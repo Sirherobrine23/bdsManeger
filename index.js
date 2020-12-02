@@ -22,20 +22,16 @@ if (process.platform == 'win32'){
 }
 
 function bds_kill(){
-    var spawn = require('child_process').spawn;
+    var spawn = require('child_process').exec;
     console.log('kill all Minecraft Bedrock Servers')
     if (process.platform == 'win32'){
-        var killbds = spawn('tasklist /fi "imagename eq bedrock_server.exe" | find /i "bedrock_server.exe" > nul & if not errorlevel 1 (taskkill /f /im "bedrock_server.exe" > nul && exit 0) else (exit 1)');  
+        var killbds = spawn(`tasklist /fi "imagename eq bedrock_server.exe" | find /i "bedrock_server.exe" > nul & if not errorlevel 1 (taskkill /f /im "bedrock_server.exe" > nul && exit 0) else (exit 1)`);  
     } else if (process.platform == 'linux'){
         // kill $(ps aux | grep '[p]ython csp_build.py' | awk '{print $2}')
         var killbds = spawn(`kill $(ps aux|grep -v 'grep'|grep 'bedrock_server'|awk '{print $2}')`, {shell: true});
-    };    
+    };
     killbds.on('exit', function (code) {
-        if (code == 0){
-            killbds.stdin.end();
-        } else {
-            killbds.stdin.end();
-        }
+        killbds.stdin.end();
     });
     return true
 }
