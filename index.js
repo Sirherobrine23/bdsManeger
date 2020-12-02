@@ -72,25 +72,6 @@ function World_BAckup(){
     };
 }
 };
-/*function log_save() {
-    const log_save_fs = require('fs')
-    if (process.platform == 'win32'){
-        var output_dir = `${process.env.USERPROFILE}`
-    } else if (process.platform == 'linux'){
-        var output_dir = `${process.env.HOME}`
-    };
-    var today = new Date();
-    var dd = String(today.getDate()).padStart(2, '0');
-    var mm = String(today.getMonth() + 1).padStart(2, '0');
-    var yyyy = today.getFullYear();
-    today = `${mm}-${dd}-${yyyy}`;
-    const filename = `${output_dir}/${today}_Bds-log_by_Bds-Maneger.txt`
-    var GetDivorTextarea = document.getElementById('LOG').tagName
-    log_save_fs.writeFile(filename, `---- Start ----\n\n ${Log}\n\n---- End ----`, function (err) {
-        if (err) throw err;
-            console.log('Log Save in home dir')
-    });
-};*/
 function Server_Start() {
     if (sessionStorage.getItem('S1')){
         alert('Reinicie o aplicativo')

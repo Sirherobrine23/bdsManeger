@@ -7,6 +7,7 @@
   <body style="background-color: white;">
     <textarea id="TEXTAREAA"></textarea>
     <select id="vT"></select>
+    <button onclick="var serverstated = services.start();serverstated.stdout.on('data', function (data) {document.getElementById('TEXTAREAA').innerHTML += `${data.replace('\n', '')}`});removeBS()" id="Start">Start</button>
   </body>
   <script>
     var services = require('bds_maneger_api')
@@ -20,8 +21,12 @@
     if (status == 'started') {
       services.kill();
     } else {
-      var serverstated = services.start();
+      function removeBS(){
+        var buttons = document.getElementById('Start')
+        buttons.parentNode.removeChild(buttons);
+        return false
+      }
     }
-    serverstated.stdout.on('data', function (data) {document.getElementById('TEXTAREAA').innerHTML += `${data.replace('\n', '')}`});
+    
   </script>
 </html>

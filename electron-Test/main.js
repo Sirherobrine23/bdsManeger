@@ -7,7 +7,7 @@ function createWindow () {
   const win = new BrowserWindow({
     minWidth: 640,
     minHeight: 640,
-    webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, sandbox: false}
+    webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, sandbox: false, debug: true, devTools: true}
   });
   win.loadFile(`${process.cwd()}/index.html`);
 }
