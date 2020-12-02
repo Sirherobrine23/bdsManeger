@@ -25,20 +25,19 @@ function bds_kill(){
     var spawn = require('child_process').spawn;
     console.log('kill all Minecraft Bedrock Servers')
     if (process.platform == 'win32'){
-        var killbds = spawn('tasklist /fi "imagename eq bedrock_server.exe" | find /i "bedrock_server.exe" > nul & if not errorlevel 1 (taskkill /f /im "bedrock_server.exe" > nul && exit 0) else (exit 1)', {shell: true});  
+        var killbds = spawn('tasklist /fi "imagename eq bedrock_server.exe" | find /i "bedrock_server.exe" > nul & if not errorlevel 1 (taskkill /f /im "bedrock_server.exe" > nul && exit 0) else (exit 1)');  
     } else if (process.platform == 'linux'){
         // kill $(ps aux | grep '[p]ython csp_build.py' | awk '{print $2}')
         var killbds = spawn(`kill $(ps aux|grep -v 'grep'|grep 'bedrock_server'|awk '{print $2}')`, {shell: true});
     };    
     killbds.on('exit', function (code) {
         if (code == 0){
-            localStorage.setItem('bds_status', 'stoped')
             killbds.stdin.end();
         } else {
-            localStorage.setItem('bds_status', 'stoped')
             killbds.stdin.end();
         }
     });
+    return true
 }
 function World_BAckup(){
     if (process.platform == "win32"){
@@ -62,6 +61,7 @@ function World_BAckup(){
     zip.writeZip(name); /* Zip file destination */
     console.log('Backup Sucess')
     /* Compress the folders */
+    return 'Sucess'
 };
 function Server_Start() {
     var today = new Date();
@@ -120,7 +120,7 @@ function bds_version_get(type){
     return out.replace('undefined', '');
 };
 
-function DownloadBDS(Vdown, ID){
+function DownloadBDS(Vdown){
     console.log("Iniciando o download");
     // var Vdown = document.getElementById(ID).value
     localStorage.setItem('bds_server_version', Vdown)
@@ -152,10 +152,6 @@ function DownloadBDS(Vdown, ID){
             console.log('init extract');
             var AdmZip = require('adm-zip');
             var zip = new AdmZip(ZIP_FILE_PATH);
-            /*var zipEntries = zip.getEntries();
-            zipEntries.forEach(function(zipEntry) {
-                console.log(zipEntry.entryName.toString())
-            });*/
             zip.extractAllTo(ZIP_FILE_OUTPUT, true);
             console.log('extract Sucess')
             // End Unzip
@@ -174,5 +170,7 @@ module.exports = {
     backup: World_BAckup,
     kill: bds_kill,
     get_version: bds_version_get,
-    version_Download: DownloadBDS
+    version_Download: DownloadBDS,
+    home: home,
+    system: system
 }
