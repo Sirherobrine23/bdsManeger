@@ -1,12 +1,6 @@
   
 name: Publish Dev in npm
-on:
-  push:
-    branches:
-      - API
-  schedule: 
-    - cron: 0 0 1 * *
-    - cron: 0 0 28 * *
+on: [push]
 jobs:
   npm-dev:
     runs-on: ubuntu-latest

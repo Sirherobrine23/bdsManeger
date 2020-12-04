@@ -92,7 +92,7 @@ function bds_version_get(type) {
     } else if (process.platform == 'win32') {
         var TMP = `${process.env.TMP}/v.json`
     }
-    fetch('https://raw.githubusercontent.com/Sirherobrine23/Bds_Maneger-for-Windows/dev/Server.json').then(response => response.text()).then(rawOUT => {
+    fetch('https://raw.githubusercontent.com/Sirherobrine23/Bds_Maneger-for-Windows/main/Server.json').then(response => response.text()).then(rawOUT => {
         fs.writeFileSync(TMP, rawOUT);
     });
     var vers = JSON.parse(fs.readFileSync(TMP, 'utf8')).Versions
