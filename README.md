@@ -1,3 +1,3 @@
-# bds_maneger_api
+# Minecraft BDS Manger API
 
-Desatualizado
+Uma Simples API ainda em alpha mais sendo implemetada ao púlblico
