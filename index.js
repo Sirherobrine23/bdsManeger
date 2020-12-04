@@ -8,14 +8,9 @@ if (process.argv[0].includes('electron')){
 }
 // This script server to forcefully kill old servers without being stopped before closing the application or having reloaded the page, an alternative and safer way is being sought.var
 if (process.platform == 'win32') {
-    if (require('os').release().includes('10.')) {
-        var home = process.env.USERPROFILE.replaceAll('\\', '/');
-        var server_dir = `${home}/bds_Server`;
-        var system = `windows`;
-    } else {
-        alert(`Alerta \"Utilize o Windows 10 OU Windows Server 2016\"`);
-        require('electron').remote.app.quit();
-    }
+    var home = process.env.USERPROFILE;
+    var server_dir = `${home}\\bds_Server`;
+    var system = `windows`;
 } else if (process.platform == 'linux') {
     var home = process.env.HOME;
     var server_dir = `${home}/bds_Server`;
@@ -121,7 +116,7 @@ function DownloadBDS(Vdown) {
         var URLd = `https://minecraft.azureedge.net/bin-linux/bedrock-server-${Vdown}.zip`;
     }
     console.log(URLd, NAMEd)
-    var NAMEd = `bedrock-server-${Vdown}.zip'`
+    var NAMEd = `bedrock-server-${Vdown}.zip`
     // 
     var exec = require('child_process').exec;
     if (process.platform == 'win32') {
@@ -132,11 +127,17 @@ function DownloadBDS(Vdown) {
     downloadBDSchild.on('exit', function (code) {
         if (code == 0) {
             console.log('download Sucess');
-            var old = require('fs').readFileSync(`${require('bds_manegr_api').server_dir}/server.properties`, "utf-8");
+            if (require('fs').existsSync(`${require('bds_maneger_api').server_dir}/server.properties`)){
+                var OLD_ = true
+                var old = require('fs').readFileSync(`${require('bds_maneger_api').server_dir}/server.properties`, "utf-8");
+            }
+            
             if (process.platform == 'win32') {
                 var ZIP_FILE_PATH = `${process.env.TMP}/${NAMEd}`;
+                require('child_process').execSync(`mklink /J ${require('bds_maneger_api').home.replaceAll('/', '\\')}\\Desktop\\Bds_server ${require('bds_maneger_api').server_dir.replaceAll('/', '\\')}`).toString()
             } else if (process.platform = 'linux') {
                 var ZIP_FILE_PATH = `/tmp/${NAMEd}`;
+                require('child_process').execSync(`ln -s ${require('bds_maneger_api').server_dir} ~/Desktop/Bds`)
             };
             var ZIP_FILE_OUTPUT = `${require('bds_maneger_api').server_dir}`;
             console.log('init extract'); // Unzip
@@ -144,7 +145,7 @@ function DownloadBDS(Vdown) {
             var zip = new AdmZip(ZIP_FILE_PATH);
             zip.extractAllTo(ZIP_FILE_OUTPUT, true);
             console.log('extract Sucess'); // End Unzip
-            require('fs').writeFileSync(`${require('bds_manegr_api').server_dir}/server.properties`, old)
+            if (OLD_){require('fs').writeFileSync(`${require('bds_maneger_api').server_dir}/server.properties`, old)};
             return 'Sucess'
         } /*Erro download*/
         else {
