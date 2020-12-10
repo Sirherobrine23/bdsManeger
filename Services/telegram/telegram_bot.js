@@ -6,17 +6,24 @@ if (fs.existsSync(`${require('../../index').server_dir}/token.txt`)){
 };
 const { Telegraf } = require('telegraf')
 const bot = new Telegraf(token)
-bot.start((ctx) => ctx.replyWithMarkdown(`Hello ${ctx.message.from.username}
-Temos Algumas Coisas ainda sendo feitas na programação do novo bot Mais funcional 👍:
+bot.start((ctx) => {
+    var markdown = `Hello ${ctx.message.from.username}
+Temos Algumas Coisas ainda sendo feitas na programação do novo bot mais funciona 👍:
 
-*Comandos:*
+Comandos:
 /server_start
 /server_stop
 /server_restart
 /log
 /command
 
-- [x] As mensagens são reetransmitidas para o chat do minecraft caso ele estejá ligado`))
+<br>---------<br>
+
+As mensagens são reetransmitidas para o chat do minecraft caso ele estejá ligado: ✔
+Controle de Mensagem: ❌
+`
+ctx.reply(markdown)
+})
 bot.help((ctx) => ctx.reply('Help message'))
 bot.action('delete', ({ deleteMessage }) => deleteMessage())
 /*bot.on('message', (ctx) => {
@@ -33,5 +40,31 @@ bot.command('server_start', (ctx) => {
         console.log('Erro');
         ctx.reply(`Por Favor contate o Administrador do Servidor, Você não está na lista, conteo para adicionar seu username \(${ctx.message.from.username}\) na whitelist`)
     };
-})
+});
+bot.command('server_stop', (ctx) => {
+    // ctx.reply('Hello')
+    if (require('./check').checkUser(ctx.message.from.username)){
+        console.log('Sucess')
+        ctx.reply(`Em manuteção ${ctx.message.from.username}`)
+    } else {
+        console.log('Erro');
+        ctx.reply(`Por Favor contate o Administrador do Servidor, Você não está na lista, conteo para adicionar seu username \(${ctx.message.from.username}\) na whitelist`)
+    };
+});
+bot.command('server_restart', (ctx) => {
+    // ctx.reply('Hello')
+    if (require('./check').checkUser(ctx.message.from.username)){
+        console.log('Sucess')
+        ctx.reply(`Em manuteção ${ctx.message.from.username}`)
+    } else {
+        console.log('Erro');
+        ctx.reply(`Por Favor contate o Administrador do Servidor, Você não está na lista, conteo para adicionar seu username \(${ctx.message.from.username}\) na whitelist`)
+    };
+});
+
+bot.command('log', (ctx) => {
+    // ctx.reply('Hello')
+    fs.readSync(`${require('../../index').server_dir}/`)
+    ctx.reply(LOGBDS)
+});
 bot.launch()
