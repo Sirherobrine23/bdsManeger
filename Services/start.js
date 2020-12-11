@@ -2,8 +2,12 @@
 // Very important file to start the server in NodeJs and leave it in the background.
 if (require('../index').electron){
     function LogOut(data){
-        
-    }
+        if (document.getElementById('LOG').tagName == 'TEXTAREA'){
+            document.getElementById('LOG').value = data
+        } else {
+            document.getElementById('LOG').innerHTML = data
+        };
+    };
 } else {
     function LogOut(data){
         console.log(data)
