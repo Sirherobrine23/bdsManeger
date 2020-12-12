@@ -1,6 +1,6 @@
 var fs = require("fs");
-if (fs.existsSync(`${require('../../index').server_dir}/token.txt`)){
-    var token = fs.readFileSync(`${require('../../index').server_dir}/token.txt`, "utf-8").replaceAll('\n', '');
+if (fs.existsSync(`${require('bds_maneger_api').server_dir}/token.txt`)){
+    var token = fs.readFileSync(`${require('bds_maneger_api').server_dir}/token.txt`, "utf-8").replaceAll('\n', '');
 } else {
     var token = null;
 };
@@ -51,7 +51,7 @@ bot.command('server_stop', (ctx) => {
         ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
     };
 });
-bot.command('server_restart', (ctx) => {
+/*bot.command('server_restart', (ctx) => {
     // ctx.reply('Hello')
     if (requir('/check').checkUser(ctx.messge.from.username)){
         console.log('Sucess')
@@ -60,13 +60,31 @@ bot.command('server_restart', (ctx) => {
         console.log('Erro');
         ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
     };
-});
+});*/
 
 bot.command('log', (ctx) => {
     // ctx.reply('Hello')
-    fs.readSync(`${requie('../../index').server_dir}/`)
+    fs.readSync(`${requie('bds_maneger_api').server_dir}/`)
     ctx.reply(LOGBDS)
 });
 bot.launch()
 
 module.exports = {}
+
+
+
+
+
+function Server_Start() {
+    var today = require('bds_maneger_api').date('full')
+    var fs = require('fs')
+    var exec = require('child_process').exec;
+    if (process.platform == 'win32'){
+        var logConsoleStream = fs.createWriteStream(``, {flags: 'a'});
+        var bdsDIRpathexe = `cd ${require('bds_maneger_api').server_dir} && bedrock_server.exe`;
+    } else if (process.platform == 'linux'){
+        var logConsoleStream = fs.createWriteStream(``, {flags: 'a'});
+        var bdsDIRpathexe = `cd ${require('bds_maneger_api').server_dir} && chmod 777 bedrock_server && LD_LIBRARY_PATH=${require('bds_maneger_api').server_dir}/.  ./bedrock_server`
+    };
+    serverstated.stdout.pipe(logConsoleStream);
+};

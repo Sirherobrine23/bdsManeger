@@ -10,10 +10,14 @@ if (process.argv[0].includes('electron')){
 if (process.platform == 'win32') {
     var home = process.env.USERPROFILE;
     var server_dir = `${home}\\bds_Server`;
+    var cache_dir = `${home}\\AppData\\Roaming\\bds_maneger_api\\`
+    var log_file = `${home}/Desktop/${require('bds_maneger_api').date()}_Bds_log.log`
     var system = `windows`;
 } else if (process.platform == 'linux') {
     var home = process.env.HOME;
     var server_dir = `${home}/bds_Server`;
+    var cache_dir = `${home}/.config/bds_maneger_api`
+    var log_file = `${home}/${require('bds_maneger_api').date()}_Bds_log.log`
     var system = `linux`;
 } else if (process.platform == 'darwin') {
     console.error('Por favor utilize o Windows ou Linux o MacOS Ainda não há suporte')
@@ -54,21 +58,22 @@ function StdindWrite(Variable_storaged, command) {
     } /*child_process*/
 };
 
-
-
-
-
-
-
+function Storage(){
+    var LocalStorage = require('node-localstorage').LocalStorage;
+    return new LocalStorage(`${require('./').api_dir}/Local_Storage`);
+};
 
 // Module export
 module.exports = {
-    /*start: Server_Start,
-    stop: Server_Stop,*/
     home: home,
     system: system,
     server_dir: server_dir,
     electron: electron_de,
+    api_dir: cache_dir,
+    log_file: log_file,
+    start: require('./services/start').Server_start,
+    stop: require('./services/stop').Server_stop,
+    Storage: Storage,
     date: date,
     command: StdindWrite,
     backup: require("./services/backup").World_BAckup,

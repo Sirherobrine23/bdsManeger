@@ -2,7 +2,7 @@ function DownloadBDS(Vdown) {
     console.log("Iniciando o download");
     // var Vdown = document.getElementById(ID).value
     if (require('bds_maneger_api').electron){
-        localStorage.setItem('bds_server_version', Vdown)
+        require('bds_maneger_api').Storage().setItem('bds_server_version', Vdown)
     }
     if (process.platform == 'win32') {
         var URLd = `https://minecraft.azureedge.net/bin-win/bedrock-server-${Vdown}.zip`;
