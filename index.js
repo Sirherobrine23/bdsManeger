@@ -1,31 +1,3 @@
-if (process.argv[0].includes('electron')){
-    var electron_de = true;
-} else if (process.argv[0].includes('node')){
-    // console.error('Use o Electron, o Node não é totalmente suportado');
-    var electron_de = undefined;
-} else {
-    var electron_de = false;
-}
-// This script server to forcefully kill old servers without being stopped before closing the application or having reloaded the page, an alternative and safer way is being sought.var
-if (process.platform == 'win32') {
-    var home = process.env.USERPROFILE;
-    var server_dir = `${home}\\bds_Server`;
-    var cache_dir = `${home}\\AppData\\Roaming\\bds_maneger_api\\`
-    var log_file = `${home}/Desktop/${require('bds_maneger_api').date()}_Bds_log.log`
-    var system = `windows`;
-} else if (process.platform == 'linux') {
-    var home = process.env.HOME;
-    var server_dir = `${home}/bds_Server`;
-    var cache_dir = `${home}/.config/bds_maneger_api`
-    var log_file = `${home}/${require('bds_maneger_api').date()}_Bds_log.log`
-    var system = `linux`;
-} else if (process.platform == 'darwin') {
-    console.error('Por favor utilize o Windows ou Linux o MacOS Ainda não há suporte')
-} else {
-    alert(`Por Favor utilize uma sistema operacional (OS) compativel com o Minecraft Bedrock Server o ${process.platform} não é Suportdo`);
-    require('electron').remote.app.quit();
-}
-
 function date(fu) {
     var today = new Date();
     if (fu == 'year') {    
@@ -57,20 +29,42 @@ function StdindWrite(Variable_storaged, command) {
         } /*Command Send*/
     } /*child_process*/
 };
-
 function Storage(){
     var LocalStorage = require('node-localstorage').LocalStorage;
     return new LocalStorage(`${require('./').api_dir}/Local_Storage`);
 };
-
+if (process.argv[0].includes('electron')){
+    var electron_de = true;
+} else if (process.argv[0].includes('node')){
+    // console.error('Use o Electron, o Node não é totalmente suportado');
+    var electron_de = undefined;
+} else {
+    var electron_de = false;
+}
+// This script server to forcefully kill old servers without being stopped before closing the application or having reloaded the page, an alternative and safer way is being sought.var
+if (process.platform == 'win32') {
+    var home = process.env.USERPROFILE;
+    var server_dir = `${home}\\bds_Server`;
+    var cache_dir = `${home}\\AppData\\Roaming\\bds_maneger_api\\`
+    var log_file = `${server_dir}\\${date()}_Bds_log.log`
+    var log_date = `${date()}`
+    var system = `windows`;
+} else if (process.platform == 'linux') {
+    var home = process.env.HOME;
+    var server_dir = `${home}/bds_Server`;
+    var cache_dir = `${home}/.config/bds_maneger_api`
+    var log_file = `${server_dir}/${date()}_Bds_log.log`
+    var log_date = `${date()}`
+    var system = `linux`;
+} else if (process.platform == 'darwin') {
+    console.error('Por favor utilize o Windows ou Linux o MacOS Ainda não há suporte')
+} else {
+    alert(`Por Favor utilize uma sistema operacional (OS) compativel com o Minecraft Bedrock Server o ${process.platform} não é Suportdo`);
+    require('electron').remote.app.quit();
+}
+// 
 // Module export
 module.exports = {
-    home: home,
-    system: system,
-    server_dir: server_dir,
-    electron: electron_de,
-    api_dir: cache_dir,
-    log_file: log_file,
     start: require('./services/start').Server_start,
     stop: require('./services/stop').Server_stop,
     Storage: Storage,
@@ -80,5 +74,12 @@ module.exports = {
     kill: require("./services/kill").bds_kill,
     get_version: require("./services/versions").bds_version_get,
     version_Download: require("./services/download").DownloadBDS,
-    detect: require("./services/detect_bds").bds_detect    
+    detect: require("./services/detect_bds").bds_detect,
+    home: home,
+    system: system,
+    server_dir: server_dir,
+    electron: electron_de,
+    api_dir: cache_dir,
+    log_file: log_file,
+    log_date: log_date
 }
