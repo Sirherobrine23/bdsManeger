@@ -57,6 +57,7 @@ if (process.platform == 'win32') {
     var log_date = `${date()}`
     var system = `linux`;
 } else if (process.platform == 'darwin') {
+    require("shell").openExternal("https://github.com/Sirherobrine23/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
     console.error('Por favor utilize o Windows ou Linux o MacOS Ainda não há suporte')
 } else {
     alert(`Por Favor utilize uma sistema operacional (OS) compativel com o Minecraft Bedrock Server o ${process.platform} não é Suportdo`);
