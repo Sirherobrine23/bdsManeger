@@ -43,10 +43,10 @@ if (process.argv[0].includes('electron')){
 }
 // This script server to forcefully kill old servers without being stopped before closing the application or having reloaded the page, an alternative and safer way is being sought.var
 if (process.platform == 'win32') {
-    var home = process.env.USERPROFILE;
-    var server_dir = `${home}\\bds_Server`;
-    var cache_dir = `${home}\\AppData\\Roaming\\${require(process.cwd() + '/package.json').name}\\`
-    var log_file = `${server_dir}\\${date()}_Bds_log.log`
+    var home = process.env.USERPROFILE.replaceAll('\\', '/');
+    var server_dir = `${home}/bds_Server`;
+    var cache_dir = `${home}/AppData/Roaming/${require(process.cwd()+'/package.json').name}\\`
+    var log_file = `${server_dir}/${date()}_Bds_log.log`
     var log_date = `${date()}`
     var system = `windows`;
 } else if (process.platform == 'linux') {
