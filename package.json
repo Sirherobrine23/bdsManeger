@@ -19,7 +19,6 @@
   "homepage": "https://github.com/Sirherobrine23/bds_maneger_api#readme",
   "dependencies": {
     "adm-zip": "^0.5.1",
-    "bds_maneger_api": "file:./",
     "node-localstorage": "^2.1.6",
     "telegraf": "^3.38.0"
   }
