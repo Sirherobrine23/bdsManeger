@@ -1,30 +1,9 @@
-var fs = require("fs");
-if (fs.existsSync(`${require('bds_maneger_api').server_dir}/token.txt`)){
-    var token = fs.readFileSync(`${require('bds_maneger_api').server_dir}/token.txt`, "utf-8").replaceAll('\n', '');
-} else {
-    var token = null;
-};
 const { Telegraf } = require('telegraf')
-const bot = new Telegraf(token)
+const bot = new Telegraf(require('bds_maneger_api').token)
 bot.start((ctx) => {
-    var markdown = `Hello ${ctx.message.from.username}
-We have some things still being done in the programming of the new bot more works 👍:
-
-Commands:
-/server_start
-/server_stop
-/server_restart
-/log
-/command
-
-<br>---------<br>
-
-The messages are re-transmitted to the minecraft chat if it is already connected: ✔
-Message Control: ❌
-`
-ctx.reply(markdown)
+    ctx.reply(`Hello ${ctx.message.from.username}\nWe have some things still being done in the programming of the new bot more works 👍:\n\nCommands:\n/server_start\n/server_stop\n/server_restart\n/log\n/command: Commands are not working in this version, wait until it is broken\n\nThe messages are re-transmitted to the minecraft chat if it is already connected: ✔\nMessage Control: ❌`)
 })
-bot.help((ctx) => ctx.reply('Help message'))
+bot.help((ctx) => ctx.reply('Use o/start'))
 bot.action('delete', ({ deleteMessage }) => deleteMessage())
 /*bot.on('message', (ctx) => {
     ctx.telegram.sendCopy(ctx.chat.id, ctx.message)
@@ -35,7 +14,7 @@ bot.command('server_start', (ctx) => {
     // ctx.reply('Hello')
     if (require('./check').checkUser(ctx.message.from.username)){
         console.log('Sucess')
-        ctx.reply(`Em manuteção ${ctx.message.from.username}`)
+        ctx.reply(`Under maintenance ${ctx.message.from.username}`)
     } else {
         console.log('Erro');
         ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
@@ -45,46 +24,21 @@ bot.command('server_stop', (ctx) => {
     // ctx.reply('Hello')
     if (require('./check').checkUser(ctx.message.from.username)){
         console.log('Sucess')
-        ctx.reply(`Em manuteção ${ctx.message.from.username}`)
+        ctx.reply(`Under maintenance ${ctx.message.from.username}`)
     } else {
         console.log('Erro');
         ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
     };
 });
-/*bot.command('server_restart', (ctx) => {
-    // ctx.reply('Hello')
-    if (requir('/check').checkUser(ctx.messge.from.username)){
-        console.log('Sucess')
-        ctx.reply(`Em manuteção ${ctx.message.from.username}`)
-    } else {
-        console.log('Erro');
-        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
-    };
-});*/
-
+bot.command('command', (ctx) =>{
+    let commands = 'Commands are disabled globally, wait for some version that supports';
+    ctx.reply(commands)
+});
 bot.command('log', (ctx) => {
-    // ctx.reply('Hello')
-    fs.readSync(`${requie('bds_maneger_api').server_dir}/`)
-    ctx.reply(LOGBDS)
+    if (fs.existsSync(require('bds_maneger_api').log_file))
+        var logB = require("fs").readSync(require('bds_maneger_api').log_file);
+    else 
+        var logB = 'there is no log';
+    ctx.reply(logB)
 });
-bot.launch()
-
-module.exports = {}
-
-
-
-
-
-function Server_Start() {
-    var today = require('bds_maneger_api').date('full')
-    var fs = require('fs')
-    var exec = require('child_process').exec;
-    if (process.platform == 'win32'){
-        var logConsoleStream = fs.createWriteStream(``, {flags: 'a'});
-        var bdsDIRpathexe = `cd ${require('bds_maneger_api').server_dir} && bedrock_server.exe`;
-    } else if (process.platform == 'linux'){
-        var logConsoleStream = fs.createWriteStream(``, {flags: 'a'});
-        var bdsDIRpathexe = `cd ${require('bds_maneger_api').server_dir} && chmod 777 bedrock_server && LD_LIBRARY_PATH=${require('bds_maneger_api').server_dir}/.  ./bedrock_server`
-    };
-    serverstated.stdout.pipe(logConsoleStream);
-};
+module.exports = bot;

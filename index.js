@@ -45,14 +45,14 @@ if (process.argv[0].includes('electron')){
 if (process.platform == 'win32') {
     var home = process.env.USERPROFILE;
     var server_dir = `${home}\\bds_Server`;
-    var cache_dir = `${home}\\AppData\\Roaming\\bds_maneger_api\\`
+    var cache_dir = `${home}\\AppData\\Roaming\\${require(process.cwd() + '/package.json').name}\\`
     var log_file = `${server_dir}\\${date()}_Bds_log.log`
     var log_date = `${date()}`
     var system = `windows`;
 } else if (process.platform == 'linux') {
     var home = process.env.HOME;
     var server_dir = `${home}/bds_Server`;
-    var cache_dir = `${home}/.config/bds_maneger_api`
+    var cache_dir = `${home}/.config/${require(process.cwd() + '/package.json').name}/`
     var log_file = `${server_dir}/${date()}_Bds_log.log`
     var log_date = `${date()}`
     var system = `linux`;
@@ -63,24 +63,34 @@ if (process.platform == 'win32') {
     alert(`Por Favor utilize uma sistema operacional (OS) compativel com o Minecraft Bedrock Server o ${process.platform} não é Suportdo`);
     require('electron').remote.app.quit();
 }
+function telegram_tokenv1(){
+    if (require("fs").existsSync(`${server_dir}/token.txt`)){
+        return require("fs").readFileSync(`${server_dir}/token.txt`, "utf-8").replaceAll('\n', '');
+    } else {
+        console.log(`There is no token file`);return null;
+    };
+};
 // 
 // Module export
-module.exports = {
-    start: require('./services/start').Server_start,
-    stop: require('./services/stop').Server_stop,
-    Storage: Storage,
-    date: date,
-    command: StdindWrite,
-    backup: require("./services/backup").World_BAckup,
-    kill: require("./services/kill").bds_kill,
-    get_version: require("./services/versions").bds_version_get,
-    version_Download: require("./services/download").DownloadBDS,
-    detect: require("./services/detect_bds").bds_detect,
-    home: home,
-    system: system,
-    server_dir: server_dir,
-    electron: electron_de,
-    api_dir: cache_dir,
-    log_file: log_file,
-    log_date: log_date
-}
+/* Variaveis */
+module.exports.token = telegram_tokenv1(),
+module.exports.home = home,
+module.exports.system = system,
+module.exports.server_dir = server_dir,
+module.exports.electron = electron_de,
+module.exports.api_dir = cache_dir,
+module.exports.log_file = log_file,
+module.exports.log_date = log_date
+
+/* Commands server */
+module.exports.detect = require("./services/detect_bds").bds_detect,
+module.exports.get_version = require("./services/versions").bds_version_get,
+module.exports.telegram = require("./Services/telegram/telegram_bot")
+module.exports.start = require('./services/start').Server_start
+module.exports.stop = require('./services/stop').Server_stop
+module.exports.Storage = Storage
+module.exports.date = date
+module.exports.command = StdindWrite
+module.exports.backup = require("./services/backup").World_BAckup
+module.exports.kill = require("./services/kill").bds_kill
+module.exports.version_Download = require("./services/download").DownloadBDS
