@@ -2,11 +2,34 @@
 name: Publish Dev in npm
 on: [push]
 jobs:
-  npm-dev:
+  npm-check-vunarability:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@v1
+      - run: |
+          if npm update|grep -q 'found 0 vulnerabilities';then
+          exit 0
+          else
+          echo 'Vunarability found, leaving with error'
+          exit 1
+          fi
+      - run: |
+          if npm install|grep -q 'found 0 vulnerabilities';then
+          exit 0
+          else
+          echo 'Vunarability found, leaving with error'
+          exit 1
+          fi
+  Npm-Publish:
+    needs: npm-dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 
+        uses: actions/checkout@master
+
+      - name: Npm and Node Setup
+        uses: actions/setup-node@v1
         with:
           node-version: 15.x
           registry-url: https://registry.npmjs.org/
@@ -18,8 +41,14 @@ jobs:
           sed "s|$old|\"version\": \"23.$id_run.0beta\",|g" package.json > package2.json
           cat package2.json > package.json
           rm -rfv package2.json
-      - run: npm update
-      - run: npm install
-      - run: npm publish
+
+      - name: Update Packages
+        run: npm update
+
+      - name: Install Packages
+        run: npm install
+
+      - name: Publish
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
