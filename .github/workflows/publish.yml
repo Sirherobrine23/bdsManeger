@@ -22,7 +22,7 @@ jobs:
           exit 1
           fi
   Npm-Publish:
-    needs: npm-dev
+    needs: npm-check-vunarability
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 
