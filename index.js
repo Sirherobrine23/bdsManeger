@@ -83,14 +83,14 @@ module.exports.log_file = log_file,
 module.exports.log_date = log_date
 
 /* Commands server */
-module.exports.detect = require("./services/detect_bds").bds_detect,
-module.exports.get_version = require("./services/versions").bds_version_get,
+module.exports.detect = require("./Services/detect_bds").bds_detect,
+module.exports.get_version = require("./Services/versions").bds_version_get,
 module.exports.telegram = require("./Services/telegram/telegram_bot")
-module.exports.start = require('./services/start').Server_start
-module.exports.stop = require('./services/stop').Server_stop
+module.exports.start = require('./Services/start').Server_start
+module.exports.stop = require('./Services/stop').Server_stop
 module.exports.Storage = Storage
 module.exports.date = date
 module.exports.command = StdindWrite
-module.exports.backup = require("./services/backup").World_BAckup
-module.exports.kill = require("./services/kill").bds_kill
-module.exports.version_Download = require("./services/download").DownloadBDS
+module.exports.backup = require("./Services/backup").World_BAckup
+module.exports.kill = require("./Services/kill").bds_kill
+module.exports.version_Download = require("./Services/download").DownloadBDS
