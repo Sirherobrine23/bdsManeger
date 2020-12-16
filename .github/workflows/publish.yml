@@ -21,6 +21,8 @@ jobs:
           echo 'Vunarability found, leaving with error'
           exit 1
           fi
+      - name: Jest Test
+        run: npm run test
   Npm-Publish:
     needs: npm-check-vunarability
     runs-on: ubuntu-latest

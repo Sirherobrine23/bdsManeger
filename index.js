@@ -22,7 +22,11 @@ function StdindWrite(Variable_storaged, command) {
         } else {
             if (command == 'stop'){
                 Variable_storaged.stdin.write(`stop\n`)
-                Variable_storaged.on('exit', function (code){if (code = 0){delete(Variable_storaged);};});
+                Variable_storaged.on('exit', function (code){
+                    if (code = 0){
+                        var Variable_storaged = null
+                    };
+                });
             } /*End Stop Delete*/ else {
                 eval(Variable_storaged.stdin.write(`${command}\n`))
             }
@@ -67,7 +71,7 @@ function telegram_tokenv1(){
     if (require("fs").existsSync(`${server_dir}/token.txt`)){
         return require("fs").readFileSync(`${server_dir}/token.txt`, "utf-8").replaceAll('\n', '');
     } else {
-        console.log(`There is no token file`);return null;
+        return null;
     };
 };
 // 
@@ -81,6 +85,7 @@ module.exports.electron = electron_de,
 module.exports.api_dir = cache_dir,
 module.exports.log_file = log_file,
 module.exports.log_date = log_date
+module.exports.bds_latest = require("./Services/versions").bds_latest_version,
 
 /* Commands server */
 module.exports.detect = require("./Services/detect_bds").bds_detect,
