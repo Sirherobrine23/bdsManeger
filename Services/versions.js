@@ -34,7 +34,23 @@ function bds_version_get(type) {
     };
 };
 
-// module.exports = bds_version_get
-module.exports = {
-    bds_version_get: bds_version_get
+fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json")
+  .then(function (response) {
+    return response.json();
+  })
+  .then(function (content) {
+    require('bds_maneger_api').Storage().setItem('bds_latest', content.latest);
+    require('bds_maneger_api').Storage().setItem('bds_latest', content.latest);
+  })
+  .catch(function (error) {
+    console.log("Error: " + error);
+  });
+function resposta(){
+    return require('bds_maneger_api').Storage().getItem('bds_latest');
 }
+setTimeout(() => {
+    resposta()
+}, 1000)
+
+module.exports.bds_latest = require('bds_maneger_api').Storage().getItem('bds_latest');
+module.exports.bds_version_get = bds_version_get
