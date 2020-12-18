@@ -2,8 +2,8 @@ const bds = require('../index');
 
 test("Returns versions", ()=>{
     expect(bds.get_version());
-    console.log(bds.get_version())
-    console.log(bds.get_version('raw'))
+    expect(bds.bds_latest);
+    expect(bds.get_version('raw'));
 });
 
 test("Download latest version", ()=>{
