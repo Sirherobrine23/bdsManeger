@@ -99,3 +99,6 @@ module.exports.backup = require("./Services/backup").World_BAckup
 module.exports.kill = require("./Services/kill").bds_kill
 module.exports.version_Download = require("./Services/download").DownloadBDS
 module.exports.bds_latest = require("./Services/versions").bds_latest()
+module.exports.set_config = require("./Services/bds_settings").config
+module.exports.get_config = require("./Services/bds_settings").get_config
+module.exports.config_example = require("./Services/bds_settings").config_example
