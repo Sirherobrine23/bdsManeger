@@ -28,10 +28,10 @@ function DownloadBDS(Vdown) {
             
             if (process.platform == 'win32') {
                 var ZIP_FILE_PATH = `${process.env.TMP}/${NAMEd}`;
-                require('child_process').execSync(`mklink /J ${require('bds_maneger_api').home.replaceAll('/', '\\')}\\Desktop\\Bds_server ${require('bds_maneger_api').server_dir.replaceAll('/', '\\')}`).toString()
+                // require('child_process').execSync(`mklink /J ${require('bds_maneger_api').home.replaceAll('/', '\\')}\\Desktop\\Bds_server ${require('bds_maneger_api').server_dir.replaceAll('/', '\\')}`).toString()
             } else if (process.platform = 'linux') {
                 var ZIP_FILE_PATH = `/tmp/${NAMEd}`;
-                require('child_process').execSync(`ln -s ${require('bds_maneger_api').server_dir} ~/Desktop/Bds`)
+                // require('child_process').execSync(`ln -s ${require('bds_maneger_api').server_dir} ~/Desktop/Bds`)
             };
             var ZIP_FILE_OUTPUT = `${require('bds_maneger_api').server_dir}`;
             console.log('init extract'); // Unzip
