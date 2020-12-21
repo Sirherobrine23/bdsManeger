@@ -54,11 +54,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-     - name: Create Pull Request
-       uses: peter-evans/create-pull-request@v3
-       with:
-          commit-message: update version
-          title: Update version
-          body: Update version
-          branch: update-version
-          base: main
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+            commit-message: update version
+            title: Update version
+            body: Update version
+            branch: update-version
+            base: main
