@@ -1,0 +1,55 @@
+  
+name: Tag
+on:
+  push:
+    tags:        
+      - v1.*
+      - v0.*
+jobs:
+  Linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@v1
+
+      - name: Update Version
+        run: |
+          sudo apt install jq -y
+          TESTE=`cat package.json |jq .version|sed 's|"||g'`
+          TESTE2="$(echo $TESTE|tr '.' ' ')"
+          PR=`echo $TESTE2|awk '{print $1}'`
+          SE=`echo $TESTE2|awk '{print $2}'`
+          TE=`echo $TESTE2|awk '{print $3}'`
+          NEW_VERSION="$PR.$SE.$(($TE + 1))"
+          OLD=`cat package.json|grep '"version":'|awk '{print $2}'`
+          cat package.json|sed -e "s|$OLD|\"$NEW_VERSION\",|g" > package2.json
+          rm -rfv package.json
+          mv -fv package2.json package.json
+
+      - name: Update Dependecies
+        run: |
+          npm update &> /tmp/update.txt
+          if cat /tmp/update.txt |grep -q 'found 0 vulnerabilities';then
+          cat /tmp/update.txt
+          exit 0
+          else
+          cat /tmp/update.txt
+          echo 'Vunarability found, leaving with error'
+          exit 1
+          fi
+      - name: Install Depedencies
+        run: |
+          npm install &> /tmp/install.txt
+          if cat /tmp/install.txt |grep -q 'found 0 vulnerabilities';then
+          cat /tmp/install.txt
+          exit 0
+          else
+          cat /tmp/install.txt
+          echo 'Vunarability found, leaving with error'
+          exit 1
+          fi
+      
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

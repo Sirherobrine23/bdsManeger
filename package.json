@@ -1,7 +1,7 @@
 {
   "name": "bds_maneger_api",
   "version": "0.1.0",
-  "description": "",
+  "description": "scripts to manage minecraft bedrock server",
   "private": false,
   "main": "index.js",
   "scripts": {
