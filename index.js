@@ -26,18 +26,28 @@ if (process.argv[0].includes('electron')){
     var electron_de = false;
 }
 // This script server to forcefully kill old servers without being stopped before closing the application or having reloaded the page, an alternative and safer way is being sought.var
+const path = require('path')
+const fs = require('fs')
 if (process.platform == 'win32') {
-    var home = process.env.USERPROFILE.replaceAll('\\', '/');
-    var server_dir = `${home}/bds_Server`;
-    var cache_dir = `${home}/AppData/Roaming/${require(process.cwd()+'/package.json').name}\\`
-    var log_file = `${server_dir}/${date()}_Bds_log.log`
+    var home = process.env.USERPROFILE;
+    var server_dir = path.join(home, `bds_Server`);
+    var cache_dir = path.join(home, 'AppData', 'Roaming', require(process.cwd()+'/package.json').name)
+    var log_dir = path.join(server_dir, 'log')
+    if (!fs.existsSync(log_dir)){
+        fs.mkdirSync(log_dir);
+    };
+    var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
     var system = `windows`;
 } else if (process.platform == 'linux') {
     var home = process.env.HOME;
-    var server_dir = `${home}/bds_Server`;
-    var cache_dir = `${home}/.config/${require(process.cwd() + '/package.json').name}/`
-    var log_file = `${server_dir}/${date()}_Bds_log.log`
+    var server_dir = path.join(home, 'bds_Server');
+    var cache_dir = path.join(home, '.config', require(process.cwd() + '/package.json').name);
+    var log_dir = path.join(server_dir, 'log')
+    if (!fs.existsSync(log_dir)){
+        fs.mkdirSync(log_dir);
+    };
+    var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
     var system = `linux`;
 } else if (process.platform == 'darwin') {
@@ -46,8 +56,8 @@ if (process.platform == 'win32') {
     process.exit(1984)
 } else {
     console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
-    process.exit(2)
-}
+    process.exit(2021)
+};
 function telegram_tokenv1(){
     if (require("fs").existsSync(`${server_dir}/token.txt`)){
         return require("fs").readFileSync(`${server_dir}/token.txt`, "utf-8").replaceAll('\n', '');

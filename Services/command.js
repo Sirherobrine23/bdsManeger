@@ -5,16 +5,7 @@ module.exports.command = (Variable_storaged, command) => {
         if (command == undefined) {
             console.error('command?')
         } else {
-            if (command == 'stop'){
-                Variable_storaged.stdin.write(`stop\n`)
-                Variable_storaged.on('exit', function (code){
-                    if (code == 0){
-                        null
-                    };
-                });
-            } else {
-                Variable_storaged.stdin.write(`${command}\n`)
-            }
+            Variable_storaged.stdin.write(`${command}\n`);
         } /*Command Send*/
     } /*child_process*/
 };

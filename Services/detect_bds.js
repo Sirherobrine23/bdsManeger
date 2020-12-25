@@ -1,4 +1,4 @@
-function bds_detect() {
+module.exports.bds_detect = () => {
     var spawn = require('child_process').execSync;
     if (process.platform == 'win32') {
         var killbds = spawn(`tasklist /fi "imagename eq bedrock_server.exe" | find /i "bedrock_server.exe" > nul & if not errorlevel 1 (echo 0) else (echo 1)`);
@@ -10,8 +10,4 @@ function bds_detect() {
     } else {
         return false
     };
-};
-
-module.exports = {
-    bds_detect: bds_detect
 };

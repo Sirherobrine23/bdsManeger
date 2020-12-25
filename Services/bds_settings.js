@@ -4,107 +4,85 @@ const cpuCount = require('os').cpus().length;
 var fs = require("fs")
 if (2 < cpuCount - 2) var CPU = cpuCount - 2; else var CPU = cpuCount;
 if (json_config.includes('.json')){
-    var json_storage = fs.readFileSync(json_config)
+    var config = JSON.parse(fs.readFileSync(json_config, 'utf-8'))
 } else
-    var json_storage = json_config
-const config = JSON.parse(json_storage)
+    var config = JSON.parse(json_config)
+// const config = json_storage/*JSON.parse(json_storage)*/
 // Definitions
 //
-var nothing = '';
+// var nothing = '';
 // description
-if (config.description == nothing){
-    var description_name = `Dedicated Server`;
-} else if(config.description == undefined){
+if (config.description == undefined){
     var description_name = `Dedicated Server`;
 } else {
     var description_name = config.description;
 };
 
 // Level Name
-if (config.name == nothing){
-    var level_name = `Bedrock level`;
-} else if(config.name == undefined){
+if (config.name == undefined){
     var level_name = `Bedrock level`;
 } else {
     var level_name = config.name;
 };
 
 // gamemode
-if (config.gamemode == nothing){
-    var gamemode = `survival`;
-} else if(config.gamemode == undefined){
+if (config.gamemode == undefined){
     var gamemode = `survival`;
 } else {
     var gamemode = config.gamemode;
 };
 
 // Difficulty
-if (config.difficulty == nothing){
-    var difficulty = `easy`;
-} else if(config.difficulty == undefined){
+if (config.difficulty == undefined){
     var difficulty = `easy`;
 } else {
     var difficulty = config.difficulty;
 };
 
 // cheats
-if (config.cheats == nothing){
-    var allow_cheats = false;
-} else if(config.cheats == undefined){
+if (config.cheats == undefined){
     var allow_cheats = false;
 } else {
     var allow_cheats = config.cheats;
 };
 
 // Maximo de Jogadores
-if (config.players == nothing){
-    var max_players = 10;
-} else if(config.players == undefined){
+if (config.players == undefined){
     var max_players = 10;
 } else {
     var max_players = config.players;
 };
 
 // Xbox authentication outside the internal network
-if (config.xbox == nothing){
-    var online_mode = true;
-} else if(config.xbox == undefined){
+if (config.xbox == undefined){
     var online_mode = true;
 } else {
     var online_mode = config.xbox;
 };
 
 // Whitelist
-if (config.white_list == nothing){
-    var white_list = false;
-} else if(config.white_list == undefined){
+if (config.white_list == undefined){
     var white_list = false;
 } else {
     var white_list = config.white_list;
 };
 
 // Server Port IPv4
-if (config.port == nothing){
-    var server_port = 19132;
-} else if(config.port == undefined){
+if (config.port == undefined){
     var server_port = 19132;
 } else {
     var server_port = config.port;
 };
 
 // Server Port IPv6
-if (config.port6 == nothing){
-    var server_portv6 = 19133;
-} else if(config.port6 == undefined){
+if (config.port6 == undefined){
     var server_portv6 = 19133;
 } else {
     var server_portv6 = config.port6;
 };
 
 // Default player permission
-if (config.player_permission == nothing){
-    var player_permission = `member`;
-} else if(config.player_permission == undefined){
+if (config.player_permission == undefined){
     var player_permission = `member`;
 } else {
     var player_permission = config.player_permission;
@@ -153,6 +131,7 @@ correct-player-movement=false
 
 # Created on Bds-Manager by Sirherobrine23
 `
+// console.log(config_file_content);
 fs.writeFileSync(Server_Config, config_file_content);
 return config_file_content
 };
@@ -160,8 +139,8 @@ function bds_get_config(){
     var fs = require("fs");
     const propertiesToJSON = require("properties-to-json");
     const Server_Config = `${require("../index").server_dir}/server.properties`;
-    const OUTPUT = propertiesToJSON(fs.readFileSync(Server_Config, "utf-8").replaceAll('-','_'))
-    return OUTPUT
+    const inGET = fs.readFileSync(Server_Config, "utf-8").replaceAll('-','_');
+    return propertiesToJSON(inGET);
 };
 module.exports.config_example = () =>{
 const example = `{
