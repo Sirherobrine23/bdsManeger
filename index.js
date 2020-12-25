@@ -33,9 +33,11 @@ if (process.platform == 'win32') {
     var server_dir = path.join(home, `bds_Server`);
     var cache_dir = path.join(home, 'AppData', 'Roaming', require(process.cwd()+'/package.json').name)
     var log_dir = path.join(server_dir, 'log')
-    if (!fs.existsSync(log_dir)){
-        fs.mkdirSync(log_dir);
-    };
+    if (fs.existsSync(server_dir)){
+        if (!fs.existsSync(log_dir)){
+            fs.mkdirSync(log_dir);
+        };
+    };    
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
     var system = `windows`;
@@ -44,8 +46,10 @@ if (process.platform == 'win32') {
     var server_dir = path.join(home, 'bds_Server');
     var cache_dir = path.join(home, '.config', require(process.cwd() + '/package.json').name);
     var log_dir = path.join(server_dir, 'log')
-    if (!fs.existsSync(log_dir)){
-        fs.mkdirSync(log_dir);
+    if (fs.existsSync(server_dir)){
+        if (!fs.existsSync(log_dir)){
+            fs.mkdirSync(log_dir);
+        };
     };
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
