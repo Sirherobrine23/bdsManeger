@@ -1,6 +1,9 @@
   
 name: Publish Dev in npm
-on: [push]
+on: 
+  push:
+    branches:
+      - main
 jobs:
   npm-check-vunarability:
     runs-on: ubuntu-latest

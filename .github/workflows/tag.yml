@@ -1,10 +1,10 @@
   
 name: Tag
 on:
-  push:
-    tags:        
-      - v1.*
-      - v0.*
+  push: 
+    tags:
+      - '*.*'
+      - 'v*.*'
 jobs:
   Linux:
     runs-on: ubuntu-latest
