@@ -51,7 +51,7 @@ if (process.platform == 'win32') {
     var log_date = `${date()}`
     var system = `linux`;
 } else if (process.platform == 'darwin') {
-    require("open")("https://github.com/Sirherobrine23/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
+    require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
     console.error('Please use Windows or Linux MacOS Not yet supported')
     process.exit(1984)
 } else {

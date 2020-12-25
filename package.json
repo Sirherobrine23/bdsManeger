@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Sirherobrine23/bds_maneger_api.git"
+    "url": "git+https://github.com/Bds-Maneger/bds_maneger_api.git"
   },
   "author": "Sirherobrine23",
   "license": "LGPL",
   "bugs": {
-    "url": "https://github.com/Sirherobrine23/bds_maneger_api/issues"
+    "url": "https://github.com/Bds-Maneger/bds_maneger_api/issues"
   },
-  "homepage": "https://github.com/Sirherobrine23/bds_maneger_api#readme",
+  "homepage": "https://github.com/Bds-Maneger/bds_maneger_api#readme",
   "dependencies": {
     "adm-zip": "^0.5.1",
     "node-fetch": "^2.6.1",

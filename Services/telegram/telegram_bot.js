@@ -1,6 +1,6 @@
 function botV(){
     const { Telegraf } = require('telegraf')
-    const bot = new Telegraf(require('bds_maneger_api').token)
+    const bot = new Telegraf(require('../../index').token)
     bot.start((ctx) => {
         ctx.reply(`Hello ${ctx.message.from.username}\nWe have some things still being done in the programming of the new bot more works 👍:\n\nCommands:\n/server_start\n/server_stop\n/server_restart\n/log\n/command: Commands are not working in this version, wait until it is broken\n\nThe messages are re-transmitted to the minecraft chat if it is already connected: ✔\nMessage Control: ❌`)
     })
@@ -36,8 +36,8 @@ function botV(){
         ctx.reply(commands)
     });
     bot.command('log', (ctx) => {
-        if (fs.existsSync(require('bds_maneger_api').log_file))
-            var logB = require("fs").readSync(require('bds_maneger_api').log_file);
+        if (fs.existsSync(require('../../index').log_file))
+            var logB = require("fs").readSync(require('../../index').log_file);
         else 
             var logB = 'there is no log';
         ctx.reply(logB)

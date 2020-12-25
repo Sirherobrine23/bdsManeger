@@ -8,7 +8,7 @@ function World_BAckup() {
         var minu = today.getMinutes();
         today = `Date_${yyyy}-${mm}-${dd}(Hour_${hour}-Minutes_${minu})`;
         var name = `${process.env.USERPROFILE}/Desktop/bds_backup_World_${today}.zip`
-        var dir_zip = `require('bds_maneger_api').server_dir/worlds/`
+        var dir_zip = `${require('../index').server_dir}/worlds/`
     } else if (process.platform == 'linux') {
         
         var dd = String(today.getDate()).padStart(2, '0');
@@ -18,7 +18,7 @@ function World_BAckup() {
         var minu = today.getMinutes();
         today = `Date_${yyyy}-${mm}-${dd} Hour_${hour}-Minutes_${minu}`;
         var name = `${process.env.HOME}/bds_backup_World_${today}.zip`
-        var dir_zip = `require('bds_maneger_api').server_dir/worlds/`
+        var dir_zip = `${require('../index').server_dir}/worlds/`
     }; /* End Files name */
     /* Compress the folders */
     var AdmZip = require('adm-zip');
