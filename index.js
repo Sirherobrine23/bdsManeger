@@ -13,26 +13,6 @@ function date(fu) {
     };
 }
 
-function StdindWrite(Variable_storaged, command) {
-    if (Variable_storaged == undefined) {
-        console.error('Child_process Variable?')
-    } else {
-        if (command == undefined) {
-            console.error('command?')
-        } else {
-            if (command == 'stop'){
-                Variable_storaged.stdin.write(`stop\n`)
-                Variable_storaged.on('exit', function (code){
-                    if (code = 0){
-                        var Variable_storaged = null
-                    };
-                });
-            } /*End Stop Delete*/ else {
-                eval(Variable_storaged.stdin.write(`${command}\n`))
-            }
-        } /*Command Send*/
-    } /*child_process*/
-};
 function Storage(){
     var LocalStorage = require('node-localstorage').LocalStorage;
     return new LocalStorage(`${require('./').api_dir}/Local_Storage`);
@@ -61,11 +41,12 @@ if (process.platform == 'win32') {
     var log_date = `${date()}`
     var system = `linux`;
 } else if (process.platform == 'darwin') {
-    require("shell").openExternal("https://github.com/Sirherobrine23/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
-    console.error('Por favor utilize o Windows ou Linux o MacOS Ainda não há suporte')
+    require("open")("https://github.com/Sirherobrine23/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
+    console.error('Please use Windows or Linux MacOS Not yet supported')
+    process.exit(1984)
 } else {
-    alert(`Por Favor utilize uma sistema operacional (OS) compativel com o Minecraft Bedrock Server o ${process.platform} não é Suportdo`);
-    require('electron').remote.app.quit();
+    console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
+    process.exit(2)
 }
 function telegram_tokenv1(){
     if (require("fs").existsSync(`${server_dir}/token.txt`)){
@@ -78,27 +59,27 @@ function telegram_tokenv1(){
 // Module export
 /* Variaveis */
 module.exports.Storage = Storage
-module.exports.token = telegram_tokenv1(),
-module.exports.home = home,
-module.exports.system = system,
-module.exports.server_dir = server_dir,
-module.exports.electron = electron_de,
-module.exports.api_dir = cache_dir,
-module.exports.log_file = log_file,
+module.exports.token = telegram_tokenv1()
+module.exports.home = home
+module.exports.system = system
+module.exports.server_dir = server_dir
+module.exports.electron = electron_de
+module.exports.api_dir = cache_dir
+module.exports.log_file = log_file
 module.exports.log_date = log_date
+module.exports.bds_latest = require("./Services/versions").bds_latest()
 
 /* Commands server */
-module.exports.detect = require("./Services/detect_bds").bds_detect,
-module.exports.get_version = require("./Services/versions").bds_version_get,
+module.exports.detect = require("./Services/detect_bds").bds_detect
+module.exports.get_version = require("./Services/versions").bds_version_get
 module.exports.telegram = require("./Services/telegram/telegram_bot")
 module.exports.start = require('./Services/start').Server_start
 module.exports.stop = require('./Services/stop').Server_stop
 module.exports.date = date
-module.exports.command = StdindWrite
+module.exports.command = require('./Services/command').command
 module.exports.backup = require("./Services/backup").World_BAckup
 module.exports.kill = require("./Services/kill").bds_kill
 module.exports.version_Download = require("./Services/download").DownloadBDS
-module.exports.bds_latest = require("./Services/versions").bds_latest()
 module.exports.set_config = require("./Services/bds_settings").config
 module.exports.get_config = require("./Services/bds_settings").get_config
 module.exports.config_example = require("./Services/bds_settings").config_example

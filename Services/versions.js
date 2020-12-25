@@ -1,4 +1,4 @@
-function bds_version_get(type) {
+module.exports.bds_version_get = (type) => {
     var fs = require('fs')
     if (process.platform == 'linux') {
         var TMP = '/tmp/v.json'
@@ -29,7 +29,7 @@ function bds_version_get(type) {
     };
     return out.replaceAll(undefined, '');
 };
-function bds_latest(){
+module.exports.bds_latest = () => {
     var bds_maneger = require('../index').Storage
     if (typeof fetch === "function") {
         let NULL = null
@@ -47,5 +47,5 @@ function bds_latest(){
     return result
 }
 
-module.exports.bds_latest = bds_latest
-module.exports.bds_version_get = bds_version_get
+//  = bds_latest
+// = bds_version_get

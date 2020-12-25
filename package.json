@@ -21,6 +21,7 @@
     "adm-zip": "^0.5.1",
     "node-fetch": "^2.6.1",
     "node-localstorage": "^2.1.6",
+    "open": "^7.3.0",
     "properties-to-json": "^0.1.7",
     "telegraf": "^3.38.0"
   },
