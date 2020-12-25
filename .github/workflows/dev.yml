@@ -1,5 +1,5 @@
   
-name: Publish Dev in npm
+name: Dev Publish
 on: 
   push:
     branches:
@@ -19,6 +19,7 @@ jobs:
 
       - name: Jest Test
         run: npm run test
+        
   Npm-Publish:
     needs: npm-check-vunarability
     runs-on: ubuntu-latest

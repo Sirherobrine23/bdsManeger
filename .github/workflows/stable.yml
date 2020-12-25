@@ -1,16 +1,18 @@
-  
-name: Tag
+name: Stable Publish
 on:
   push: 
     tags:
       - '*.*'
       - 'v*.*'
 jobs:
-  Linux:
+  Publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@v1
+        with:
+          node-version: 15.x
+          registry-url: https://registry.npmjs.org/
 
       - name: Update Version
         run: |
@@ -48,11 +50,6 @@ jobs:
           echo 'Vunarability found, leaving with error'
           exit 1
           fi
-      
-      - name: Publish
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
@@ -62,3 +59,8 @@ jobs:
             body: Update version
             branch: update-version
             base: main
+
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
