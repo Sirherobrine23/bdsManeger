@@ -69,6 +69,11 @@ function telegram_tokenv1(){
         return null;
     };
 };
+if (typeof fetch === 'undefined'){
+    var fetch = require('node-fetch')
+}    
+fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json').then(response => response.text()).then(rawOUT => {Storage().setItem('bds_versions', rawOUT);});
+fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(function (response) {return response.json();}).then(function (content) {Storage().setItem('bds_latest', content.latest);});
 // 
 // Module export
 /* Variaveis */
