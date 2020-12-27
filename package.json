@@ -19,6 +19,7 @@
   "homepage": "https://github.com/Bds-Maneger/bds_maneger_api#readme",
   "dependencies": {
     "adm-zip": "^0.5.1",
+    "googleapis": "^39.2.0",
     "node-fetch": "^2.6.1",
     "node-localstorage": "^2.1.6",
     "open": "^7.3.0",
