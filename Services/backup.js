@@ -1,3 +1,5 @@
+const { bds_detect } = require('./detect_bds');
+
 module.exports.World_BAckup = () => {
     if (process.platform == "win32") {
         
@@ -36,6 +38,9 @@ module.exports.World_BAckup = () => {
 };
 
 module.exports.Drive_backup = () => {
+    if (require('./detect_bds').bds_detect()){
+        require('./stop').Server_stop()
+    }
     const bds = require('../index');
     const path = require('path');
     const dir_zip = bds.world_dir;

@@ -1,4 +1,5 @@
 module.exports.DownloadBDS = (Vdown) => {
+    console.warn('Do not exit BDS Manager')
     const exec = require('child_process').exec
     if (require('../index').electron){
         require('../index').Storage().setItem('bds_server_version', Vdown);

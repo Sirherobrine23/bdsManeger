@@ -1,11 +1,11 @@
-module.exports.command = (Variable_storaged, command) => {
-    if (Variable_storaged == undefined) {
-        console.error('Child_process Variable?')
+module.exports.command = (command) => {
+    if (bds_server_string == undefined) {
+        console.error('Start Server!')
     } else {
         if (command == undefined) {
             console.error('command?')
         } else {
-            Variable_storaged.stdin.write(`${command}\n`);
+            bds_server_string.stdin.write(`${command}\n`);
         } /*Command Send*/
     } /*child_process*/
 };

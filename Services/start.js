@@ -1,4 +1,5 @@
 function Server_start(){
+    const bds_detect = require('../index').detect()
     var Storage = require('../index').Storage();
     var exec = require('child_process').exec;
     if (process.platform == 'win32'){
@@ -6,8 +7,7 @@ function Server_start(){
     } else if (process.platform == 'linux'){
         var bdsDIRpathexe = `chmod 777 bedrock_server && LD_LIBRARY_PATH=. ./bedrock_server`
     };
-    const Started = Storage.getItem('bds_status')
-    if (Started){
+    if (!bds_detect){
         var serverstated = exec(bdsDIRpathexe, {
             detached: false,
             cwd: `${require('../index').server_dir}`
