@@ -40,6 +40,7 @@ if (process.platform == 'win32') {
     };    
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
+    var tmp = process.env.TMP
     var system = `windows`;
 } else if (process.platform == 'linux') {
     var home = process.env.HOME;
@@ -53,6 +54,7 @@ if (process.platform == 'win32') {
     };
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
+    var tmp = `/tmp`
     var system = `linux`;
 } else if (process.platform == 'darwin') {
     require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
@@ -82,6 +84,8 @@ module.exports.token = telegram_tokenv1()
 module.exports.home = home
 module.exports.system = system
 module.exports.server_dir = server_dir
+module.exports.world_dir = path.join(server_dir, 'worlds')
+module.exports.tmp_dir = tmp
 module.exports.electron = electron_de
 module.exports.api_dir = cache_dir
 module.exports.log_file = log_file
@@ -97,6 +101,7 @@ module.exports.stop = require('./Services/stop').Server_stop
 module.exports.date = date
 module.exports.command = require('./Services/command').command
 module.exports.backup = require("./Services/backup").World_BAckup
+module.exports.drive_backup = require('./Services/drive/auth').drive_backup
 module.exports.kill = require("./Services/kill").bds_kill
 module.exports.version_Download = require("./Services/download").DownloadBDS
 module.exports.set_config = require("./Services/bds_settings").config
