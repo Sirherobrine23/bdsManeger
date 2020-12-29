@@ -30,10 +30,11 @@ bot.command('command', (ctx) =>{
 });
 bot.command('log', (ctx) => {
     const file_log_path = require('../../index').log_file;
-    if (fs.existsSync(file_log_path))
-        ctx.reply(require("fs").readSync(file_log_path))
-    else 
-        ctx.reply('there is no log')
-    
+    const fs = require("fs")
+    if (fs.existsSync(file_log_path)){
+        const text = fs.readFileSync(file_log_path, 'utf8')
+        ctx.reply(text)
+    } else 
+        ctx.reply('there is no log');
 });
-module.exports = bot.launch;
+module.exports = bot;

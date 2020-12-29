@@ -68,7 +68,7 @@ function telegram_tokenv1(){
     if (require("fs").existsSync(`${server_dir}/token.txt`)){
         return require("fs").readFileSync(`${server_dir}/token.txt`, "utf-8").replaceAll('\n', '');
     } else {
-        return null;
+        return '10000a0asd1dssd0000000';
     };
 };
 if (typeof fetch === 'undefined'){
