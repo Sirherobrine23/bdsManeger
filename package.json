@@ -1,6 +1,6 @@
 {
   "name": "bds_maneger_api",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "scripts to manage minecraft bedrock server",
   "private": false,
   "main": "index.js",
@@ -11,6 +11,13 @@
     "type": "git",
     "url": "git+https://github.com/Bds-Maneger/bds_maneger_api.git"
   },
+  "keywords": [
+    "minecraft",
+    "bds",
+    "bds-server",
+    "Windows",
+    "linux"
+  ],
   "author": "Sirherobrine23",
   "license": "LGPL",
   "bugs": {
