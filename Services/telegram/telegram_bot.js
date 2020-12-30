@@ -9,7 +9,8 @@ Commands:
 /server_stop
 /server_restart
 /log
-/command: Commands are not working in this version, wait until it is broken
+/command
+/list
 The messages are re-transmitted to the minecraft chat if it is already connected: ✔
 Message Control: ❌`
     ctx.reply(amenssagem)

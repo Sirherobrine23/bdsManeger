@@ -4,7 +4,7 @@ const cpuCount = require('os').cpus().length;
 var fs = require("fs")
 if (2 < cpuCount - 2) var CPU = cpuCount - 2; else var CPU = cpuCount;
 if (json_config.includes('.json')){
-    var config = JSON.parse(fs.readFileSync(json_config, 'utf-8'))
+    var config = JSON.parse(fs.readFileSync(json_config, 'utf8'))
 } else
     var config = JSON.parse(json_config)
 // const config = json_storage/*JSON.parse(json_storage)*/
@@ -139,7 +139,7 @@ function bds_get_config(){
     var fs = require("fs");
     const propertiesToJSON = require("properties-to-json");
     const Server_Config = `${require("../index").server_dir}/server.properties`;
-    const inGET = fs.readFileSync(Server_Config, "utf-8").replaceAll('-','_');
+    const inGET = fs.readFileSync(Server_Config, "utf8").replaceAll('-','_');
     return propertiesToJSON(inGET);
 };
 module.exports.config_example = () =>{
