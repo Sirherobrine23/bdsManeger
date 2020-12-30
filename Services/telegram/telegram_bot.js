@@ -12,15 +12,19 @@ Commands:
 /command: Commands are not working in this version, wait until it is broken
 The messages are re-transmitted to the minecraft chat if it is already connected: ✔
 Message Control: ❌`
-    ctx.reply(``)
+    ctx.reply(amenssagem)
 })
-bot.help((ctx) => ctx.reply('Use o/start'))
+bot.help((ctx) => ctx.reply('Use o /start'))
 bot.action('delete', ({ deleteMessage }) => deleteMessage())
 bot.command('server_start', (ctx) => {
     if (require('./check').checkUser(ctx.message.from.username)){
         const bds_status = require('../../index').detect()
         if (!bds_status){
-            require('../../index').start()
+            if (require('../../index').electron){
+                document.getElementById('startButtom').click()
+            } else {
+                require('../../index').start()
+            };            
             ctx.reply(`The server has started`)
         } else 
             ctx.reply(`${ctx.message.from.username} already started`)
@@ -31,16 +35,52 @@ bot.command('server_start', (ctx) => {
 });
 bot.command('server_stop', (ctx) => {
     if (require('./check').checkUser(ctx.message.from.username)){
-        console.log('Sucess')
-        ctx.reply(`Under maintenance ${ctx.message.from.username}`)
+        const bds_status = require('../../index').detect()
+        if (bds_status){
+            require('../../index').stop()
+            ctx.reply(`O servidor esta parando`)
+        } else 
+            ctx.reply(`${ctx.message.from.username} o servidor está parado`)
     } else {
         console.log('Erro');
         ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
     };
 });
 bot.command('command', (ctx) =>{
-    let commands = 'Commands are disabled globally, wait for some version that supports';
-    ctx.reply(commands)
+    const bds_command = require('../../index').command
+    var command = ctx.message.text.replace('/command ', '');
+    console.log(`Comandos para o servidor foram recebidos: ${command}`)
+    const fs = require('fs');
+    const bds = require('../../index');
+    const detect_log_file = fs.existsSync(bds.log_file);
+    bds_command(command)
+    if (detect_log_file){
+        const old = fs.readFileSync(bds.log_file, 'utf8');
+        setTimeout(() => {
+            var out = fs.readFileSync(bds.log_file, 'utf8');
+            var name = out.replace(old, '');
+            ctx.reply(name)
+        }, 1000);   
+    } else {
+        ctx.reply('Não temos um arquivo log')
+    }
+});
+bot.command('list', (ctx) =>{
+    const bds_command = require('../../index').command
+    const fs = require('fs');
+    const bds = require('../../index');
+    const detect_log_file = fs.existsSync(bds.log_file);
+    bds_command('list')
+    if (detect_log_file){
+        const old = fs.readFileSync(bds.log_file, 'utf8');
+        setTimeout(() => {
+            var out = fs.readFileSync(bds.log_file, 'utf8');
+            var name = out.replace(old, '');
+            ctx.reply(name)
+        }, 1000);   
+    } else {
+        ctx.reply('NO log file to get list player')
+    }
 });
 bot.command('log', (ctx) => {
     const file_log_path = require('../../index').log_file;

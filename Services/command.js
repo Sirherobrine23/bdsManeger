@@ -1,5 +1,5 @@
 module.exports.command = (command) => {
-    if (bds_server_string == undefined) {
+    if (typeof bds_server_string === 'undefined') {
         console.error('Start Server!')
     } else {
         if (command == undefined) {
