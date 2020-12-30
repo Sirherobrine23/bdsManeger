@@ -9,7 +9,7 @@ function date(fu) {
     } else if (fu == 'hour'){
         return `${today.getHours()}_${today.getMinutes()}`
     } else {
-        return `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`
+        return `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}_${today.getHours()}-${today.getSeconds()}`
     };
 }
 
