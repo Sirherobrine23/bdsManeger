@@ -102,6 +102,7 @@ module.exports.date = date
 module.exports.command = require('./Services/command').command
 module.exports.backup = require("./Services/backup").World_BAckup
 module.exports.drive_backup = require('./Services/drive/auth').drive_backup
+module.exports.mcpe_file = require('./Services/drive/auth').drive_download
 module.exports.kill = require("./Services/kill").bds_kill
 module.exports.version_Download = require("./Services/download").DownloadBDS
 module.exports.set_config = require("./Services/bds_settings").config

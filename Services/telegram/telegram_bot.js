@@ -83,6 +83,12 @@ bot.command('list', (ctx) =>{
         ctx.reply('NO log file to get list player')
     }
 });
+bot.command('mcpe', (ctx) =>{
+    const fs = require('fs');
+    const bds = require('../../index');
+    // https://telegraf.js.org/#/?id=senddocument
+    telegram.sendDocument(ctx.chatId, doc)
+});
 bot.command('log', (ctx) => {
     const file_log_path = require('../../index').log_file;
     const fs = require("fs")
