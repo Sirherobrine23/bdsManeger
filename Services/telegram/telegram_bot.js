@@ -9,7 +9,8 @@ Commands:
 /server_stop
 /server_restart
 /log
-/command: Commands are not working in this version, wait until it is broken
+/command
+/list
 The messages are re-transmitted to the minecraft chat if it is already connected: ✔
 Message Control: ❌`
     ctx.reply(amenssagem)
@@ -82,6 +83,46 @@ bot.command('list', (ctx) =>{
         ctx.reply('NO log file to get list player')
     }
 });
+// bot.command('mcpe', (ctx) =>{
+//     const fs = require('fs');
+//     const bds = require('../../index');
+//     const path = require('path')
+//     if (!(fs.existsSync(path.join(bds.tmp_dir, 'mcpe.apk')))){
+//         require('../drive/auth').mcpe()
+//     }
+//     // doc = fs.ReadStream(path.join(bds.tmp_dir, 'mcpe.apk'))
+//     let te = 0;
+//     if (typeof mcpe_file_end == 'undefined'){
+//         global.mcpe_file_end = true
+//     }
+//     while (te++ < te++ + 1){
+//         if (mcpe_file_end){
+//             break
+//         } else if (mcpe_file_end == undefined){
+//             ctx.reply('Um erro ocorreu');
+//             break
+//         } else {
+//             te++
+//         }
+//         process.stdout.clearLine();
+//         process.stdout.cursorTo(0);
+//         process.stdout.write(`Teste ${te}`);
+//     }
+//     var buff = fs.ReadStream(path.join(bds.tmp_dir, 'mcpe.apk'));
+//     console.log(`mcpe.apk buffer: ${buff}`)
+
+//     // delete(mcpe_file_end)
+//     const requestListener = function (req, res) {
+//         res.writeHead(200);
+//         res.end(buff);
+//     }
+
+//      const server = http.createServer(requestListener);
+//      server.listen(8187);
+//     // ctx.replyWithDocument({ source: buff}, {filename: 'Bds.apk' })
+//     ctx.reply('http://localhost:8187')
+//     // https://telegraf.js.org/#/?id=senddocument
+// });
 bot.command('log', (ctx) => {
     const file_log_path = require('../../index').log_file;
     const fs = require("fs")
