@@ -10,5 +10,5 @@ module.exports.Server_stop = () => {
             };
         });
     };
-    return !(require('../Services/detect_bds').bds_detect())
+    return !(require('./detect_bds').bds_detect())
 }

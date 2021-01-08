@@ -1,9 +1,9 @@
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
-const bds =  require('../../index')
+const bds =  require("../../index");
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
-const TOKEN_PATH = path.join(bds.server_dir, 'google_token.json');
+const TOKEN_PATH = path.join(bds.server_dir, "google_token.json");
 
 
 function authorize(credentials, callback) {
@@ -40,7 +40,7 @@ function getAccessToken(oAuth2Client, callback) {
   });
 };
 
-const CREDENTIAL = require('../../index').google_drive_credential
+const CREDENTIAL = require("../../index").google_drive_credential
 module.exports.drive_backup = (parent_id) => {
   function upload_backup(auth) {
     const bds_backup = require('../backup').Drive_backup();
@@ -58,12 +58,19 @@ module.exports.drive_backup = (parent_id) => {
 };
 
 module.exports.mcpe = () => {
+  global.mcpe_file_end = false;
   function download_mcpe(auth) {
       const drive = google.drive({version: 'v3', auth});
       var fileId = '11jJjMZRtrQus3Labo_kr85EgtgSVRPLI';
       var dest = fs.createWriteStream(path.join(bds.tmp_dir, 'mcpe.apk'));
       let progress = 0;
-      drive.files.get({fileId: fileId, alt: 'media'}, {responseType: 'stream'},function(err, res){res.data.on('end', () => {console.log('\nDone');}).on('error', err => {console.log('\nError', err)}).on('data', d => {
+      drive.files.get({fileId: fileId, alt: 'media'}, {responseType: 'stream'},function(err, res){res.data.on('end', () => {
+        console.log(`\nDone, Save in ${path.join(bds.tmp_dir, 'mcpe.apk')}`);
+        global.mcpe_file_end = true;
+      }).on('error', err => {
+        console.log('\nError', err)
+        global.mcpe_file_end = undefined;
+      }).on('data', d => {
           progress += d.length / 1024 / 1024;
           if (process.stdout.isTTY) {process.stdout.clearLine();process.stdout.cursorTo(0);process.stdout.write(`Downloaded ${Math.trunc(progress)} Mbytes`);}
       }).pipe(dest)});
