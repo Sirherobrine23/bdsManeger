@@ -86,8 +86,13 @@ bot.command('list', (ctx) =>{
 bot.command('mcpe', (ctx) =>{
     const fs = require('fs');
     const bds = require('../../index');
+    const path = require('path')
+    // doc = fs.ReadStream(path.join(bds.tmp_dir, 'mcpe.apk'))
+    const buff = fs.ReadStream(path.join(bds.tmp_dir, 'mcpe.apk'))
+    console.log(`mcpe.apk buffer: ${buff}`)
+    ctx.replyWithDocument({ source: buff}, {filename: 'Bds.apk' })
     // https://telegraf.js.org/#/?id=senddocument
-    telegram.sendDocument(ctx.chatId, doc)
+    // bot.sendDocument(ctx.chatId, doc)
 });
 bot.command('log', (ctx) => {
     const file_log_path = require('../../index').log_file;

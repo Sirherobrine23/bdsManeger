@@ -1,18 +1,16 @@
 function date(fu) {
     var today = new Date();
-    if (fu == 'year') {    
+    if (fu == 'year')
         return `${today.getFullYear()}`
-    } else if (fu == 'day') {
+    else if (fu == 'day')
         return `${String(today.getDate()).padStart(2, '0')}`
-    }else if (fu == 'month') {
+    else if (fu == 'month')
         return `${String(today.getMonth() + 1).padStart(2, '0')}`
-    } else if (fu == 'hour'){
+    else if (fu == 'hour')
         return `${today.getHours()}_${today.getMinutes()}`
-    } else {
+    else 
         return `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}_${today.getHours()}-${today.getSeconds()}`
-    };
 }
-
 function Storage(){
     var LocalStorage = require('node-localstorage').LocalStorage;
     return new LocalStorage(`${require('./').api_dir}/Local_Storage`);
@@ -64,18 +62,42 @@ if (process.platform == 'win32') {
     console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
     process.exit(2021)
 };
+
+if (!(fs.existsSync(server_dir))){
+    fs.mkdirSync(server_dir);
+    console.log('Creating the bds directory')
+}
 function telegram_tokenv1(){
     if (require("fs").existsSync(`${server_dir}/token.txt`)){
-        return require("fs").readFileSync(`${server_dir}/token.txt`, "utf-8").replaceAll('\n', '');
+        return require("fs").readFileSync(`${server_dir}/token.txt`, "utf8").replaceAll('\n', '');
     } else {
-        return '10000a0asd1dssd0000000';
-    };
+        return undefined;
+    }
 };
 if (typeof fetch === 'undefined'){
     var fetch = require('node-fetch')
-}    
-fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json').then(response => response.text()).then(rawOUT => {Storage().setItem('bds_versions', rawOUT);});
-fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(function (response) {return response.json();}).then(function (content) {Storage().setItem('bds_latest', content.latest);});
+}
+fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json').then(response => response.text()).then(gd_cre => {
+    module.exports.google_drive_credential = gd_cre
+    module.exports.drive_backup = require('./Services/drive/auth').drive_backup
+    module.exports.mcpe_file = require('./Services/drive/auth').mcpe
+}).catch(function(error) {console.log(`Could not get credentials, Error: \"${error.message}\"`);});
+fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json').then(response => response.json()).then(rawOUT => {
+    for (let v in rawOUT.Versions){
+        var html = `${rawOUT.Versions[v]}`;
+        var out = `${out}\n <option value=\"${html}\">${html}</option>`;
+        v++;
+    };
+    module.exports.version_select = out.replaceAll(undefined, '');
+    module.exports.version_raw = rawOUT.Versions;
+    module.exports.bds_latest = rawOUT.latest;
+    module.exports.get_version = (type) => {
+        if (type == 'raw')
+            return rawOUT.Versions;
+        else
+            return out.replaceAll(undefined, '');
+    }
+}).catch(function(error) {console.log('There has been a problem with your fetch operation: ' + error.message);});
 // 
 // Module export
 /* Variaveis */
@@ -90,19 +112,15 @@ module.exports.electron = electron_de
 module.exports.api_dir = cache_dir
 module.exports.log_file = log_file
 module.exports.log_date = log_date
-module.exports.bds_latest = require("./Services/versions").bds_latest()
 
 /* Commands server */
 module.exports.detect = require("./Services/detect_bds").bds_detect
-module.exports.get_version = require("./Services/versions").bds_version_get
 module.exports.telegram = require("./Services/telegram/telegram_bot")
 module.exports.start = require('./Services/start').Server_start
 module.exports.stop = require('./Services/stop').Server_stop
 module.exports.date = date
 module.exports.command = require('./Services/command').command
 module.exports.backup = require("./Services/backup").World_BAckup
-module.exports.drive_backup = require('./Services/drive/auth').drive_backup
-module.exports.mcpe_file = require('./Services/drive/auth').drive_download
 module.exports.kill = require("./Services/kill").bds_kill
 module.exports.version_Download = require("./Services/download").DownloadBDS
 module.exports.set_config = require("./Services/bds_settings").config
