@@ -13,6 +13,7 @@ function Server_start(){
             cwd: `${require('../index').server_dir}`
         });
         var logConsoleStream = require('fs').createWriteStream(require('../index').log_file, {flags: 'a'});
+        Storage.setItem('old_log_file', require('../index').log_file)
         serverstated.stdout.pipe(logConsoleStream);
         Storage.setItem('bds_status', true);
         global.bds_server_string = serverstated;

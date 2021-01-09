@@ -25,7 +25,7 @@ if (process.argv[0].includes('electron')){
 }
 // This script server to forcefully kill old servers without being stopped before closing the application or having reloaded the page, an alternative and safer way is being sought.var
 const path = require('path')
-const fs = require('fs')
+const fs = require('fs');
 if (process.platform == 'win32') {
     var home = process.env.USERPROFILE;
     var server_dir = path.join(home, `bds_Server`);
@@ -75,7 +75,7 @@ function telegram_tokenv1(){
     }
 };
 if (typeof fetch === 'undefined'){
-    var fetch = require('node-fetch')
+    global.fetch = require('node-fetch')
 }
 fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json').then(response => response.text()).then(gd_cre => {
     module.exports.google_drive_credential = gd_cre
@@ -91,6 +91,12 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json'
     module.exports.version_select = out.replaceAll(undefined, '');
     module.exports.version_raw = rawOUT.Versions;
     module.exports.bds_latest = rawOUT.latest;
+    if (typeof bds_api_start === 'undefined'){
+        module.exports.api = require('./API/api')()
+    } else {
+        console.log(`API already started`)
+    }
+
     module.exports.get_version = (type) => {
         if (type == 'raw')
             return rawOUT.Versions;

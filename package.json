@@ -1,6 +1,6 @@
 {
   "name": "bds_maneger_api",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "scripts to manage minecraft bedrock server",
   "private": false,
   "main": "index.js",
@@ -19,18 +19,18 @@
     "linux"
   ],
   "author": "Sirherobrine23",
-  "license": "LGPL",
+  "license": "LGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/Bds-Maneger/bds_maneger_api/issues"
   },
   "homepage": "https://github.com/Bds-Maneger/bds_maneger_api#readme",
   "dependencies": {
-    "@google-cloud/local-auth": "^1.0.0",
     "adm-zip": "^0.5.1",
+    "express": "^4.17.1",
     "googleapis": "^67.0.0",
     "node-fetch": "^2.6.1",
     "node-localstorage": "^2.1.6",
-    "open": "^7.3.0",
+    "open": "^7.3.1",
     "properties-to-json": "^0.1.7",
     "telegraf": "^3.38.0"
   }
