@@ -81,7 +81,7 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.
     module.exports.google_drive_credential = gd_cre
     module.exports.drive_backup = require('./Services/drive/auth').drive_backup
     module.exports.mcpe_file = require('./Services/drive/auth').mcpe
-}).catch(function(error) {console.log(`Could not get credentials, Error: \"${error.message}\"`);});
+});
 fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json').then(response => response.json()).then(rawOUT => {
     for (let v in rawOUT.Versions){
         var html = `${rawOUT.Versions[v]}`;
@@ -103,7 +103,7 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json'
         else
             return out.replaceAll(undefined, '');
     }
-}).catch(function(error) {console.log('There has been a problem with your fetch operation: ' + error.message);});
+})
 // 
 // Module export
 /* Variaveis */

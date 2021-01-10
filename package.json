@@ -5,7 +5,8 @@
   "private": false,
   "main": "index.js",
   "scripts": {
-    "test": "exit 0"
+    "test": "exit 0",
+    "server": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,7 @@
   "homepage": "https://github.com/Bds-Maneger/bds_maneger_api#readme",
   "dependencies": {
     "adm-zip": "^0.5.1",
+    "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "googleapis": "^67.0.0",
     "node-fetch": "^2.6.1",
