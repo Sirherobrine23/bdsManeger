@@ -1,6 +1,6 @@
 {
   "name": "bds_maneger_api",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "scripts to manage minecraft bedrock server",
   "private": false,
   "main": "index.js",
@@ -32,6 +32,7 @@
     "node-localstorage": "^2.1.6",
     "open": "^7.3.1",
     "properties-to-json": "^0.1.7",
+    "systeminformation": "^4.34.5",
     "telegraf": "^3.38.0"
   }
 }

@@ -83,46 +83,22 @@ bot.command('list', (ctx) =>{
         ctx.reply('NO log file to get list player')
     }
 });
-// bot.command('mcpe', (ctx) =>{
-//     const fs = require('fs');
-//     const bds = require('../../index');
-//     const path = require('path')
-//     if (!(fs.existsSync(path.join(bds.tmp_dir, 'mcpe.apk')))){
-//         require('../drive/auth').mcpe()
-//     }
-//     // doc = fs.ReadStream(path.join(bds.tmp_dir, 'mcpe.apk'))
-//     let te = 0;
-//     if (typeof mcpe_file_end == 'undefined'){
-//         global.mcpe_file_end = true
-//     }
-//     while (te++ < te++ + 1){
-//         if (mcpe_file_end){
-//             break
-//         } else if (mcpe_file_end == undefined){
-//             ctx.reply('Um erro ocorreu');
-//             break
-//         } else {
-//             te++
-//         }
-//         process.stdout.clearLine();
-//         process.stdout.cursorTo(0);
-//         process.stdout.write(`Teste ${te}`);
-//     }
-//     var buff = fs.ReadStream(path.join(bds.tmp_dir, 'mcpe.apk'));
-//     console.log(`mcpe.apk buffer: ${buff}`)
+bot.command('mcpe', (ctx) =>{
+    // ctx.replyWithHTML(`<a href="https://storage.cloud.google.com/bds_mcpe_files/mcpe.apk">Minecraft for Android 1.16.201.01</a>`)
+const text = `[Minecraft for Android 1.16.201.01](https://storage.googleapis.com/bds_mcpe_files/0.16.201.01.apk)
 
-//     // delete(mcpe_file_end)
-//     const requestListener = function (req, res) {
-//         res.writeHead(200);
-//         res.end(buff);
-//     }
+[Minecraft for IOS](https://apps.apple.com/br/app/minecraft/id479516143)
+`
+ctx.replyWithMarkdown(text)
+});
+bot.command('status', (ctx) =>{
+const bds = require('../../index')
+const text = `Bds CPU usage: ${bds.bds_cpu}%, Total CPU utilization: ${bds.current_cpu}%
 
-//      const server = http.createServer(requestListener);
-//      server.listen(8187);
-//     // ctx.replyWithDocument({ source: buff}, {filename: 'Bds.apk' })
-//     ctx.reply('http://localhost:8187')
-//     // https://telegraf.js.org/#/?id=senddocument
-// });
+Total ram memory: ${bds.ram_total} GB, Total free ram memory: ${bds.ram_free} GB
+`
+ctx.replyWithMarkdown(text)
+});
 bot.command('log', (ctx) => {
     const file_log_path = require('../../index').log_file;
     const fs = require("fs")

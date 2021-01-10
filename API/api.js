@@ -4,16 +4,16 @@ module.exports = () => {
     const bds = require('../index');
     const fs = require('fs');
     const app = express();
-    const text = fs.readFileSync(bds.Storage().getItem('old_log_file'), 'utf8');
-    const versions = bds.version_raw
-    for (let v in versions){
-        if (text.includes(versions[v])){
-            var log_version = versions[v];
-        } else {
-            v++;
-        }
-    };
-    app.get('/status', (req, res) => {
+    app.get('/info', (req, res) => {
+        const text = fs.readFileSync(bds.Storage().getItem('old_log_file'), 'utf8');
+        const versions = bds.version_raw
+        for (let v in versions){
+            if (text.includes(versions[v])){
+                var log_version = versions[v];
+            } else {
+                v++;
+            }
+        };
         const config = bds.get_config()
         var json_http = {
             "running": bds.detect(),
@@ -21,11 +21,18 @@ module.exports = () => {
             "port": config.server_port,
             "port6": config.server_portv6,
             "world_name": config.level_name,
-            "whitelist": config.whitelist,
-            "xbox_account": config.online_mode,
+            "whitelist": config.white_list,
+            "xbox": config.online_mode,
             "max_players": config.max_players
         }
         return res.send(json_http);
+    });
+    app.get('/', (req, res) => {
+        return res.send({
+            "info": "/info",
+            "bds_maneger_API_version": require('../package.json').version,
+            "app_version": require(process.cwd()+'/package.json').version
+        });
     });
     const http_port = '1932'
     app.listen(http_port, () =>{
