@@ -4,12 +4,6 @@ module.exports = () => {
     const bds = require('../index');
     const fs = require('fs');
     const app = express();
-    const bodyParser = require('body-parser');
-    // create application/json parser
-    var jsonParser = bodyParser.json()
-    
-    // create application/x-www-form-urlencoded parser
-    var urlencodedParser = bodyParser.urlencoded({ extended: false })
     app.get('/info', (req, res) => {
         const text = fs.readFileSync(bds.Storage().getItem('old_log_file'), 'utf8');
         const versions = bds.version_raw
@@ -40,46 +34,41 @@ module.exports = () => {
             "app_version": require(process.cwd()+'/package.json').version
         });
     });
-    app.param('name', function(req, res, next, name) {req.name = name;next();});
-    app.get('/user/:name', function(req, res) {
+    app.get('/log', function(req, res) {
         const text = fs.readFileSync(bds.Storage().getItem('old_log_file'), 'utf-8')
-        if(text.includes(req.name)){
-            var texts = true
-        } else {
-            var texts = false
-        }
         res.send({
-            "sucess": texts,
+            "sucess": text,
             "log_file": bds.Storage().getItem('old_log_file'),
             "requeset_date": bds.date()
         });
     });
-    app.param('token', function(req, res, next, token) {req.token = token;next();});
-    app.param('text', function(req, res, next, text) {req.text = text;next();});
-    app.get('/remote/:token/:text', jsonParser, function (req, res) {
-        if (req.token == 'teste'){
-            const token = JSON.parse(fs.readFileSync(bds.server_dir+'/whitelist.json', "utf-8"))
+    const bodyParser = require('body-parser');
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.post('/remote', (req, res) => {
+        const body = req.body
+        const tokens = JSON.parse(fs.readFileSync(path.join(bds.server_dir, "bds_tokens.json"), "utf-8"))
+        var pass = false;
+        for (let token_verify in tokens) {
+            const element = tokens[token_verify].token;
+            if (body.token == element){
+                pass = true
+            } else {
+                token_verify++
+                console.log('No')
+            }
+        }
+        if (pass){
             res.send({
-                "token": req.token,
-                "text": token
+                "status": 200,
+                "command": body.command,
+                "message": `authorized to ${body.token}`
             })
         } else {
             res.send({
-                "mensagem": "Token not autorized"
+                "status": 401,
+                "message": "not authorized"
             })
         }
-        
-    })
-    app.use(bodyParser.urlencoded({ extended: true }));
-
-    app.post('/remote', (req, res) => {
-        console.log('Got body:', req.body);
-        const body = req.body
-        res.send({
-            "status": true,
-            "name": Math.random(),
-            "text": body.text
-        })
     });
     const http_port = '1932'
     app.listen(http_port, () =>{

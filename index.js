@@ -167,3 +167,24 @@ module.exports.version_Download = require("./Services/download").DownloadBDS
 module.exports.set_config = require("./Services/bds_settings").config
 module.exports.get_config = require("./Services/bds_settings").get_config
 module.exports.config_example = require("./Services/bds_settings").config_example
+module.exports.token_register = () => {
+    if (!(fs.existsSync(path.join(server_dir, "bds_tokens.json")))){
+        fs.writeFileSync(path.join(server_dir, "bds_tokens.json"), '[]')
+    }
+    require('crypto').randomBytes(10, function(err, buffer) {
+        var token = buffer.toString('hex');
+        console.log(token)
+        var QRCode = require('qrcode')
+        QRCode.toString(token, function (err, url) {
+            fs.readFile(path.join(server_dir, "bds_tokens.json"), 'utf8', function (err, data){
+                if (err){
+                    console.log(err);
+                } else {
+                obj = JSON.parse(data); //now it an object
+                obj.push({token}); //add some data
+                json = JSON.stringify(obj); //convert it back to json
+                fs.writeFileSync(path.join(server_dir, "bds_tokens.json"), json, 'utf8'); // write it back 
+            }});
+        })
+    });
+}
