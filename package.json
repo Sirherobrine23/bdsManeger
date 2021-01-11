@@ -37,6 +37,6 @@
     "properties-to-json": "^0.1.7",
     "qrcode": "^1.4.4",
     "systeminformation": "^4.34.5",
-    "telegraf": "^3.38.0"
+    "telegraf": "^4.0.0"
   }
 }
