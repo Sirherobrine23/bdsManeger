@@ -36,6 +36,7 @@
     "open": "^7.3.1",
     "properties-to-json": "^0.1.7",
     "qrcode": "^1.4.4",
+    "shelljs": "^0.8.4",
     "systeminformation": "^4.34.5",
     "telegraf": "^4.0.0"
   }

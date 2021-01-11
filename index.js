@@ -11,10 +11,6 @@ function date(fu) {
     else 
         return `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}_${today.getHours()}-${today.getSeconds()}`
 }
-function Storage(){
-    var LocalStorage = require('node-localstorage').LocalStorage;
-    return new LocalStorage(`${require('./').api_dir}/Local_Storage`);
-};
 if (process.argv[0].includes('electron')){
     var electron_de = true;
 } else if (process.argv[0].includes('node')){
@@ -35,7 +31,7 @@ if (process.platform == 'win32') {
         if (!fs.existsSync(log_dir)){
             fs.mkdirSync(log_dir);
         };
-    };    
+    };
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
     var tmp = process.env.TMP
@@ -43,7 +39,7 @@ if (process.platform == 'win32') {
 } else if (process.platform == 'linux') {
     var home = process.env.HOME;
     var server_dir = path.join(home, 'bds_Server');
-    var cache_dir = path.join(home, '.config', require(process.cwd() + '/package.json').name);
+    var cache_dir = path.join(home, '.config', require(process.cwd()+'/package.json').name);
     var log_dir = path.join(server_dir, 'log')
     if (fs.existsSync(server_dir)){
         if (!fs.existsSync(log_dir)){
@@ -63,19 +59,35 @@ if (process.platform == 'win32') {
     process.exit(2021)
 };
 
+if (!(fs.existsSync(cache_dir))){
+    console.log(`Creating a folder for Storage`)
+    var shell = require('shelljs');
+    shell.mkdir('-p', cache_dir);
+}
 if (!(fs.existsSync(server_dir))){
     fs.mkdirSync(server_dir);
     console.log('Creating the bds directory')
 }
 function telegram_tokenv1(){
-    if (require("fs").existsSync(`${server_dir}/token.txt`)){
-        return require("fs").readFileSync(`${server_dir}/token.txt`, "utf8").replaceAll('\n', '');
+    if (require("fs").existsSync(`${server_dir}/telegram_token.txt`)){
+        return require("fs").readFileSync(`${server_dir}/telegram_token.txt`, "utf8").replaceAll('\n', '');
     } else {
         return undefined;
     }
 };
+function Storage(){
+    var LocalStorage = require('node-localstorage').LocalStorage;
+    return new LocalStorage(`${require('./').api_dir}/Local_Storage`);
+};
+module.exports.telegram_token_save = (token) =>{
+    fs.writeFileSync(`${server_dir}/telegram_token.txt`, token)
+    return 'OK'
+}
 if (typeof fetch === 'undefined'){
     global.fetch = require('node-fetch')
+}
+if (typeof LocalStorage === 'undefined'){
+    global.LocalStorage = Storage()
 }
 fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json').then(response => response.text()).then(gd_cre => {
     module.exports.google_drive_credential = gd_cre
@@ -104,20 +116,7 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json'
             return out.replaceAll(undefined, '');
     }
 })
-// 
-// Module export
-/* Variaveis */
-module.exports.Storage = Storage
-module.exports.token = telegram_tokenv1()
-module.exports.home = home
-module.exports.system = system
-module.exports.server_dir = server_dir
-module.exports.world_dir = path.join(server_dir, 'worlds')
-module.exports.tmp_dir = tmp
-module.exports.electron = electron_de
-module.exports.api_dir = cache_dir
-module.exports.log_file = log_file
-module.exports.log_date = log_date
+
 const si = require('systeminformation');
 setInterval(() => {
     // si.cpu().then(data => {module.exports.cpu_speed = Math.trunc(data.speed)})
@@ -154,6 +153,22 @@ setInterval(() => {
         }
     })
 }, 3000);
+
+// 
+// Module export
+/* Variaveis */
+module.exports.Storage = Storage
+module.exports.token = telegram_tokenv1()
+module.exports.home = home
+module.exports.system = system
+module.exports.server_dir = server_dir
+module.exports.world_dir = path.join(server_dir, 'worlds')
+module.exports.tmp_dir = tmp
+module.exports.electron = electron_de
+module.exports.api_dir = cache_dir
+module.exports.log_file = log_file
+module.exports.log_date = log_date
+
 /* Commands server */
 module.exports.detect = require("./Services/detect_bds").bds_detect
 module.exports.telegram = require("./Services/telegram/telegram_bot")
@@ -181,7 +196,9 @@ module.exports.token_register = () => {
                     console.log(err);
                 } else {
                 obj = JSON.parse(data); //now it an object
-                obj.push({token}); //add some data
+                var count = Object.keys(obj).length
+                var teste = {count, token}
+                obj.push(teste); //add some data
                 json = JSON.stringify(obj); //convert it back to json
                 fs.writeFileSync(path.join(server_dir, "bds_tokens.json"), json, 'utf8'); // write it back 
             }});

@@ -4,6 +4,7 @@ module.exports = () => {
     const bds = require('../index');
     const fs = require('fs');
     const app = express();
+    const path = require('path')
     app.get('/info', (req, res) => {
         const text = fs.readFileSync(bds.Storage().getItem('old_log_file'), 'utf8');
         const versions = bds.version_raw
@@ -44,25 +45,24 @@ module.exports = () => {
     });
     const bodyParser = require('body-parser');
     app.use(bodyParser.urlencoded({ extended: true }));
-    app.post('/remote', (req, res) => {
+    app.post('/bds_command', (req, res) => {
         const body = req.body
         const tokens = JSON.parse(fs.readFileSync(path.join(bds.server_dir, "bds_tokens.json"), "utf-8"))
         var pass = false;
         for (let token_verify in tokens) {
             const element = tokens[token_verify].token;
-            if (body.token == element){
-                pass = true
-            } else {
-                token_verify++
-                console.log('No')
-            }
+            if (body.token == element){pass = true} else {token_verify++}
         }
         if (pass){
+            const command = body.command
+            const teste = bds.command(command)
             res.send({
                 "status": 200,
                 "command": body.command,
+                "log": teste,
                 "message": `authorized to ${body.token}`
             })
+
         } else {
             res.send({
                 "status": 401,

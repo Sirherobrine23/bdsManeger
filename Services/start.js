@@ -1,19 +1,25 @@
 function Server_start(){
-    const bds_detect = require('../index').detect()
-    var Storage = require('../index').Storage();
+    const bds = require('../index')
+    const Storage = LocalStorage;
     var exec = require('child_process').exec;
-    if (process.platform == 'win32'){
-        var bdsDIRpathexe = `bedrock_server.exe`;
-    } else if (process.platform == 'linux'){
-        var bdsDIRpathexe = `chmod 777 bedrock_server && LD_LIBRARY_PATH=. ./bedrock_server`
-    };
-    if (!bds_detect){
-        var serverstated = exec(bdsDIRpathexe, {
-            detached: false,
-            cwd: `${require('../index').server_dir}`
-        });
-        var logConsoleStream = require('fs').createWriteStream(require('../index').log_file, {flags: 'a'});
-        Storage.setItem('old_log_file', require('../index').log_file)
+    if (!(bds.detect())){
+        if (process.platform == 'win32'){
+            var serverstated = exec(`bedrock_server.exe`, {
+                detached: false,
+                cwd: bds.server_dir
+            });
+        } else if (process.platform == 'linux'){
+            var serverstated = exec(`chmod 777 bedrock_server && ./bedrock_server`, {
+                detached: false,
+                env: {
+                    PATH: process.env.PATH,
+                    LD_LIBRARY_PATH: bds.server_dir
+                },
+                cwd: bds.server_dir
+            });
+        };
+        var logConsoleStream = require('fs').createWriteStream(bds.log_file, {flags: 'a'});
+        Storage.setItem('old_log_file', bds.log_file)
         serverstated.stdout.pipe(logConsoleStream);
         Storage.setItem('bds_status', true);
         global.bds_server_string = serverstated;
