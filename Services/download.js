@@ -29,7 +29,9 @@ module.exports.DownloadBDS = (Vdown) => {
             zip.extractAllTo(ZIP_FILE_OUTPUT, true);
             if (OLD_){require('fs').writeFileSync(`${require('../index').server_dir}/server.properties`, old)};
             console.log('extract Sucess'); // End Unzip
+            LocalStorage.setItem('Downlaod_sucess', "yes")
         } else {
+            LocalStorage.setItem('Download_sucess', "no")
             throw new error(`Could not download`);
         }
     });
