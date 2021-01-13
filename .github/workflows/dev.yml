@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - main
+
+
+
 jobs:
-  npm-check-vunarability:
-    runs-on: ubuntu-latest
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@v1
@@ -17,11 +23,13 @@ jobs:
       - name: Install Depedencies
         run: npm install
 
-      - name: Jest Test
+      - name: Javascript Teste
         run: npm run test
-        
+
+
+
   Npm-Publish:
-    needs: npm-check-vunarability
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 

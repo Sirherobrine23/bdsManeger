@@ -4,6 +4,8 @@ on:
     tags:
       - '*.*'
       - 'v*.*'
+    branches:
+      - stable
 jobs:
   Publish:
     runs-on: ubuntu-latest
@@ -36,15 +38,6 @@ jobs:
           echo 'Vunarability found, leaving with error'
           exit 1
           fi
-
-      # - name: Create Pull Request
-      #   uses: peter-evans/create-pull-request@v3
-      #   with:
-      #       commit-message: update version
-      #       title: Update version
-      #       body: Update version
-      #       branch: update-version
-      #       base: main
 
       - name: Publish
         run: npm publish

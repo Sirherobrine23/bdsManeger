@@ -18,11 +18,21 @@ if (process.argv[0].includes('electron')){
 } else {
     var electron_de = false;
 }
+const arch = process.arch
+if (arch == 'x64'){
+    var archi = 'amd64'
+} else if (arch == 'arm64'){
+    console.warn(`It is not recommended to use platforms that are not amd64 (x64), please inform you that you will need to manually configure some things. \!\!`)
+    var archi = 'arm'
+} else {
+    console.warn(`Unsupported processor, ${arch} will not be supported by The Bds Maneger`)
+}
 const path = require('path')
 const fs = require('fs');
 const package_root = path.join(process.cwd(), 'package.json')
 if (process.platform == 'win32') {
     var home = process.env.USERPROFILE;
+    var desktop = path.join(home, 'Desktop')
     var server_dir = path.join(home, `bds_Server`);
     if (fs.existsSync(package_root)){
         var cache_dir = path.join(home, 'AppData', 'Roaming', require(package_root).name)
@@ -44,23 +54,52 @@ if (process.platform == 'win32') {
         console.warn(`Temporary Storages, some functions will be lost after restarting the system`)
         var cache_dir = `/tmp/bds_tmp_configs`;
     }
+    let file = path.join(home, ".config", "user-dirs.dirs")
+    let data = {}
+    if(fs.existsSync(file)){
+        let content = fs.readFileSync(file,"utf8")
+        let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"))
+        for(let line of lines){
+            let i = line.indexOf("=")
+            if(i >= 0){
+                try{
+                    data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))
+                }catch(e){}
+            }
+        }
+    }
+    // one day will be in the documents XDG_DOCUMENTS_DIR
+    if(data["XDG_DESKTOP_DIR"]){
+        var desktop = data["XDG_DESKTOP_DIR"]
+        desktop = desktop.replace(/\$([A-Za-z\-\_]+)|\$\{([^\{^\}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))
+    }else{
+        var desktop = '/tmp'
+    }
     var log_dir = path.join(server_dir, 'log')
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
     var tmp = `/tmp`
     var system = `linux`;
 } else if (process.platform == 'android') {
-    require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-android-users")
-    console.error('Android is not yet supported by bds manager')
-    process.exit(2007)
-    var home = `/data/data/com.temux/files/home`;
-    var server_dir = path.join(home, 'bds_Server');
-    var cache_dir = path.join(home, '.bds_configs', require(package_root).name);
-    var log_dir = path.join(server_dir, 'log')
-    var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
-    var log_date = `${date()}`
-    var tmp = `/tmp`
-    var system = `linux`;
+    if (process.env.ANDROID_IGNORE !== undefined){
+        var home = `/data/data/com.temux/files/home`;
+        var server_dir = path.join(home, 'bds_Server');
+        if (fs.existsSync(package_root)){
+            var cache_dir = path.join(home, '.config', require(package_root).name);
+        } else {
+            console.warn(`Temporary Storages, some functions will be lost after restarting the system`)
+            var cache_dir = `/tmp/bds_tmp_configs`;
+        }
+        var log_dir = path.join(server_dir, 'log')
+        var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
+        var log_date = `${date()}`
+        var tmp = `/tmp`
+        var system = `linux`;
+    } else {
+        require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-android-users")
+        console.error('Android is not yet supported by bds manager')
+        process.exit(2007)
+    }
 } else if (process.platform == 'darwin') {
     require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
     console.error('Please use Windows or Linux MacOS Not yet supported')
@@ -144,7 +183,7 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json'
             console.log(`API already started`)
         }
     } else {
-        console.warn(`The bds Maneger API Rest disabled\nTo Enable!\nJavaScript:\n\nprocess.env.ENABLE_BDS_API = true\n\nexport export ENABLE_BDS_API='true'\n`)
+        console.warn(`The API via http is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html`)
     }
     
     module.exports.get_version = (type) => {
@@ -161,6 +200,7 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json'
 /* Variaveis */
 
 module.exports.home = home
+module.exports.desktop = desktop
 module.exports.system = system
 module.exports.server_dir = server_dir
 module.exports.world_dir = path.join(server_dir, 'worlds')
@@ -169,6 +209,7 @@ module.exports.electron = electron_de
 module.exports.api_dir = cache_dir
 module.exports.log_file = log_file
 module.exports.log_date = log_date
+module.exports.arch = archi
 
 /* Commands server */
 module.exports.detect = require("./Services/detect_bds").bds_detect
@@ -245,5 +286,5 @@ if (bds_monitor){
         })
     }, 3000);
 }else {
-    console.warn(`The system CPU\nTo Enable!\nJavaScript:\n\nprocess.env.BDS_MONI = true\n\nexport export BDS_MONI='true'\n`)
+    console.warn(`the use of cpu is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html`)
 }
