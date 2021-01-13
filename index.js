@@ -14,24 +14,23 @@ function date(fu) {
 if (process.argv[0].includes('electron')){
     var electron_de = true;
 } else if (process.argv[0].includes('node')){
-    // console.error('Use o Electron, o Node não é totalmente suportado');
     var electron_de = undefined;
 } else {
     var electron_de = false;
 }
-// This script server to forcefully kill old servers without being stopped before closing the application or having reloaded the page, an alternative and safer way is being sought.var
 const path = require('path')
 const fs = require('fs');
+const package_root = path.join(process.cwd(), 'package.json')
 if (process.platform == 'win32') {
     var home = process.env.USERPROFILE;
     var server_dir = path.join(home, `bds_Server`);
-    var cache_dir = path.join(home, 'AppData', 'Roaming', require(process.cwd()+'/package.json').name)
+    if (fs.existsSync(package_root)){
+        var cache_dir = path.join(home, 'AppData', 'Roaming', require(package_root).name)
+    } else {
+        console.warn(`Temporary Storages, some functions will be lost after restarting the system`)
+        var cache_dir = path.join(process.env.TMP, `bds_tmp_configs`);
+    }
     var log_dir = path.join(server_dir, 'log')
-    if (fs.existsSync(server_dir)){
-        if (!fs.existsSync(log_dir)){
-            fs.mkdirSync(log_dir);
-        };
-    };
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
     var tmp = process.env.TMP
@@ -39,13 +38,25 @@ if (process.platform == 'win32') {
 } else if (process.platform == 'linux') {
     var home = process.env.HOME;
     var server_dir = path.join(home, 'bds_Server');
-    var cache_dir = path.join(home, '.config', require(process.cwd()+'/package.json').name);
+    if (fs.existsSync(package_root)){
+        var cache_dir = path.join(home, '.config', require(package_root).name);
+    } else {
+        console.warn(`Temporary Storages, some functions will be lost after restarting the system`)
+        var cache_dir = `/tmp/bds_tmp_configs`;
+    }
     var log_dir = path.join(server_dir, 'log')
-    if (fs.existsSync(server_dir)){
-        if (!fs.existsSync(log_dir)){
-            fs.mkdirSync(log_dir);
-        };
-    };
+    var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
+    var log_date = `${date()}`
+    var tmp = `/tmp`
+    var system = `linux`;
+} else if (process.platform == 'android') {
+    require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-android-users")
+    console.error('Android is not yet supported by bds manager')
+    process.exit(2007)
+    var home = `/data/data/com.temux/files/home`;
+    var server_dir = path.join(home, 'bds_Server');
+    var cache_dir = path.join(home, '.bds_configs', require(package_root).name);
+    var log_dir = path.join(server_dir, 'log')
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
     var tmp = `/tmp`
@@ -58,37 +69,49 @@ if (process.platform == 'win32') {
     console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
     process.exit(2021)
 };
-
+var shell = require('shelljs');
 if (!(fs.existsSync(cache_dir))){
-    console.log(`Creating a folder for Storage`)
-    var shell = require('shelljs');
+    console.log(`Creating a folder for Storage in ${cache_dir}`);
     shell.mkdir('-p', cache_dir);
 }
 if (!(fs.existsSync(server_dir))){
-    fs.mkdirSync(server_dir);
     console.log('Creating the bds directory')
+    shell.mkdir('-p', server_dir);
 }
-function telegram_tokenv1(){
-    if (require("fs").existsSync(`${server_dir}/telegram_token.txt`)){
-        return require("fs").readFileSync(`${server_dir}/telegram_token.txt`, "utf8").replaceAll('\n', '');
-    } else {
-        return undefined;
-    }
+if (fs.existsSync(server_dir)){
+    if (!fs.existsSync(log_dir)){
+        console.log('Creating the bds log dir')
+        shell.mkdir('-p', log_dir);
+    };
 };
-function Storage(){
+if (require("fs").existsSync(`${server_dir}/telegram_token.txt`)){
+    module.exports.token = require("fs").readFileSync(`${server_dir}/telegram_token.txt`, "utf8").replaceAll('\n', '');
+} else {
+    module.exports.token = undefined;
+}
+
+// Depacretd function
+module.exports.Storage = () => {
     var LocalStorage = require('node-localstorage').LocalStorage;
-    return new LocalStorage(`${require('./').api_dir}/Local_Storage`);
+    return new LocalStorage(`${cache_dir}/Local_Storage`)();
 };
+
 module.exports.telegram_token_save = (token) =>{
     fs.writeFileSync(`${server_dir}/telegram_token.txt`, token)
     return 'OK'
 }
+
+// Set commands
 if (typeof fetch === 'undefined'){
     global.fetch = require('node-fetch')
 }
+
 if (typeof LocalStorage === 'undefined'){
-    global.LocalStorage = Storage()
+    var LocalStorage = require('node-localstorage').LocalStorage;
+    global.LocalStorage = new LocalStorage(`${cache_dir}/Local_Storage`);
 }
+
+// Fetchs
 fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json').then(response => response.text()).then(gd_cre => {
     module.exports.google_drive_credential = gd_cre
     module.exports.drive_backup = require('./Services/drive/auth').drive_backup
@@ -108,7 +131,6 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json'
     } else {
         console.log(`API already started`)
     }
-
     module.exports.get_version = (type) => {
         if (type == 'raw')
             return rawOUT.Versions;
@@ -116,6 +138,7 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json'
             return out.replaceAll(undefined, '');
     }
 })
+// Fetchs
 
 const si = require('systeminformation');
 setInterval(() => {
@@ -157,8 +180,7 @@ setInterval(() => {
 // 
 // Module export
 /* Variaveis */
-module.exports.Storage = Storage
-module.exports.token = telegram_tokenv1()
+
 module.exports.home = home
 module.exports.system = system
 module.exports.server_dir = server_dir

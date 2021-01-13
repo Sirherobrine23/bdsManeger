@@ -1,5 +1,5 @@
 module.exports.bds_version_get = (type) => {
-    var Storage = require('../index').Storage()
+    var Storage = LocalStorage
     var vers = JSON.parse(Storage.getItem('bds_versions')).Versions;
     for (index in vers) {
         if (type == 'raw') {
@@ -14,7 +14,7 @@ module.exports.bds_version_get = (type) => {
     return out.replaceAll(undefined, '');
 };
 module.exports.bds_latest = () => {
-    const Storage = require('../index').Storage()
+    const Storage = LocalStorage
     setTimeout(() => {
         var NULL = null
     }, 1000)
