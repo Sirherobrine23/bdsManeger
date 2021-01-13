@@ -110,6 +110,16 @@ if (typeof LocalStorage === 'undefined'){
     var LocalStorage = require('node-localstorage').LocalStorage;
     global.LocalStorage = new LocalStorage(`${cache_dir}/Local_Storage`);
 }
+let blanks;
+if (process.env.BDS_MONI == blanks){
+    process.env.BDS_MONI = 'false'
+}
+// process.env.BDS_MONI
+if (process.env.ENABLE_BDS_API == blanks){
+    process.env.ENABLE_BDS_API = 'false'
+}
+// process.env.ENABLE_BDS_API
+
 
 // Fetchs
 fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json').then(response => response.text()).then(gd_cre => {
@@ -126,11 +136,17 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json'
     module.exports.version_select = out.replaceAll(undefined, '');
     module.exports.version_raw = rawOUT.Versions;
     module.exports.bds_latest = rawOUT.latest;
-    if (typeof bds_api_start === 'undefined'){
-        module.exports.api = require('./API/api')()
+    const enable_api = process.env.ENABLE_BDS_API.includes('true')
+    if (enable_api){
+        if (typeof bds_api_start === 'undefined'){
+            module.exports.api = require('./API/api')()
+        } else {
+            console.log(`API already started`)
+        }
     } else {
-        console.log(`API already started`)
+        console.warn(`The bds Maneger API Rest disabled\nTo Enable!\nJavaScript:\n\nprocess.env.ENABLE_BDS_API = true\n\nexport export ENABLE_BDS_API='true'\n`)
     }
+    
     module.exports.get_version = (type) => {
         if (type == 'raw')
             return rawOUT.Versions;
@@ -139,43 +155,6 @@ fetch('https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json'
     }
 })
 // Fetchs
-
-const si = require('systeminformation');
-setInterval(() => {
-    // si.cpu().then(data => {module.exports.cpu_speed = Math.trunc(data.speed)})
-    si.mem().then(data => {
-        module.exports.ram_free = Math.trunc(data.free / 1024 / 1024 / 1024);
-        module.exports.ram_total = Math.trunc(data.total / 1024 / 1024 / 1024);
-    })
-    si.currentLoad().then(data => {
-        module.exports.current_cpu = Math.trunc(data.currentload)
-    })
-
-}, 1000);
-si.processes().then(data => {
-    const list = data.list
-    for (let pid in list) {
-        var pids = list[pid].command
-        if (pids.includes('bedrock_server')){
-            module.exports.bds_cpu = Math.trunc(list[pid].pcpu)
-        } else {
-            pid++
-        }
-    }
-})
-setInterval(() => {
-    si.processes().then(data => {
-        const list = data.list
-        for (let pid in list) {
-            var pids = list[pid].command
-            if (pids.includes('bedrock_server')){
-                module.exports.bds_cpu = Math.trunc(list[pid].pcpu)
-            } else {
-                pid++
-            }
-        }
-    })
-}, 3000);
 
 // 
 // Module export
@@ -226,4 +205,45 @@ module.exports.token_register = () => {
             }});
         })
     });
+}
+const bds_monitor = process.env.BDS_MONI.includes('true')
+if (bds_monitor){
+    const si = require('systeminformation');
+    setInterval(() => {
+        // si.cpu().then(data => {module.exports.cpu_speed = Math.trunc(data.speed)})
+        si.mem().then(data => {
+            module.exports.ram_free = Math.trunc(data.free / 1024 / 1024 / 1024);
+            module.exports.ram_total = Math.trunc(data.total / 1024 / 1024 / 1024);
+        })
+        si.currentLoad().then(data => {
+            module.exports.current_cpu = Math.trunc(data.currentload)
+        })
+
+    }, 1000);
+    si.processes().then(data => {
+        const list = data.list
+        for (let pid in list) {
+            var pids = list[pid].command
+            if (pids.includes('bedrock_server')){
+                module.exports.bds_cpu = Math.trunc(list[pid].pcpu)
+            } else {
+                pid++
+            }
+        }
+    })
+    setInterval(() => {
+        si.processes().then(data => {
+            const list = data.list
+            for (let pid in list) {
+                var pids = list[pid].command
+                if (pids.includes('bedrock_server')){
+                    module.exports.bds_cpu = Math.trunc(list[pid].pcpu)
+                } else {
+                    pid++
+                }
+            }
+        })
+    }, 3000);
+}else {
+    console.warn(`The system CPU\nTo Enable!\nJavaScript:\n\nprocess.env.BDS_MONI = true\n\nexport export BDS_MONI='true'\n`)
 }
