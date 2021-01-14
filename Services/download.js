@@ -22,8 +22,17 @@ module.exports.DownloadBDS = (Vdown) => {
             if (fs.existsSync(`${server_DIR}/server.properties`)){
                 var OLD_ = true
                 var old1 = fs.readFileSync(`${server_DIR}/server.properties`, "utf-8");
+            }
+            if (fs.existsSync(`${server_DIR}/permissions.json`)){
+                var _old2 = true
                 var old2 = fs.readFileSync(`${server_DIR}/permissions.json`, "utf-8");
+            }
+            if (fs.existsSync(`${server_DIR}/whitelist.json`)) {
+                var _old3 = true
                 var old3 = fs.readFileSync(`${server_DIR}/whitelist.json`, "utf-8");
+            }
+            if (fs.existsSync(`${server_DIR}/valid_known_packs.json`)){
+                var _old4 = true
                 var old4 = fs.readFileSync(`${server_DIR}/valid_known_packs.json`, "utf-8");
             };
             console.log(`Download zip file success`)
@@ -33,8 +42,14 @@ module.exports.DownloadBDS = (Vdown) => {
             zip.extractAllTo(ZIP_FILE_OUTPUT, true);
             if (OLD_){
                 fs.writeFileSync(`${server_DIR}/server.properties`, old1);
+            }
+            if (_old2){
                 fs.writeFileSync(`${server_DIR}/permissions.json`, old2);
+            }
+            if (_old3){
                 fs.writeFileSync(`${server_DIR}/whitelist.json`, old3);
+            }
+            if (_old4){
                 fs.writeFileSync(`${server_DIR}/valid_known_packs.json`, old4);
             };
             console.log('extract Sucess'); // End Unzip
