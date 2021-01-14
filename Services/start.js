@@ -1,6 +1,6 @@
 function Server_start(){
     const bds = require('../index')
-    const Storage = LocalStorage;
+    const Storage = localStorage;
     var exec = require('child_process').exec;
     if (!(bds.detect())){
         if (process.platform == 'win32'){

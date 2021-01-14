@@ -131,8 +131,8 @@ if (require("fs").existsSync(`${server_dir}/telegram_token.txt`)){
 
 // Depacretd function
 module.exports.Storage = () => {
-    var LocalStorage = require('node-localstorage').LocalStorage;
-    return new LocalStorage(`${cache_dir}/Local_Storage`)();
+    var localStorage = require('node-localstorage').localStorage;
+    return new localStorage(`${cache_dir}/Local_Storage`)();
 };
 
 module.exports.telegram_token_save = (token) =>{
@@ -145,9 +145,9 @@ if (typeof fetch === 'undefined'){
     global.fetch = require('node-fetch')
 }
 
-if (typeof LocalStorage === 'undefined'){
-    var LocalStorage = require('node-localstorage').LocalStorage;
-    global.LocalStorage = new LocalStorage(`${cache_dir}/Local_Storage`);
+if (typeof localStorage === 'undefined'){
+    var localStorage = require('node-localstorage').LocalStorage;
+    global.localStorage = new localStorage(`${cache_dir}/Local_Storage`);
 }
 let blanks;
 if (process.env.BDS_MONI == blanks){

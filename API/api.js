@@ -6,7 +6,7 @@ module.exports = () => {
     const app = express();
     const path = require('path')
     app.get('/info', (req, res) => {
-        const text = fs.readFileSync(LocalStorage.getItem('old_log_file'), 'utf8');
+        const text = fs.readFileSync(localStorage.getItem('old_log_file'), 'utf8');
         const versions = bds.version_raw
         for (let v in versions){
             if (text.includes(versions[v])){
@@ -36,10 +36,10 @@ module.exports = () => {
         });
     });
     app.get('/log', function(req, res) {
-        const text = fs.readFileSync(LocalStorage.getItem('old_log_file'), 'utf-8')
+        const text = fs.readFileSync(localStorage.getItem('old_log_file'), 'utf-8')
         res.send({
             "sucess": text,
-            "log_file": LocalStorage.getItem('old_log_file'),
+            "log_file": localStorage.getItem('old_log_file'),
             "requeset_date": bds.date()
         });
     });
@@ -51,6 +51,7 @@ module.exports = () => {
         var pass = false;
         for (let token_verify in tokens) {
             const element = tokens[token_verify].token;
+            // req.connection.remoteAddress
             if (body.token == element){pass = true} else {token_verify++}
         }
         if (pass){

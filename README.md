@@ -2,6 +2,8 @@
 
 A separate module from Bds Manager, and simple delivery of management
 
+[Bds Maneger, Docker Image](https://github.com/Bds-Maneger/Docker_Image)
+
 Alpha version, testing and quality:
 
 ![CodeQL](https://github.com/Bds-Maneger/bds_maneger_api/workflows/CodeQL/badge.svg) ![Stable Publish](https://github.com/Bds-Maneger/bds_maneger_api/workflows/Stable%20Publish/badge.svg) ![Dev Publish](https://github.com/Bds-Maneger/bds_maneger_api/workflows/Dev%20Publish/badge.svg)

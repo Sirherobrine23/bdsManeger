@@ -1,11 +1,11 @@
-const { error } = require('console');
-
 module.exports.DownloadBDS = (Vdown) => {
     console.warn('Do not exit BDS Manager')
+    console.log('Starting download')
     const exec = require('child_process').exec
     if (require('../index').electron){
-        LocalStorage.setItem('bds_server_version', Vdown);
+        localStorage.setItem('bds_server_version', Vdown);
     };
+    var NAMEd = `bedrock-server-${Vdown}.zip`
     if (process.platform == 'win32') {
         var URLd = `https://minecraft.azureedge.net/bin-win/bedrock-server-${Vdown}.zip`;
         var downloadBDSchild = exec(`cd %TMP% && curl ${URLd} --output ${NAMEd}`);
@@ -14,26 +14,34 @@ module.exports.DownloadBDS = (Vdown) => {
         var URLd = `https://minecraft.azureedge.net/bin-linux/bedrock-server-${Vdown}.zip`;
         var downloadBDSchild = exec(`cd /tmp && curl ${URLd} --output ${NAMEd}`);
         var ZIP_FILE_PATH = `/tmp/${NAMEd}`;
-    };
-    var NAMEd = `bedrock-server-${Vdown}.zip`
+    }
     downloadBDSchild.on('exit', function (code) {
-        if (code == 0) {
-            if (require('fs').existsSync(`${require('../index').server_dir}/server.properties`)){
+        if (code === 0) {
+            const server_DIR = require('../index').server_dir;
+            const fs = require('fs')
+            if (fs.existsSync(`${server_DIR}/server.properties`)){
                 var OLD_ = true
-                var old = require('fs').readFileSync(`${require('../index').server_dir}/server.properties`, "utf-8");
+                var old1 = fs.readFileSync(`${server_DIR}/server.properties`, "utf-8");
+                var old2 = fs.readFileSync(`${server_DIR}/permissions.json`, "utf-8");
+                var old3 = fs.readFileSync(`${server_DIR}/whitelist.json`, "utf-8");
+                var old4 = fs.readFileSync(`${server_DIR}/valid_known_packs.json`, "utf-8");
             };
             console.log(`Download zip file success`)
-            var ZIP_FILE_OUTPUT = `${require('../index').server_dir}`;
+            var ZIP_FILE_OUTPUT = `${server_DIR}`;
             var AdmZip = require('adm-zip');
             var zip = new AdmZip(ZIP_FILE_PATH);
             zip.extractAllTo(ZIP_FILE_OUTPUT, true);
-            if (OLD_){require('fs').writeFileSync(`${require('../index').server_dir}/server.properties`, old)};
+            if (OLD_){
+                fs.writeFileSync(`${server_DIR}/server.properties`, old1);
+                fs.writeFileSync(`${server_DIR}/permissions.json`, old2);
+                fs.writeFileSync(`${server_DIR}/whitelist.json`, old3);
+                fs.writeFileSync(`${server_DIR}/valid_known_packs.json`, old4);
+            };
             console.log('extract Sucess'); // End Unzip
-            LocalStorage.setItem('Downlaod_sucess', "yes")
+            localStorage.setItem('Downlaod_sucess', "yes")
         } else {
-            LocalStorage.setItem('Download_sucess', "no")
+            localStorage.setItem('Download_sucess', "no")
             throw new error(`Could not download`);
         }
     });
-    return 'Complete'
 };

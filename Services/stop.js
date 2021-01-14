@@ -2,7 +2,7 @@ module.exports.Server_stop = () => {
     if (typeof bds_server_string == 'undefined')
         console.log("The server is stopped!");
      else {
-        const Storage = LocalStorage;
+        const Storage = localStorage;
         bds_server_string.stdin.write('stop\n');
         bds_server_string.stdout.on('data', function (data){
             if (data.includes('Quit correctly')){
