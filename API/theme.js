@@ -1,9 +1,9 @@
 module.exports = () => {
-    require('express');
-    if (typeof fetch === 'undefined'){
-        var fetch = require('node-fetch')
+    require("express");
+    if (typeof fetch === "undefined"){
+        var fetch = require("node-fetch")
     }
-    const themes = 'https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/themes.json'
+    const themes = "https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/themes.json"
     fetch(themes).then(response => response.json()).then(array => {
         for (let index = 0; index < array.length; index++) {
             const name = array[index].name;

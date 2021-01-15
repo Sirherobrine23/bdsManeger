@@ -1,12 +1,12 @@
 module.exports = () => {
     global.bds_api_start = true
-    const express = require('express');
-    const bds = require('../index');
-    const fs = require('fs');
+    const express = require("express");
+    const bds = require("../index");
+    const fs = require("fs");
     const app = express();
-    const path = require('path')
-    app.get('/info', (req, res) => {
-        const text = fs.readFileSync(localStorage.getItem('old_log_file'), 'utf8');
+    const path = require("path")
+    app.get("/info", (req, res) => {
+        const text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf8");
         const versions = bds.version_raw
         for (let v in versions){
             if (text.includes(versions[v])){
@@ -28,24 +28,33 @@ module.exports = () => {
         }
         return res.send(json_http);
     });
-    app.get('/', (req, res) => {
+    app.get("/", (req, res) => {
         return res.send({
             "info": "/info",
-            "bds_maneger_API_version": require('../package.json').version,
-            "app_version": require(process.cwd()+'/package.json').version
+            "Bds Commnd": "/bds_command (POST)",
+            "Log": "/log",
+            "bds_maneger_API_version": require("../package.json").version,
+            "app_version": require(process.cwd()+"/package.json").version
         });
     });
-    app.get('/log', function(req, res) {
-        const text = fs.readFileSync(localStorage.getItem('old_log_file'), 'utf-8')
-        res.send({
-            "sucess": text,
-            "log_file": localStorage.getItem('old_log_file'),
+    app.get("/log", function(req, res) {
+        if (typeof bds_log_string === 'undefined'){
+            var text = 'The server is stopped';
+            var sucess = false
+        } else {
+            var text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf-8")
+            var sucess = true
+        } 
+        res.json({
+            "sucess": sucess,
+            "log": text,
+            "log_file": localStorage.getItem("old_log_file"),
             "requeset_date": bds.date()
         });
     });
-    const bodyParser = require('body-parser');
+    const bodyParser = require("body-parser");
     app.use(bodyParser.urlencoded({ extended: true }));
-    app.post('/bds_command', (req, res) => {
+    app.post("/bds_command", (req, res) => {
         const body = req.body
         const tokens = JSON.parse(fs.readFileSync(path.join(bds.server_dir, "bds_tokens.json"), "utf-8"))
         var pass = false;
@@ -71,7 +80,7 @@ module.exports = () => {
             })
         }
     });
-    const http_port = '1932'
+    const http_port = "1932"
     app.listen(http_port, () =>{
         console.log(`Bds API port: http://localhost:${http_port}`)
     });

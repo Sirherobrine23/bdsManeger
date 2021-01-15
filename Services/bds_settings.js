@@ -1,16 +1,16 @@
 function bds_config(json_config){
 const Server_Config = `${require("../index").server_dir}/server.properties`
-const cpuCount = require('os').cpus().length;
+const cpuCount = require("os").cpus().length;
 var fs = require("fs")
 if (2 < cpuCount - 2) var CPU = cpuCount - 2; else var CPU = cpuCount;
-if (json_config.includes('.json')){
-    var config = JSON.parse(fs.readFileSync(json_config, 'utf8'))
+if (json_config.includes(".json")){
+    var config = JSON.parse(fs.readFileSync(json_config, "utf8"))
 } else
     var config = JSON.parse(json_config)
 // const config = json_storage/*JSON.parse(json_storage)*/
 // Definitions
 //
-// var nothing = '';
+// var nothing = "";
 // description
 if (config.description == undefined){
     var description_name = `Dedicated Server`;
@@ -87,7 +87,7 @@ if (config.player_permission == undefined){
 } else {
     var player_permission = config.player_permission;
 };
-const cpuCountTick = require('os').cpus().length;
+const cpuCountTick = require("os").cpus().length;
 if (2 >= cpuCountTick)
     var tick = 2
 else if (4 >= cpuCountTick)
@@ -139,7 +139,7 @@ function bds_get_config(){
     var fs = require("fs");
     const propertiesToJSON = require("properties-to-json");
     const Server_Config = `${require("../index").server_dir}/server.properties`;
-    const inGET = fs.readFileSync(Server_Config, "utf8").replaceAll('-','_');
+    const inGET = fs.readFileSync(Server_Config, "utf8").replaceAll("-","_");
     return propertiesToJSON(inGET);
 };
 module.exports.config_example = () =>{

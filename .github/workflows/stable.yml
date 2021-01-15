@@ -2,8 +2,8 @@ name: Stable Publish
 on:
   push: 
     tags:
-      - '*.*'
-      - 'v*.*'
+      - "*.*"
+      - "v*.*"
     branches:
       - stable
 jobs:
@@ -19,23 +19,23 @@ jobs:
       - name: Update Dependecies
         run: |
           npm update &> /tmp/update.txt
-          if cat /tmp/update.txt |grep -q 'found 0 vulnerabilities';then
+          if cat /tmp/update.txt |grep -q "found 0 vulnerabilities";then
           cat /tmp/update.txt
           exit 0
           else
           cat /tmp/update.txt
-          echo 'Vunarability found, leaving with error'
+          echo "Vunarability found, leaving with error"
           exit 1
           fi
       - name: Install Depedencies
         run: |
           npm install &> /tmp/install.txt
-          if cat /tmp/install.txt |grep -q 'found 0 vulnerabilities';then
+          if cat /tmp/install.txt |grep -q "found 0 vulnerabilities";then
           cat /tmp/install.txt
           exit 0
           else
           cat /tmp/install.txt
-          echo 'Vunarability found, leaving with error'
+          echo "Vunarability found, leaving with error"
           exit 1
           fi
 

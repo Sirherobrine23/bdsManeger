@@ -1,24 +1,24 @@
 module.exports.DownloadBDS = (Vdown) => {
-    console.warn('Do not exit BDS Manager')
-    console.log('Starting download')
-    const exec = require('child_process').exec
-    if (require('../index').electron){
-        localStorage.setItem('bds_server_version', Vdown);
+    console.warn("Do not exit BDS Manager")
+    console.log("Starting download")
+    const exec = require("child_process").exec
+    if (require("../index").electron){
+        localStorage.setItem("bds_server_version", Vdown);
     };
     var NAMEd = `bedrock-server-${Vdown}.zip`
-    if (process.platform == 'win32') {
+    if (process.platform == "win32") {
         var URLd = `https://minecraft.azureedge.net/bin-win/bedrock-server-${Vdown}.zip`;
         var downloadBDSchild = exec(`cd %TMP% && curl ${URLd} --output ${NAMEd}`);
         var ZIP_FILE_PATH = `${process.env.TMP}/${NAMEd}`;
-    } else if (process.platform == 'linux') {
+    } else if (process.platform == "linux") {
         var URLd = `https://minecraft.azureedge.net/bin-linux/bedrock-server-${Vdown}.zip`;
         var downloadBDSchild = exec(`cd /tmp && curl ${URLd} --output ${NAMEd}`);
         var ZIP_FILE_PATH = `/tmp/${NAMEd}`;
     }
-    downloadBDSchild.on('exit', function (code) {
+    downloadBDSchild.on("exit", function (code) {
         if (code === 0) {
-            const server_DIR = require('../index').server_dir;
-            const fs = require('fs')
+            const server_DIR = require("../index").server_dir;
+            const fs = require("fs")
             if (fs.existsSync(`${server_DIR}/server.properties`)){
                 var OLD_ = true
                 var old1 = fs.readFileSync(`${server_DIR}/server.properties`, "utf-8");
@@ -37,7 +37,7 @@ module.exports.DownloadBDS = (Vdown) => {
             };
             console.log(`Download zip file success`)
             var ZIP_FILE_OUTPUT = `${server_DIR}`;
-            var AdmZip = require('adm-zip');
+            var AdmZip = require("adm-zip");
             var zip = new AdmZip(ZIP_FILE_PATH);
             zip.extractAllTo(ZIP_FILE_OUTPUT, true);
             if (OLD_){
@@ -52,10 +52,10 @@ module.exports.DownloadBDS = (Vdown) => {
             if (_old4){
                 fs.writeFileSync(`${server_DIR}/valid_known_packs.json`, old4);
             };
-            console.log('extract Sucess'); // End Unzip
-            localStorage.setItem('Downlaod_sucess', "yes")
+            console.log("extract Sucess"); // End Unzip
+            localStorage.setItem("Downlaod_sucess", "yes")
         } else {
-            localStorage.setItem('Download_sucess', "no")
+            localStorage.setItem("Download_sucess", "no")
             throw new error(`Could not download`);
         }
     });
