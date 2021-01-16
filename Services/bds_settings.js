@@ -1,5 +1,8 @@
 function bds_config(json_config){
-const Server_Config = `${require("../index").server_dir}/server.properties`
+if (localStorage.getItem("bds_edititon") === 'java')
+    var Server_Config = `${require("../index").bds_dir_java}/server.properties`
+else
+    var Server_Config = `${require("../index").bds_dir_bedrock}/server.properties`
 const cpuCount = require("os").cpus().length;
 var fs = require("fs")
 if (2 < cpuCount - 2) var CPU = cpuCount - 2; else var CPU = cpuCount;
@@ -103,7 +106,63 @@ else
 // end
 //
 /*Save Files*/
-var config_file_content = `
+if (localStorage.getItem("bds_edititon") === 'java'){
+    var config_file_content = `
+enable-jmx-monitoring=false
+rcon.port=25575
+level-seed=
+gamemode=${gamemode}
+enable-command-block=false
+enable-query=false
+generator-settings=
+level-name=${level_name}
+motd=${description_name}
+query.port=${server_port}
+pvp=true
+generate-structures=true
+difficulty=${difficulty}
+network-compression-threshold=256
+max-tick-time=60000
+max-players=${max_players}
+use-native-transport=true
+online-mode=${online_mode}
+enable-status=true
+allow-flight=false
+broadcast-rcon-to-ops=true
+view-distance=32
+max-build-height=256
+server-ip=
+allow-nether=true
+server-port=${server_port}
+enable-rcon=${allow_cheats}
+sync-chunk-writes=true
+op-permission-level=4
+prevent-proxy-connections=false
+resource-pack=
+entity-broadcast-range-percentage=100
+rcon.password=25as65d3
+player-idle-timeout=0
+force-gamemode=false
+rate-limit=0
+hardcore=false
+white-list=${white_list}
+broadcast-console-to-ops=true
+spawn-npcs=true
+spawn-animals=true
+snooper-enabled=true
+function-permission-level=2
+level-type=default
+text-filtering-config=
+spawn-monsters=true
+enforce-whitelist=false
+resource-pack-sha1=
+spawn-protection=16
+max-world-size=29999984
+#
+# Created on Bds-Manager by Sirherobrine23
+`
+} else {
+    var config_file_content = `
 server-name=${description_name}
 gamemode=${gamemode}
 difficulty=${difficulty}
@@ -131,6 +190,8 @@ correct-player-movement=false
 
 # Created on Bds-Manager by Sirherobrine23
 `
+}
+
 // console.log(config_file_content);
 fs.writeFileSync(Server_Config, config_file_content);
 return config_file_content
@@ -138,7 +199,10 @@ return config_file_content
 function bds_get_config(){
     var fs = require("fs");
     const propertiesToJSON = require("properties-to-json");
-    const Server_Config = `${require("../index").server_dir}/server.properties`;
+    if (localStorage.getItem("bds_edititon") === 'java')
+    var Server_Config = `${require("../index").bds_dir_java}/server.properties`
+else
+    var Server_Config = `${require("../index").bds_dir_bedrock}/server.properties`
     const inGET = fs.readFileSync(Server_Config, "utf8").replaceAll("-","_");
     return propertiesToJSON(inGET);
 };

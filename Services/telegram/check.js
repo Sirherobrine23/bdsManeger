@@ -1,7 +1,7 @@
 module.exports.checkUser = (USERNAME) => {
     const fs = require("fs")
-    if (fs.existsSync(`${require("../../index").server_dir}/telegram_admin.json`)) {
-        var admins = fs.readFileSync(`${require("../../index").server_dir}/telegram_admin.json`, "utf-8");
+    if (fs.existsSync(`${require("../../index").bds_dir}/telegram_admin.json`)) {
+        var admins = fs.readFileSync(`${require("../../index").bds_dir}/telegram_admin.json`, "utf-8");
     } else {
         var admins = `{"sh23_bot_not_config": {"allow": true}}`;
         console.log("All allowed")

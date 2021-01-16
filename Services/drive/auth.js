@@ -4,7 +4,7 @@ const readline = require("readline");
 const {google} = require("googleapis");
 const bds =  require("../../index");
 const SCOPES = ["https://www.googleapis.com/auth/drive"];
-const TOKEN_PATH = path.join(bds.server_dir, "google_token.json");
+const TOKEN_PATH = path.join(bds.bds_dir, "google_token.json");
 
 
 function authorize(credentials, callback) {

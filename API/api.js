@@ -59,7 +59,7 @@ module.exports = () => {
     app.use(bodyParser.urlencoded({ extended: true }));
     app.post("/bds_command", (req, res) => {
         const body = req.body
-        const tokens = JSON.parse(fs.readFileSync(path.join(bds.server_dir, "bds_tokens.json"), "utf-8"))
+        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
         var pass = false;
         for (let token_verify in tokens) {
             const element = tokens[token_verify].token;

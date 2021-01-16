@@ -12,7 +12,7 @@ module.exports = () => {
     app.use(require("body-parser").json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.post("/info", (req, res) => {
         const body = req.body
-        const tokens = JSON.parse(fs.readFileSync(path.join(bds.server_dir, "bds_tokens.json"), "utf-8"))
+        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
         var pass = false;
         var teste = 'Sucess'
         for (let token_verify in tokens) {const element = tokens[token_verify].token;if (body.token == element){pass = true} else {token_verify++}}

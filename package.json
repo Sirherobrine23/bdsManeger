@@ -28,6 +28,7 @@
   "dependencies": {
     "adm-zip": "^0.5.1",
     "body-parser": "^1.19.0",
+    "command-exists": "^1.2.9",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "express": "^4.17.1",

@@ -1,5 +1,3 @@
-const { bds_detect } = require("./detect_bds");
-
 module.exports.World_BAckup = () => {
     if (process.platform == "win32") {
         
@@ -10,7 +8,7 @@ module.exports.World_BAckup = () => {
         var minu = today.getMinutes();
         today = `Date_${yyyy}-${mm}-${dd}(Hour_${hour}-Minutes_${minu})`;
         var name = `${process.env.USERPROFILE}/Desktop/bds_backup_World_${today}.zip`
-        var dir_zip = `${require("../index").server_dir}/worlds/`
+        var dir_zip = `${require("../index").bds_dir}/worlds/`
     } else if (process.platform == "linux") {
         
         var dd = String(today.getDate()).padStart(2, "0");
@@ -20,7 +18,7 @@ module.exports.World_BAckup = () => {
         var minu = today.getMinutes();
         today = `Date_${yyyy}-${mm}-${dd} Hour_${hour}-Minutes_${minu}`;
         var name = `${process.env.HOME}/bds_backup_World_${today}.zip`
-        var dir_zip = `${require("../index").server_dir}/worlds/`
+        var dir_zip = `${require("../index").bds_dir_bedrock}/worlds/`
     }; /* End Files name */
     /* Compress the folders */
     var AdmZip = require("adm-zip");
@@ -43,7 +41,10 @@ module.exports.Drive_backup = () => {
     }
     const bds = require("../index");
     const path = require("path");
-    const dir_zip = bds.world_dir;
+    if (localStorage.getItem('bds_edititon') === 'java')
+        var dir_zip = path.join(bds.bds_dir_java, "world");
+    else
+        var dir_zip = path.join(bds.bds_dir_bedrock, "worlds");
     const today = bds.date();
     const file_name = `bds_backup_World_${today}.zip`
     const name = path.join(bds.tmp_dir, file_name)
