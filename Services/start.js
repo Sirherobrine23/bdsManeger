@@ -21,6 +21,9 @@ function Server_start(){
         var logConsoleStream = require("fs").createWriteStream(bds.log_file, {flags: "a"});
         Storage.setItem("old_log_file", bds.log_file)
         serverstated.stdout.pipe(logConsoleStream);
+        if (typeof bds_log_string !== "undefined"){
+            delete(bds_log_string)
+        }
         serverstated.stdout.on("data", function(data){
             global.bds_log_string += data
         })

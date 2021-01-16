@@ -1,10 +1,10 @@
 module.exports = () => {
-    global.bds_api_start = true
+    global.bds_api_post_start = true
     const express = require("express");
     const bds = require("../index");
     const fs = require("fs");
     const app = express();
-    var cors = require('cors'); 
+    var cors = require('cors');
     const path = require("path")
     const bodyParser = require("body-parser");
     app.use(cors());
@@ -19,7 +19,7 @@ module.exports = () => {
         if (pass){
             if (fs.existsSync(process.cwd()+"/package.json")){
                 var api_v = require(process.cwd()+"/package.json").version
-                var name = require(process.cwd()+"/package.json").name
+                var name = bds.get_config().level_name
             } else {
                 var api_v = null
                 var name = 'Bds_Maneger_api'

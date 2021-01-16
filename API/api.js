@@ -5,6 +5,9 @@ module.exports = () => {
     const fs = require("fs");
     const app = express();
     const path = require("path")
+    var cors = require('cors');
+    app.use(cors());
+    app.use(require("body-parser").json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.get("/info", (req, res) => {
         const text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf8");
         const versions = bds.version_raw
@@ -81,7 +84,5 @@ module.exports = () => {
         }
     });
     const http_port = "1932"
-    app.listen(http_port, () =>{
-        console.log(`Bds API port: http://localhost:${http_port}`)
-    });
+    app.listen(http_port);
 }
