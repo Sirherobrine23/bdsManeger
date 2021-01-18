@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path")
 const readline = require("readline");
 const {google} = require("googleapis");
-const bds =  require("../../index");
+const bds =  require("../index");
 const SCOPES = ["https://www.googleapis.com/auth/drive"];
 const TOKEN_PATH = path.join(bds.bds_dir, "google_token.json");
 
@@ -41,7 +41,7 @@ function getAccessToken(oAuth2Client, callback) {
   });
 };
 
-const CREDENTIAL = require("../../index").google_drive_credential
+const CREDENTIAL = require("../index").google_drive_credential
 module.exports.drive_backup = (parent_id) => {
   function upload_backup(auth) {
     const bds_backup = require("../backup").Drive_backup();

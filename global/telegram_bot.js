@@ -1,5 +1,5 @@
 const { Telegraf } = require("telegraf")
-const token  = require("../../index").token
+const token  = require("../index").token
 const bot = new Telegraf(token)
 bot.start((ctx) => {
     const amenssagem = `Hello ${ctx.message.from.username}
@@ -19,12 +19,12 @@ bot.help((ctx) => ctx.reply("Use o /start"))
 bot.action("delete", ({ deleteMessage }) => deleteMessage())
 bot.command("server_start", (ctx) => {
     if (require("./check").checkUser(ctx.message.from.username)){
-        const bds_status = require("../../index").detect()
+        const bds_status = require("../index").detect()
         if (!bds_status){
-            if (require("../../index").electron){
+            if (require("../index").electron){
                 document.getElementById("startButtom").click()
             } else {
-                require("../../index").start()
+                require("../index").start()
             };            
             ctx.reply(`The server has started`)
         } else 
@@ -36,9 +36,9 @@ bot.command("server_start", (ctx) => {
 });
 bot.command("server_stop", (ctx) => {
     if (require("./check").checkUser(ctx.message.from.username)){
-        const bds_status = require("../../index").detect()
+        const bds_status = require("../index").detect()
         if (bds_status){
-            require("../../index").stop()
+            require("../index").stop()
             ctx.reply(`O servidor esta parando`)
         } else 
             ctx.reply(`${ctx.message.from.username} o servidor está parado`)
@@ -48,11 +48,11 @@ bot.command("server_stop", (ctx) => {
     };
 });
 bot.command("command", (ctx) =>{
-    const bds_command = require("../../index").command
+    const bds_command = require("../index").command
     var command = ctx.message.text.replace("/command ", "");
     console.log(`Comandos para o servidor foram recebidos: ${command}`)
     const fs = require("fs");
-    const bds = require("../../index");
+    const bds = require("../index");
     const detect_log_file = fs.existsSync(bds.log_file);
     bds_command(command)
     if (detect_log_file){
@@ -67,9 +67,9 @@ bot.command("command", (ctx) =>{
     }
 });
 bot.command("list", (ctx) =>{
-    const bds_command = require("../../index").command
+    const bds_command = require("../index").command
     const fs = require("fs");
-    const bds = require("../../index");
+    const bds = require("../index");
     const detect_log_file = fs.existsSync(bds.log_file);
     bds_command("list")
     if (detect_log_file){
@@ -92,7 +92,7 @@ const text = `[Minecraft for Android 1.16.201.01](https://storage.googleapis.com
 ctx.replyWithMarkdown(text)
 });
 bot.command("status", (ctx) =>{
-const bds = require("../../index")
+const bds = require("../index")
 const text = `Bds CPU usage: ${bds.bds_cpu}%, Total CPU utilization: ${bds.current_cpu}%
 
 Total ram memory: ${bds.ram_total} GB, Total free ram memory: ${bds.ram_free} GB
@@ -100,7 +100,7 @@ Total ram memory: ${bds.ram_total} GB, Total free ram memory: ${bds.ram_free} GB
 ctx.replyWithMarkdown(text)
 });
 bot.command("log", (ctx) => {
-    const file_log_path = require("../../index").log_file;
+    const file_log_path = require("../index").log_file;
     const fs = require("fs")
     if (fs.existsSync(file_log_path)){
         const text = fs.readFileSync(file_log_path, "utf8")

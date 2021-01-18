@@ -73,52 +73,13 @@ if (process.platform == "win32") {
         console.warn(`Temporary Storages, some functions will be lost after restarting the system`)
         var cache_dir = `/tmp/bds_tmp_configs`;
     }
-    let file = path.join(home, ".config", "user-dirs.dirs")
-    let data = {}
-    if(fs.existsSync(file)){
-        let content = fs.readFileSync(file,"utf8")
-        let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"))
-        for(let line of lines){
-            let i = line.indexOf("=")
-            if(i >= 0){
-                try{
-                    data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))
-                }catch(e){}
-            }
-        }
-    }
-    // one day will be in the documents XDG_DOCUMENTS_DIR
-    if(data["XDG_DESKTOP_DIR"]){
-        var desktop = data["XDG_DESKTOP_DIR"]
-        desktop = desktop.replace(/\$([A-Za-z\-\_]+)|\$\{([^\{^\}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))
-    }else{
-        var desktop = "/tmp"
-    }
+    var file = path.join(home, ".config", "user-dirs.dirs");var data = {};
+    if(fs.existsSync(file)){let content = fs.readFileSync(file,"utf8");let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));for(let line of lines){let i = line.indexOf("=");if(i >= 0){try{data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))}catch(e){}}}};if(data["XDG_DESKTOP_DIR"]){var desktop = data["XDG_DESKTOP_DIR"];desktop = desktop.replace(/\$([A-Za-z\-\_]+)|\$\{([^\{^\}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))}else{var desktop = "/tmp"}
     var log_dir = path.join(bds_dir, "log")
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
     var tmp = `/tmp`
     var system = `linux`;
-} else if (process.platform == "android") {
-    if (process.env.ANDROID_IGNORE !== undefined){
-        var home = `/data/data/com.temux/files/home`;
-        var bds_dir = path.join(home, "bds_Server");
-        if (fs.existsSync(package_root)){
-            var cache_dir = path.join(home, ".config", require(package_root).name);
-        } else {
-            console.warn(`Temporary Storages, some functions will be lost after restarting the system`)
-            var cache_dir = `/tmp/bds_tmp_configs`;
-        }
-        var log_dir = path.join(bds_dir, "log")
-        var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
-        var log_date = `${date()}`
-        var tmp = `/tmp`
-        var system = `linux`;
-    } else {
-        require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-android-users")
-        console.error("Android is not yet supported by bds manager")
-        process.exit(2007)
-    }
 } else if (process.platform == "darwin") {
     require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
     console.error("Please use Windows or Linux MacOS Not yet supported")
@@ -153,88 +114,34 @@ if (fs.existsSync(log_dir)){
     };
 };
 // e
-if (require("fs").existsSync(`${bds_dir}/telegram_token.txt`)){
-    module.exports.token = require("fs").readFileSync(`${bds_dir}/telegram_token.txt`, "utf8").replaceAll("\n", "");
-} else {
-    module.exports.token = undefined;
-}
+if (require("fs").existsSync(`${bds_dir}/telegram_token.txt`)){module.exports.token = require("fs").readFileSync(`${bds_dir}/telegram_token.txt`, "utf8").replaceAll("\n", "");} else {module.exports.token = undefined;}
 
 // Depacretd function
-module.exports.Storage = () => {
-    var localStorage = require("node-localstorage").localStorage;
-    return new localStorage(`${cache_dir}/Local_Storage`)();
-};
+module.exports.Storage = () => {var localStorage = require("node-localstorage").localStorage;return new localStorage(`${cache_dir}/Local_Storage`)();}
 
-module.exports.telegram_token_save = (token) =>{
-    fs.writeFileSync(`${bds_dir}/telegram_token.txt`, token)
-    return "OK"
-}
+module.exports.telegram_token_save = (token) =>{fs.writeFileSync(`${bds_dir}/telegram_token.txt`, token);return "OK"}
+if (typeof fetch === "undefined"){global.fetch = require("node-fetch")}
 
-// Set commands
-if (typeof fetch === "undefined"){
-    global.fetch = require("node-fetch")
-}
+if (typeof localStorage === "undefined"){var localStorageS = require("node-localstorage").LocalStorage;global.localStorage = new localStorageS(`${cache_dir}/Local_Storage`);}
+if (process.env.JAVA_ENABLE !== undefined){localStorage.setItem('bds_edititon', 'java');}else{localStorage.setItem('bds_edititon', 'bedrock');}
 
-if (typeof localStorage === "undefined"){
-    var localStorageS = require("node-localstorage").LocalStorage;
-    global.localStorage = new localStorageS(`${cache_dir}/Local_Storage`);
-}
-
-
-if (process.env.JAVA_ENABLE !== undefined)
-    localStorage.setItem('bds_edititon', 'java');
-else
-    localStorage.setItem('bds_edititon', 'bedrock');
-
-if (process.env.BDS_MONI == blanks){
-    process.env.BDS_MONI = "false"
-}
-// process.env.BDS_MONI
-if (process.env.ENABLE_BDS_API == blanks){
-    process.env.ENABLE_BDS_API = "false"
-}
-// process.env.ENABLE_BDS_API
+if (process.env.BDS_MONI == blanks){process.env.BDS_MONI = "false"}
+if (process.env.ENABLE_BDS_API == blanks){process.env.ENABLE_BDS_API = "false"}
 
 
 // Fetchs
 fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").then(response => response.text()).then(gd_cre => {
     module.exports.google_drive_credential = gd_cre
-    module.exports.drive_backup = require("./bedrock/drive/auth").drive_backup
-    module.exports.mcpe_file = require("./bedrock/drive/auth").mcpe
+    module.exports.drive_backup = require("./global/auth").drive_backup
+    module.exports.mcpe_file = require("./global/auth").mcpe
 });
-fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(rawOUT => {
-    const versions = Object.getOwnPropertyNames(rawOUT.bedrock)
-    for (let v in versions){
-        var html = `${versions[v]}`;
-        var out = `${out}\n <option value=\"${html}\">${html}</option>`;
-        v++;
-    };
-    module.exports.version_select = out.replaceAll(undefined, "");
-    module.exports.version_raw = Object.getOwnPropertyNames(rawOUT.bedrock);
-    module.exports.bds_latest = rawOUT.bedrock_lateste;
-    const enable_api = process.env.ENABLE_BDS_API.includes("true")
-    if (enable_api){
-        if (typeof bds_api_start === "undefined"){
-            require("./API/api")()
-            require("./API/log")()
-            require("./API/remote_access")()
-        } else {
-            console.log(`API already started`)
-        }
-    } else {
-        console.warn(`The API via http is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html`)
-    }
-    
-    module.exports.get_version = (type) => {
-        if (type == "raw")
-            return rawOUT.Versions;
-        else
-            return out.replaceAll(undefined, "");
-    }
+fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(rawOUT => {const versions = Object.getOwnPropertyNames(rawOUT.bedrock);for (let v in versions){var html = `${versions[v]}`;var out = `${out}\n <option value=\"${html}\">${html}</option>`;v++;};
+    module.exports.version_select = out.replaceAll(undefined, "");module.exports.version_raw = Object.getOwnPropertyNames(rawOUT.bedrock);module.exports.bds_latest = rawOUT.bedrock_lateste;
+    const enable_api = process.env.ENABLE_BDS_API.includes("true");if (enable_api){if (typeof bds_api_start === "undefined"){require("./API/api")();require("./API/log")();require("./API/remote_access")()} else {console.log(`API already started`)}} else {console.warn(`The API via http is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html`)}
+    module.exports.get_version = (type) => {if (type == "raw")return rawOUT.Versions; else return out.replaceAll(undefined, "");}
 })
 // Fetchs
 
-// 
 // Module export
 /* Variaveis */
 
@@ -244,7 +151,7 @@ module.exports.system = system
 module.exports.bds_dir = bds_dir
 module.exports.bds_dir_bedrock = bds_dir_bedrock
 module.exports.bds_dir_java = bds_dir_java
-module.exports.world_dir = path.join(bds_dir, "worlds")
+
 module.exports.tmp_dir = tmp
 module.exports.electron = electron_de
 module.exports.api_dir = cache_dir
@@ -252,80 +159,36 @@ module.exports.log_file = log_file
 module.exports.log_date = log_date
 module.exports.arch = archi
 
-/* Commands server */
-module.exports.detect = require("./bedrock/detect_bds").bds_detect
-module.exports.telegram = require("./bedrock/telegram/telegram_bot")
-module.exports.start = require("./bedrock/start").Server_start
-module.exports.stop = require("./bedrock/stop").Server_stop
-module.exports.date = date
-module.exports.command = require("./bedrock/command").command
-module.exports.backup = require("./bedrock/backup").World_BAckup
-module.exports.kill = require("./bedrock/kill").bds_kill
-module.exports.version_Download = require("./bedrock/download")
-module.exports.set_config = require("./bedrock/bds_settings").config
-module.exports.get_config = require("./bedrock/bds_settings").get_config
-module.exports.config_example = require("./bedrock/bds_settings").config_example
-module.exports.token_register = () => {
-    if (!(fs.existsSync(path.join(bds_dir, "bds_tokens.json")))){
-        fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), "[]")
-    }
-    require("crypto").randomBytes(10, function(err, buffer) {
-        var token = buffer.toString("hex");
-        console.log(token)
-        var QRCode = require("qrcode")
-        QRCode.toString(token, function (err, url) {
-            fs.readFile(path.join(bds_dir, "bds_tokens.json"), "utf8", function (err, data){
-                if (err){
-                    console.log(err);
-                } else {
-                obj = JSON.parse(data); //now it an object
-                var count = Object.keys(obj).length
-                var teste = {count, token}
-                obj.push(teste); //add some data
-                json = JSON.stringify(obj); //convert it back to json
-                fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), json, "utf8"); // write it back 
-            }});
-        })
-    });
-}
-const bds_monitor = process.env.BDS_MONI.includes("true")
-if (bds_monitor){
-    const si = require("systeminformation");
-    setInterval(() => {
-        // si.cpu().then(data => {module.exports.cpu_speed = Math.trunc(data.speed)})
-        si.mem().then(data => {
-            module.exports.ram_free = Math.trunc(data.free / 1024 / 1024 / 1024);
-            module.exports.ram_total = Math.trunc(data.total / 1024 / 1024 / 1024);
-        })
-        si.currentLoad().then(data => {
-            module.exports.current_cpu = Math.trunc(data.currentload)
-        })
 
-    }, 1000);
-    si.processes().then(data => {
-        const list = data.list
-        for (let pid in list) {
-            var pids = list[pid].command
-            if (pids.includes("bedrock_server")){
-                module.exports.bds_cpu = Math.trunc(list[pid].pcpu)
-            } else {
-                pid++
-            }
-        }
-    })
-    setInterval(() => {
-        si.processes().then(data => {
-            const list = data.list
-            for (let pid in list) {
-                var pids = list[pid].command
-                if (pids.includes("bedrock_server")){
-                    module.exports.bds_cpu = Math.trunc(list[pid].pcpu)
-                } else {
-                    pid++
-                }
-            }
-        })
-    }, 3000);
-}else {
-    console.warn(`the use of cpu is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html`)
+// Global commands
+module.exports.telegram = require("./global/telegram_bot")
+module.exports.token_register = () => {if (!(fs.existsSync(path.join(bds_dir, "bds_tokens.json")))){fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), "[]")};require("crypto").randomBytes(10, function(err, buffer) {var token = buffer.toString("hex");console.log(token);var QRCode = require("qrcode");QRCode.toString(token, function (err, url) {fs.readFile(path.join(bds_dir, "bds_tokens.json"), "utf8", function (err, data){if (err){console.log(err);} else {obj = JSON.parse(data);var count = Object.keys(obj).length;var teste = {count, token};obj.push(teste);json = JSON.stringify(obj);fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), json, "utf8");}});})});}
+module.exports.date = date
+module.exports.command = require("./global/command").command
+
+
+// Platform selection in the most primitive way
+const plataforma = '';
+if (plataforma === 'bedrock'){
+    module.exports.detect = require("./bedrock/detect_bds").bds_detect
+    module.exports.start = require("./bedrock/start").Server_start
+    module.exports.stop = require("./bedrock/stop").Server_stop
+    module.exports.backup = require("./bedrock/backup").World_BAckup
+    module.exports.kill = require("./bedrock/kill").bds_kill
+    module.exports.version_Download = require("./bedrock/download")
+    module.exports.set_config = require("./bedrock/bds_settings").config
+    module.exports.get_config = require("./bedrock/bds_settings").get_config
+    module.exports.config_example = require("./bedrock/bds_settings").config_example
+    module.exports.world_dir = path.join(bds_dir, "worlds")
+} else {
+    module.exports.detect = require("./java/detect_bds").bds_detect
+    module.exports.start = require("./java/start").Server_start
+    module.exports.stop = require("./java/stop").Server_stop
+    module.exports.backup = require("./java/backup").World_BAckup
+    module.exports.kill = require("./java/kill").bds_kill
+    module.exports.version_Download = require("./java/download")
+    module.exports.set_config = require("./java/bds_settings").config
+    module.exports.get_config = require("./java/bds_settings").get_config
+    module.exports.config_example = require("./java/bds_settings").config_example
+    module.exports.world_dir = path.join(bds_dir, "worlds")
 }
