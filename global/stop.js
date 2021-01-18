@@ -10,8 +10,5 @@ module.exports.Server_stop = () => {
             };
         });
     };
-    if (require("./detect_bds").bds_detect())
-        return false
-    else
-        return true
+    return
 }

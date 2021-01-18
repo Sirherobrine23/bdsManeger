@@ -44,17 +44,10 @@ const package_root = path.join(process.cwd(), "package.json")
 if (process.platform == "win32") {
     var home = process.env.USERPROFILE;
     var desktop = path.join(home, "Desktop")
-    // Server directories
     var bds_dir = path.join(home, `bds_Server`);
     var bds_dir_bedrock = path.join(home, `bds_Server`, 'bedrock');
     var bds_dir_java = path.join(home, `bds_Server`, 'java');
-    
-    if (fs.existsSync(package_root)){
-        var cache_dir = path.join(home, "AppData", "Roaming", require(package_root).name)
-    } else {
-        console.warn(`Temporary Storages, some functions will be lost after restarting the system`)
-        var cache_dir = path.join(process.env.TMP, `bds_tmp_configs`);
-    }
+    if (fs.existsSync(package_root)){var cache_dir = path.join(home, "AppData", "Roaming", require(package_root).name)} else {console.warn(`Temporary Storages, some functions will be lost after restarting the system`);var cache_dir = path.join(process.env.TMP, `bds_tmp_configs`);}
     var log_dir = path.join(bds_dir, "log")
     var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
     var log_date = `${date()}`
@@ -62,24 +55,13 @@ if (process.platform == "win32") {
     var system = `windows`;
 } else if (process.platform == "linux") {
     var home = process.env.HOME;
-    // Server directories
     var bds_dir = path.join(home, "bds_Server");
     var bds_dir_bedrock = path.join(home, `bds_Server`, 'bedrock');
     var bds_dir_java = path.join(home, `bds_Server`, 'java');
-
-    if (fs.existsSync(package_root)){
-        var cache_dir = path.join(home, ".config", require(package_root).name);
-    } else {
-        console.warn(`Temporary Storages, some functions will be lost after restarting the system`)
-        var cache_dir = `/tmp/bds_tmp_configs`;
-    }
+    if (fs.existsSync(package_root)){var cache_dir = path.join(home, ".config", require(package_root).name);} else {console.warn(`Temporary Storages, some functions will be lost after restarting the system`);var cache_dir = `/tmp/bds_tmp_configs`;}
     var file = path.join(home, ".config", "user-dirs.dirs");var data = {};
-    if(fs.existsSync(file)){let content = fs.readFileSync(file,"utf8");let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));for(let line of lines){let i = line.indexOf("=");if(i >= 0){try{data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))}catch(e){}}}};if(data["XDG_DESKTOP_DIR"]){var desktop = data["XDG_DESKTOP_DIR"];desktop = desktop.replace(/\$([A-Za-z\-\_]+)|\$\{([^\{^\}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))}else{var desktop = "/tmp"}
-    var log_dir = path.join(bds_dir, "log")
-    var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
-    var log_date = `${date()}`
-    var tmp = `/tmp`
-    var system = `linux`;
+    if (fs.existsSync(file)){let content = fs.readFileSync(file,"utf8");let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));for(let line of lines){let i = line.indexOf("=");if(i >= 0){try{data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))}catch(e){}}}};if(data["XDG_DESKTOP_DIR"]){var desktop = data["XDG_DESKTOP_DIR"];desktop = desktop.replace(/\$([A-Za-z\-\_]+)|\$\{([^\{^\}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))}else{var desktop = "/tmp"}
+    var log_dir = path.join(bds_dir, "log");var log_file = path.join(log_dir, `${date()}_Bds_log.log`);var log_date = `${date()}`;var tmp = `/tmp`;var system = `linux`;
 } else if (process.platform == "darwin") {
     require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
     console.error("Please use Windows or Linux MacOS Not yet supported")
@@ -165,14 +147,24 @@ module.exports.telegram = require("./global/telegram_bot")
 module.exports.token_register = () => {if (!(fs.existsSync(path.join(bds_dir, "bds_tokens.json")))){fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), "[]")};require("crypto").randomBytes(10, function(err, buffer) {var token = buffer.toString("hex");console.log(token);var QRCode = require("qrcode");QRCode.toString(token, function (err, url) {fs.readFile(path.join(bds_dir, "bds_tokens.json"), "utf8", function (err, data){if (err){console.log(err);} else {obj = JSON.parse(data);var count = Object.keys(obj).length;var teste = {count, token};obj.push(teste);json = JSON.stringify(obj);fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), json, "utf8");}});})});}
 module.exports.date = date
 module.exports.command = require("./global/command").command
+module.exports.stop = require("./global/stop").Server_stop
 
+const bds_config_file = path.join(bds_dir, "bds_config.json")
+if (fs.existsSync(bds_config_file)){
+    var bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf-8"))
+} else {
+    const _config = `{"bds_platform": "bedrock"}`
+    // fs.writeFileSync(_config, bds_config_file)
+    fs.writeFileSync(bds_config_file,_config)
+    var bds_config = JSON.parse(_config)
+}
 
 // Platform selection in the most primitive way
-const plataforma = '';
+const plataforma = bds_config.bds_platform;
 if (plataforma === 'bedrock'){
+    module.exports.bds_plataform = `bedrock`
     module.exports.detect = require("./bedrock/detect_bds").bds_detect
     module.exports.start = require("./bedrock/start").Server_start
-    module.exports.stop = require("./bedrock/stop").Server_stop
     module.exports.backup = require("./bedrock/backup").World_BAckup
     module.exports.kill = require("./bedrock/kill").bds_kill
     module.exports.version_Download = require("./bedrock/download")
@@ -181,9 +173,9 @@ if (plataforma === 'bedrock'){
     module.exports.config_example = require("./bedrock/bds_settings").config_example
     module.exports.world_dir = path.join(bds_dir, "worlds")
 } else {
+    module.exports.bds_plataform = `java`
     module.exports.detect = require("./java/detect_bds").bds_detect
     module.exports.start = require("./java/start").Server_start
-    module.exports.stop = require("./java/stop").Server_stop
     module.exports.backup = require("./java/backup").World_BAckup
     module.exports.kill = require("./java/kill").bds_kill
     module.exports.version_Download = require("./java/download")

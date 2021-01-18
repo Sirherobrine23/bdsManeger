@@ -11,3 +11,13 @@ Alpha version, testing and quality:
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/alerts/) [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/context:javascript)
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/4d19af8fe5b146608a8f4a5e2092f66d)](https://www.codacy.com/gh/Bds-Maneger/bds_maneger_api/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Bds-Maneger/bds_maneger_api&amp;utm_campaign=Badge_Grade)
+
+# A simple module for NodeJS
+
+This module was made to work both in the cli version and in gui versions like electron.
+
+some deven ports are unlocked by the firewall if enabled:
+
+- 28574
+- 1932
+- 6565

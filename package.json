@@ -24,7 +24,7 @@
   "bugs": {
     "url": "https://github.com/Bds-Maneger/bds_maneger_api/issues"
   },
-  "homepage": "https://github.com/Bds-Maneger/bds_maneger_api#readme",
+  "homepage": "https://docs.srherobrine23.com/bds-maneger-api_whatis.html",
   "dependencies": {
     "adm-zip": "^0.5.1",
     "body-parser": "^1.19.0",

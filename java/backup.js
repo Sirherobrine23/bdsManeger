@@ -37,7 +37,7 @@ module.exports.World_BAckup = () => {
 
 module.exports.Drive_backup = () => {
     if (require("./detect_bds").bds_detect()){
-        require("./stop").Server_stop()
+        require("../global/stop").Server_stop()
     }
     const bds = require("../index");
     const path = require("path");

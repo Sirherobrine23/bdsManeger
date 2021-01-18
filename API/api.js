@@ -31,14 +31,18 @@ module.exports = () => {
         };
         const config = bds.get_config()
         var json_http = {
+            "server": {
+                "bds_version": log_version,
+                "port": config.server_port,
+                "port6": config.server_portv6,
+                "world_name": config.level_name,
+                "whitelist": config.white_list,
+                "xbox": config.online_mode,
+                "max_players": config.max_players
+            },
             "running": bds.detect(),
-            "bds_version": log_version,
-            "port": config.server_port,
-            "port6": config.server_portv6,
-            "world_name": config.level_name,
-            "whitelist": config.white_list,
-            "xbox": config.online_mode,
-            "max_players": config.max_players
+            "bds_platform": bds.bds_plataform,
+            "system_arch": process.arch
         }
         return res.send(json_http);
     });
@@ -47,37 +51,12 @@ module.exports = () => {
             "info": "/info",
             "Bds Commnd": "/bds_command (POST)",
             "Log": "/log",
-            "bds_maneger_API_version": require("../package.json").version,
-            "app_version": require(process.cwd()+"/package.json").version
+            "bds_maneger_API_version": require("../package.json").version
         });
     });
     const bodyParser = require("body-parser");
     app.use(bodyParser.urlencoded({ extended: true }));
-    app.post("/bds_command", (req, res) => {
-        const body = req.body
-        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
-        var pass = false;
-        for (let token_verify in tokens) {
-            const element = tokens[token_verify].token;
-            // req.connection.remoteAddress
-            if (body.token == element){pass = true} else {token_verify++}
-        }
-        if (pass){
-            const command = body.command
-            const teste = bds.command(command)
-            res.send({
-                "status": 200,
-                "command": body.command,
-                "log": teste,
-                "message": `authorized to ${body.token}`
-            })
-        } else {
-            res.send({
-                "status": 401,
-                "message": "not authorized"
-            })
-        }
-    });
+    
     const http_port = "1932"
     app.listen(http_port);
 }
