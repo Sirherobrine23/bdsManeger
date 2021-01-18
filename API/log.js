@@ -12,7 +12,7 @@ module.exports = () => {
             var text = 'The server is stopped';
             var sucess = false
         } else {
-            var text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf-8")
+            var text = bds_log_string
             var sucess = true
         }
         res.json({
