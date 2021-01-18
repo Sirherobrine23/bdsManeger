@@ -39,6 +39,16 @@ jobs:
           exit 1
           fi
 
+      - name: Check Latest
+        run: |
+          sudo apt install jq -y
+          latest="$(npm show bds_maneger_api version)"
+          package_version="$(cat package.json| jq .version)"
+          if [ $package_version == $latest ];then
+          echo "This version has already been published"
+          exit 1
+          fi
+
       - name: Publish
         run: npm publish
         env:

@@ -1,3 +1,5 @@
+console.log(`Running the Bds Maneger API in version ${require(__dirname+"/package.json").version}`)
+let blanks;
 function date(fu) {
     var today = new Date();
     if (fu == "year")
@@ -15,6 +17,15 @@ if (process.argv[0].includes("electron")){
     var electron_de = true;
 } else if (process.argv[0].includes("node")){
     var electron_de = undefined;
+    if (process.env.BDS_MONI == blanks){
+        process.env.BDS_MONI = true
+    }
+    // process.env.BDS_MONI
+    if (process.env.ENABLE_BDS_API == blanks){
+        process.env.ENABLE_BDS_API = true
+    }
+    // process.env.ENABLE_BDS_API
+
 } else {
     var electron_de = false;
 }
@@ -175,8 +186,6 @@ if (process.env.JAVA_ENABLE !== undefined)
 else
     localStorage.setItem('bds_edititon', 'bedrock');
 
-
-let blanks;
 if (process.env.BDS_MONI == blanks){
     process.env.BDS_MONI = "false"
 }
@@ -206,7 +215,9 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
     const enable_api = process.env.ENABLE_BDS_API.includes("true")
     if (enable_api){
         if (typeof bds_api_start === "undefined"){
-            module.exports.api = require("./API/api")()
+            require("./API/api")()
+            require("./API/log")()
+            require("./API/remote_access")()
         } else {
             console.log(`API already started`)
         }

@@ -7,7 +7,18 @@ module.exports = () => {
     var cors = require('cors');
     const path = require("path")
     const bodyParser = require("body-parser");
+    const rateLimit = require("express-rate-limit");
+
+    // Enable if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
+    // see https://expressjs.com/en/guide/behind-proxies.html
+    // app.set('trust proxy', 1);
+
+    const limiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100 // limit each IP to 100 requests per windowMs
+    });
     app.use(cors());
+    app.use(limiter);
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(require("body-parser").json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.post("/info", (req, res) => {

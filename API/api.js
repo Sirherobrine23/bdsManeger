@@ -6,8 +6,19 @@ module.exports = () => {
     const app = express();
     const path = require("path")
     var cors = require('cors');
+    const rateLimit = require("express-rate-limit");
+
+    // Enable if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
+    // see https://expressjs.com/en/guide/behind-proxies.html
+    // app.set('trust proxy', 1);
+
+    const limiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100 // limit each IP to 100 requests per windowMs
+    });
     app.use(cors());
     app.use(require("body-parser").json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
+    app.use(limiter);
     app.get("/info", (req, res) => {
         const text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf8");
         const versions = bds.version_raw
@@ -38,21 +49,6 @@ module.exports = () => {
             "Log": "/log",
             "bds_maneger_API_version": require("../package.json").version,
             "app_version": require(process.cwd()+"/package.json").version
-        });
-    });
-    app.get("/log", function(req, res) {
-        if (typeof bds_log_string === 'undefined'){
-            var text = 'The server is stopped';
-            var sucess = false
-        } else {
-            var text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf-8")
-            var sucess = true
-        } 
-        res.json({
-            "sucess": sucess,
-            "log": text,
-            "log_file": localStorage.getItem("old_log_file"),
-            "requeset_date": bds.date()
         });
     });
     const bodyParser = require("body-parser");
