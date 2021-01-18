@@ -1,10 +1,9 @@
 module.exports = () => {
-    global.bds_api_start = true
+    global.bds_log_api_start = true
     const express = require("express");
     const bds = require("../index");
     const fs = require("fs");
     const app = express();
-    const path = require("path")
     var cors = require('cors');
     app.use(cors());
     app.use(require("body-parser").json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
@@ -15,7 +14,7 @@ module.exports = () => {
         } else {
             var text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf-8")
             var sucess = true
-        } 
+        }
         res.json({
             "sucess": sucess,
             "log": text,
@@ -23,6 +22,6 @@ module.exports = () => {
             "requeset_date": bds.date()
         });
     });
-    const http_port = "65652"
+    const http_port = "6565"
     app.listen(http_port);
 }

@@ -71,7 +71,6 @@ module.exports = () => {
                 "log": teste,
                 "message": `authorized to ${body.token}`
             })
-
         } else {
             res.send({
                 "status": 401,
