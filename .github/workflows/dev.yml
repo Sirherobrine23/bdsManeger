@@ -45,7 +45,7 @@ jobs:
         run: |
           id_run1=$(echo ${{ github.run_id }} |cut -b 1-2)
           id_run2=$(echo ${{ github.run_id }} |cut -b 3-6)
-          id_run2=$(echo ${{ github.run_id }} |cut -b 7-)
+          id_run3=$(echo ${{ github.run_id }} |cut -b 7-)
           old="$(cat package.json |grep "version"|head -1)"
           new_version="$id_run1.$id_run2.$id_run3"
           sed "s|$old|\"version\": \"$new_version\",|g" package.json > package2.json
