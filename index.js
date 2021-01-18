@@ -199,8 +199,8 @@ if (process.env.ENABLE_BDS_API == blanks){
 // Fetchs
 fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").then(response => response.text()).then(gd_cre => {
     module.exports.google_drive_credential = gd_cre
-    module.exports.drive_backup = require("./Services/drive/auth").drive_backup
-    module.exports.mcpe_file = require("./Services/drive/auth").mcpe
+    module.exports.drive_backup = require("./bedrock/drive/auth").drive_backup
+    module.exports.mcpe_file = require("./bedrock/drive/auth").mcpe
 });
 fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(rawOUT => {
     const versions = Object.getOwnPropertyNames(rawOUT.bedrock)
@@ -253,18 +253,18 @@ module.exports.log_date = log_date
 module.exports.arch = archi
 
 /* Commands server */
-module.exports.detect = require("./Services/detect_bds").bds_detect
-module.exports.telegram = require("./Services/telegram/telegram_bot")
-module.exports.start = require("./Services/start").Server_start
-module.exports.stop = require("./Services/stop").Server_stop
+module.exports.detect = require("./bedrock/detect_bds").bds_detect
+module.exports.telegram = require("./bedrock/telegram/telegram_bot")
+module.exports.start = require("./bedrock/start").Server_start
+module.exports.stop = require("./bedrock/stop").Server_stop
 module.exports.date = date
-module.exports.command = require("./Services/command").command
-module.exports.backup = require("./Services/backup").World_BAckup
-module.exports.kill = require("./Services/kill").bds_kill
-module.exports.version_Download = require("./Services/download")
-module.exports.set_config = require("./Services/bds_settings").config
-module.exports.get_config = require("./Services/bds_settings").get_config
-module.exports.config_example = require("./Services/bds_settings").config_example
+module.exports.command = require("./bedrock/command").command
+module.exports.backup = require("./bedrock/backup").World_BAckup
+module.exports.kill = require("./bedrock/kill").bds_kill
+module.exports.version_Download = require("./bedrock/download")
+module.exports.set_config = require("./bedrock/bds_settings").config
+module.exports.get_config = require("./bedrock/bds_settings").get_config
+module.exports.config_example = require("./bedrock/bds_settings").config_example
 module.exports.token_register = () => {
     if (!(fs.existsSync(path.join(bds_dir, "bds_tokens.json")))){
         fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), "[]")
