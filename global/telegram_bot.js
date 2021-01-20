@@ -91,14 +91,37 @@ const text = `[Minecraft for Android 1.16.201.01](https://storage.googleapis.com
 `
 ctx.replyWithMarkdown(text)
 });
-bot.command("status", (ctx) =>{
-const bds = require("../index")
-const text = `Bds CPU usage: ${bds.bds_cpu}%, Total CPU utilization: ${bds.current_cpu}%
-
-Total ram memory: ${bds.ram_total} GB, Total free ram memory: ${bds.ram_free} GB
-`
-ctx.replyWithMarkdown(text)
-});
+// bot.command("status", (ctx) =>{
+// const si = require("systeminformation");
+//         // si.cpu().then(data => {module.exports.cpu_speed = Math.trunc(data.speed)})
+//     si.mem().then(data => {
+//         global.ram_free = Math.trunc(data.free / 1024 / 1024 / 1024);
+//         global.ram_total = Math.trunc(data.total / 1024 / 1024 / 1024);
+//         si.currentLoad().then(data => {
+//             global.current_cpu = Math.trunc(data.currentload)
+//             si.processes().then(data => {
+//                 const list = data.list
+//                 for (let pid in list) {
+//                     var pids = list[pid].command
+//                     if (pids.includes("bedrock_server")){global.bds_cpu = Math.trunc(list[pid].pcpu)} else if (pids.includes("server.jar")){global.bds_cpu = Math.trunc(list[pid].pcpu)} else {pid++}
+//                 }
+//                 si.processes().then(data => {
+//                     const list = data.list
+//                     for (let pid in list) {
+//                         var pids = list[pid].command
+//                         if (pids.includes("bedrock_server")){global.bds_cpu = Math.trunc(list[pid].pcpu)} else {pid++}
+//                     }
+//                     const text = `Bds CPU usage: ${bds_cpu}%, Total CPU utilization: ${current_cpu}%\n\n\nTotal ram memory: ${ram_total} GB, Total free ram memory: ${ram_free} GB`
+//                     ctx.replyWithMarkdown(text);
+//                     delete(bds_cpu);
+//                     delete(current_cpu);
+//                     delete(ram_total);
+//                     delete(ram_free);
+//                 })
+//             })
+//         })
+//     })
+// });
 bot.command("log", (ctx) => {
     const file_log_path = require("../index").log_file;
     const fs = require("fs")
