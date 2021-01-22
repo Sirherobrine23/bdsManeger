@@ -49,39 +49,42 @@ module.exports = () => {
             })
         }
     });
-    app.post("/bds/:command", (req, res) => {
+    app.get("/bds/:command", (req, res) => {
         const body = req.body
         const command_bds = '';
         const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
         var pass = false;
-        for (let token_verify in tokens) {const element = tokens[token_verify].token;if (body.token == element){pass = true} else {token_verify++}}
-        if (pass){
-            if (command_bds === 'start'){
-                var bds_init = bds.start()
-                var command_status = `Bds Started`
-            } else if (command_bds === 'stop'){
-                bds.stop()
-                var command_status = `Stopping the bds server`
-            } else if (command_bds === 'reload'){
-                const bds_status = bds.detect()
-                if (bds_detect){
-                    bds.stop()
-                }
-                var bds_init = bds.start()
-                var command_status = `Reloading`
-            } else {
-                var command_status = `no command identified`
-            }
-            res.send({
-                "status": 200,
-                "bds_status": command_status
-            })
-        } else {
-            res.send({
-                "status": 401,
-                "message": `Not authorized: ${body.token}`
-            })
-        }
+        res.send({
+            "command": req.params.command
+        })
+        // for (let token_verify in tokens) {const element = tokens[token_verify].token;if (body.token == element){pass = true} else {token_verify++}}
+        // if (pass){
+        //     if (command_bds === 'start'){
+        //         var bds_init = bds.start()
+        //         var command_status = `Bds Started`
+        //     } else if (command_bds === 'stop'){
+        //         bds.stop()
+        //         var command_status = `Stopping the bds server`
+        //     } else if (command_bds === 'reload'){
+        //         const bds_status = bds.detect()
+        //         if (bds_detect){
+        //             bds.stop()
+        //         }
+        //         var bds_init = bds.start()
+        //         var command_status = `Reloading`
+        //     } else {
+        //         var command_status = `no command identified`
+        //     }
+        //     res.send({
+        //         "status": 200,
+        //         "bds_status": command_status
+        //     })
+        // } else {
+        //     res.send({
+        //         "status": 401,
+        //         "message": `Not authorized: ${body.token}`
+        //     })
+        // }
     });
     app.post("/bds_command", (req, res) => {
         const body = req.body

@@ -1,5 +1,5 @@
 module.exports.World_BAckup = () => {
-    if (require("./detect_bds").bds_detect()){require("./stop").Server_stop()}
+    if (require("./detect_bds").bds_detect()){require("../global/stop").Server_stop()}
     const bds = require('../index')
     if (process.platform == "win32") {
         var today = bds.date()
@@ -14,7 +14,7 @@ module.exports.World_BAckup = () => {
 };
 
 module.exports.Drive_backup = () => {
-    if (require("./detect_bds").bds_detect()){require("./stop").Server_stop()}
+    if (require("./detect_bds").bds_detect()){require("../global/stop").Server_stop()}
     const bds = require("../index");
     const path = require("path");
     var dir_zip = path.join(bds.bds_dir_bedrock, "worlds");

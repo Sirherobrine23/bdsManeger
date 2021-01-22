@@ -56,10 +56,9 @@ bot.command("command", (ctx) =>{
     const detect_log_file = fs.existsSync(bds.log_file);
     bds_command(command)
     if (detect_log_file){
-        const old = fs.readFileSync(bds.log_file, "utf8");
+        const old = bds_log_string;
         setTimeout(() => {
-            var out = fs.readFileSync(bds.log_file, "utf8");
-            var name = out.replace(old, "");
+            var name = bds_log_string.replace(old, "");
             ctx.reply(name)
         }, 1000);   
     } else {
@@ -71,12 +70,11 @@ bot.command("list", (ctx) =>{
     const fs = require("fs");
     const bds = require("../index");
     const detect_log_file = fs.existsSync(bds.log_file);
-    bds_command("list")
     if (detect_log_file){
-        const old = fs.readFileSync(bds.log_file, "utf8");
+        bds_command("list")
+        var old = bds_log_string;
         setTimeout(() => {
-            var out = fs.readFileSync(bds.log_file, "utf8");
-            var name = out.replace(old, "");
+            var name = bds_log_string.replace(old, "");
             ctx.reply(name)
         }, 1000);   
     } else {
@@ -87,7 +85,7 @@ bot.command("mcpe", (ctx) =>{
     // ctx.replyWithHTML(`<a href="https://storage.cloud.google.com/bds_mcpe_files/mcpe.apk">Minecraft for Android 1.16.201.01</a>`)
 const text = `[Minecraft for Android 1.16.201.01](https://storage.googleapis.com/bds_mcpe_files/0.16.201.01.apk)
 
-[Minecraft for IOS](https://apps.apple.com/br/app/minecraft/id479516143)
+Iphone users are not privileged
 `
 ctx.replyWithMarkdown(text)
 });

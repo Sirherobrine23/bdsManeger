@@ -99,7 +99,9 @@ if (fs.existsSync(log_dir)){
 if (require("fs").existsSync(`${bds_dir}/telegram_token.txt`)){module.exports.token = require("fs").readFileSync(`${bds_dir}/telegram_token.txt`, "utf8").replaceAll("\n", "");} else {module.exports.token = undefined;}
 
 // Depacretd function
-module.exports.Storage = () => {var localStorage = require("node-localstorage").localStorage;return new localStorage(`${cache_dir}/Local_Storage`)();}
+// module.exports.Storage = () => {
+//     return new require("node-localstorage").localStorage(`${cache_dir}/Local_Storage`)();
+// }
 
 module.exports.telegram_token_save = (token) =>{fs.writeFileSync(`${bds_dir}/telegram_token.txt`, token);return "OK"}
 if (typeof fetch === "undefined"){global.fetch = require("node-fetch")}
