@@ -38,21 +38,19 @@ module.exports = (Vdown) => {
                 zipEntries.forEach(function(zipEntry) {
                     totalfiles--
                     if (totalfiles === 0){
+                        if (_old){fs.writeFileSync(`${server_DIR}/server.properties`, old1);}
+                        if (_old2){fs.writeFileSync(`${server_DIR}/permissions.json`, old2);}
+                        if (_old3){fs.writeFileSync(`${server_DIR}/whitelist.json`, old3);}
+                        if (_old4){fs.writeFileSync(`${server_DIR}/valid_known_packs.json`, old4);};
                         const docker_exit = process.env.BDS_DOCKER_IMAGE
                         console.log(docker_exit)
-                        if (docker_exit.includes("true")){
+                        if (docker_exit == "true"){
                             console.log(`going out`)
                             process.exit(0)
                         }
                     }   
                 });
                 zip.extractAllTo(server_DIR, true);
-                // Unzip 
-                if (_old){fs.writeFileSync(`${server_DIR}/server.properties`, old1);}
-                if (_old2){fs.writeFileSync(`${server_DIR}/permissions.json`, old2);}
-                if (_old3){fs.writeFileSync(`${server_DIR}/whitelist.json`, old3);}
-                if (_old4){fs.writeFileSync(`${server_DIR}/valid_known_packs.json`, old4);};
-
                 console.log("Downlod Sucess"); // End Unzip
                 localStorage.setItem("Downlaod_sucess", "yes")
             } else {
