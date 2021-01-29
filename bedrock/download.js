@@ -5,10 +5,11 @@ module.exports = (Vdown) => {
         const system = bds.system
         var mine_name = `bedrock.zip`
         var server_DIR = bds.bds_dir_bedrock;
-        if (system === 'linux')
+        if (system === 'linux'){
             var versions_get = versions.bedrock[Vdown].url_linux;
-        else
+        } else {
             var versions_get = versions.bedrock[Vdown].url_windows;
+        }
 
         console.log("Starting download")
         const exec = require("child_process").exec
@@ -32,6 +33,18 @@ module.exports = (Vdown) => {
                 if (fs.existsSync(`${server_DIR}/valid_known_packs.json`)){var _old4 = true;var old4 = fs.readFileSync(`${server_DIR}/valid_known_packs.json`, "utf-8");};
                 // Unzip 
                 var zip = new AdmZip(ZIP_FILE_PATH);
+                var zipEntries = zip.getEntries();
+                var totalfiles = zipEntries.length
+                zipEntries.forEach(function(zipEntry) {
+                    totalfiles--
+                    if (totalfiles === 0){
+                        const docker_exit = process.env.BDS_DOCKER_IMAGE
+                        if (docker_exit.includes("true")){
+                            console.log(`going out`)
+                            process.exit(0)
+                        }
+                    }   
+                });
                 zip.extractAllTo(server_DIR, true);
                 // Unzip 
                 if (_old){fs.writeFileSync(`${server_DIR}/server.properties`, old1);}
