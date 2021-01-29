@@ -39,6 +39,7 @@ module.exports = (Vdown) => {
                     totalfiles--
                     if (totalfiles === 0){
                         const docker_exit = process.env.BDS_DOCKER_IMAGE
+                        console.log(docker_exit)
                         if (docker_exit.includes("true")){
                             console.log(`going out`)
                             process.exit(0)
