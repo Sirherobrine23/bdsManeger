@@ -2,9 +2,6 @@ module.exports = (Vdown) => {
     console.warn("Do not exit BDS Manager")
     const bds = require('../index')
     fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(versions => {
-        console.log(Vdown, config)
-        const mine = config.minecraft
-
         const system = bds.system
         var mine_name = `bedrock.zip`
         var server_DIR = bds.bds_dir_bedrock;
