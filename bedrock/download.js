@@ -16,7 +16,7 @@ module.exports = (Vdown) => {
         var downloadBDSchild = exec(`curl ${versions_get} --output ${mine_name}`, {
             cwd: `${bds.tmp_dir}`
         });
-        var ZIP_FILE_PATH = `${bds.bds_dir}/${mine_name}`;
+        var ZIP_FILE_PATH = `${bds.tmp_dir}/${mine_name}`;
         downloadBDSchild.stdout.on("data", function(data){
             console.log(data)
         })
@@ -31,8 +31,8 @@ module.exports = (Vdown) => {
                 if (fs.existsSync(`${server_DIR}/whitelist.json`)) {var _old3 = true;var old3 = fs.readFileSync(`${server_DIR}/whitelist.json`, "utf-8");}
                 if (fs.existsSync(`${server_DIR}/valid_known_packs.json`)){var _old4 = true;var old4 = fs.readFileSync(`${server_DIR}/valid_known_packs.json`, "utf-8");};
                 // Unzip 
-                var ZIP_FILE_OUTPUT = `${server_DIR}`;var zip = new AdmZip(ZIP_FILE_PATH);
-                zip.extractAllTo(ZIP_FILE_OUTPUT, true);
+                var zip = new AdmZip(ZIP_FILE_PATH);
+                zip.extractAllTo(server_DIR, true);
                 // Unzip 
                 if (_old){fs.writeFileSync(`${server_DIR}/server.properties`, old1);}
                 if (_old2){fs.writeFileSync(`${server_DIR}/permissions.json`, old2);}
