@@ -47,10 +47,12 @@ if (process.platform == "win32") {
     var bds_dir = path.join(home, `bds_Server`);
     var bds_dir_bedrock = path.join(home, `bds_Server`, 'bedrock');
     var bds_dir_java = path.join(home, `bds_Server`, 'java');
-    if (fs.existsSync(package_root)){var cache_dir = path.join(home, "AppData", "Roaming", require(package_root).name)} else {console.warn(`Temporary Storages, some functions will be lost after restarting the system`);var cache_dir = path.join(process.env.TMP, `bds_tmp_configs`);}
-    var log_dir = path.join(bds_dir, "log")
-    var log_file = path.join(log_dir, `${date()}_Bds_log.log`)
-    var log_date = `${date()}`
+    if (fs.existsSync(package_root)){
+        var cache_dir = path.join(home, "AppData", "Roaming", require(package_root).name)
+    } else {
+        console.warn(`Temporary Storages, some functions will be lost after restarting the system`);
+        var cache_dir = path.join(process.env.TMP, `bds_tmp_configs`);
+    }
     var tmp = process.env.TMP
     var system = `windows`;
 } else if (process.platform == "linux") {
@@ -58,10 +60,17 @@ if (process.platform == "win32") {
     var bds_dir = path.join(home, "bds_Server");
     var bds_dir_bedrock = path.join(home, `bds_Server`, 'bedrock');
     var bds_dir_java = path.join(home, `bds_Server`, 'java');
-    if (fs.existsSync(package_root)){var cache_dir = path.join(home, ".config", require(package_root).name);} else {console.warn(`Temporary Storages, some functions will be lost after restarting the system`);var cache_dir = `/tmp/bds_tmp_configs`;}
+    if (fs.existsSync(package_root)){
+        var cache_dir = path.join(home, ".config", require(package_root).name);
+    } else {
+        console.warn(`Temporary Storages, some functions will be lost after restarting the system`);
+        var cache_dir = `/tmp/bds_tmp_configs`;
+    }
     var file = path.join(home, ".config", "user-dirs.dirs");var data = {};
     if (fs.existsSync(file)){let content = fs.readFileSync(file,"utf8");let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));for(let line of lines){let i = line.indexOf("=");if(i >= 0){try{data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))}catch(e){}}}};if(data["XDG_DESKTOP_DIR"]){var desktop = data["XDG_DESKTOP_DIR"];desktop = desktop.replace(/\$([A-Za-z\-\_]+)|\$\{([^\{^\}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))}else{var desktop = "/tmp"}
-    var log_dir = path.join(bds_dir, "log");var log_file = path.join(log_dir, `${date()}_Bds_log.log`);var log_date = `${date()}`;var tmp = `/tmp`;var system = `linux`;
+    
+    var tmp = `/tmp`;
+    var system = `linux`;
 } else if (process.platform == "darwin") {
     require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
     console.error("Please use Windows or Linux MacOS Not yet supported")
@@ -70,7 +79,13 @@ if (process.platform == "win32") {
     console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
     process.exit(2021)
 };
+// ---------
+// ---------
+var log_dir = path.join(bds_dir, "log");
+var log_file = path.join(log_dir, `${date()}_Bds_log.log`);
+var log_date = `${date()}`;
 var shell = require("shelljs");
+
 if (!(fs.existsSync(cache_dir))){
     console.log(`Creating a folder for Storage in ${cache_dir}`);
     shell.mkdir("-p", cache_dir);
@@ -91,8 +106,9 @@ if (!(fs.existsSync(bds_dir_bedrock))){
 // e
 if (fs.existsSync(log_dir)){
     if (!fs.existsSync(log_dir)){
-        console.log("Creating the bds log dir")
-        shell.mkdir("-p", log_dir);
+        console.log(`Creating the bds log dir (${log_dir})`)
+        // shell.mkdir("-p", log_dir)
+        fs.mkdirSync(log_dir)
     };
 };
 // e
