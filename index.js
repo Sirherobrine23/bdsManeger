@@ -104,7 +104,7 @@ if (!(fs.existsSync(bds_dir_bedrock))){
     shell.mkdir("-p", bds_dir_bedrock);
 }
 // e
-if (fs.existsSync(log_dir)){
+if (!fs.existsSync(log_dir)){
     if (!fs.existsSync(log_dir)){
         console.log(`Creating the bds log dir (${log_dir})`)
         // shell.mkdir("-p", log_dir)
