@@ -1,5 +1,3 @@
-const { bds_detect } = require("../bedrock/detect_bds");
-
 module.exports = () => {
     global.bds_api_post_start = true
     const express = require("express");

@@ -3,14 +3,16 @@ const path = require("path")
 const readline = require("readline");
 const {google} = require("googleapis");
 const bds =  require("../index");
-const SCOPES = ["https://www.googleapis.com/auth/drive"];
+const open = require("open")
 const TOKEN_PATH = path.join(bds.bds_dir, "google_token.json");
 
 
 function authorize(credentials, callback) {
-  const {client_secret, client_id, redirect_uris} = credentials.installed;
-  const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0]);
+  const gd = JSON.parse(require("../index").google_drive_credential);
+  const client_secret = gd.installed.client_secret;
+  const client_id = gd.installed.client_id;
+  const redirect_uris = gd.installed.redirect_uris;
+  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 
   fs.readFile(TOKEN_PATH, (err, token) => {
     if (err) return getAccessToken(oAuth2Client, callback);
@@ -20,9 +22,10 @@ function authorize(credentials, callback) {
 function getAccessToken(oAuth2Client, callback) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: SCOPES,
+    scope: ["https://www.googleapis.com/auth/drive"],
   });
   console.log("Authorize this app by visiting this url:", authUrl);
+  open(authUrl)
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -41,24 +44,47 @@ function getAccessToken(oAuth2Client, callback) {
   });
 };
 
-const CREDENTIAL = require("../index").google_drive_credential
-module.exports.drive_backup = (parent_id) => {
+module.exports.drive_backup = () => {
+  const file_json = require("../new_script/backups").Drive_backup()
+  console.log(file_json)
+  const parent_id = file_json.id
+  const path_file = file_json.file_path
+  const name_d = file_json.file_name;
+  
+  const gd_secret = '';
+  console.log(gd_secret)
   function upload_backup(auth) {
-    const bds_backup = require("../backup").Drive_backup();
     const drive = google.drive({version: "v3", auth});
-    if (parent_id == undefined){var fileMetadata = {"name": bds_backup.file_name,};console.log("Your backup will be saved to My Drive")} else {var fileMetadata = {"name": bds_backup.file_name,parents: [parent_id]};};
-    var media = {mimeType: "application/octet-stream",body: fs.createReadStream(bds_backup.file_dir)};
-    drive.files.create({resource: fileMetadata, media: media, fields: "id"}, function (err, file) {
-      if (err) {console.error(err);} else {
-        global.backup_id = file.data.id;
-        console.log("File: ", file.data.id);}
+    if (parent_id === undefined){
+      var fileMetadata = {
+        name: name_d
+      }
+      console.log("Your backup will be saved to My Drive")
+    } else {
+      var fileMetadata = {
+        name: name_d,
+        parents: [parent_id]
+      }
+    };
+    var media = {
+      mimeType: "application/octet-stream",
+      body: fs.createReadStream(path_file)
+    }
+    drive.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: "id"
+    }, function (err, file) {
+      if (err) console.error(err)
+      else {global.backup_id = file.data.id;console.log("File: ", file.data.id);}
     });
   }
-  return authorize(JSON.parse(CREDENTIAL), upload_backup);
+  return authorize(gd_secret, upload_backup);
   // End Upload Backup
 };
 
 module.exports.mcpe = () => {
+  const gd_secret = JSON.parse(require("../index").google_drive_credential)
   global.mcpe_file_end = false;
   function download_mcpe(auth) {
       const drive = google.drive({version: "v3", auth});
@@ -76,5 +102,5 @@ module.exports.mcpe = () => {
           if (process.stdout.isTTY) {process.stdout.clearLine();process.stdout.cursorTo(0);process.stdout.write(`Downloaded ${Math.trunc(progress)} Mbytes`);}
       }).pipe(dest)});
   };
-  return authorize(JSON.parse(CREDENTIAL), download_mcpe);
+  return authorize(gd_secret, download_mcpe);
 }
