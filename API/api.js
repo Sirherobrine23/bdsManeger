@@ -61,6 +61,9 @@ module.exports = () => {
             return res.send(themes_json);
         });
     });
+    app.get("/bds_dirs/", (req, res) => {
+      return res.send(fs.readdirSync(bds.bds_dir_bedrock));
+    });
     const bodyParser = require("body-parser");
     app.use(bodyParser.urlencoded({ extended: true }));
     
