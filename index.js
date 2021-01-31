@@ -104,35 +104,35 @@ var log_date = date();
 // ---------
 // ---------
 
-// var shell = require("shelljs");
+var shell = require("shelljs");
 
 if (!(fs.existsSync(cache_dir))){
     console.log(`Creating a folder for Storage in ${cache_dir}`);
-    // shell.mkdir("-p", cache_dir);
     fs.mkdirSync(cache_dir)
+    if (!(fs.existsSync(cache_dir))) shell.mkdir("-p", cache_dir);
 }
 // e
 if (!(fs.existsSync(bds_dir))){
     console.log("Creating the bds directory")
-    // shell.mkdir("-p", bds_dir);
     fs.mkdirSync(bds_dir)
+    if (!(fs.existsSync(bds_dir))) shell.mkdir("-p", bds_dir);
 }
 if (!(fs.existsSync(bds_dir_java))){
     console.log("Creating the bds directory to Java")
-    // shell.mkdir("-p", bds_dir_java);
     fs.mkdirSync(bds_dir_java)
+    if (!(fs.existsSync(bds_dir_java))) shell.mkdir("-p", bds_dir_java);
 }
 if (!(fs.existsSync(bds_dir_bedrock))){
     console.log("Creating the bds directory to Bedrock")
-    // shell.mkdir("-p", bds_dir_bedrock);
     fs.mkdirSync(bds_dir_bedrock)
+    if (!(fs.existsSync(bds_dir_bedrock))) shell.mkdir("-p", bds_dir_bedrock);
 }
 // e
-if (!fs.existsSync(log_dir)){
+if (!(fs.existsSync(log_dir))){
     if (!fs.existsSync(log_dir)){
         console.log(`Creating the bds log dir (${log_dir})`)
-        // shell.mkdir("-p", log_dir)
         fs.mkdirSync(log_dir)
+        if (!(fs.existsSync(log_dir))) shell.mkdir("-p", log_dir)
     };
 };
 // e

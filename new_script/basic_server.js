@@ -32,8 +32,9 @@ module.exports.start = () => {
             }
         }
         
-        var logConsoleStream = require("fs").createWriteStream(bds.log_file, {flags: "a"});
+        
         Storage.setItem("old_log_file", bds.log_file)
+        var logConsoleStream = require("fs").createWriteStream(bds.log_file, {flags: "a"});
         start_server.stdout.pipe(logConsoleStream);
         start_server.stdout.on("data", function(data){
             if (data.includes("agree", "EULA")){
