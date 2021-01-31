@@ -82,13 +82,6 @@ var bds_dir_java = path.join(bds_dir, 'java');
 var bds_dir_backup = path.join(bds_dir, 'backups');
 module.exports.backup_folder = bds_dir_backup
 
-const home_config = path.join(process.env.HOMR, ".config")
-if (!(fs.existsSync(home_config))){
-    console.log("Creating the bds config folder")
-    fs.mkdirSync(home_config)
-    if (!(fs.existsSync(home_config))) shell.mkdir("-p", home_config);
-}
-
 if (!(fs.existsSync(bds_dir))){
     console.log("Creating the bds directory")
     fs.mkdirSync(bds_dir)
