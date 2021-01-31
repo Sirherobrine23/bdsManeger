@@ -37,6 +37,7 @@ module.exports = (Vdown) => {
                     var zipEntries = zip.getEntries();
                     var totalfiles = zipEntries.length
                     zipEntries.forEach(function(zipEntry) {
+                        console.log(zipEntry.entryName)
                         totalfiles--
                         if (totalfiles === 0){
                             if (_old){fs.writeFileSync(`${server_DIR}/server.properties`, old1);}
