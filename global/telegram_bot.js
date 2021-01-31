@@ -74,7 +74,7 @@ bot.command("list", (ctx) =>{
         bds_command("list")
         var old = bds_log_string;
         setTimeout(() => {
-            var name = bds_log_string.replace(old, "\n\nEnd");
+            var name = bds_log_string.replace(old, "End\n\n");
             ctx.reply(name)
         }, 1000);   
     } else {
