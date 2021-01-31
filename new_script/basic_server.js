@@ -3,15 +3,20 @@ module.exports.start = () => {
     const Storage = localStorage;
     const exec = require("child_process").exec;
     const fs = require('fs')
+    const path = require("path")
 
 
     if (!(bds.detect())){
         const plat = bds.platform
         if (plat === "bedrock"){
             if (process.platform == "win32"){
-                var start_server = exec(`bedrock_server.exe`, {cwd: bds.bds_dir_bedrock});
+                if (fs.existSync(path.join(bds.bds_dir_bedrock, "bedrock_server.exe")){
+                   var start_server = exec(`bedrock_server.exe`, {cwd: bds.bds_dir_bedrock});
+                } else {console.log(`erro ao extrair ou a um erro na sua unidade de armazenamento`)}
             } else if (process.platform == "linux"){
-                var start_server = exec(`chmod 777 bedrock_server && ./bedrock_server`, {env: {PATH: process.env.PATH, LD_LIBRARY_PATH: bds.bds_dir_bedrock}, cwd: bds.bds_dir_bedrock});
+                if (fs.existSync(path.join(bds.bds_dir_bedrock, "bedrock_server")){
+                   var start_server = exec(`chmod 777 bedrock_server && ./bedrock_server`, {env: {PATH: process.env.PATH, LD_LIBRARY_PATH: bds.bds_dir_bedrock}, cwd: bds.bds_dir_bedrock});
+                } else {console.log(`erro ao extrair ou a um erro na sua unidade de armazenamento`)}
             } else {
                 process.exit(210)
             }
