@@ -1,4 +1,5 @@
 console.log(`Running the Bds Maneger API in version ${require(__dirname+"/package.json").version}`)
+var shell = require("shelljs");
 let blanks;
 function date(fu) {
     var today = new Date();
@@ -81,6 +82,12 @@ var bds_dir_java = path.join(bds_dir, 'java');
 var bds_dir_backup = path.join(bds_dir, 'backups');
 module.exports.backup_folder = bds_dir_backup
 
+if (!(fs.existsSync(bds_dir))){
+    console.log("Creating the bds directory")
+    fs.mkdirSync(bds_dir)
+    if (!(fs.existsSync(bds_dir))) shell.mkdir("-p", bds_dir);
+}
+
 // Configs
 const bds_config_file = path.join(bds_dir, "bds_config.json")
 if (fs.existsSync(bds_config_file)){
@@ -104,7 +111,7 @@ var log_date = date();
 // ---------
 // ---------
 
-var shell = require("shelljs");
+
 
 if (!(fs.existsSync(cache_dir))){
     console.log(`Creating a folder for Storage in ${cache_dir}`);
@@ -112,11 +119,6 @@ if (!(fs.existsSync(cache_dir))){
     if (!(fs.existsSync(cache_dir))) shell.mkdir("-p", cache_dir);
 }
 // e
-if (!(fs.existsSync(bds_dir))){
-    console.log("Creating the bds directory")
-    fs.mkdirSync(bds_dir)
-    if (!(fs.existsSync(bds_dir))) shell.mkdir("-p", bds_dir);
-}
 if (!(fs.existsSync(bds_dir_java))){
     console.log("Creating the bds directory to Java")
     fs.mkdirSync(bds_dir_java)
