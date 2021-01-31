@@ -12,8 +12,7 @@ module.exports = (Vdown) => {
             } else {
                 var versions_get = versions.bedrock[Vdown].url_windows;
             }
-
-            console.log("Starting download")
+            console.log("Starting download, with url "+versions_get)
             const exec = require("child_process").exec
             localStorage.setItem("bds_server_version", Vdown);        
             var downloadBDSchild = exec(`curl ${versions_get} --output ${mine_name}`, {
