@@ -10,11 +10,11 @@ module.exports.start = () => {
         const plat = bds.platform
         if (plat === "bedrock"){
             if (process.platform == "win32"){
-                if (fs.existSync(path.join(bds.bds_dir_bedrock, "bedrock_server.exe"))){
+                if (fs.existsSync(path.join(bds.bds_dir_bedrock, "bedrock_server.exe"))){
                    var start_server = exec(`bedrock_server.exe`, {cwd: bds.bds_dir_bedrock});
                 } else {console.log(`erro ao extrair ou a um erro na sua unidade de armazenamento`)}
             } else if (process.platform == "linux"){
-                if (fs.existSync(path.join(bds.bds_dir_bedrock, "bedrock_server"))){
+                if (fs.existsSync(path.join(bds.bds_dir_bedrock, "bedrock_server"))){
                    var start_server = exec(`chmod 777 bedrock_server && ./bedrock_server`, {env: {PATH: process.env.PATH, LD_LIBRARY_PATH: bds.bds_dir_bedrock}, cwd: bds.bds_dir_bedrock});
                 } else {console.log(`erro ao extrair ou a um erro na sua unidade de armazenamento`)}
             } else {
