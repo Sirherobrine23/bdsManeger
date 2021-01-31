@@ -4,14 +4,15 @@ module.exports.checkUser = (USERNAME) => {
         var admins = fs.readFileSync(`${require("../index").bds_dir}/telegram_admin.json`, "utf-8");
     } else {
         var admins = `{"sh23_bot_not_config": {"allow": true}}`;
-        console.log("All allowed")
+        console.warn("All allowed")
+        console.log(`Create file in with name: ${require("../index").bds_dir}/telegram_admin.json`)
     }
     var adm = JSON.parse(admins);
     for(index in adm){
         if (USERNAME == index){
             return true
         } else if (index == "sh23_bot_not_config"){
-            console.log("Allow all")
+            console.warn("Allow all")
             return true
         }; index++;
     };

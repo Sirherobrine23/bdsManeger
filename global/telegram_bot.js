@@ -56,10 +56,9 @@ bot.command("command", (ctx) =>{
     const detect_log_file = fs.existsSync(bds.log_file);
     bds_command(command)
     if (detect_log_file){
-        const old = fs.readFileSync(bds.log_file, "utf8");
+        const old = bds_log_string;
         setTimeout(() => {
-            var out = fs.readFileSync(bds.log_file, "utf8");
-            var name = out.replace(old, "");
+            var name = bds_log_string.replace(old, "");
             ctx.reply(name)
         }, 1000);   
     } else {
@@ -71,12 +70,11 @@ bot.command("list", (ctx) =>{
     const fs = require("fs");
     const bds = require("../index");
     const detect_log_file = fs.existsSync(bds.log_file);
-    bds_command("list")
     if (detect_log_file){
-        const old = fs.readFileSync(bds.log_file, "utf8");
+        bds_command("list")
+        var old = bds_log_string;
         setTimeout(() => {
-            var out = fs.readFileSync(bds.log_file, "utf8");
-            var name = out.replace(old, "");
+            var name = bds_log_string.replace(old, "");
             ctx.reply(name)
         }, 1000);   
     } else {
@@ -87,18 +85,41 @@ bot.command("mcpe", (ctx) =>{
     // ctx.replyWithHTML(`<a href="https://storage.cloud.google.com/bds_mcpe_files/mcpe.apk">Minecraft for Android 1.16.201.01</a>`)
 const text = `[Minecraft for Android 1.16.201.01](https://storage.googleapis.com/bds_mcpe_files/0.16.201.01.apk)
 
-[Minecraft for IOS](https://apps.apple.com/br/app/minecraft/id479516143)
+Iphone users are not privileged
 `
 ctx.replyWithMarkdown(text)
 });
-bot.command("status", (ctx) =>{
-const bds = require("../index")
-const text = `Bds CPU usage: ${bds.bds_cpu}%, Total CPU utilization: ${bds.current_cpu}%
-
-Total ram memory: ${bds.ram_total} GB, Total free ram memory: ${bds.ram_free} GB
-`
-ctx.replyWithMarkdown(text)
-});
+// bot.command("status", (ctx) =>{
+// const si = require("systeminformation");
+//         // si.cpu().then(data => {module.exports.cpu_speed = Math.trunc(data.speed)})
+//     si.mem().then(data => {
+//         global.ram_free = Math.trunc(data.free / 1024 / 1024 / 1024);
+//         global.ram_total = Math.trunc(data.total / 1024 / 1024 / 1024);
+//         si.currentLoad().then(data => {
+//             global.current_cpu = Math.trunc(data.currentload)
+//             si.processes().then(data => {
+//                 const list = data.list
+//                 for (let pid in list) {
+//                     var pids = list[pid].command
+//                     if (pids.includes("bedrock_server")){global.bds_cpu = Math.trunc(list[pid].pcpu)} else if (pids.includes("server.jar")){global.bds_cpu = Math.trunc(list[pid].pcpu)} else {pid++}
+//                 }
+//                 si.processes().then(data => {
+//                     const list = data.list
+//                     for (let pid in list) {
+//                         var pids = list[pid].command
+//                         if (pids.includes("bedrock_server")){global.bds_cpu = Math.trunc(list[pid].pcpu)} else {pid++}
+//                     }
+//                     const text = `Bds CPU usage: ${bds_cpu}%, Total CPU utilization: ${current_cpu}%\n\n\nTotal ram memory: ${ram_total} GB, Total free ram memory: ${ram_free} GB`
+//                     ctx.replyWithMarkdown(text);
+//                     delete(bds_cpu);
+//                     delete(current_cpu);
+//                     delete(ram_total);
+//                     delete(ram_free);
+//                 })
+//             })
+//         })
+//     })
+// });
 bot.command("log", (ctx) => {
     const file_log_path = require("../index").log_file;
     const fs = require("fs")
