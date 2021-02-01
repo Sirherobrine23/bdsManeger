@@ -1,6 +1,6 @@
 {
   "name": "bds_maneger_api",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "scripts to manage minecraft bedrock server",
   "private": false,
   "main": "index.js",
@@ -16,8 +16,8 @@
     "minecraft",
     "bds",
     "bds-server",
-    "Windows",
-    "linux"
+    "bedrock",
+    "java"
   ],
   "author": "Sirherobrine23",
   "license": "AGPL-3.0-or-later",
