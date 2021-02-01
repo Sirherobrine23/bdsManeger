@@ -1,7 +1,7 @@
 module.exports.start = () => {
     const bds = require("../index")
     const Storage = localStorage;
-    const exec = require("child_process").exec;
+    const {exec, execSync} = require("child_process");
     const fs = require('fs')
 
 
@@ -11,7 +11,8 @@ module.exports.start = () => {
             if (process.platform == "win32"){
                 var start_server = exec(`bedrock_server.exe`, {cwd: bds.bds_dir_bedrock});
             } else if (process.platform == "linux"){
-                var start_server = exec(`chmod 777 bedrock_server && ./bedrock_server`, {env: {PATH: process.env.PATH, LD_LIBRARY_PATH: bds.bds_dir_bedrock}, cwd: bds.bds_dir_bedrock});
+                console.log(execSync(`chmod 777 bedrock_server`, {cwd: bds.bds_dir_bedrock}).toString())
+                var start_server = exec(`./bedrock_server`, {env: {PATH: process.env.PATH, LD_LIBRARY_PATH: bds.bds_dir_bedrock}, cwd: bds.bds_dir_bedrock});
             } else {
                 process.exit(210)
             }

@@ -17,7 +17,8 @@
     "bds",
     "bds-server",
     "bedrock",
-    "java"
+    "java",
+    "server_mode"
   ],
   "author": "Sirherobrine23",
   "license": "AGPL-3.0-or-later",
