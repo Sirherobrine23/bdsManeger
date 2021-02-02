@@ -84,16 +84,15 @@ bot.command("list", (ctx) =>{
     }
 });
 bot.command("mcpe", (ctx) =>{
-    // ctx.replyWithHTML(`<a href="https://storage.cloud.google.com/bds_mcpe_files/mcpe.apk">Minecraft for Android 1.16.201.01</a>`)
-const text = `[Minecraft for Android 1.16.201.01](https://files.sh33.org/mcpe/latest.sonic)
+ctx.replyWithMarkdown(`[Minecraft for Android 1.16.201.01](https://files.sh33.org/mcpe/latest.sonic)
 
 Iphone users are not privileged
-`
-ctx.replyWithMarkdown(text)
-});
+`)});
 bot.command("status", (ctx) =>{
-  const status = require("./system_monitor")
-const text = `Bds CPU usage: ${bds_cpu}%, Total CPU utilization: ${current_cpu}%\n\n\nTotal ram memory: ${ram_total} GB, Total free ram memory: ${ram_free} GB`
+const {bds_cpu, current_cpu, ram_total, ram_free} = require("./system_monitor")
+const text = `Bds CPU usage: ${bds_cpu}%, Total CPU utilization: ${current_cpu}%
+
+Total ram memory: ${ram_total} GB, Total free ram memory: ${ram_free} GB`
 ctx.replyWithMarkdown(text);
 });
 bot.command("log", (ctx) => {
