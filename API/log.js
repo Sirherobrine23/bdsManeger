@@ -6,22 +6,27 @@ module.exports = () => {
     const app = express();
     var cors = require('cors');
     app.use(cors());
-    app.use(require("body-parser").json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.get("/", (req, res) => {
         if (typeof bds_log_string === 'undefined'){
-            var text = 'The server is stopped';
-            var sucess = false
+            if (fs.existsSync(localStorage.getItem("old_log_file"))){
+                var text = `${fs.readFileSync(localStorage.getItem("old_log_file"), "utf8")}`
+                var log_file = localStorage.getItem("old_log_file")
+                var sucess = true
+            } else {
+                var text = `The server is stopped`
+                var sucess = false
+            }
         } else {
             var text = bds_log_string
+            var log_file = "string"
             var sucess = true
         }
         res.json({
             "sucess": sucess,
             "log": text,
-            "log_file": localStorage.getItem("old_log_file"),
+            "log_file": log_file,
             "requeset_date": bds.date()
         });
     });
-    const http_port = "6565"
-    app.listen(http_port);
+    app.listen(6565);
 }

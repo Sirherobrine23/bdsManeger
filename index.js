@@ -42,11 +42,14 @@ if (arch == "x64"){
 const path = require("path")
 const fs = require("fs");
 const package_root = path.join(process.cwd(), "package.json")
+const package_root_builder = path.resolve(".", "resources", "app", "package.json")
 if (process.platform == "win32") {
     var home = process.env.USERPROFILE;
     var desktop = path.join(home, "Desktop")
     if (fs.existsSync(package_root)){
         var cache_dir = path.join(home, "AppData", "Roaming", require(package_root).name)
+    } else if (package_root_builder){
+        var cache_dir = path.join(home, "AppData", "Roaming", require(package_root_builder).name)
     } else {
         console.warn(`Temporary Storages, some functions will be lost after restarting the system`);
         var cache_dir = path.join(process.env.TMP, `bds_tmp_configs`);
@@ -57,6 +60,8 @@ if (process.platform == "win32") {
     var home = process.env.HOME;
     if (fs.existsSync(package_root)){
         var cache_dir = path.join(home, ".config", require(package_root).name);
+    } else if (fs.existsSync(package_root_builder)) {
+        var cache_dir = path.join(home, ".config", require(package_root_builder).name);
     } else {
         console.warn(`Temporary Storages, some functions will be lost after restarting the system`);
         var cache_dir = `/tmp/bds_tmp_configs`;
@@ -189,7 +194,6 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
         if (typeof bds_api_start === "undefined"){
             require("./API/api")();
             require("./API/log")();
-            require("./API/remote_access")();
         }
     } else {
         console.warn(`The API via http is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html`)

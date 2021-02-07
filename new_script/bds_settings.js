@@ -157,7 +157,8 @@ function bds_get_config(){
 
     if (bds.platform === "bedrock") var config_path = path.join(bds.bds_dir_bedrock, "server.properties")
     else var config_path = path.join(bds.bds_dir_java, "server.properties")
-    return propertiesToJSON(fs.readFileSync(config_path, "utf8").replaceAll("-","_"));
+    var config = fs.readFileSync(config_path, "utf8").split("-").join("_")
+    return propertiesToJSON(config);
 }
 module.exports.config_example = () =>{
 return {
