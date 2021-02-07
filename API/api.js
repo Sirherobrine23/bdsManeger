@@ -21,6 +21,9 @@ module.exports = () => {
     app.use(limiter);
     const bodyParser = require("body-parser");
     app.use(bodyParser.urlencoded({ extended: true }));
+    app.get("/configs", (req, res) => {
+        return res.send(bds.get_config());
+    });
     app.get("/info", (req, res) => {
         const text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf8");
         const versions = bds.version_raw
