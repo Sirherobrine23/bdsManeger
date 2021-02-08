@@ -19,6 +19,11 @@ module.exports = () => {
     app.use(cors());
     app.use(require("body-parser").json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.use(limiter);
+    const bodyParser = require("body-parser");
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.get("/configs", (req, res) => {
+        return res.send(bds.get_config());
+    });
     app.get("/info", (req, res) => {
         const text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf8");
         const versions = bds.version_raw
@@ -49,24 +54,89 @@ module.exports = () => {
     app.get("/", (req, res) => {
         return res.send(`Hello, welcome to the Bds Maneger API, If this page has loaded it means that the API is working as planned, More information access the API documentation at: https://docs.srherobrine23.com/bds-maneger-api_whatis.html, Version: ${require(__dirname+'/../package.json').version}`);
     });
-    app.get("/themes", (req, res) => {
-        fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/themes.json").then(response => response.json()).then(array => {
-            var themes_json;
-            for (let index = 0; index < array.length; index++) {
-                const name = array[index].name;
-                const zip_url = array[index].zip_url;
-                const git_url = array[index].git_url;
-                themes_json += `{Name: ${name},\n Url Zip: ${zip_url},\n Git url: ${git_url}},`
+    app.post("/service", (req, res) => {
+        const body = req.body
+        const command_bds = body.command
+        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
+        var pass = false;
+        for (let token_verify in tokens) {
+            const element = tokens[token_verify].token;
+            if (body.token == element){
+                pass = true
+            } else {
+                token_verify++
             }
-            return res.send(themes_json);
-        });
+        }
+        if (pass){
+            if (command_bds === 'start'){
+                var bds_init = bds.start()
+                var command_status = `Bds Started`
+            } else if (command_bds === 'stop'){
+                bds.stop()
+                var command_status = `Stopping the bds server`
+            } else {
+                var command_status = `no command identified`
+            }
+            res.send({
+                "status": 200,
+                "bds_status": command_status
+            })
+        } else {
+            res.send({
+                "status": 401,
+                "message": `Not authorized: ${body.token}`
+            })
+        }
     });
-    app.get("/bds_dirs/", (req, res) => {
-      return res.send(fs.readdirSync(bds.bds_dir_bedrock));
+    app.post("/bds_download", (req, res) => {
+        const body = req.body
+        const ver = body.version
+        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
+        var pass = false;
+        for (let token_verify in tokens) {
+            const element = tokens[token_verify].token;
+            if (body.token == element){
+                pass = true
+            } else {
+                token_verify++
+            }
+        }
+        if (pass){
+            var STA = `wait`
+            var EMN = bds.download(ver)
+        } else {
+            var STA = `401`,
+            EMN = `Unauthorized Token`
+        }
+        res.send({
+            "status": STA,
+            "message": EMN
+        })
     });
-    const bodyParser = require("body-parser");
-    app.use(bodyParser.urlencoded({ extended: true }));
-    
-    const http_port = "1932"
-    app.listen(http_port);
+    app.post("/bds_command", (req, res) => {
+        const body = req.body
+        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
+        var pass = false;
+        for (let token_verify in tokens) {
+            const element = tokens[token_verify].token;
+            // req.connection.remoteAddress
+            if (body.token == element){pass = true} else {token_verify++}
+        }
+        if (pass){
+            const command = body.command
+            const teste = bds.command(command)
+            res.send({
+                "status": 200,
+                "command": body.command,
+                "log": teste,
+                "message": `authorized to ${body.token}`
+            })
+        } else {
+            res.send({
+                "status": 401,
+                "message": "not authorized"
+            })
+        }
+    });    
+    app.listen(1932);
 }
