@@ -55,13 +55,14 @@ module.exports.drive_backup = () => {
   console.log(gd_secret)
   function upload_backup(auth) {
     const drive = google.drive({version: "v3", auth});
+    var fileMetadata;
     if (parent_id === undefined){
-      var fileMetadata = {
+      fileMetadata = {
         name: name_d
       }
       console.log("Your backup will be saved to My Drive")
     } else {
-      var fileMetadata = {
+      fileMetadata = {
         name: name_d,
         parents: [parent_id]
       }

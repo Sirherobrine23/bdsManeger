@@ -1,11 +1,11 @@
 module.exports = () => {
-    global.bds_api_start = true:
+    global.bds_api_start = true;
     const express = require("express");
     const bds = require("../index");
     const fs = require("fs");
     const app = express();
     const path = require("path");
-    var cors = require('cors');
+    var cors = require("cors");
     const rateLimit = require("express-rate-limit");
 
     // Enable if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
@@ -33,7 +33,7 @@ module.exports = () => {
             } else {
                 v++;
             }
-        };
+        }
         const config = bds.get_config()
         var json_http = {
             "server": {
@@ -52,7 +52,7 @@ module.exports = () => {
         return res.send(json_http);
     });
     app.get("/", (req, res) => {
-        return res.send(`Hello, welcome to the Bds Maneger API, If this page has loaded it means that the API is working as planned, More information access the API documentation at: https://docs.srherobrine23.com/bds-maneger-api_whatis.html, Version: ${require(__dirname+'/../package.json').version}`);
+        return res.send(`Hello, welcome to the Bds Maneger API, If this page has loaded it means that the API is working as planned, More information access the API documentation at: https://docs.srherobrine23.com/bds-maneger-api_whatis.html, Version: ${require(path.join(__dirname, "..", "package.json")).version}`);
     });
     app.post("/service", (req, res) => {
         const body = req.body
@@ -68,14 +68,15 @@ module.exports = () => {
             }
         }
         if (pass){
-            if (command_bds === 'start'){
+            var command_status
+            if (command_bds === "start"){
                 bds.start()
-                var command_status = `Bds Started`
-            } else if (command_bds === 'stop'){
+                command_status = "Bds Started"
+            } else if (command_bds === "stop"){
                 bds.stop()
-                var command_status = `Stopping the bds server`
+                command_status = "Stopping the bds server"
             } else {
-                var command_status = `no command identified`
+                command_status = "no command identified"
             }
             res.send({
                 "status": 200,
@@ -101,12 +102,13 @@ module.exports = () => {
                 token_verify++
             }
         }
+        var STA,EMN
         if (pass){
-            var STA = `wait`
-            var EMN = bds.download(ver)
+            STA = "wait"
+            EMN = bds.download(ver)
         } else {
-            var STA = `401`,
-            EMN = `Unauthorized Token`
+            STA = "401",
+            EMN = "Unauthorized Token"
         }
         res.send({
             "status": STA,

@@ -7,18 +7,19 @@ module.exports.start = () => {
 
     if (!(bds.detect())){
         const plat = bds.platform
+        var start_server
         if (plat === "bedrock"){
             if (process.platform == "win32"){
-                var start_server = exec("bedrock_server.exe", {cwd: bds.bds_dir_bedrock});
+                start_server = exec("bedrock_server.exe", {cwd: bds.bds_dir_bedrock});
             } else if (process.platform == "linux"){
                 console.log(execSync("chmod 777 bedrock_server", {cwd: bds.bds_dir_bedrock}).toString())
-                var start_server = exec("./bedrock_server", {env: {PATH: process.env.PATH, LD_LIBRARY_PATH: bds.bds_dir_bedrock}, cwd: bds.bds_dir_bedrock});
+                start_server = exec("./bedrock_server", {env: {PATH: process.env.PATH, LD_LIBRARY_PATH: bds.bds_dir_bedrock}, cwd: bds.bds_dir_bedrock});
             } else {
                 process.exit(210)
             }
         } else {
             if (require("command-exists").sync("java")){
-                var start_server = exec("java -Xmx1024M -Xms1024M -jar server.jar nogui", {cwd: bds.bds_dir_java});
+                start_server = exec("java -Xmx1024M -Xms1024M -jar server.jar nogui", {cwd: bds.bds_dir_java});
             } else {
                 if (bds.system == "windows"){
                     require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#Windows");

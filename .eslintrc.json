@@ -6,6 +6,10 @@
         "node": true,
         "shelljs": true
     },
+    "globals": {
+        "bds_log_string": "writable",
+        "bds_server_string": "writable"
+    },
     "extends": "eslint:recommended",
     "parserOptions": {
         "ecmaVersion": 12,
@@ -15,7 +19,10 @@
         }
     },
     "rules": {
-        "quotes": ["error", "double"],
+        "quotes": [
+            "error",
+            "double"
+        ],
         "eqeqeq": 0
     }
 }

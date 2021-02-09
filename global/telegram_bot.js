@@ -33,7 +33,7 @@ bot.command("server_start", (ctx) => {
             ctx.reply(`${ctx.message.from.username} already started`)
     } else {
         console.log("Erro");
-        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
+        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
     }
 });
 bot.command("server_stop", (ctx) => {
@@ -46,7 +46,7 @@ bot.command("server_stop", (ctx) => {
             ctx.reply(`${ctx.message.from.username} o servidor está parado`)
     } else {
         console.log("Erro");
-        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
+        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
     }
 });
 bot.command("command", (ctx) =>{

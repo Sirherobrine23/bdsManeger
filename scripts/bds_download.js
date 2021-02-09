@@ -3,18 +3,21 @@ module.exports = (Vdown) => {
     const bds = require("../index")
 
     fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(versions => {
+        var mine_name
+        var downloadBDSchild
         if (bds.platform === "bedrock"){
             const system = bds.system
-            var mine_name = "bedrock.zip"
+            mine_name = "bedrock.zip"
+            var versions_get
             if (system === "linux"){
-                var versions_get = versions.bedrock[Vdown].url_linux;
+                versions_get = versions.bedrock[Vdown].url_linux;
             } else {
-                var versions_get = versions.bedrock[Vdown].url_windows;
+                versions_get = versions.bedrock[Vdown].url_windows;
             }
             console.log("Starting download, with url "+versions_get)
             const exec = require("child_process").exec
             localStorage.setItem("bds_server_version", Vdown);        
-            var downloadBDSchild = exec(`curl ${versions_get} --output ${mine_name}`, {
+            downloadBDSchild = exec(`curl ${versions_get} --output ${mine_name}`, {
                 cwd: `${bds.tmp_dir}`
             });
             
@@ -51,13 +54,13 @@ module.exports = (Vdown) => {
                 }
             })
         } else {
-            var versions_get = versions.java[Vdown].url
-            var mine_name = "server.jar"
+            versions_get = versions.java[Vdown].url
+            mine_name = "server.jar"
 
             console.log("Starting download")
             const exec = require("child_process").exec
             localStorage.setItem("bds_server_version", Vdown);        
-            var downloadBDSchild = exec(`curl ${versions_get} --output ${mine_name}`, {
+            downloadBDSchild = exec(`curl ${versions_get} --output ${mine_name}`, {
                 cwd: `${bds.bds_dir_java}`
             });
             downloadBDSchild.stdout.on("data", function(data){
