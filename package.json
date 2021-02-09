@@ -44,5 +44,8 @@
     "shelljs": "^0.8.4",
     "systeminformation": "^5.0.10",
     "telegraf": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=14"
   }
 }
