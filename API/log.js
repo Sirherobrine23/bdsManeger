@@ -4,7 +4,7 @@ module.exports = () => {
     const bds = require("../index");
     const fs = require("fs");
     const app = express();
-    var cors = require('cors');
+    var cors = require("cors");
     app.use(cors());
     const rateLimit = require("express-rate-limit");
     const limiter = rateLimit({
@@ -17,22 +17,25 @@ module.exports = () => {
         max: 5000 // limit each IP to 5000 requests per windowMs
     });
     app.use(limiter);
-    const requestIp = require('request-ip');
+    const requestIp = require("request-ip");
     app.use(requestIp.mw())
     app.get("/", (req, res) => {
-        if (typeof bds_log_string === 'undefined'){
+        var text="";
+        var log_file="";
+        var sucess="";
+        if (typeof bds_log_string === "undefined"){
             if (fs.existsSync(localStorage.getItem("old_log_file"))){
-                var text = `${fs.readFileSync(localStorage.getItem("old_log_file"), "utf8")}`
-                var log_file = localStorage.getItem("old_log_file")
-                var sucess = true
+                text = `${fs.readFileSync(localStorage.getItem("old_log_file"), "utf8")}`
+                log_file = localStorage.getItem("old_log_file")
+                sucess = true
             } else {
-                var text = `The server is stopped`
-                var sucess = false
+                text = "The server is stopped"
+                sucess = false
             }
         } else {
-            var text = bds_log_string
-            var log_file = "string"
-            var sucess = true
+            text = bds_log_string
+            log_file = "string"
+            sucess = true
         }
         res.json({
             "sucess": sucess,

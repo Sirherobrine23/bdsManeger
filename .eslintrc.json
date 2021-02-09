@@ -1,0 +1,28 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es2021": true,
+        "node": true,
+        "shelljs": true
+    },
+    "globals": {
+        "bds_log_string": "writable",
+        "bds_server_string": "writable"
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+        "ecmaVersion": 12,
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true
+        }
+    },
+    "rules": {
+        "quotes": [
+            "error",
+            "double"
+        ],
+        "eqeqeq": 0
+    }
+}
