@@ -53,8 +53,8 @@ jobs:
 
       - name: Get Infos
         run: |
-          echo "bds_api_version=$(cat package.kson | jq '.version')" >> $GITHUB_ENV
-          echo "bds_api_depe=\"$(cat package.kson | jq '.dependencies')\"" >> $GITHUB_ENV
+          echo "bds_api_version=$(cat package.json | jq '.version')" >> $GITHUB_ENV
+          echo "bds_api_depe=\"$(cat package.json | jq '.dependencies')\"" >> $GITHUB_ENV
 
       - name: Tag
         uses: softprops/action-gh-release@v1
