@@ -3,7 +3,7 @@ function bds_config(json_config){
     const path = require("path")
     var fs = require("fs")
 
-    if (bds.platform === 'java') var Server_Config = path.join(bds.bds_dir_java, "server.properties");
+    if (bds.platform === "java") var Server_Config = path.join(bds.bds_dir_java, "server.properties");
     else var Server_Config = path.join(bds.bds_dir_bedrock, "server.properties");
 
     const cpuCount = require("os").cpus().length;
@@ -15,19 +15,19 @@ function bds_config(json_config){
         var config = JSON.parse(fs.readFileSync(json_config, "utf8"))
     } else var config = JSON.parse(json_config)
 
-    if (config.description == undefined) var description_name = `Dedicated Server`;
+    if (config.description == undefined) var description_name = "Dedicated Server";
     else var description_name = config.description;
 
     // Level Name
-    if (config.name == undefined) var level_name = `Bedrock level`;
+    if (config.name == undefined) var level_name = "Bedrock level";
     else var level_name = config.name;
 
     // gamemode
-    if (config.gamemode == undefined) var gamemode = `survival`;
+    if (config.gamemode == undefined) var gamemode = "survival";
     else var gamemode = config.gamemode;
 
     // Difficulty
-    if (config.difficulty == undefined) var difficulty = `easy`;
+    if (config.difficulty == undefined) var difficulty = "easy";
     else var difficulty = config.difficulty;
 
     // cheats
@@ -43,16 +43,16 @@ function bds_config(json_config){
     else var online_mode = config.xbox;
 
     // Whitelist
-    if (config.white_list == undefined){var white_list = false;} else {var white_list = config.white_list;};
+    if (config.white_list == undefined){var white_list = false;} else {var white_list = config.white_list;}
 
     // Server Port IPv4
-    if (config.port == undefined){var server_port = 19132;} else {var server_port = config.port;};
+    if (config.port == undefined){var server_port = 19132;} else {var server_port = config.port;}
 
     // Server Port IPv6
-    if (config.port6 == undefined){var server_portv6 = 19133;} else {var server_portv6 = config.port6;};
+    if (config.port6 == undefined){var server_portv6 = 19133;} else {var server_portv6 = config.port6;}
 
     // Default player permission
-    if (config.player_permission == undefined) var player_permission = `member`;
+    if (config.player_permission == undefined) var player_permission = "member";
     else var player_permission = config.player_permission;
     
     if (2 >= cpuCount) var tick = 2 ;
@@ -63,7 +63,7 @@ function bds_config(json_config){
     else var tick = 12
 
 /*Save Files*/
-if (bds.platform === 'bedrock'){
+if (bds.platform === "bedrock"){
     var config_file_content = `server-name=${description_name}
 gamemode=${gamemode}
 difficulty=${difficulty}
@@ -147,8 +147,8 @@ max-world-size=29999984
 }
 // console.log(config_file_content);
 fs.writeFileSync(Server_Config, config_file_content);
-return `success`
-};
+return "success"
+}
 function bds_get_config(){
     var fs = require("fs");
     const path = require("path")

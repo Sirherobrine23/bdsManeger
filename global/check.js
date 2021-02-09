@@ -3,7 +3,7 @@ module.exports.checkUser = (USERNAME) => {
     if (fs.existsSync(`${require("../index").bds_dir}/telegram_admin.json`)) {
         var admins = fs.readFileSync(`${require("../index").bds_dir}/telegram_admin.json`, "utf-8");
     } else {
-        var admins = `{"sh23_bot_not_config": {"allow": true}}`;
+        var admins = "{\"sh23_bot_not_config\": {\"allow\": true}}";
         console.warn("All allowed")
         console.log(`Create file in with name: ${require("../index").bds_dir}/telegram_admin.json`)
     }
@@ -14,8 +14,8 @@ module.exports.checkUser = (USERNAME) => {
         } else if (check_ == "sh23_bot_not_config"){
             console.warn("Allow all")
             return true
-        }; check_++;
-    };
+        } check_++;
+    }
     return false
 }
 

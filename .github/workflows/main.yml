@@ -67,10 +67,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Get Infos
-        run: |
-          sudo apt install -y jq
-          echo "bds_api_version=$(cat package.json | jq '.version'|sed "s|\"||g")" >> $GITHUB_ENV
-          echo "bds_api_depe=$(cat package.json | jq '.dependencies'|tr "\n" " "|sed "s|\^||g"|sed "s|  ||g") >> $GITHUB_ENV
+        run: bash .github/workflows/get_version.sh
 
       - name: Tag
         uses: softprops/action-gh-release@v1
@@ -78,7 +75,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: Bds Maneger API v${{ env.bds_api_version }}
-          tag_name: ${{ env.bds_api_version }}
+          tag_name: ${{ github.run_id }}
           prerelease: true
           body: |
             Install: npm install bds_maneger_api@dev

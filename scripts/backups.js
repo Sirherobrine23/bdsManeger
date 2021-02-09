@@ -1,5 +1,5 @@
 module.exports.World_BAckup = () => {
-    const bds = require('../index')
+    const bds = require("../index")
     const path = require("path")
     const java_pro = require("properties-to-json")
     const fs = require("fs")
@@ -33,7 +33,7 @@ module.exports.World_BAckup = () => {
 };
 
 module.exports.Drive_backup = () => {
-    const bds = require('../index')
+    const bds = require("../index")
     const path = require("path")
     const java_pro = require("properties-to-json")
     const fs = require("fs")

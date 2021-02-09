@@ -42,7 +42,7 @@ function getAccessToken(oAuth2Client, callback) {
       callback(oAuth2Client);
     });
   });
-};
+}
 
 module.exports.drive_backup = () => {
   const file_json = require("../scripts/backups").Drive_backup()
@@ -51,7 +51,7 @@ module.exports.drive_backup = () => {
   const path_file = file_json.file_path
   const name_d = file_json.file_name;
   
-  const gd_secret = '';
+  const gd_secret = "";
   console.log(gd_secret)
   function upload_backup(auth) {
     const drive = google.drive({version: "v3", auth});
@@ -65,7 +65,7 @@ module.exports.drive_backup = () => {
         name: name_d,
         parents: [parent_id]
       }
-    };
+    }
     var media = {
       mimeType: "application/octet-stream",
       body: fs.createReadStream(path_file)
@@ -101,6 +101,6 @@ module.exports.mcpe = () => {
           progress += d.length / 1024 / 1024;
           if (process.stdout.isTTY) {process.stdout.clearLine();process.stdout.cursorTo(0);process.stdout.write(`Downloaded ${Math.trunc(progress)} Mbytes`);}
       }).pipe(dest)});
-  };
+  }
   return authorize(gd_secret, download_mcpe);
 }

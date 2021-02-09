@@ -34,7 +34,7 @@ const arch = process.arch
 if (arch == "x64"){
     var archi = "amd64"
 } else if (arch == "arm64"){
-    console.warn(`It is not recommended to use platforms that are not amd64 (x64), please inform you that you will need to manually configure some things. \!\!`)
+    console.warn("It is not recommended to use platforms that are not amd64 (x64), please inform you that you will need to manually configure some things. \!\!")
     var archi = "arm"
 } else {
     console.warn(`Unsupported processor, ${arch} will not be supported by The Bds Maneger`)
@@ -52,11 +52,11 @@ if (process.platform == "win32") {
     } else if (package_root_builder){
         var cache_dir = path.join(home, "AppData", "Roaming", require(package_root_builder).name)
     } else {
-        console.warn(`Temporary Storages, some functions will be lost after restarting the system`);
-        var cache_dir = path.join(process.env.TMP, `bds_tmp_configs`);
+        console.warn("Temporary Storages, some functions will be lost after restarting the system");
+        var cache_dir = path.join(process.env.TMP, "bds_tmp_configs");
     }
     var tmp = process.env.TMP
-    var system = `windows`;
+    var system = "windows";
 } else if (process.platform == "linux") {
     var home = process.env.HOME;
     if (fs.existsSync(package_root)){
@@ -64,14 +64,14 @@ if (process.platform == "win32") {
     } else if (fs.existsSync(package_root_builder)) {
         var cache_dir = path.join(home, ".config", require(package_root_builder).name);
     } else {
-        console.warn(`Temporary Storages, some functions will be lost after restarting the system`);
-        var cache_dir = `/tmp/bds_tmp_configs`;
+        console.warn("Temporary Storages, some functions will be lost after restarting the system");
+        var cache_dir = "/tmp/bds_tmp_configs";
     }
     var file = path.join(home, ".config", "user-dirs.dirs");var data = {};
-    if (fs.existsSync(file)){let content = fs.readFileSync(file,"utf8");let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));for(let line of lines){let i = line.indexOf("=");if(i >= 0){try{data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))}catch(e){}}}};if(data["XDG_DESKTOP_DIR"]){var desktop = data["XDG_DESKTOP_DIR"];desktop = desktop.replace(/\$([A-Za-z\-\_]+)|\$\{([^\{^\}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))}else{var desktop = "/tmp"}
+    if (fs.existsSync(file)){let content = fs.readFileSync(file,"utf8");let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));for(let line of lines){let i = line.indexOf("=");if(i >= 0){try{data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))}catch(e){}}}}if(data["XDG_DESKTOP_DIR"]){var desktop = data["XDG_DESKTOP_DIR"];desktop = desktop.replace(/\$([A-Za-z\-\_]+)|\$\{([^\{^\}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))}else{var desktop = "/tmp"}
     
-    var tmp = `/tmp`;
-    var system = `linux`;
+    var tmp = "/tmp";
+    var system = "linux";
 } else if (process.platform == "darwin") {
     require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
     console.error("Please use Windows or Linux MacOS Not yet supported")
@@ -79,7 +79,7 @@ if (process.platform == "win32") {
 } else {
     console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
     process.exit(2021)
-};
+}
 // ---------
 // ---------
 if (typeof fetch === "undefined"){
@@ -87,12 +87,12 @@ if (typeof fetch === "undefined"){
 }
 if (typeof localStorage === "undefined"){
     var localStorageS = require("node-localstorage").LocalStorage;
-    global.localStorage = new localStorageS(path.join(cache_dir, `Local_Storage`));
+    global.localStorage = new localStorageS(path.join(cache_dir, "Local_Storage"));
 }
 var bds_dir = path.join(home, "bds_Server");
-var bds_dir_bedrock = path.join(bds_dir, 'bedrock');
-var bds_dir_java = path.join(bds_dir, 'java');
-var bds_dir_backup = path.join(bds_dir, 'backups');
+var bds_dir_bedrock = path.join(bds_dir, "bedrock");
+var bds_dir_java = path.join(bds_dir, "java");
+var bds_dir_backup = path.join(bds_dir, "backups");
 module.exports.backup_folder = bds_dir_backup
 
 if (!(fs.existsSync(bds_dir))){
@@ -147,8 +147,8 @@ if (!(fs.existsSync(log_dir))){
         console.log(`Creating the bds log dir (${log_dir})`)
         fs.mkdirSync(log_dir)
         if (!(fs.existsSync(log_dir))) shell.mkdir("-p", log_dir)
-    };
-};
+    }
+}
 // e
 
 
@@ -198,9 +198,9 @@ if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
         const token = fs.readFileSync(path.join(bds_dir, "telegram_token.txt"), "utf-8").split("\n").join("")
         require("./index").telegram_token_save(token)
         fs.rmSync(path.join(bds_dir, "telegram_token.txt"))
-        console.log(`We finished migrating the old telegram token file`)
+        console.log("We finished migrating the old telegram token file")
     } catch {
-        throw new error(`It was not possible to move the old telegram token file to the new bds maneger api file`)
+        throw new error("It was not possible to move the old telegram token file to the new bds maneger api file")
     }
 }
 
@@ -235,7 +235,7 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
         var html = `${versions[v]}`;
         module.exports.version_select += `<option value=\"${html}\">${html}</option>\n`;
         v++;
-    };
+    }
     module.exports.bedrock_all_versions = Object.getOwnPropertyNames(rawOUT.bedrock);
     module.exports.java_all_versions = Object.getOwnPropertyNames(rawOUT.java);
     module.exports.bds_latest = rawOUT.bedrock_lateste;
@@ -248,7 +248,7 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
             require("./API/log")();
         }
     } else {
-        console.warn(`The API via http is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html`)
+        console.warn("The API via http is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html")
     }
     module.exports.get_version = (type) => {
         if (type == "raw")
@@ -312,7 +312,7 @@ module.exports.telegram = require("./global/telegram_bot")
 module.exports.change_platform = platform_update
 module.exports.token_register = () => {
     if (!(fs.existsSync(path.join(bds_dir, "bds_tokens.json")))){
-        fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), "[]")};
+        fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), "[]")}
         require("crypto").randomBytes(10, function(err, buffer) {
             var token = buffer.toString("hex");
             console.log(token);
