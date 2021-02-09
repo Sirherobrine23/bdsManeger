@@ -1,10 +1,10 @@
 module.exports = () => {
-    global.bds_api_start = true
+    global.bds_api_start = true:
     const express = require("express");
     const bds = require("../index");
     const fs = require("fs");
     const app = express();
-    const path = require("path")
+    const path = require("path");
     var cors = require('cors');
     const rateLimit = require("express-rate-limit");
 

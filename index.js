@@ -161,8 +161,8 @@ if (!(fs.existsSync(log_dir))){
  * @example change_platform("bedrock")
  */
 function platform_update(plate){
-    if (plate === "java") true
-    else if (plate === "bedrock") true
+    if (plate === "java") complet_ = true
+    else if (plate === "bedrock") complet_ = true
     else throw new console.error(`platform not identified or does not exist, ${plate} informed platform`);
     const bds_config = path.join(bds_dir, "bds_config.json")
     try {
@@ -321,12 +321,12 @@ module.exports.token_register = () => {
                 fs.readFile(path.join(bds_dir, "bds_tokens.json"), "utf8", function (err, data){
                     if (err){console.log(err);}
                     else {
-                        obj = JSON.parse(data);
+                        objeto = JSON.parse(data);
                         var count = Object.keys(obj).length;
                         var teste = {count, token};
-                        obj.push(teste);
-                        json = JSON.stringify(obj);
-                        fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), json, "utf8");}
+                        objeto.push(teste);
+                        json_ = JSON.stringify(objeto);
+                        fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), json_, "utf8");}
                     });
                 })
             })
