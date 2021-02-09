@@ -4,7 +4,7 @@ module.exports.checkUser = (USERNAME) => {
     const bds = require("../index")
     const telegram_admin = path.join(bds.bds_dir, "telegram_admin.json")
     if (fs.existsSync(telegram_admin)) {
-        var admins = fs.readFileSync(telegram_admin, "utf-8");
+        var admins = fs.readFileSync(telegram_admin, "utf8");
     } else {
         const config = {
             "sh23_bot_not_config": {

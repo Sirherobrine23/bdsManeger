@@ -43,7 +43,7 @@ module.exports.start = () => {
                 const path = require("path");
                 require("open")("https://account.mojang.com/documents/minecraft_eula");
                 const eula_file = path.join(bds.bds_dir_java, "eula.txt")
-                const eula_make_true = fs.readFileSync(eula_file, "utf-8").replace("eula=false", "eula=true")
+                const eula_make_true = fs.readFileSync(eula_file, "utf8").replace("eula=false", "eula=true")
                 fs.writeFileSync(eula_file, eula_make_true)
                 const node_detect = process.argv[0]
                 if (node_detect.includes("node")){

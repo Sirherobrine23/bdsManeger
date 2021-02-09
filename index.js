@@ -116,7 +116,7 @@ if (!(fs.existsSync(bds_dir))){
 // Configs
 const bds_config_file = path.join(bds_dir, "bds_config.json")
 if (fs.existsSync(bds_config_file)){
-    var bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf-8"))
+    var bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
 } else {
     const bds_config = {
         "bds_platform": "bedrock",
@@ -209,7 +209,7 @@ module.exports.telegram_token_save = (token) =>{
 if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
     console.log(`We identified the old telegram token file (${path.join (bds_dir, "telegram_token.txt")}), starting the immigration process`)
     try {
-        const token = fs.readFileSync(path.join(bds_dir, "telegram_token.txt"), "utf-8").split("\n").join("")
+        const token = fs.readFileSync(path.join(bds_dir, "telegram_token.txt"), "utf8").split("\n").join("")
         require("./index").telegram_token_save(token)
         fs.rmSync(path.join(bds_dir, "telegram_token.txt"))
         console.log("We finished migrating the old telegram token file")

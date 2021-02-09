@@ -11,7 +11,7 @@ module.exports.World_BAckup = () => {
     if (bds.platform === "bedrock"){
         dir_zip = path.join(bds.bds_dir_bedrock, "worlds") //`${require("../index").}/worlds/`
     } else {
-        const world_name = JSON.parse(java_pro(fs.readFileSync(path.join(bds.bds_dir_java, "server.properties"), "utf-8").replaceAll("-", "_"))).level_name
+        const world_name = JSON.parse(java_pro(fs.readFileSync(path.join(bds.bds_dir_java, "server.properties"), "utf8").replaceAll("-", "_"))).level_name
         dir_zip = path.join(bds.bds_dir_java, world_name) //`${require("../index").bds_dir_bedrock}/${world_name}/`
     }
     /**
@@ -46,7 +46,7 @@ module.exports.Drive_backup = () => {
     if (bds.platform === "bedrock"){
         dir_zip = path.join(bds.bds_dir_bedrock, "worlds") //`${require("../index").}/worlds/`
     } else {
-        const world_name = JSON.parse(java_pro(fs.readFileSync(path.join(bds.bds_dir_java, "server.properties"), "utf-8").replaceAll("-", "_"))).level_name
+        const world_name = JSON.parse(java_pro(fs.readFileSync(path.join(bds.bds_dir_java, "server.properties"), "utf8").replaceAll("-", "_"))).level_name
         dir_zip = path.join(bds.bds_dir_java, world_name) //`${require("../index").bds_dir_bedrock}/${world_name}/`
     }
     /**

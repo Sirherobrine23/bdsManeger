@@ -29,10 +29,10 @@ module.exports = (Vdown) => {
                     var ZIP_FILE_PATH = require("path").join(bds.tmp_dir, mine_name);
                     var AdmZip = require("adm-zip");
                     const fs = require("fs")
-                    if (fs.existsSync(`${server_DIR}/server.properties`)){var _old = true;var old1 = fs.readFileSync(`${server_DIR}/server.properties`, "utf-8");}
-                    if (fs.existsSync(`${server_DIR}/permissions.json`)){var _old2 = true;var old2 = fs.readFileSync(`${server_DIR}/permissions.json`, "utf-8");}
-                    if (fs.existsSync(`${server_DIR}/whitelist.json`)) {var _old3 = true;var old3 = fs.readFileSync(`${server_DIR}/whitelist.json`, "utf-8");}
-                    if (fs.existsSync(`${server_DIR}/valid_known_packs.json`)){var _old4 = true;var old4 = fs.readFileSync(`${server_DIR}/valid_known_packs.json`, "utf-8");}
+                    if (fs.existsSync(`${server_DIR}/server.properties`)){var _old = true;var old1 = fs.readFileSync(`${server_DIR}/server.properties`, "utf8");}
+                    if (fs.existsSync(`${server_DIR}/permissions.json`)){var _old2 = true;var old2 = fs.readFileSync(`${server_DIR}/permissions.json`, "utf8");}
+                    if (fs.existsSync(`${server_DIR}/whitelist.json`)) {var _old3 = true;var old3 = fs.readFileSync(`${server_DIR}/whitelist.json`, "utf8");}
+                    if (fs.existsSync(`${server_DIR}/valid_known_packs.json`)){var _old4 = true;var old4 = fs.readFileSync(`${server_DIR}/valid_known_packs.json`, "utf8");}
                     // Unzip 
                     var zip = new AdmZip(ZIP_FILE_PATH);
                     zip.extractAllTo(server_DIR, true);

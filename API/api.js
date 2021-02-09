@@ -57,7 +57,7 @@ module.exports = () => {
     app.post("/service", (req, res) => {
         const body = req.body
         const command_bds = body.command
-        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
+        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf8"))
         var pass = false;
         for (let token_verify in tokens) {
             const element = tokens[token_verify].token;
@@ -92,7 +92,7 @@ module.exports = () => {
     app.post("/bds_download", (req, res) => {
         const body = req.body
         const ver = body.version
-        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
+        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf8"))
         var pass = false;
         for (let token_verify in tokens) {
             const element = tokens[token_verify].token;
@@ -117,7 +117,7 @@ module.exports = () => {
     });
     app.post("/bds_command", (req, res) => {
         const body = req.body
-        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf-8"))
+        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf8"))
         var pass = false;
         for (let token_verify in tokens) {
             const element = tokens[token_verify].token;
