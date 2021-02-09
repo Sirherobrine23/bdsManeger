@@ -1,5 +1,5 @@
 const { Telegraf } = require("telegraf")
-const token  = require("../index").token
+const token  = require("../index").telegram_token
 const bot = new Telegraf(token)
 bot.start((ctx) => {
     const amenssagem = `Hello ${ctx.message.from.username}

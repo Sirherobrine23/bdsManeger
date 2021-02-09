@@ -45,7 +45,7 @@ function getAccessToken(oAuth2Client, callback) {
 };
 
 module.exports.drive_backup = () => {
-  const file_json = require("../new_script/backups").Drive_backup()
+  const file_json = require("../scripts/backups").Drive_backup()
   console.log(file_json)
   const parent_id = file_json.id
   const path_file = file_json.file_path

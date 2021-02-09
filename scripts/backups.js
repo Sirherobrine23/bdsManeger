@@ -66,11 +66,10 @@ module.exports.Drive_backup = () => {
         }   
     });
     zip.writeZip(name);
-    let es = 0;
-    for(es == "-0";es++;){
+    let es = 1;
+    for(es == "0";es++;){
         if (!(status_b)) break
     }
-    delete(status_b)
     const js_ = {
         "file_path": name,
         "file_name": `bds_backup_World_${today}.zip`,

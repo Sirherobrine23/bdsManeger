@@ -8,13 +8,13 @@ module.exports.checkUser = (USERNAME) => {
         console.log(`Create file in with name: ${require("../index").bds_dir}/telegram_admin.json`)
     }
     var adm = JSON.parse(admins);
-    for(index in adm){
-        if (USERNAME == index){
+    for(check_ in adm){
+        if (USERNAME == check_){
             return true
-        } else if (index == "sh23_bot_not_config"){
+        } else if (check_ == "sh23_bot_not_config"){
             console.warn("Allow all")
             return true
-        }; index++;
+        }; check_++;
     };
     return false
 }
