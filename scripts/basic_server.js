@@ -18,7 +18,7 @@ module.exports.start = () => {
             }
         } else {
             if (require('command-exists').sync('java')){
-                var start_server = exec(`java -jar server.jar nogui`, {cwd: bds.bds_dir_java});
+                var start_server = exec(`java -Xmx1024M -Xms1024M -jar server.jar nogui`, {cwd: bds.bds_dir_java});
             } else {
                 if (bds.system == 'windows'){
                     require('open')("http://docs.sirherobrine23.com/bds_maneger_api_java#Windows");

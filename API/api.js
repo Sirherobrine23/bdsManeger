@@ -69,7 +69,7 @@ module.exports = () => {
         }
         if (pass){
             if (command_bds === 'start'){
-                var bds_init = bds.start()
+                bds.start()
                 var command_status = `Bds Started`
             } else if (command_bds === 'stop'){
                 bds.stop()
