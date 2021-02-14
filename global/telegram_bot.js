@@ -1,5 +1,5 @@
 const { Telegraf } = require("telegraf")
-const token  = require("../index").token
+const token  = require("../index").telegram_token
 const bot = new Telegraf(token)
 bot.start((ctx) => {
     const amenssagem = `Hello ${ctx.message.from.username}
@@ -11,6 +11,8 @@ Commands:
 /log
 /command
 /list
+/mcpe
+/status
 The messages are re-transmitted to the minecraft chat if it is already connected: ✔
 Message Control: ❌`
     ctx.reply(amenssagem)
@@ -25,27 +27,27 @@ bot.command("server_start", (ctx) => {
                 document.getElementById("startButtom").click()
             } else {
                 require("../index").start()
-            };            
-            ctx.reply(`The server has started`)
+            }            
+            ctx.reply("The server has started")
         } else 
             ctx.reply(`${ctx.message.from.username} already started`)
     } else {
         console.log("Erro");
-        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
-    };
+        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
+    }
 });
 bot.command("server_stop", (ctx) => {
     if (require("./check").checkUser(ctx.message.from.username)){
         const bds_status = require("../index").detect()
         if (bds_status){
             require("../index").stop()
-            ctx.reply(`O servidor esta parando`)
+            ctx.reply("O servidor esta parando")
         } else 
             ctx.reply(`${ctx.message.from.username} o servidor está parado`)
     } else {
         console.log("Erro");
-        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username \(${ctx.message.from.username}\) on the whitelist`)
-    };
+        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
+    }
 });
 bot.command("command", (ctx) =>{
     const bds_command = require("../index").command
@@ -74,7 +76,11 @@ bot.command("list", (ctx) =>{
         bds_command("list")
         var old = bds_log_string;
         setTimeout(() => {
+<<<<<<< HEAD
             var name = bds_log_string.replace(old, "");
+=======
+            var name = bds_log_string.replace(old, "End\n\n");
+>>>>>>> main
             ctx.reply(name)
         }, 1000);   
     } else {
@@ -82,12 +88,21 @@ bot.command("list", (ctx) =>{
     }
 });
 bot.command("mcpe", (ctx) =>{
-    // ctx.replyWithHTML(`<a href="https://storage.cloud.google.com/bds_mcpe_files/mcpe.apk">Minecraft for Android 1.16.201.01</a>`)
-const text = `[Minecraft for Android 1.16.201.01](https://storage.googleapis.com/bds_mcpe_files/0.16.201.01.apk)
+ctx.replyWithMarkdown(`[Minecraft for Android 1.16.201.01](https://files.sh33.org/mcpe/latest.sonic)
 
 Iphone users are not privileged
+<<<<<<< HEAD
 `
 ctx.replyWithMarkdown(text)
+=======
+`)});
+bot.command("status", (ctx) =>{
+const {bds_cpu, current_cpu, ram_total, ram_free} = require("./system_monitor")
+const text = `Bds CPU usage: ${bds_cpu}%, Total CPU utilization: ${current_cpu}%
+
+Total ram memory: ${ram_total} GB, Total free ram memory: ${ram_free} GB`
+ctx.replyWithMarkdown(text);
+>>>>>>> main
 });
 // bot.command("status", (ctx) =>{
 // const si = require("systeminformation");

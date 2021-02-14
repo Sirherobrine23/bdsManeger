@@ -1,11 +1,14 @@
 name: Stable Publish
 on:
   push: 
-    tags:
-      - "*.*"
-      - "v*.*"
     branches:
       - stable
+    paths-ignore:
+      - 'README.md'
+      - '.github/*/**'
+      - 'package-lock.json'
+      - '.devcontainer/**'
+      - 'CHANGELOG.md'
 jobs:
   Publish:
     runs-on: ubuntu-latest
@@ -53,3 +56,19 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Get Infos
+        run: bash .github/workflows/get_version.sh
+
+      - name: Tag
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: Bds Maneger API v${{ env.bds_api_version }}
+          tag_name: ${{ env.bds_api_version }}
+          body: |
+            Install: npm install bds_maneger_api@latest
+            Install: npm install bds_maneger_api@${{ env.bds_api_version }}
+            Bds Maneger API publish Version: ${{ env.bds_api_version }}
+            Bds Maneger API depedencies: ${{ env.bds_api_depe }}

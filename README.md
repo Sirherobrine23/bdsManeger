@@ -18,6 +18,5 @@ This module was made to work both in the cli version and in gui versions like el
 
 some deven ports are unlocked by the firewall if enabled:
 
-- 28574
 - 1932
 - 6565
