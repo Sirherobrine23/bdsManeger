@@ -1,5 +1,8 @@
 {
-  "name": "bds_maneger_api",
+  "name": "@the-bds-maneger/bds_maneger_api",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.5.4",
   "description": "scripts to manage minecraft bedrock server",
   "private": false,
