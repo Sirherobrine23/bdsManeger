@@ -1,15 +1,17 @@
   
 name: Dev Publish
-on: 
+on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'README.md'
-      - '.github/*/**'
-      - 'package-lock.json'
-      - '.devcontainer/**'
-      - 'CHANGELOG.md'
+  schedule:
+    - cron: "0 13 * */1 *"
+  paths-ignore:
+    - 'README.md'
+    - '.github/*/**'
+    - 'package-lock.json'
+    - '.devcontainer/**'
+    - 'CHANGELOG.md'
 jobs:
   check:
     strategy:

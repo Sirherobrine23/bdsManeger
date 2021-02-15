@@ -29,7 +29,8 @@
 		"coenraads.bracket-pair-colorizer",
 		"aaron-bond.better-comments",
 		"msjsdiag.debugger-for-chrome",
-		"smcpeak.default-keys-windows"
+		"smcpeak.default-keys-windows",
+		"vscode-icons-team.vscode-icons"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
