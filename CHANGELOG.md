@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 # 1.5.0
 
 All scripts have been rewritten some features are still under maintenance
@@ -6,6 +8,7 @@ The Docker image has returned to work in the new version.
 
 Some functions will be modified or removed from the next version in the Stable branch
 
+>>>>>>> main
 # 1.4.2
 
 Docker test fix

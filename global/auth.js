@@ -45,12 +45,24 @@ function getAccessToken(oAuth2Client, callback) {
 }
 
 module.exports.drive_backup = () => {
+<<<<<<< HEAD
+  const file_json = require("../new_script/backups").Drive_backup()
+=======
   const file_json = require("../scripts/backups").Drive_backup()
+>>>>>>> main
   console.log(file_json)
   const parent_id = file_json.id
   const path_file = file_json.file_path
   const name_d = file_json.file_name;
   
+<<<<<<< HEAD
+  const gd_secret = '';
+  console.log(gd_secret)
+  function upload_backup(auth) {
+    const drive = google.drive({version: "v3", auth});
+    if (parent_id === undefined){
+      var fileMetadata = {
+=======
   const gd_secret = "";
   console.log(gd_secret)
   function upload_backup(auth) {
@@ -58,15 +70,24 @@ module.exports.drive_backup = () => {
     var fileMetadata;
     if (parent_id === undefined){
       fileMetadata = {
+>>>>>>> main
         name: name_d
       }
       console.log("Your backup will be saved to My Drive")
     } else {
+<<<<<<< HEAD
+      var fileMetadata = {
+        name: name_d,
+        parents: [parent_id]
+      }
+    };
+=======
       fileMetadata = {
         name: name_d,
         parents: [parent_id]
       }
     }
+>>>>>>> main
     var media = {
       mimeType: "application/octet-stream",
       body: fs.createReadStream(path_file)
@@ -102,6 +123,10 @@ module.exports.mcpe = () => {
           progress += d.length / 1024 / 1024;
           if (process.stdout.isTTY) {process.stdout.clearLine();process.stdout.cursorTo(0);process.stdout.write(`Downloaded ${Math.trunc(progress)} Mbytes`);}
       }).pipe(dest)});
+<<<<<<< HEAD
+  };
+=======
   }
+>>>>>>> main
   return authorize(gd_secret, download_mcpe);
 }
