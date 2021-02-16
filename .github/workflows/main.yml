@@ -1,6 +1,6 @@
   
 name: Dev Publish
-on: 
+on:
   push:
     branches:
       - main
