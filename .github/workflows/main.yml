@@ -19,9 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@v1
-      
-      - name: Update Dependecies
-        run: npm update
 
       - name: Install Depedencies
         run: npm install
@@ -55,9 +52,6 @@ jobs:
           cat package2.json > package.json
           rm -rfv package2.json
 
-      - name: Update Packages
-        run: npm update
-
       - name: Install Packages
         run: npm install
 
@@ -78,7 +72,7 @@ jobs:
           tag_name: ${{ github.run_id }}
           prerelease: true
           body: |
-            Install: npm install bds_maneger_api@dev
-            Install: npm install bds_maneger_api@${{ env.bds_api_version }}
+            Install: npm install @the-bds-maneger/bds_maneger_api@dev
+            Install: npm install @the-bds-maneger/bds_maneger_api@${{ env.bds_api_version }}
             Bds Maneger API publish Version (dev): ${{ env.bds_api_version }}
             Bds Maneger API depedencies: ${{ env.bds_api_depe }}

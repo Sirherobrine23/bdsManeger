@@ -8,10 +8,10 @@ module.exports = () => {
     app.use(cors());
     const rateLimit = require("express-rate-limit");
     const limiter = rateLimit({
-        windowMs: 5 * 60 * 1000, // 5 minutes
+        windowMs: 500,
         message: {
           "status": false,
-          "log": "we had an overflow of log requests, please wait 5 minutes."
+          "log": "we had an overflow of log requests, please wait."
         },
         statusCode: 200,
         max: 5000 // limit each IP to 5000 requests per windowMs

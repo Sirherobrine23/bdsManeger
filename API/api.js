@@ -52,23 +52,7 @@ module.exports = () => {
         return res.send(json_http);
     });
     app.get("/", (req, res) => {
-<<<<<<< HEAD
-        return res.send(`Hello, welcome to the Bds Maneger API, If this page has loaded it means that the API is working as planned, More information access the API documentation at: https://docs.srherobrine23.com/bds-maneger-api_whatis.html, Version: ${require(__dirname+'/../package.json').version}`);
-    });
-    app.get("/themes", (req, res) => {
-        fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/themes.json").then(response => response.json()).then(array => {
-            var themes_json;
-            for (let index = 0; index < array.length; index++) {
-                const name = array[index].name;
-                const zip_url = array[index].zip_url;
-                const git_url = array[index].git_url;
-                themes_json += `{Name: ${name},\n Url Zip: ${zip_url},\n Git url: ${git_url}},`
-            }
-            return res.send(themes_json);
-        });
-=======
         return res.send(`Hello, welcome to the Bds Maneger API, If this page has loaded it means that the API is working as planned, More information access the API documentation at: https://docs.srherobrine23.com/bds-maneger-api_whatis.html, Version: ${require(path.join(__dirname, "..", "package.json")).version}`);
->>>>>>> main
     });
     app.post("/service", (req, res) => {
         const body = req.body
