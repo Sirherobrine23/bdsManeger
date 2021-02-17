@@ -3,14 +3,13 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "scripts to manage minecraft bedrock server",
   "private": false,
   "main": "index.js",
   "scripts": {
     "test": "eslint .",
-    "test:fix": "eslint --fix .",
-    "server": "node index.js"
+    "test:fix": "eslint --fix ."
   },
   "repository": {
     "type": "git",

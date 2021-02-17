@@ -81,8 +81,8 @@ if (process.platform == "win32") {
     if(data["XDG_DESKTOP_DIR"]){
         desktop = data["XDG_DESKTOP_DIR"];
         desktop = desktop.replace(/\$([A-Za-z\-_]+)|\$\{([^{^}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))}
-        else{desktop = "/tmp"}
-    
+        else if (process.env.BDS_DOCKER_IMAGE) desktop = "/home/bds/"
+        else desktop = "/tmp"
     tmp = "/tmp";
     system = "linux";
 } else if (process.platform == "darwin") {
@@ -115,28 +115,27 @@ if (!(fs.existsSync(bds_dir))){
 }
 
 // Configs
-const bds_config_file = path.join(bds_dir, "bds_config.json")
+var bds_config,
+    bds_config_file;
+bds_config_file = path.join(bds_dir, "bds_config.json")
 if (fs.existsSync(bds_config_file)){
-    var bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
+    bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
 } else {
-    const bds_config = {
+    bds_config = {
         "bds_platform": "bedrock",
-        "telegram_token": "not User defined"
+        "telegram_token": "not User defined",
+        "telegram_admin": [
+            "all",
+            "users"
+        ]
     }
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config))
 }
 module.exports.platform = bds_config.bds_platform
-console.log(`Running on the "${bds_config.bds_platform}" platform`)
-// Configs
-
+module.exports.bds_maneger_config = bds_config
 var log_dir = path.join(bds_dir, "log");
 var log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_log.log`);
 var log_date = date();
-
-// ---------
-// ---------
-
-
 
 if (!(fs.existsSync(cache_dir))){
     console.log(`Creating a folder for Storage in ${cache_dir}`);
@@ -184,7 +183,7 @@ function platform_update(plate){
         const config_load = JSON.parse(fs.readFileSync(bds_config))
         config_load.bds_platform = plate
         fs.writeFileSync(bds_config, JSON.stringify(config_load))
-        console.log(`upgrading the bedrock ${plate}`)
+        console.log(`upgrading the platform ${plate}`)
     } catch (error) {
         throw new console.error(`Something happened error code: ${error}`);
     }

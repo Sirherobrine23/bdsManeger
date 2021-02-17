@@ -19,3 +19,6 @@ RUN wget https://github.com/cli/cli/releases/download/v1.6.0-pre.3/gh_1.6.0-pre.
 
 # [Optional] Uncomment if you want to install more global node modules
 # RUN su node -c "npm install -g <your-package-list-here>"
+
+ENV BDS_DOCKER_IMAGE="true"
+RUN mkdir -p /home/bds/
