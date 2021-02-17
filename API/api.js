@@ -7,6 +7,7 @@ module.exports = () => {
     const path = require("path");
     var cors = require("cors");
     const rateLimit = require("express-rate-limit");
+    const token_verify = require("./token_api_check")
 
     // Enable if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
     // see https://expressjs.com/en/guide/behind-proxies.html
@@ -57,16 +58,9 @@ module.exports = () => {
     app.post("/service", (req, res) => {
         const body = req.body
         const command_bds = body.command
-        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf8"))
-        var pass = false;
-        for (let token_verify in tokens) {
-            const element = tokens[token_verify].token;
-            if (body.token == element){
-                pass = true
-            } else {
-                token_verify++
-            }
-        }
+        
+        var pass = token_verify(body.token)
+
         if (pass){
             var command_status
             if (command_bds === "start"){
@@ -92,16 +86,7 @@ module.exports = () => {
     app.post("/bds_download", (req, res) => {
         const body = req.body
         const ver = body.version
-        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf8"))
-        var pass = false;
-        for (let token_verify in tokens) {
-            const element = tokens[token_verify].token;
-            if (body.token == element){
-                pass = true
-            } else {
-                token_verify++
-            }
-        }
+        var pass = token_verify(body.token)
         var STA,EMN
         if (pass){
             STA = "wait"
@@ -117,13 +102,7 @@ module.exports = () => {
     });
     app.post("/bds_command", (req, res) => {
         const body = req.body
-        const tokens = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_tokens.json"), "utf8"))
-        var pass = false;
-        for (let token_verify in tokens) {
-            const element = tokens[token_verify].token;
-            // req.connection.remoteAddress
-            if (body.token == element){pass = true} else {token_verify++}
-        }
+        var pass = token_verify(body.token)
         if (pass){
             const command = body.command
             const teste = bds.command(command)

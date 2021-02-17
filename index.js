@@ -325,26 +325,25 @@ module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "b
 module.exports.telegram = require("./scripts/telegram_bot")
 module.exports.change_platform = platform_update
 module.exports.token_register = () => {
-    if (!(fs.existsSync(path.join(bds_dir, "bds_tokens.json")))){
-        fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), "[]")}
-        require("crypto").randomBytes(10, function(err, buffer) {
-            var token = buffer.toString("hex");
-            console.log(token);
-            var QRCode = require("qrcode");
-            QRCode.toString(token, function (err) {
-                if (err){console.log(err);}
-                fs.readFile(path.join(bds_dir, "bds_tokens.json"), "utf8", function (err, data){
-                    if (err){console.log(err);}
-                    else {
-                        var objeto = JSON.parse(data);
-                        var count = Object.keys(objeto).length;
-                        var teste = {count, token};
-                        objeto.push(teste);
-                        var json_ = JSON.stringify(objeto);
-                        fs.writeFileSync(path.join(bds_dir, "bds_tokens.json"), json_, "utf8");}
-                    });
-                })
-            })
+    const QRCode = require("qrcode");
+    const bds_token_path = path.join(bds_dir, "bds_tokens.json") 
+    if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]")
+
+    require("crypto").randomBytes(10, function(err, buffer) {
+        if (err) console.warn(err);
+        const new_token = buffer.toString("hex");
+
+        var tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
+        tokens.push({"token": new_token});
+        fs.writeFileSync(bds_token_path, JSON.stringify(tokens), "utf8");
+
+        console.log(new_token);
+        
+        QRCode.toString(new_token, {type:"terminal"}, function (err, url) {
+            if (err) console.warn(err)
+            console.log(url)
+        })
+    })
 }
 module.exports.date = date
 /**
