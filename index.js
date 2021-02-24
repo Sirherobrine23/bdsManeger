@@ -256,7 +256,7 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
     module.exports.bedrock_latest = rawOUT.bedrock_lateste;
     module.exports.java_latest = rawOUT.java_lateste;
 
-    if (process.env.ENABLE_BDS_API.includes("true")){
+    if ((process.env.ENABLE_BDS_API||false) === "true"){
         if (typeof bds_api_start === "undefined"){
             require("./API/api")();
             require("./API/log")();
