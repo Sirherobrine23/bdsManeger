@@ -41,7 +41,7 @@
     "node-fetch": "^2.6.1",
     "node-localstorage": "^2.1.6",
     "open": "^7.4.2",
-    "properties-to-json": "^0.1.7",
+    "properties-to-json": "^0.2.1",
     "qr-image": "^3.2.0",
     "qrcode": "^1.4.4",
     "request-ip": "^2.1.3",
