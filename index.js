@@ -1,5 +1,5 @@
 /* eslint-disable no-irregular-whitespace */
-console.log(`Running the Bds Maneger API in version ${require(__dirname+"/package.json").version}`)
+if (process.env.IS_BIN_BDS === undefined) console.log(`Running the Bds Maneger API in version ${require(__dirname+"/package.json").version}`)
 var shell = require("shelljs");
 let blanks;
 function date(fu) {
@@ -129,10 +129,9 @@ if (fs.existsSync(bds_config_file)){
             "users"
         ]
     }
-    fs.writeFileSync(bds_config_file, JSON.stringify(bds_config))
+    fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
 }
 module.exports.platform = bds_config.bds_platform
-module.exports.bds_maneger_config = bds_config
 var log_dir = path.join(bds_dir, "log");
 var log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_log.log`);
 var log_date = date();
@@ -182,24 +181,24 @@ function platform_update(plate){
     try {
         const config_load = JSON.parse(fs.readFileSync(bds_config))
         config_load.bds_platform = plate
-        fs.writeFileSync(bds_config, JSON.stringify(config_load))
+        fs.writeFileSync(bds_config, JSON.stringify(config_load, null, 4))
         console.log(`upgrading the platform ${plate}`)
     } catch (error) {
         throw new console.error(`Something happened error code: ${error}`);
     }
 }
-if ((process.env.SERVER || "bedrock").includes("java", "JAVA")){
-    platform_update("java")
-}else{
-    platform_update("bedrock")
+if (process.env.SERVER !== undefined){
+    if ((process.env.SERVER || "bedrock").includes("java", "JAVA")) platform_update("java");
+    else platform_update("bedrock");
 }
+
 
 module.exports.telegram_token_save = (token) =>{
     try {
         const bds_config = path.join(bds_dir, "bds_config.json")
         const config_load = JSON.parse(fs.readFileSync(bds_config))
         config_load.telegram_token = token
-        fs.writeFileSync(bds_config, JSON.stringify(config_load))
+        fs.writeFileSync(bds_config, JSON.stringify(config_load, null, 4))
         return true
     } catch {
         return false
@@ -306,8 +305,6 @@ module.exports.system = system
  * Backups etc ...
  */
 module.exports.bds_dir = bds_dir
-
-
 module.exports.bds_dir_bedrock = bds_dir_bedrock
 module.exports.bds_dir_java = bds_dir_java
 module.exports.tmp_dir = tmp
@@ -316,6 +313,21 @@ module.exports.api_dir = cache_dir
 module.exports.log_file = log_file
 module.exports.log_date = log_date
 module.exports.arch = archi
+
+function bds_config_export (){
+    /**
+     * Get current bds core config
+     * 
+     * @example bds.bds_config.bds_platform // return bedrock or java
+     * 
+     * * it updates every second
+     */
+     module.exports.bds_config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json")))
+}
+bds_config_export()
+setInterval(() => {
+    bds_config_export()
+}, 60 * 1000 /* seconds*milliseconds */);
 
 // module.exports.token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
 module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
@@ -335,7 +347,7 @@ module.exports.token_register = () => {
 
         var tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
         tokens.push({"token": new_token});
-        fs.writeFileSync(bds_token_path, JSON.stringify(tokens), "utf8");
+        fs.writeFileSync(bds_token_path, JSON.stringify(tokens, null, 4), "utf8");
 
         console.log(new_token);
         

@@ -6,6 +6,7 @@ module.exports = (Vdown) => {
         var mine_name
         var downloadBDSchild
         if (bds.platform === "bedrock"){
+            if (Vdown === "latest") Vdown = versions.bedrock_lateste
             const system = bds.system
             mine_name = "bedrock.zip"
             var versions_get
@@ -54,6 +55,7 @@ module.exports = (Vdown) => {
                 }
             })
         } else {
+            if (Vdown === "latest") Vdown = versions.java_latest
             versions_get = versions.java[Vdown].url
             mine_name = "server.jar"
 

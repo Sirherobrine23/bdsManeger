@@ -8,7 +8,8 @@
     },
     "globals": {
         "bds_log_string": "writable",
-        "bds_server_string": "writable"
+        "bds_server_string": "writable",
+        "external_ip": "writable"
     },
     "extends": "eslint:recommended",
     "parserOptions": {

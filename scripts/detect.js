@@ -16,6 +16,6 @@ module.exports = () => {
         }
     }
     // 
-    console.log(`Detect code ${killbds}`)
+    if (process.env.DEBUG === "true") console.debug(`Detect code ${killbds}`)
     if (killbds == 0){return true} else {return false}
 };

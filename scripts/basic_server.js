@@ -3,6 +3,7 @@ module.exports.start = () => {
     const Storage = localStorage;
     const {exec, execSync} = require("child_process");
     const fs = require("fs")
+    const path = require("path")
 
 
     if (!(bds.detect())){
@@ -29,15 +30,17 @@ module.exports.start = () => {
                     console.log("http://docs.sirherobrine23.com/bds_maneger_api_java#Linux")
                 } else {
                     require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java");
-                    console.log("http://docs.sirherobrine23.com/bds_maneger_api_java")
+                    console.log("http://docs.sirherobrine23.com/scripts/_java")
                 }
             }
         }
         
-        
+        fs.writeFileSync(path.join(bds.bds_dir, "users.json"), "[]")
         Storage.setItem("old_log_file", bds.log_file)
         var logConsoleStream = require("fs").createWriteStream(bds.log_file, {flags: "a"});
+        var latestLog = require("fs").createWriteStream(path.join(bds.bds_dir, "log", "latest.log"), {flags: "a"});
         start_server.stdout.pipe(logConsoleStream);
+        start_server.stdout.pipe(latestLog);
         start_server.stdout.on("data", function(data){
             if (data.includes("agree", "EULA")){
                 const path = require("path");
@@ -52,6 +55,27 @@ module.exports.start = () => {
                         process.exit(0)
                     }, 1000);
                 }
+            }
+        })
+        start_server.stdout.on("data", function(data){
+            data = data.split("\n")
+            for (let line in data){
+                  const value = data[line]
+                  for (var i = 0;i < value.length;i++){
+                    if (value[i].includes("connected")) {
+                        console.log(value[i])
+                        const list = value[i]
+                        for (let h in value[i] ){
+                            const username = list[h]
+                            const users = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_users.json"), "utf-8"))
+                            users.push({
+                                user: username[3]
+                            })
+                            fs.writeFileSync(path.join(bds.bds_dir, "users.json"), JSON.stringify(users, null, 2))
+                        }
+                        
+                    }
+                  }
             }
         })
         if (typeof bds_log_string !== "undefined"){bds_log_string = ""}
