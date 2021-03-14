@@ -12,7 +12,7 @@
     "test:fix": "eslint --fix ."
   },
   "bin": {
-    "bds_maneger": "./bin/bds_maneger"
+    "bds_maneger": "./bin/bds_maneger.js"
   },
   "contributors": [
     {

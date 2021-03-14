@@ -22,23 +22,12 @@ module.exports = () => {
     app.use(limiter);
     const bodyParser = require("body-parser");
     app.use(bodyParser.urlencoded({ extended: true }));
-    app.get("/configs", (req, res) => {
-        return res.send(bds.get_config());
-    });
+    app.get("/configs", (req, res) => {return res.send(bds.get_config());/* end */});
     app.get("/info", (req, res) => {
-        const text = fs.readFileSync(localStorage.getItem("old_log_file"), "utf8");
-        const versions = bds.version_raw
-        for (let v in versions){
-            if (text.includes(versions[v])){
-                var log_version = versions[v];
-            } else {
-                v++;
-            }
-        }
         const config = bds.get_config()
         var json_http = {
             "server": {
-                "bds_version": log_version,
+                "bds_version": bds.bds_config,
                 "port": config.server_port,
                 "port6": config.server_portv6,
                 "world_name": config.level_name,
@@ -52,8 +41,20 @@ module.exports = () => {
         }
         return res.send(json_http);
     });
+    app.get("/players", (req, res) => {
+        return res.send(fs.readFileSync(bds.api_dir));
+    });
     app.get("/", (req, res) => {
-        return res.send(`Hello, welcome to the Bds Maneger API, If this page has loaded it means that the API is working as planned, More information access the API documentation at: https://docs.srherobrine23.com/bds-maneger-api_whatis.html, Version: ${require(path.join(__dirname, "..", "package.json")).version}`);
+        return res.send(`<html>
+            <body>
+                <h1>Hello From Bds Maneger Core</h1>
+                <a>If this page has loaded it means that the API is working as planned, More information access the API documentation at: <a href="https://docs.srherobrine23.com/bds-maneger-api_whatis.html">Bds Maneger Core</a>. </a>
+                <br><a>Version: ${require(path.resolve(__dirname, "..", "package.json")).version}</a>
+            </body>
+            <header>
+                by Sirherobrine23
+            </header>
+        </html>`);
     });
     app.post("/service", (req, res) => {
         const body = req.body
@@ -120,4 +121,59 @@ module.exports = () => {
         }
     });    
     app.listen(1932);
+}
+
+module.exports.log = () => {
+    const express = require("express");
+    const bds = require("../index");
+    const fs = require("fs");
+    const app = express();
+    var cors = require("cors");
+    app.use(cors());
+    const rateLimit = require("express-rate-limit");
+    const limiter = rateLimit({
+        windowMs: 500,
+        message: {
+            "status": false,
+            "log": "we had an overflow of log requests, please wait."
+        },
+        statusCode: 200,
+        max: 5000 // limit each IP to 5000 requests per windowMs
+    });
+    app.use(limiter);
+    const requestIp = require("request-ip");
+    app.use(requestIp.mw())
+    app.get("/", (req, res) => {
+        let format = req.query.format
+        var text="";
+        var log_file="";
+        var sucess="";
+        if (typeof bds_log_string === "undefined"){
+            if (fs.existsSync(bds.latest_log)){
+                text = `${fs.readFileSync(bds.latest_log)}`
+                log_file = bds.latest_log
+                sucess = true
+            } else {
+                text = "The server is stopped"
+                sucess = false
+            }
+        } else {
+            text = bds_log_string
+            log_file = "string"
+            sucess = true
+        }
+        if (format === "json") res.json(text.split("\n"));
+        else if (format === "html") res.send(text.split("\n").join("<br>"));
+        else if (format === "plain") res.send(text);
+        else res.json({
+            "sucess": sucess,
+            "log": text,
+            "log_file": log_file,
+            "ip": `${req.clientIp}`,
+            "requeset_date": bds.date()
+        });
+        
+    });
+    app.listen(6565);
+    return app
 }

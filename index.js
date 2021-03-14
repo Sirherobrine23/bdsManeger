@@ -124,9 +124,9 @@ if (fs.existsSync(bds_config_file)){
     bds_config = {
         "bds_platform": "bedrock",
         "telegram_token": "not User defined",
+        "version": "latest",
         "telegram_admin": [
-            "all",
-            "users"
+            "all_users"
         ]
     }
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
@@ -257,8 +257,10 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
 
     if ((process.env.ENABLE_BDS_API||false) === "true"){
         if (typeof bds_api_start === "undefined"){
-            require("./API/api")();
-            require("./API/log")();
+            console.warn("The API Http is being moved to \"bds.api\" use this option to activate requests via http");
+            const API = require("./API/api");
+            API()
+            API.log()
         }
     } else {
         console.warn("The API via http is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html")
@@ -272,6 +274,16 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
 })
 // Fetchs
 
+
+/**
+ * Activate an API via expresss.js, to receive requests via http such as the log, send and receive commands
+ * 
+ * to activate use:
+ * * bds.api() // to activate requests via http
+ * * bds.log()
+ */
+module.exports.api = require("./API/api");
+
 // Module export
 /* Variaveis */
 /**
@@ -281,10 +293,23 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
  * 
  * Windows: C:\\Users\\USER\\
  * 
- * MacOS: not supported
+ * MacOS: In tests
  */
 module.exports.home = home
 
+/**
+ * get the location of the file where the player history connected to the server is saved
+ * 
+ */
+const user_file_connected = path.join(bds_dir, "bds_users.json")
+module.exports.players_files = user_file_connected
+if (!(fs.existsSync(user_file_connected))) fs.writeFileSync(user_file_connected, "[]")
+const file_user_check = fs.readFileSync(user_file_connected, "utf8");
+const primeira_letra = file_user_check.charAt(0)
+const ultima_letra = file_user_check.slice(-1)
+if (primeira_letra !== "[") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [and end with -->]")
+else if (ultima_letra !== "]") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [and end with -->]")
+else console.info("the files of the connected players are ok !!!")
 /**
  * With different languages ​​and systems we want to find the user's desktop for some link in the directory or even a nice shortcut
  */
@@ -313,6 +338,7 @@ module.exports.api_dir = cache_dir
 module.exports.log_file = log_file
 module.exports.log_date = log_date
 module.exports.arch = archi
+module.exports.latest_log = path.join(bds_dir, "log", "latest.log")
 
 function bds_config_export (){
     /**

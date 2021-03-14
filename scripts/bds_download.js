@@ -1,5 +1,6 @@
 module.exports = (Vdown) => {
     console.warn("Do not exit BDS Manager")
+    console.warn(`Installing the version ${Vdown}`)
     const bds = require("../index")
 
     fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(versions => {

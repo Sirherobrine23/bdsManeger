@@ -1,3 +1,15 @@
+# Bds Core
+
+## 1.6.0
+
+* New variables have been added to index.js.
+
+* the index.js now check the bds_user.json.
+
+* now users who connect to the server will be saved in bds_user.json within the root of the servers files.
+
+* in the next commit it will be necessary to activate the API via express.js manually.
+
 # 1.5.5
 
 System monitor update:

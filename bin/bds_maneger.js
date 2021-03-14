@@ -51,19 +51,17 @@ if (!(existsSync(server_exec))) {
   bds_version = "latest"
 }
 if (bds_version){
-  console.log("install: "+bds_version);
-  if (!(existsSync(server_exec))){
-    console.log("install: "+bds_version);
-    try {
-      bds.download(bds_version)
-    } catch (error) {
-      console.error(error)
-      process.exit(165)
-    }
+  try {
+    process.env.BDS_DOCKER_IMAGE = true
+    bds.download(bds_version)
+  } catch (error) {
+    console.error(error)
+    process.exit(165)
   }
 }
 else {
-  console.info("Use CTRL + C to exit")
+  console.info("Send a \"stop\" command to stop the server and exit")
+  console.info("Use CTRL + C to force exit")
   const bds_server = bds.start()
   bds_server.stdout.on("data", function (data){
     console.log(data)

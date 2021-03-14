@@ -35,12 +35,8 @@ module.exports.start = () => {
             }
         }
         
-        fs.writeFileSync(path.join(bds.bds_dir, "users.json"), "[]")
+        fs.writeFileSync(bds.players_files, "[]")
         Storage.setItem("old_log_file", bds.log_file)
-        var logConsoleStream = require("fs").createWriteStream(bds.log_file, {flags: "a"});
-        var latestLog = require("fs").createWriteStream(path.join(bds.bds_dir, "log", "latest.log"), {flags: "a"});
-        start_server.stdout.pipe(logConsoleStream);
-        start_server.stdout.pipe(latestLog);
         start_server.stdout.on("data", function(data){
             if (data.includes("agree", "EULA")){
                 const path = require("path");
@@ -57,25 +53,49 @@ module.exports.start = () => {
                 }
             }
         })
+        var logConsoleStream = require("fs").createWriteStream(bds.log_file, {flags: "a"});
+        var latestLog = require("fs").createWriteStream(path.join(bds.bds_dir, "log", "latest.log"), {flags: "w"});
+        start_server.stdout.pipe(logConsoleStream);
+        start_server.stdout.pipe(latestLog);
         start_server.stdout.on("data", function(data){
             data = data.split("\n")
+            var username;
             for (let line in data){
-                  const value = data[line]
-                  for (var i = 0;i < value.length;i++){
-                    if (value[i].includes("connected")) {
-                        console.log(value[i])
-                        const list = value[i]
-                        for (let h in value[i] ){
-                            const username = list[h]
-                            const users = JSON.parse(fs.readFileSync(path.join(bds.bds_dir, "bds_users.json"), "utf-8"))
-                            users.push({
-                                user: username[3]
-                            })
-                            fs.writeFileSync(path.join(bds.bds_dir, "users.json"), JSON.stringify(users, null, 2))
+                const value = data[line].split(" ")
+                // const list_player = value
+                const status = value[2]
+                if (status === "connected:"){
+                    username = value[3]
+                    if (username.slice(-1) === ",") username = username.slice(0, -1)
+                    console.log("Server Username connected: "+username);
+                    const file_users = fs.readFileSync(bds.players_files);
+                    const users = JSON.parse(file_users, "utf-8")
+                    if (file_users.includes(username)){
+                        for (let rem in users){
+                            if (users[rem].player === username) {
+                                users[rem].connected = true
+                                users[rem].date = new Date()
+                            }
                         }
-                        
                     }
-                  }
+                    else users.push({
+                        player: username,
+                        date: new Date(),
+                        connected: true
+                    })
+                    
+                    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+                } else if (status === "disconnected:"){
+                    username = value[3]
+                    if (username.slice(-1) === ",") username = username.slice(0, -1)
+                    console.log("Server Username disconnected: "+username);
+                    const users = JSON.parse(fs.readFileSync(bds.players_files, "utf-8"))
+                    for (let rem in users){
+                        if (users[rem].player === username) users[rem].connected = false
+                        if (users[rem].player === username) users[rem].date = new Date()
+                    }
+                    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+                }
             }
         })
         if (typeof bds_log_string !== "undefined"){bds_log_string = ""}
