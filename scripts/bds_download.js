@@ -1,5 +1,6 @@
 module.exports = (Vdown) => {
-    console.warn("Do not exit BDS Manager")
+    alert("This function is discontinued, use bds.download ()")
+    console.warn("This function is discontinued, use bds.download ()")
     console.warn(`Installing the version ${Vdown}`)
     const bds = require("../index")
 

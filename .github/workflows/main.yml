@@ -26,8 +26,6 @@ jobs:
       - name: Javascript Teste
         run: npm run test
 
-
-
   Npm-Publish:
     needs: check
     runs-on: ubuntu-latest

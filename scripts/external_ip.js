@@ -11,15 +11,15 @@
         // apify
         const ipify_request = await fetch("https://api.ipify.org/?format=json")
         const ipify_test = await ipify_request.json()
-        const ipify = await ipify_test.ip
+        const ipify = ipify_test.ip
         
         var ip;
         if (plain !== ipify){
             console.log("ipify")
-            ip = await ipify
+            ip = ipify
         } else {
             console.log("plain")
-            ip = await plain
+            ip = plain
         }
         module.exports.ip = ip
     } catch (error) {

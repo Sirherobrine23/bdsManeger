@@ -70,6 +70,8 @@ else {
     console.log("leaving the server")
     process.exit(code)
   })
+  bds.api.api()
+  bds.api.log()
 }
 const rl = readline.createInterface({
   input: process.stdin,
@@ -77,6 +79,9 @@ const rl = readline.createInterface({
 })
 rl.on("line", (input) => {
   bds.command(input)
-  if (input === "stop") rl.close()
-  console.log("------------------------------------------------");
+  if (input === "stop") {
+    rl.close()
+    console.log("------------------------ Going out ------------------------")
+  }
+  else console.log("------------------------------------------------");
 });

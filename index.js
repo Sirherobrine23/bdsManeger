@@ -1,7 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 if (process.env.IS_BIN_BDS === undefined) console.log(`Running the Bds Maneger API in version ${require(__dirname+"/package.json").version}`)
 var shell = require("shelljs");
-let blanks;
 function date(fu) {
     var today = new Date();
     if (fu == "year")
@@ -20,15 +19,6 @@ if (process.argv[0].includes("electron")){
     electron_de = true;
 } else if (process.argv[0].includes("node")){
     electron_de = undefined;
-    if (process.env.BDS_MONI == blanks){
-        process.env.BDS_MONI = true
-    }
-    // process.env.BDS_MONI
-    if (process.env.ENABLE_BDS_API == blanks){
-        process.env.ENABLE_BDS_API = true
-    }
-    // process.env.ENABLE_BDS_API
-
 } else {
     electron_de = false;
 }
@@ -36,7 +26,7 @@ const arch = process.arch
 var archi = arch
 const path = require("path")
 const fs = require("fs");
-const { error } = require("console");
+const { error } = console;
 function package_location (){
     if (fs.existsSync(path.join(process.cwd(), "package.json"))) return path.join(process.cwd(), "package.json")
     else if (fs.existsSync(path.resolve(".", "resources", "app", "package.json"))) return path.resolve(".", "resources", "app", "package.json")
@@ -80,14 +70,15 @@ if (process.platform == "win32") {
     }
     if(data["XDG_DESKTOP_DIR"]){
         desktop = data["XDG_DESKTOP_DIR"];
-        desktop = desktop.replace(/\$([A-Za-z\-_]+)|\$\{([^{^}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))}
-        else if (process.env.BDS_DOCKER_IMAGE) desktop = "/home/bds/"
-        else desktop = "/tmp"
+        desktop = desktop.replace(/\$([A-Za-z\-_]+)|\$\{([^{^}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))
+    }
+    else if (process.env.BDS_DOCKER_IMAGE) desktop = "/home/bds/"
+    else desktop = "/tmp"
     tmp = "/tmp";
     system = "linux";
 } else if (process.platform == "darwin") {
     require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
-    console.error("Please use Windows or Linux MacOS Not yet supported")
+    console.error("MacOS is not yet supported, wait until it is (You can use the docker)")
     process.exit(1984)
 } else {
     console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
@@ -115,8 +106,7 @@ if (!(fs.existsSync(bds_dir))){
 }
 
 // Configs
-var bds_config,
-    bds_config_file;
+var bds_config, bds_config_file;
 bds_config_file = path.join(bds_dir, "bds_config.json")
 if (fs.existsSync(bds_config_file)){
     bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
@@ -135,13 +125,22 @@ module.exports.platform = bds_config.bds_platform
 var log_dir = path.join(bds_dir, "log");
 var log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_log.log`);
 var log_date = date();
-
+function bds_config_export (){
+    /**
+     * Get current bds core config
+     * 
+     * @example bds.bds_config.bds_platform // return bedrock or java
+     * 
+     * * it updates every second
+     */
+    module.exports.bds_config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json")))
+}
+bds_config_export()
 if (!(fs.existsSync(cache_dir))){
     console.log(`Creating a folder for Storage in ${cache_dir}`);
     fs.mkdirSync(cache_dir)
     if (!(fs.existsSync(cache_dir))) shell.mkdir("-p", cache_dir);
 }
-// e
 if (!(fs.existsSync(bds_dir_java))){
     console.log("Creating the bds directory to Java")
     fs.mkdirSync(bds_dir_java)
@@ -152,7 +151,6 @@ if (!(fs.existsSync(bds_dir_bedrock))){
     fs.mkdirSync(bds_dir_bedrock)
     if (!(fs.existsSync(bds_dir_bedrock))) shell.mkdir("-p", bds_dir_bedrock);
 }
-// e
 if (!(fs.existsSync(log_dir))){
     if (!fs.existsSync(log_dir)){
         console.log(`Creating the bds log dir (${log_dir})`)
@@ -160,9 +158,6 @@ if (!(fs.existsSync(log_dir))){
         if (!(fs.existsSync(log_dir))) shell.mkdir("-p", log_dir)
     }
 }
-// e
-
-
 /**
  * with this command we can change the platform with this script
  * 
@@ -183,6 +178,7 @@ function platform_update(plate){
         config_load.bds_platform = plate
         fs.writeFileSync(bds_config, JSON.stringify(config_load, null, 4))
         console.log(`upgrading the platform ${plate}`)
+        bds_config_export()
     } catch (error) {
         throw new console.error(`Something happened error code: ${error}`);
     }
@@ -193,17 +189,20 @@ if (process.env.SERVER !== undefined){
 }
 
 
-module.exports.telegram_token_save = (token) =>{
+const telegram_token_save = function (token) {
     try {
         const bds_config = path.join(bds_dir, "bds_config.json")
         const config_load = JSON.parse(fs.readFileSync(bds_config))
         config_load.telegram_token = token
         fs.writeFileSync(bds_config, JSON.stringify(config_load, null, 4))
+        bds_config_export()
         return true
     } catch {
         return false
     }
 }
+module.exports.telegram_token_save = telegram_token_save
+
 
 if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
     console.log(`We identified the old telegram token file (${path.join (bds_dir, "telegram_token.txt")}), starting the immigration process`)
@@ -216,10 +215,6 @@ if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
         throw new error("It was not possible to move the old telegram token file to the new bds maneger api file")
     }
 }
-
-if (process.env.BDS_MONI == blanks){process.env.BDS_MONI = "false"}
-if (process.env.ENABLE_BDS_API == blanks){process.env.ENABLE_BDS_API = "false"}
-
 
 // Fetchs
 fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").then(response => response.text()).then(gd_cre => {
@@ -254,17 +249,6 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
     module.exports.bds_latest = rawOUT.bedrock_lateste;
     module.exports.bedrock_latest = rawOUT.bedrock_lateste;
     module.exports.java_latest = rawOUT.java_lateste;
-
-    if ((process.env.ENABLE_BDS_API||false) === "true"){
-        if (typeof bds_api_start === "undefined"){
-            console.warn("The API Http is being moved to \"bds.api\" use this option to activate requests via http");
-            const API = require("./API/api");
-            API()
-            API.log()
-        }
-    } else {
-        console.warn("The API via http is disabled, for more information, visit https://docs.srherobrine23.com/enable_bds_requests.html")
-    }
     module.exports.get_version = (type) => {
         if (type == "raw")
             return rawOUT.Versions;
@@ -340,20 +324,6 @@ module.exports.log_date = log_date
 module.exports.arch = archi
 module.exports.latest_log = path.join(bds_dir, "log", "latest.log")
 
-function bds_config_export (){
-    /**
-     * Get current bds core config
-     * 
-     * @example bds.bds_config.bds_platform // return bedrock or java
-     * 
-     * * it updates every second
-     */
-     module.exports.bds_config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json")))
-}
-bds_config_export()
-setInterval(() => {
-    bds_config_export()
-}, 60 * 1000 /* seconds*milliseconds */);
 
 // module.exports.token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
 module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
@@ -419,6 +389,8 @@ module.exports.bds_detect = require("./scripts/detect")
 
 /**
  * @deprecated
+ * 
+ * use bds.download
  */
 module.exports.version_Download = require("./scripts/bds_download")
 
@@ -429,8 +401,10 @@ module.exports.version_Download = require("./scripts/bds_download")
  * bedrock: bds.download("1.16.201.02")
  * 
  * java: bds.download("1.16.5")
+ * 
+ * any platform: bds.download("latest") // It will download the latest version available for download
  */
-module.exports.download = require("./scripts/bds_download")
+module.exports.download = require("./scripts/download")
 
 /**
  * this function will be used to kill the server in the background

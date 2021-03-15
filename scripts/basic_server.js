@@ -34,8 +34,6 @@ module.exports.start = () => {
                 }
             }
         }
-        
-        fs.writeFileSync(bds.players_files, "[]")
         Storage.setItem("old_log_file", bds.log_file)
         start_server.stdout.on("data", function(data){
             if (data.includes("agree", "EULA")){
@@ -75,13 +73,23 @@ module.exports.start = () => {
                             if (users[rem].player === username) {
                                 users[rem].connected = true
                                 users[rem].date = new Date()
+                                users[rem].update.push({
+                                    date: new Date(),
+                                    connected: true
+                                })
                             }
                         }
                     }
                     else users.push({
                         player: username,
                         date: new Date(),
-                        connected: true
+                        connected: true,
+                        update: [
+                            {
+                                date: new Date(),
+                                connected: true,
+                            }
+                        ]
                     })
                     
                     fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
@@ -91,8 +99,14 @@ module.exports.start = () => {
                     console.log("Server Username disconnected: "+username);
                     const users = JSON.parse(fs.readFileSync(bds.players_files, "utf-8"))
                     for (let rem in users){
-                        if (users[rem].player === username) users[rem].connected = false
-                        if (users[rem].player === username) users[rem].date = new Date()
+                        if (users[rem].player === username) {
+                            users[rem].connected = false
+                            users[rem].date = new Date()
+                            users[rem].update.push({
+                                date: new Date(),
+                                connected: false
+                            })
+                        }
                     }
                     fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
                 }

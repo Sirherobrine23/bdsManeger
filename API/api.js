@@ -1,14 +1,14 @@
-module.exports = () => {
-    global.bds_api_start = true;
-    const express = require("express");
-    const bds = require("../index");
-    const fs = require("fs");
-    const app = express();
-    const path = require("path");
-    var cors = require("cors");
-    const rateLimit = require("express-rate-limit");
-    const token_verify = require("./token_api_check")
+const express = require("express");
+const bds = require("../index");
+const fs = require("fs");
+const app = express();
+const path = require("path");
+var cors = require("cors");
+const rateLimit = require("express-rate-limit");
+const token_verify = require("./token_api_check")
+const bodyParser = require("body-parser");
 
+function api(port_api){
     // Enable if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
     // see https://expressjs.com/en/guide/behind-proxies.html
     // app.set('trust proxy', 1);
@@ -18,10 +18,9 @@ module.exports = () => {
         max: 100 // limit each IP to 100 requests per windowMs
     });
     app.use(cors());
-    app.use(require("body-parser").json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
-    app.use(limiter);
-    const bodyParser = require("body-parser");
+    app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(limiter);
     app.get("/configs", (req, res) => {return res.send(bds.get_config());/* end */});
     app.get("/info", (req, res) => {
         const config = bds.get_config()
@@ -42,7 +41,7 @@ module.exports = () => {
         return res.send(json_http);
     });
     app.get("/players", (req, res) => {
-        return res.send(fs.readFileSync(bds.api_dir));
+        res.json(JSON.parse(fs.readFileSync(bds.players_files, "utf8")));
     });
     app.get("/", (req, res) => {
         return res.send(`<html>
@@ -51,9 +50,9 @@ module.exports = () => {
                 <a>If this page has loaded it means that the API is working as planned, More information access the API documentation at: <a href="https://docs.srherobrine23.com/bds-maneger-api_whatis.html">Bds Maneger Core</a>. </a>
                 <br><a>Version: ${require(path.resolve(__dirname, "..", "package.json")).version}</a>
             </body>
-            <header>
-                by Sirherobrine23
-            </header>
+            <p>
+                by <a href="https://github.com/Sirherobrine23">Sirherobrine23</a>
+            </p>
         </html>`);
     });
     app.post("/service", (req, res) => {
@@ -119,18 +118,15 @@ module.exports = () => {
                 "message": "not authorized"
             })
         }
-    });    
-    app.listen(1932);
+    });
+    const port = (port_api||1932)
+    app.listen(port, function (){
+        console.log(`bds maneger api http port: ${port}`);
+    });
 }
 
-module.exports.log = () => {
-    const express = require("express");
-    const bds = require("../index");
-    const fs = require("fs");
-    const app = express();
-    var cors = require("cors");
+function log(port_log){
     app.use(cors());
-    const rateLimit = require("express-rate-limit");
     const limiter = rateLimit({
         windowMs: 500,
         message: {
@@ -174,6 +170,13 @@ module.exports.log = () => {
         });
         
     });
-    app.listen(6565);
-    return app
+    const port = (port_log||6565)
+    app.listen(port, function(){
+        console.log(`bds maneger log http, port: ${port}`)
+    });
 }
+
+// module exports
+module.exports = api
+module.exports.api = api
+module.exports.log = log
