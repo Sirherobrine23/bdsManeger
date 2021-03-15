@@ -26,6 +26,7 @@ const arch = process.arch
 var archi = arch
 const path = require("path")
 const fs = require("fs");
+const { resolve } = require("path");
 const { error } = console;
 function package_location (){
     if (fs.existsSync(path.join(process.cwd(), "package.json"))) return path.join(process.cwd(), "package.json")
@@ -106,25 +107,86 @@ if (!(fs.existsSync(bds_dir))){
 }
 
 // Configs
-var bds_config, bds_config_file;
-bds_config_file = path.join(bds_dir, "bds_config.json")
+var bds_config, bds_config_file = path.join(bds_dir, "bds_config.json");
+const current_version_bds_core = require(resolve(".", "./package.json")).version
 if (fs.existsSync(bds_config_file)){
     bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
+    if (bds_config.version !== current_version_bds_core){
+        let ram_total = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
+        if (ram_total >= 1000) ram_total = ram_total - 1000
+        bds_config = {
+            "version": current_version_bds_core,
+            "bds_platform": bds_config.bds_platform,
+            "telegram_token": bds_config.telegram_token,
+            "Google_Drive_root_backup_id": bds_config.Google_Drive_root_backup_id,
+            "telegram_admin": bds_config.telegram_admin,
+            "java_config": {
+                "max": ram_total
+            }
+        }
+        fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
+        bds_config_export()
+    }
 } else {
+    let ram_total = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
+    if (ram_total >= 1000) ram_total = ram_total - 1000
     bds_config = {
+        "version": current_version_bds_core,
         "bds_platform": "bedrock",
         "telegram_token": "not User defined",
-        "version": "latest",
+        "Google_Drive_root_backup_id": undefined,
         "telegram_admin": [
             "all_users"
-        ]
+        ],
+        "java_config": {
+            "max": ram_total
+        }
     }
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
 }
+
+module.exports.save_google_id = function (id){
+    let bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
+    bds_config.Google_Drive_root_backup_id = id
+    fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
+    bds_config_export()
+    return true
+}
+
 module.exports.platform = bds_config.bds_platform
 var log_dir = path.join(bds_dir, "log");
 var log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_log.log`);
 var log_date = date();
+function update_java_memory(total){
+    if (total.includes("GB")) total = (total = Math.trunc(total / 1024))
+    else if (total.includes("GIB")) total = (total = Math.trunc(total / 1000))
+    else if (total.includes("gb")) total = (total = Math.trunc(total / 1024))
+    else if (total.includes("gib")) total = (total = Math.trunc(total / 1000))
+    else if (total.includes("MB")) total = (total = Math.trunc(total))
+    else if (total.includes("mb")) total = (total = Math.trunc(total))
+    else if (total.includes("mib")) total = (total = Math.trunc(total))
+    else if (total.includes("MIB")) total = (total = Math.trunc(total))
+    else throw new Error("Please enter a valid value such as: 1GB, 1gb, 1024mb ,1024MB, 1000MIB, 10000mib ,1GIB ,1gib")
+    if (bds_config.bds_platform === "java"){
+        bds_config.java_config.max = 
+        fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
+    }
+}
+/**
+ * Update the value of how much java will use ram when the java platform is selected
+ * 
+ * the following values ​​are: 1024mb, 1024MB, 1000MIB, 1000mib, 1GB, 1gb, 1GIB, 1gib
+ */
+module.exports.memory_for_the_java = update_java_memory
+
+if (process.env.AUTOUPDATE_JAVA_RAM !== undefined||undefined){
+    setInterval(() => {
+        let ram_total = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
+        if (ram_total >= 1000) ram_total = ram_total - 1000
+        update_java_memory(ram_total+"mb")
+    }, 2500);
+}
+
 function bds_config_export (){
     /**
      * Get current bds core config
@@ -179,15 +241,18 @@ function platform_update(plate){
         fs.writeFileSync(bds_config, JSON.stringify(config_load, null, 4))
         console.log(`upgrading the platform ${plate}`)
         bds_config_export()
+        return true
     } catch (error) {
-        throw new console.error(`Something happened error code: ${error}`);
+        throw new Error(`Something happened error code: ${error}`)
     }
 }
 if (process.env.SERVER !== undefined){
     if ((process.env.SERVER || "bedrock").includes("java", "JAVA")) platform_update("java");
     else platform_update("bedrock");
 }
+module.exports.change_platform = platform_update
 
+require("./scripts/GoogleDrive")
 
 const telegram_token_save = function (token) {
     try {
@@ -217,44 +282,29 @@ if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
 }
 
 // Fetchs
-fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").then(response => response.text()).then(gd_cre => {
-    /**
-     * backup credentials and an interesting design feature, plus privacy is important
-     */
-    module.exports.google_drive_credential = gd_cre
-    /**
-     * download the latest version of minecraft bedrock for android available, remember to use if you want ✌
-     * 
-     * you are taking responsibility for that
-     */
-    module.exports.mcpe_file = require("./scripts/auth").mcpe
-    /**
-     * perform a backup of the map, some resources are still under construction in the code more works
-     * 
-     * on the bedrock platform, all maps will be backed up into the "worlds" folder
-     * 
-     * on the java platform the map selected in the server configuration will be backed up, any other map will have to change in the server settings to perform the backup
-     */
-    module.exports.drive_backup= require("./scripts/auth").drive_backup
-});
 fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(rawOUT => {
-    const versions = Object.getOwnPropertyNames(rawOUT.bedrock);
-    for (let v in versions){
-        var html = `${versions[v]}`;
-        module.exports.version_select += `<option value="${html}">${html}</option>\n`;
-        v++;
+    const bedrock_version = Object.getOwnPropertyNames(rawOUT.bedrock);
+    var select_version
+    for (let bed in bedrock_version){
+        if (select_version === undefined) select_version = `<option value="${bedrock_version[bed]}">${bedrock_version[bed]}</option>`
+        else select_version = ` <option value="${bedrock_version[bed]}">${bedrock_version[bed]}</option>`
     }
+    module.exports.version_select = select_version
+    module.exports.bedrock_version_select = select_version
+    const java_version = Object.getOwnPropertyNames(rawOUT.bedrock);
+    select_version = ""
+    for (let bed in bedrock_version){
+        if (select_version === undefined) select_version = `<option value="${java_version[bed]}">${java_version[bed]}</option>`
+        else select_version = ` <option value="${java_version[bed]}">${java_version[bed]}</option>`
+    }
+    module.exports.java_version_select = select_version
+
+
     module.exports.bedrock_all_versions = Object.getOwnPropertyNames(rawOUT.bedrock);
     module.exports.java_all_versions = Object.getOwnPropertyNames(rawOUT.java);
     module.exports.bds_latest = rawOUT.bedrock_lateste;
-    module.exports.bedrock_latest = rawOUT.bedrock_lateste;
-    module.exports.java_latest = rawOUT.java_lateste;
-    module.exports.get_version = (type) => {
-        if (type == "raw")
-            return rawOUT.Versions;
-        else
-            return require("./").version_select;
-    }
+    module.exports.bedrock_latest = rawOUT.bedrock_latest;
+    module.exports.java_latest = rawOUT.java_latest;
 })
 // Fetchs
 
@@ -331,7 +381,6 @@ module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "b
 
 // Global commands
 module.exports.telegram = require("./scripts/telegram_bot")
-module.exports.change_platform = platform_update
 module.exports.token_register = () => {
     const QRCode = require("qrcode");
     const bds_token_path = path.join(bds_dir, "bds_tokens.json") 
@@ -435,3 +484,20 @@ module.exports.set_config = require("./scripts/bds_settings").config
  * takes the server settings in JSON format
  */
 module.exports.get_config = require("./scripts/bds_settings").get_config
+
+setInterval(() => {
+    /**
+     * download the latest version of minecraft bedrock for android available, remember to use if you want ✌
+     * 
+     * you are taking responsibility for that
+     */
+    module.exports.mcpe_file = require("./scripts/GoogleDrive").mcpe
+    /**
+     * perform a backup of the map, some resources are still under construction in the code more works
+     * 
+     * on the bedrock platform, all maps will be backed up into the "worlds" folder
+     * 
+     * on the java platform the map selected in the server configuration will be backed up, any other map will have to change in the server settings to perform the backup
+     */
+    module.exports.drive_backup= require("./scripts/GoogleDrive").drive_backup
+}, 100);

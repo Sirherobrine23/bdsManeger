@@ -1,5 +1,19 @@
 # Bds Core
 
+## 1.6.2
+
+* a new configuration was added in bds_config.json to control the ram memory in java (the default value set will be what is available when creating the first bds_config.json).
+
+* a new command was added to update the java ram saved in bds_config.json.
+
+* Now bds_config.json will be updated with each version of the core that is made available.
+
+* Now Google Drive Upload backup use fetch directly in the module and no longer in index.js
+
+* auth.js has been renamed to GoogleDrive.js
+
+* the backup script has been fixed
+
 ## 1.6.1
 
 * new download method.

@@ -20,7 +20,7 @@ module.exports.start = () => {
             }
         } else {
             if (require("command-exists").sync("java")){
-                start_server = exec("java -Xmx1024M -Xms1024M -jar server.jar nogui", {cwd: bds.bds_dir_java});
+                start_server = exec(`java -Xmx${bds.bds_config.java_config.max}M -Xms${bds.bds_config.java_config.max}M -jar server.jar nogui`, {cwd: bds.bds_dir_java});
             } else {
                 if (bds.system == "windows"){
                     require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#Windows");
@@ -125,7 +125,7 @@ module.exports.start = () => {
 module.exports.stop = () => {
     if (typeof bds_server_string == "undefined"){
         const detect = process.argv[0];
-        if (detect.includes("electron")) alert("The server is stopped!");
+        if (detect === "electron") alert("The server is stopped!");
         else console.log("The server is stopped!");
     } else {
         bds_server_string.stdin.write("stop\n");

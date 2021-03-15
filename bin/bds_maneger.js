@@ -32,10 +32,14 @@ if (version) {
 }
 if (server) {
   console.log(server);
-  if (server === "JAVA"||server === "java") bds.change_platform("java")
-  else if (server === "bedrock"||server === "bedrock") bds.change_platform("bedrock")
-  else if (server === "") bds.change_platform("bedrock")
-  else console.warn("Invalid platform, supported platforms are java and bedrock")
+  try {
+    if (server === "JAVA"||server === "java") {bds.change_platform("java");bds.platform="java"}
+    else if (server === "bedrock"||server === "bedrock") {bds.change_platform("bedrock");bds.platform="bedrock"}
+    else if (server === "") {bds.change_platform("bedrock");bds.platform="bedrock"}
+    else console.warn("Invalid platform, supported platforms are java and bedrock")
+  } finally {
+    process.exit()
+  }
 }
 var server_exec;
 if (bds_config.bds_platform === "bedrock") {
