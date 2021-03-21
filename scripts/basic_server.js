@@ -113,7 +113,7 @@ module.exports.start = () => {
             }
         })
         if (typeof bds_log_string !== "undefined"){bds_log_string = ""}
-        start_server.stdout.on("data", function(data){global.bds_log_string += data})
+        start_server.stdout.on("data", function(data){if (global.bds_log_string === undefined) global.bds_log_string = data;else global.bds_log_string += data})
         Storage.setItem("bds_status", true);
         global.bds_server_string = start_server;
         return start_server;
