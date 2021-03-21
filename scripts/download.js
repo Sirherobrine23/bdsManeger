@@ -10,7 +10,7 @@ module.exports = function (version) {
         var url;
         var server_configs, permissions, whitelist
         if (server_platform === "bedrock"){
-            if (version === "latest") version = response.bedrock_lateste
+            if (version === "latest") version = response.bedrock_latest
             if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");
             if (existsSync(join(bds_dir_bedrock, "permissions.json"))) permissions = readFileSync(join(bds_dir_bedrock, "permissions.json"), "utf8")
             if (existsSync(join(bds_dir_bedrock, "whitelist.json"))) whitelist = readFileSync(join(bds_dir_bedrock, "whitelist.json"), "utf8")
