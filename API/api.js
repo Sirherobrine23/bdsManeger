@@ -1,7 +1,6 @@
 const express = require("express");
 const bds = require("../index");
 const fs = require("fs");
-const app = express();
 const path = require("path");
 var cors = require("cors");
 const rateLimit = require("express-rate-limit");
@@ -9,6 +8,7 @@ const token_verify = require("./token_api_check")
 const bodyParser = require("body-parser");
 
 function api(port_api){
+    const app = express();
     // Enable if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
     // see https://expressjs.com/en/guide/behind-proxies.html
     // app.set('trust proxy', 1);
@@ -126,6 +126,7 @@ function api(port_api){
 }
 
 function log(port_log){
+    const app = express();
     app.use(cors());
     const limiter = rateLimit({
         windowMs: 500,
