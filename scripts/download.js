@@ -26,7 +26,7 @@ module.exports = function (version) {
                 if (server_configs) writeFileSync(join(bds_dir_bedrock, "server.properties"), server_configs);
                 if (permissions) writeFileSync(join(bds_dir_bedrock, "permissions.json"), permissions)
                 if (whitelist) writeFileSync(join(bds_dir_bedrock, "whitelist.json"), whitelist)
-                if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0):
+                if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
             })
         } else {
             if (version === "latest") version = response.java_latest
@@ -36,7 +36,7 @@ module.exports = function (version) {
                 console.log("Download Sucess")
                 writeFileSync(join(bds_dir_java, "server.jar"), response, "binary")
                 console.log("Save sucess");
-                if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0):
+                if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
             })
         }
     })
