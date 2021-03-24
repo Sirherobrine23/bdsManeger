@@ -26,6 +26,9 @@ jobs:
           exit 1
           fi
 
+      - name: Install latest npm
+        run: sudo npm -i -g npm
+
       - name: Publish
         run: npm publish
         env:
