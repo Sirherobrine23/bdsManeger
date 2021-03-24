@@ -2,8 +2,7 @@ FROM bdsmaneger/node_image:latest
 USER root
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN uname -m; apt update && apt install -y git curl wget jq sudo $(case $(uname -m) in "x86_64") echo "";; *) echo "qemu-user-static binfmt-support";; esac) && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* && mkdir -p /home/bds/
-
+RUN uname -m; apt update && apt install -y git curl openjdk-14-jdk openjdk-14-jre wget jq sudo $(case $(uname -m) in "x86_64") echo "";; *) echo "qemu-user-static binfmt-support";; esac) && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* && mkdir -p /home/bds/
 # Copy Files
 COPY ./Docker/base/ /base/
 COPY ./ /opt/bdsCore/

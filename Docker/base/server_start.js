@@ -4,7 +4,7 @@ const { existsSync, readFileSync } = require("fs")
 const { resolve, join } = require("path")
 
 // Enable APIs
-bds.api.api();bds.api.log();
+bds.api();
 
 // Log function
 function output(dados){var out = dados; if (out.slice(-1) == "\n") out = out.slice(0, -1); console.log(out)}

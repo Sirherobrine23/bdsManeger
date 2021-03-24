@@ -24,15 +24,23 @@ function api(port_api){
     // app.get("/configs", (req, res) => {return res.send(bds.get_config());});
     app.get("/info", (req, res) => {
         const config = bds.get_config()
+        var java;
+        if (bds.platform === "bedrock") java = {}
+        else java = {
+            java: {
+                "max_ram_memory": bds.bds_config.java_config.max
+            }
+        }
         var json_http = {
             "server": {
-                "bds_version": bds.bds_config,
+                "bds_config_version": bds.bds_config.version,
                 "port": config.server_port,
                 "port6": config.server_portv6,
                 "world_name": config.level_name,
                 "whitelist": config.white_list,
                 "xbox": config.online_mode,
-                "max_players": config.max_players
+                "max_players": config.max_players,
+                ...java
             },
             "running": bds.detect(),
             "bds_platform": bds.bds_plataform,
@@ -123,6 +131,7 @@ function api(port_api){
     app.listen(port, function (){
         console.log(`bds maneger api http port: ${port}`);
     });
+    return app
 }
 
 function log(port_log){
@@ -175,9 +184,19 @@ function log(port_log){
     app.listen(port, function(){
         console.log(`bds maneger log http, port: ${port}`)
     });
+    return app
 }
 
 // module exports
-module.exports = api
+module.exports = function (json_config){
+    var port_rest, port_log
+    if (json_config === undefined) json_config = {};
+    if (json_config.log_port === undefined) port_log = 6565; else port_log = json_config.log_port;
+    if (json_config.rest_port === undefined) port_rest = 1932; else port_rest = json_config.rest_port;
+    return {
+        rest: api(port_rest),
+        log:  log(port_log)
+    }
+}
 module.exports.api = api
 module.exports.log = log

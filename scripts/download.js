@@ -3,13 +3,21 @@ const { warn } = require("console");
 const {writeFileSync, existsSync, readFileSync} = require("fs");
 const { join } = require("path");
 const {bds_config, bds_dir_bedrock, bds_dir_java, platform_version_update} = require("../index")
-module.exports = function (version) {
+module.exports = function (version, force_install) {
     return fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(response => {
         if (version === "") version="latest"
         if (version === undefined) version="latest"
         const server_platform = bds_config.bds_platform
         var url;
         var server_configs, permissions, whitelist
+        if (force_install === undefined) null
+        else if (force_install === false) null
+        else if (force_install === "") null
+        else if (force_install === true) {
+            bds_config.platform_version.java = "latest"
+            bds_config.platform_version.bedrock = "latest"
+        }
+        else null
         if (server_platform === "bedrock"){
             if (version === "latest") version = response.bedrock_latest
             if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");

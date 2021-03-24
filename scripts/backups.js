@@ -22,7 +22,7 @@ module.exports.World_BAckup = () => {
     if (bds.bds_detect()){bds.stop()}
     var zip = new AdmZip();
     zip.addLocalFolder(dir_zip);
-    zip.addZipComment(`Backup zip file in ${today}. \nBackup made to ${process.platform}, Free and open content for all\n\nSirherobrine23© By Bds Maneger.`);
+    zip.addZipComment(`Backup zip file in ${today}. \nBackup made to ${process.platform}, Free and open content for all\n\nThe Bds Maneger Project ©.`);
     var zipEntries = zip.getEntries();
     zipEntries.forEach(function (zipEntry) {
         console.log(zipEntry.entryName.toString());
@@ -64,7 +64,7 @@ module.exports.Drive_backup = () => {
     if (bds.bds_detect()){bds.stop()}
     var zip = new AdmZip();
     zip.addLocalFolder(dir_zip);
-    zip.addZipComment(`Backup zip file in ${today}. \nBackup made to ${process.platform}, Free and open content for all\n\nSirherobrine23© By Bds Maneger.`);
+    zip.addZipComment("Google Drive backup, by The Bds Maneger Project ©.");
     zip.writeZip(name);
     return js_
 };

@@ -28,7 +28,9 @@
 		"aaron-bond.better-comments",
 		"msjsdiag.debugger-for-chrome",
 		"smcpeak.default-keys-windows",
-		"vscode-icons-team.vscode-icons"
+		"vscode-icons-team.vscode-icons",
+		"me-dutour-mathieu.vscode-github-actions",
+		"cschleiden.vscode-github-actions"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

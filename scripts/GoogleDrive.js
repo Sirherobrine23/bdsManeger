@@ -73,12 +73,6 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.
         fs.writeFileSync(TOKEN_PATH, fs.readFileSync(old_google0user, "utf8"))
         fs.rmSync(old_google0user)
     }
-    function logToken(TOKEN_SSA){
-        console.log(`Save Sucess in file: ${TOKEN_PATH}, Token: ${JSON.stringify(TOKEN_SSA)}`);
-    }
-    if (!(fs.existsSync(TOKEN_PATH))){
-        getGoogleUserCredential(logToken)
-    }
     function authorize(callback) {
         const client_secret = Google_Drive_creential.installed.client_secret;
         const client_id = Google_Drive_creential.installed.client_id;

@@ -3,9 +3,12 @@ const path = require("path")
 const fs = require("fs");
 const { resolve } = require("path");
 const { error } = console;
-const bds_maneger_version = require(resolve(__dirname, "package.json")).version
+const shell = require("shelljs");
+
+
+const bds_core_package = resolve(__dirname, "package.json")
+const bds_maneger_version = require(bds_core_package).version
 if (process.env.IS_BIN_BDS === undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
-var shell = require("shelljs");
 function date(fu) {
     var today = new Date();
     if (fu == "year")
@@ -27,84 +30,161 @@ if (process.argv[0].includes("electron")){
 } else {
     electron_de = false;
 }
-const arch = process.arch
-var archi = arch
 
-function package_location (){
-    return path.resolve(__dirname, "package.json")
-}
-const package_root = package_location();
-var cache_dir,home,desktop,tmp,system
-module.exports.package_path = package_root
-const tmp_men = "We were unable to locate some files, a temporary folder will be created, after restarting the server or computer some saved functions will be lost"
+// System Architect (X64 or ARM64)
+const arch = process.arch
+module.exports.arch = arch
+
+var LocalStorageFolder,home,desktop,tmp,system
+module.exports.package_path = bds_core_package
 if (process.platform == "win32") {
     home = process.env.USERPROFILE;
     desktop = path.join(home, "Desktop")
-    if (fs.existsSync(package_root)) cache_dir = path.join(home, "AppData", "Roaming", require(package_root).name)
-    else {
-        console.warn(tmp_men);
-        cache_dir = path.join(process.env.TMP, "bds_tmp_configs");
-    }
+    LocalStorageFolder = path.join(home, "AppData", "Roaming", require(bds_core_package).name)
     tmp = process.env.TMP
     system = "windows";
 } else if (process.platform == "linux") {
     home = process.env.HOME;
-    if (fs.existsSync(package_root)) cache_dir = path.join(home, ".config", require(package_root).name);
-    else {
-        console.warn(tmp_men);
-        cache_dir = "/tmp/bds_tmp_configs";
-    }
+    LocalStorageFolder = path.join(home, ".config", require(bds_core_package).name);
     var file = path.join(home, ".config", "user-dirs.dirs");var data = {};
     if (fs.existsSync(file)){
-        let content = fs.readFileSync(file,"utf8");
-        let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));
+        let content = fs.readFileSync(file, "utf8");let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));
         for(let line of lines){
             let i = line.indexOf("=");
             if(i >= 0){
-                try{data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))}
-                catch(e){
-                    error(e)
-                }
+                try {data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))}
+                catch(e) {error(e)}
             }
         }
     }
-    if(data["XDG_DESKTOP_DIR"]){
+    if (process.env.BDS_DOCKER_IMAGE) desktop = "/home/bds/"
+    else if(data["XDG_DESKTOP_DIR"]){
         desktop = data["XDG_DESKTOP_DIR"];
         desktop = desktop.replace(/\$([A-Za-z\-_]+)|\$\{([^{^}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))
     }
-    else if (process.env.BDS_DOCKER_IMAGE) desktop = "/home/bds/"
     else desktop = "/tmp"
     tmp = "/tmp";
     system = "linux";
 } else if (process.platform == "darwin") {
-    require("open")("https://github.com/Bds-Maneger/Bds_Maneger/wiki/systems-support#a-message-for-mac-os-users")
-    console.error("MacOS is not yet supported, wait until it is (You can use the docker)")
-    process.exit(1984)
+    require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
+    console.error("MacOS is not yet supported, wait until it is (You can use the docker)");
+
+    home = process.env.HOME;
+    LocalStorageFolder = resolve("/tmp", require(bds_core_package).name);
+    desktop = "/tmp"
+    tmp = "/tmp";
+    system = "macos";
 } else {
     console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
-    process.exit(2021)
+    process.exit(254)
 }
-// ---------
-// ---------
-if (typeof fetch === "undefined"){
-    global.fetch = require("node-fetch")
-}
-if (typeof localStorage === "undefined"){
-    var localStorageS = require("node-localstorage").LocalStorage;
-    global.localStorage = new localStorageS(path.join(cache_dir, "Local_Storage"));
-}
-var bds_dir = path.join(home, "bds_Server");
-var bds_dir_bedrock = path.join(bds_dir, "bedrock");
-var bds_dir_java = path.join(bds_dir, "java");
+
+/* ------------------------------------------------------------ Take the variables of different systems ------------------------------------------------------------ */
+
+/**
+ * With different languages ​​and systems we want to find the user's desktop for some link in the directory or even a nice shortcut
+ */
+module.exports.desktop = desktop
+
+ /**
+  * Identifying a system in the script can be simple with this variable
+  */
+module.exports.system = system
+
+/**
+ * Temporary system directory
+ */
+module.exports.tmp_dir = tmp
+/**
+ * Detect if it is the Electron or NodeJS
+ */
+module.exports.electron = electron_de
+
+
+// save bds core files
+const bds_dir = resolve(home, "bds_core");
+const old_bds_dir = resolve(home, "bds_Server");
+
+
+// Bds Backups Folder
 var bds_dir_backup = path.join(bds_dir, "backups");
 module.exports.backup_folder = bds_dir_backup
 
+// Move old configs to new folder
+if (fs.existsSync(old_bds_dir)){
+    console.log("Moving the old files to the new folder");
+    fs.renameSync(old_bds_dir, bds_dir);
+}
+
+// Create Main save files
 if (!(fs.existsSync(bds_dir))){
     console.log("Creating the bds directory")
     fs.mkdirSync(bds_dir)
     if (!(fs.existsSync(bds_dir))) shell.mkdir("-p", bds_dir);
 }
+/**
+ * The most important directory of this project, here are saved some important things like:
+ * 
+ * The server software
+ * 
+ * configuration of the Bds Manager API
+ * 
+ * Backups etc ...
+ */
+module.exports.bds_dir = bds_dir
 
+
+// Servers Paths
+/* Java Path */
+const bds_dir_java = path.join(bds_dir, "java");
+if (!(fs.existsSync(bds_dir_java))){
+    console.log("Creating the bds directory to Java")
+    fs.mkdirSync(bds_dir_java)
+    if (!(fs.existsSync(bds_dir_java))) shell.mkdir("-p", bds_dir_java);
+}
+module.exports.bds_dir_java = bds_dir_java
+
+/* Bedrock Path */
+const bds_dir_bedrock = path.join(bds_dir, "bedrock");
+if (!(fs.existsSync(bds_dir_bedrock))){
+    console.log("Creating the bds directory to Bedrock")
+    fs.mkdirSync(bds_dir_bedrock)
+    if (!(fs.existsSync(bds_dir_bedrock))) shell.mkdir("-p", bds_dir_bedrock);
+}
+module.exports.bds_dir_bedrock = bds_dir_bedrock
+
+
+// Create backup folder
+if (!(fs.existsSync(bds_dir_backup))){
+    fs.mkdirSync(bds_dir_backup)
+    if (!(fs.existsSync(bds_dir_backup))) shell.mkdir("-p", bds_dir_backup);
+}
+
+// Create localStorage folder
+if (!(fs.existsSync(LocalStorageFolder))){
+    console.log("Creating a folder for LocalStorage");
+    fs.mkdirSync(LocalStorageFolder)
+    if (!(fs.existsSync(LocalStorageFolder))) shell.mkdir("-p", LocalStorageFolder);
+}
+module.exports.api_dir = LocalStorageFolder
+
+// Log Dir
+const log_dir = path.join(bds_dir, "log");
+const log_date = date();
+module.exports.log_date = log_date
+module.exports.latest_log = path.join(bds_dir, "log", "latest.log")
+if (!(fs.existsSync(log_dir))){
+    fs.mkdirSync(log_dir)
+    if (!fs.existsSync(log_dir)){
+        console.log(`Creating the bds log dir (${log_dir})`)
+        if (!(fs.existsSync(log_dir))) shell.mkdir("-p", log_dir)
+    }
+}
+
+if (typeof fetch === "undefined") global.fetch = require("node-fetch");
+if (typeof localStorage === "undefined") global.localStorage = new require("node-localstorage").LocalStorage(path.join(LocalStorageFolder, "Local_Storage"));
+
+/* ---------------------------------------------------------------------------- Variables ---------------------------------------------------------------------------- */
 // Configs
 var bds_config, bds_config_file = path.join(bds_dir, "bds_config.json");
 const current_version_bds_core = bds_maneger_version
@@ -151,7 +231,6 @@ if (fs.existsSync(bds_config_file)){
     }
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
 }
-
 module.exports.platform_version_update = function (version){
     let bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     if (bds_config.bds_platform === "bedrock") bds_config.platform_version.bedrock = version
@@ -159,7 +238,6 @@ module.exports.platform_version_update = function (version){
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
     bds_config_export()
 }
-
 module.exports.save_google_id = function (id){
     let bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     bds_config.Google_Drive_root_backup_id = id
@@ -167,11 +245,7 @@ module.exports.save_google_id = function (id){
     bds_config_export()
     return true
 }
-
 module.exports.platform = bds_config.bds_platform
-var log_dir = path.join(bds_dir, "log");
-var log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_log.log`);
-var log_date = date();
 function update_java_memory(total){
     if (total.includes("GB")) total = (total = Math.trunc(total / 1024))
     else if (total.includes("GIB")) total = (total = Math.trunc(total / 1000))
@@ -187,6 +261,10 @@ function update_java_memory(total){
         fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
     }
 }
+
+const log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_log.log`);
+module.exports.log_file = log_file
+
 /**
  * Update the value of how much java will use ram when the java platform is selected
  * 
@@ -213,28 +291,7 @@ function bds_config_export (){
     module.exports.bds_config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json")))
 }
 bds_config_export()
-if (!(fs.existsSync(cache_dir))){
-    console.log(`Creating a folder for Storage in ${cache_dir}`);
-    fs.mkdirSync(cache_dir)
-    if (!(fs.existsSync(cache_dir))) shell.mkdir("-p", cache_dir);
-}
-if (!(fs.existsSync(bds_dir_java))){
-    console.log("Creating the bds directory to Java")
-    fs.mkdirSync(bds_dir_java)
-    if (!(fs.existsSync(bds_dir_java))) shell.mkdir("-p", bds_dir_java);
-}
-if (!(fs.existsSync(bds_dir_bedrock))){
-    console.log("Creating the bds directory to Bedrock")
-    fs.mkdirSync(bds_dir_bedrock)
-    if (!(fs.existsSync(bds_dir_bedrock))) shell.mkdir("-p", bds_dir_bedrock);
-}
-if (!(fs.existsSync(log_dir))){
-    if (!fs.existsSync(log_dir)){
-        console.log(`Creating the bds log dir (${log_dir})`)
-        fs.mkdirSync(log_dir)
-        if (!(fs.existsSync(log_dir))) shell.mkdir("-p", log_dir)
-    }
-}
+
 /**
  * with this command we can change the platform with this script
  * 
@@ -360,36 +417,6 @@ const ultima_letra = file_user_check.slice(-1)
 if (primeira_letra !== "[") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [and end with -->]")
 else if (ultima_letra !== "]") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [and end with -->]")
 else console.info("the files of the connected players are ok !!!")
-/**
- * With different languages ​​and systems we want to find the user's desktop for some link in the directory or even a nice shortcut
- */
-module.exports.desktop = desktop
-
-/**
- * Identifying a system in the script can be simple with this variable
- */
-module.exports.system = system
-
-/**
- * The most important directory of this project, here are saved some important things like:
- * 
- * The server software
- * 
- * configuration of the Bds Manager API
- * 
- * Backups etc ...
- */
-module.exports.bds_dir = bds_dir
-module.exports.bds_dir_bedrock = bds_dir_bedrock
-module.exports.bds_dir_java = bds_dir_java
-module.exports.tmp_dir = tmp
-module.exports.electron = electron_de
-module.exports.api_dir = cache_dir
-module.exports.log_file = log_file
-module.exports.log_date = log_date
-module.exports.arch = archi
-module.exports.latest_log = path.join(bds_dir, "log", "latest.log")
-
 
 // module.exports.token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
 module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
@@ -462,6 +489,8 @@ module.exports.version_Download = require("./scripts/bds_download")
 
 /**
  * download some version of the java and Bedrock servers in the highest possible form
+ * 
+ * use download( version, boolean ) // the boolean is for if you want to force the installation of the server
  * 
  * @example
  * bedrock: bds.download("1.16.201.02")
