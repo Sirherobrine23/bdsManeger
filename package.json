@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.6.2",
+  "version": "1.7.0",
   "description": "scripts to manage minecraft bedrock server",
   "private": false,
   "main": "index.js",

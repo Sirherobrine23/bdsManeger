@@ -1,5 +1,4 @@
-  
-name: Dev Publish
+name: Npm dev package Publish
 on:
   push:
     branches:
@@ -10,24 +9,9 @@ on:
       - 'package-lock.json'
       - '.devcontainer/**'
       - 'CHANGELOG.md'
+      - 'Docker/*/**'
 jobs:
-  check:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@master
-      - uses: actions/setup-node@v1
-
-      - name: Install Depedencies
-        run: npm install
-
-      - name: Javascript Teste
-        run: npm run test
-
   Npm-Publish:
-    needs: check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 

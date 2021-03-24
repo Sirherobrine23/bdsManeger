@@ -1,5 +1,10 @@
 /* eslint-disable no-irregular-whitespace */
-if (process.env.IS_BIN_BDS === undefined) console.log(`Running the Bds Maneger API in version ${require(__dirname+"/package.json").version}`)
+const path = require("path")
+const fs = require("fs");
+const { resolve } = require("path");
+const { error } = console;
+const bds_maneger_version = require(resolve(__dirname, "package.json")).version
+if (process.env.IS_BIN_BDS === undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
 var shell = require("shelljs");
 function date(fu) {
     var today = new Date();
@@ -24,15 +29,9 @@ if (process.argv[0].includes("electron")){
 }
 const arch = process.arch
 var archi = arch
-const path = require("path")
-const fs = require("fs");
-const { resolve } = require("path");
-const { error } = console;
+
 function package_location (){
-    if (fs.existsSync(path.join(process.cwd(), "package.json"))) return path.join(process.cwd(), "package.json")
-    else if (fs.existsSync(path.resolve(".", "resources", "app", "package.json"))) return path.resolve(".", "resources", "app", "package.json")
-    else if (fs.existsSync(path.resolve(__dirname, "package.json"))) return path.resolve(__dirname, "package.json")
-    else path.resolve(".", "package.json")
+    return path.resolve(__dirname, "package.json")
 }
 const package_root = package_location();
 var cache_dir,home,desktop,tmp,system
@@ -108,7 +107,7 @@ if (!(fs.existsSync(bds_dir))){
 
 // Configs
 var bds_config, bds_config_file = path.join(bds_dir, "bds_config.json");
-const current_version_bds_core = require(resolve(".", "./package.json")).version
+const current_version_bds_core = bds_maneger_version
 if (fs.existsSync(bds_config_file)){
     bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     if (bds_config.version !== current_version_bds_core){
@@ -117,6 +116,10 @@ if (fs.existsSync(bds_config_file)){
         bds_config = {
             "version": current_version_bds_core,
             "bds_platform": bds_config.bds_platform,
+            "platform_version": {
+                "bedrock": (bds_config.platform_version.bedrock||"latest"),
+                "java": (bds_config.platform_version.java||"latest")
+            },
             "telegram_token": bds_config.telegram_token,
             "Google_Drive_root_backup_id": bds_config.Google_Drive_root_backup_id,
             "telegram_admin": bds_config.telegram_admin,
@@ -133,6 +136,10 @@ if (fs.existsSync(bds_config_file)){
     bds_config = {
         "version": current_version_bds_core,
         "bds_platform": "bedrock",
+        "platform_version": {
+            "bedrock": "latest",
+            "java": "latest"
+        },
         "telegram_token": "not User defined",
         "Google_Drive_root_backup_id": undefined,
         "telegram_admin": [
@@ -143,6 +150,14 @@ if (fs.existsSync(bds_config_file)){
         }
     }
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
+}
+
+module.exports.platform_version_update = function (version){
+    let bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
+    if (bds_config.bds_platform === "bedrock") bds_config.platform_version.bedrock = version
+    else bds_config.platform_version.java = version
+    fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
+    bds_config_export()
 }
 
 module.exports.save_google_id = function (id){
@@ -316,7 +331,8 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
  * * bds.api() // to activate requests via http
  * * bds.log()
  */
-module.exports.api = require("./API/api");
+module.exports.api = require("./rest/api");
+module.exports.rest = require("./rest/api");
 
 // Module export
 /* Variaveis */
@@ -394,12 +410,13 @@ module.exports.token_register = () => {
         tokens.push({"token": new_token});
         fs.writeFileSync(bds_token_path, JSON.stringify(tokens, null, 4), "utf8");
 
-        console.log(new_token);
-        
-        QRCode.toString(new_token, {type:"terminal"}, function (err, url) {
-            if (err) console.warn(err)
-            console.log(url)
-        })
+        console.log(`Bds Maneger API REST token: ${new_token}`);
+        if (process.stdout.isTTY) {
+            QRCode.toString(new_token, {type:"terminal"}, function (err, url) {
+                if (err) console.warn(err)
+                console.log(url)
+            })
+        }
     })
 }
 module.exports.date = date

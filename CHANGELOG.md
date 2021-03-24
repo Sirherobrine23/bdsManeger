@@ -1,5 +1,13 @@
 # Bds Core
 
+## 1.7.0
+
+* In this version we have minor modifications in downloads.js to skip the installation if it is already installed.
+
+* The docker core image is now part of the core repository, and some modifications have been made to the docker image. more changes are planned for the next commit
+
+* some errors can still occur if the new configuration file is not updated, and this will have to be done manually
+
 ## 1.6.2
 
 * a new configuration was added in bds_config.json to control the ram memory in java (the default value set will be what is available when creating the first bds_config.json).

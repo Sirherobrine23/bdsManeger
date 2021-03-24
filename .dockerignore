@@ -1,0 +1,3 @@
+node_modules/
+Docker/
+!Docker/base

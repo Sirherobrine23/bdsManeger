@@ -1,22 +1,40 @@
-# Minecraft BDS Manger API
+# Bds Maneger CORE
 
-A separate module from Bds Manager, and simple delivery of management
+Deploy a Minecarft server easily with various features made available by our REST API, along with a GUI available to control the entire server, both locally and remotely, along with powerful and versatile technology.
 
-[Bds Maneger, Docker Image](https://github.com/Bds-Maneger/Docker_Image)
+For now we are in a version qualified for general use and implementations in complete azure.
 
-Alpha version, testing and quality:
+## CI/CD status
 
-![CodeQL](https://github.com/Bds-Maneger/bds_maneger_api/workflows/CodeQL/badge.svg) ![Stable Publish](https://github.com/Bds-Maneger/bds_maneger_api/workflows/Stable%20Publish/badge.svg) ![Dev Publish](https://github.com/Bds-Maneger/bds_maneger_api/workflows/Dev%20Publish/badge.svg)
+[![CodeQL](https://github.com/Bds-Maneger/bds_maneger_api/workflows/CodeQL/badge.svg)](https://github.com/The-Bds-Maneger/core/actions/workflows/codeql-analysis.yml) [![Total alerts](https://img.shields.io/lgtm/alerts/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/alerts/) [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/context:javascript) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/4d19af8fe5b146608a8f4a5e2092f66d)](https://www.codacy.com/gh/Bds-Maneger/bds_maneger_api/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Bds-Maneger/bds_maneger_api&amp;utm_campaign=Badge_Grade)
 
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/alerts/) [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/context:javascript)
+## Start the Bds Maneger Core docker server
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/4d19af8fe5b146608a8f4a5e2092f66d)](https://www.codacy.com/gh/Bds-Maneger/bds_maneger_api/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Bds-Maneger/bds_maneger_api&amp;utm_campaign=Badge_Grade)
+```bash
+$ docker run --rm -d --name BdsManegerCore -v ./bds_save/:/home/bds \
+    -p 19132:19132/udp \
+    -p 19133:19133/udp \
+    -p 1932:1932/tcp \
+    -e TELEGRAM_TOKEN="null" \
+    -e WORLD_NAME="World name" \
+    -e DESCRIPTION="This is not simple" \
+    -e GAMEMODE="survival" \
+    -e DIFFICULTY="normal" \
+    -e PLAYERS="13" \
+    -e SERVER="bedrock" \
+    -e BDS_REINSTALL="true" \
+    -e BDS_VERSION="latest" \
+bdsmaneger/maneger:latest
+```
 
-# A simple module for NodeJS
+## Azure Deploys
 
-This module was made to work both in the cli version and in gui versions like electron.
+**Recommended to use a new resource group**
 
-some deven ports are unlocked by the firewall if enabled:
+### Microsoft Azure Container
 
-- 1932
-- 6565
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FBds-Maneger%2FThe-Bds-Maneger-Docker%2Fmain%2Fazure%2FBdsMangerCore_docker.json)
+
+### Microsoft Azure Virtual machine
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FThe-Bds-Maneger%2FAzure_VMs%2Fmain%2Fdeploy.json) More Information Access the repository: [Azure VMs](https://github.com/The-Bds-Maneger/Azure_VMs)

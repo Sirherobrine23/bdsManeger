@@ -21,7 +21,7 @@ function api(port_api){
     app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(limiter);
-    app.get("/configs", (req, res) => {return res.send(bds.get_config());/* end */});
+    // app.get("/configs", (req, res) => {return res.send(bds.get_config());});
     app.get("/info", (req, res) => {
         const config = bds.get_config()
         var json_http = {
