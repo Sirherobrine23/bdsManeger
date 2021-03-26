@@ -40,12 +40,12 @@ module.exports.package_path = bds_core_package
 if (process.platform == "win32") {
     home = process.env.USERPROFILE;
     desktop = path.join(home, "Desktop")
-    LocalStorageFolder = path.join(home, "AppData", "Roaming", require(bds_core_package).name)
+    LocalStorageFolder = path.join(home, "AppData", "Roaming", "bds_core")
     tmp = process.env.TMP
     system = "windows";
 } else if (process.platform == "linux") {
     home = process.env.HOME;
-    LocalStorageFolder = path.join(home, ".config", require(bds_core_package).name);
+    LocalStorageFolder = path.join(home, ".config", "bds_core");
     var file = path.join(home, ".config", "user-dirs.dirs");var data = {};
     if (fs.existsSync(file)){
         let content = fs.readFileSync(file, "utf8");let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));
@@ -70,7 +70,7 @@ if (process.platform == "win32") {
     console.error("MacOS is not yet supported, wait until it is (You can use the docker)");
 
     home = process.env.HOME;
-    LocalStorageFolder = resolve("/tmp", require(bds_core_package).name);
+    LocalStorageFolder = resolve("/tmp", "bds_core");
     desktop = "/tmp"
     tmp = "/tmp";
     system = "macos";
@@ -161,11 +161,8 @@ if (!(fs.existsSync(bds_dir_backup))){
 }
 
 // Create localStorage folder
-if (!(fs.existsSync(LocalStorageFolder))){
-    console.log("Creating a folder for LocalStorage");
-    fs.mkdirSync(LocalStorageFolder)
-    if (!(fs.existsSync(LocalStorageFolder))) shell.mkdir("-p", LocalStorageFolder);
-}
+if (!(fs.existsSync(LocalStorageFolder))) shell.mkdir("-p", LocalStorageFolder);
+if (!(fs.existsSync(LocalStorageFolder))) fs.mkdirSync(LocalStorageFolder)
 module.exports.api_dir = LocalStorageFolder
 
 // Log Dir
