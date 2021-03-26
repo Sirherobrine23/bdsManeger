@@ -7,7 +7,7 @@ on:
 jobs:
   Publish:
     runs-on: ubuntu-latest
-    container: dsmaneger/node_image:latest
+    container: bdsmaneger/node_image:latest
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@v1
