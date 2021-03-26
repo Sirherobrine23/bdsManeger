@@ -27,7 +27,7 @@ jobs:
           fi
 
       - name: Install latest npm
-        run: sudo npm -i -g npm
+        run: sudo npm install -g npm
 
       - name: Publish
         run: npm publish
