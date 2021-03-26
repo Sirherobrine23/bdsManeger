@@ -1,19 +1,16 @@
+module.exports.ram_free = 0
+module.exports.ram_total = 0
+module.exports.bds_cpu = 0
+module.exports.bds_ram = 0
+// -----------------------------------
 const si = require("systeminformation");
-module.exports.current_cpu = undefined
-module.exports.ram_free = undefined
-module.exports.ram_total = undefined
-module.exports.cpu_speed = undefined
-module.exports.bds_cpu = undefined
-module.exports.bds_ram = undefined
-// module.exports.system = si
-
 function init_1(){
     si.cpu().then(data => {
         module.exports.cpu_speed = Math.trunc(data.speed)
     })
     si.mem().then(data => {
-        module.exports.ram_free = Math.trunc(data.free / 1024 / 1024 / 1024)
-        module.exports.ram_total = Math.trunc(data.total / 1024 / 1024 / 1024)
+        module.exports.ram_free = Math.trunc(data.free / 1000 / 1000 / 1000)
+        module.exports.ram_total = Math.trunc(data.total / 1000 / 1000 / 1000)
     })
     si.currentLoad().then(data => {
         module.exports.current_cpu = Math.trunc(data.currentLoad)
@@ -29,7 +26,8 @@ function init_2(){
                 module.exports.bds_cpu = Math.trunc(list[pid].cpu)
                 module.exports.bds_ram = Math.trunc(list[pid].mem)
             } else {
-                pid++
+                module.exports.bds_cpu = 0
+                module.exports.bds_ram = 0
             }
         }
     })

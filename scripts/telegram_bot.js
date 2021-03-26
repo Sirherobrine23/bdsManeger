@@ -1,6 +1,14 @@
-const { Telegraf } = require("telegraf")
-const token  = require("../index").telegram_token
-const bot = new Telegraf(token)
+function boot_telegram_bot(){
+const { Telegraf } = require("telegraf");
+const {start, stop, detect, command, players_files, telegram_token} = require("../index");
+const {checkUser} = require("./check");
+const IsElectron = require("../index").electron;
+const {readFileSync} = require("fs");
+const {resolve} = require("path")
+var monitor = require("./system_monitor")
+
+// Set Telegram Bot
+const bot = new Telegraf(telegram_token)
 bot.start((ctx) => {
     const amenssagem = `Hello ${ctx.message.from.username}
 We have some things still being done in the programming of the new bot more works 👍:
@@ -20,80 +28,77 @@ Message Control: ❌`
 bot.help((ctx) => ctx.reply("Use o /start"))
 bot.action("delete", ({ deleteMessage }) => deleteMessage())
 bot.command("server_start", (ctx) => {
-    if (require("./check").checkUser(ctx.message.from.username)){
-        const bds_status = require("../index").detect()
-        if (!bds_status){
-            if (require("../index").electron){
-                document.getElementById("startButtom").click()
-            } else {
-                require("../index").start()
-            }            
-            ctx.reply("The server has started")
-        } else 
-            ctx.reply(`${ctx.message.from.username} already started`)
+    if (checkUser(ctx.message.from.username)){
+        if (!(detect())){
+            if (IsElectron) document.getElementById("startButtom").click(); else start()
+            ctx.reply("Server Started please wait a few moments")
+        } else ctx.reply(`${ctx.message.from.username} already started`);
     } else {
-        console.log("Erro");
+        console.log(`It was not started for ${ctx.message.from.username} as it is not an administrator`);
+        ctx.deleteMessage()
         ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
     }
 });
 bot.command("server_stop", (ctx) => {
-    if (require("./check").checkUser(ctx.message.from.username)){
-        const bds_status = require("../index").detect()
-        if (bds_status){
-            require("../index").stop()
-            ctx.reply("O servidor esta parando")
-        } else 
-            ctx.reply(`${ctx.message.from.username} o servidor está parado`)
+    if (checkUser(ctx.message.from.username)){
+        if (detect()){stop();ctx.reply("The server is stopping, wait for a few moments")}
+        else ctx.reply(`Hello ${ctx.message.from.username}, the server will remain stopped`);
     } else {
-        console.log("Erro");
+        console.log(`It was not stoped for ${ctx.message.from.username} as it is not an administrator`);
         ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
     }
 });
 bot.command("command", (ctx) =>{
-    const bds_command = require("../index").command
-    var command = ctx.message.text.replace("/command ", "");
-    console.log(`Comandos para o servidor foram recebidos: ${command}`)
-    const fs = require("fs");
-    const bds = require("../index");
-    const detect_log_file = fs.existsSync(bds.log_file);
-    bds_command(command)
-    if (detect_log_file){
+    command(ctx.message.text.replace("/command ", ""))
+    if (bds_log_string){
         const old = bds_log_string;
-        setTimeout(() => {
-            var name = bds_log_string.replace(old, "");
-            ctx.reply(name)
-        }, 1000);   
+        setTimeout(() => {ctx.reply(bds_log_string.replace(old, ""))}, 1000);   
     } else {
         ctx.reply("Não temos um arquivo log")
     }
 });
 bot.command("list", (ctx) =>{
-    const bds_command = require("../index").command
-    const fs = require("fs");
-    const bds = require("../index");
-    const detect_log_file = fs.existsSync(bds.log_file);
-    if (detect_log_file){
-        bds_command("list")
-        var old = bds_log_string;
-        setTimeout(() => {
-            var name = bds_log_string.replace(old, "End\n\n");
-            ctx.reply(name)
-        }, 1000);   
-    } else {
-        ctx.reply("NO log file to get list player")
+    const current_user = JSON.parse(readFileSync(players_files, "utf8")),
+        connected = readFileSync(resolve(__dirname, "..", "static_files", "list_user.md"), "utf8")
+    for (let userN in current_user){
+        let user = current_user[userN]
+        let date = new Date(user.date)
+        ctx.replyWithMarkdown(connected
+            .split("@PLAYER").join(user.player)
+            .split("@JSON_H").join(JSON.stringify(user.update))
+            .split("@DATA").join(`${date.getUTCDay()}/${date.getUTCMonth()}/${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}:${date.getUTCMilliseconds()} UTC`)
+            .split("@CONNECTED").join(user.connected)
+        )
     }
 });
 bot.command("mcpe", (ctx) =>{
-ctx.replyWithMarkdown(`[Minecraft for Android 1.16.201.01](https://files.sh33.org/mcpe/latest.sonic)
+ctx.replyWithMarkdown(`[Minecraft for Android Latest](https://f.sh23.org/Minecraft/Mcpe/Oficial/1.16.210.05.apk)
 
-Iphone users are not privileged
+iPhone users are not privileged, by Sirherobrine23
 `)});
 bot.command("status", (ctx) =>{
-const {bds_cpu, current_cpu, ram_total, ram_free} = require("./system_monitor")
-const text = `Bds CPU usage: ${bds_cpu}%, Total CPU utilization: ${current_cpu}%
+    const current_user = JSON.parse(readFileSync(players_files, "utf8"))
+    var connected = 0,
+    player = ""
+    for (let con in current_user){
+        if (current_user[con].connected) {connected = connected + 1;player += `- ${current_user[con].player}\n\n`}
+    }
+const text = `-------- Bds Core --------
+------------ CPU ------------
+- Bds CPU usage: ${monitor.bds_cpu}%
+- Total CPU utilization: ${monitor.current_cpu}%
 
-Total ram memory: ${ram_total} GB, Total free ram memory: ${ram_free} GB`
-ctx.replyWithMarkdown(text);
+------------ Ram memory ------------
+- Total ram memory: ${monitor.ram_total} GB
+- Total free ram memory: ${monitor.ram_free} GB
+
+------------ Players ------------
+
+- Players currently logged on to the server: ${connected}
+
+${player}
+`
+ctx.reply(text);
 });
 bot.command("log", (ctx) => {
     const file_log_path = require("../index").log_file;
@@ -104,4 +109,9 @@ bot.command("log", (ctx) => {
     } else 
         ctx.reply("there is no log");
 });
-module.exports = bot;
+bot.launch()
+return true
+}
+
+module.exports = boot_telegram_bot
+module.exports.launch = boot_telegram_bot
