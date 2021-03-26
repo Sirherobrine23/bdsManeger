@@ -1,11 +1,12 @@
 function boot_telegram_bot(){
 const { Telegraf } = require("telegraf");
-const {start, stop, detect, command, players_files, telegram_token} = require("../index");
+const {start, stop, detect, players_files, telegram_token} = require("../index");
+const bds_command = require("../index").command;
 const {checkUser} = require("./check");
 const IsElectron = require("../index").electron;
 const {readFileSync} = require("fs");
-const {resolve} = require("path")
-var monitor = require("./system_monitor")
+const {resolve} = require("path");
+var monitor = require("./system_monitor");
 
 // Set Telegram Bot
 const bot = new Telegraf(telegram_token)
@@ -48,14 +49,11 @@ bot.command("server_stop", (ctx) => {
         ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
     }
 });
-bot.command("command", (ctx) =>{
-    command(ctx.message.text.replace("/command ", ""))
-    if (bds_log_string){
-        const old = bds_log_string;
-        setTimeout(() => {ctx.reply(bds_log_string.replace(old, ""))}, 1000);   
-    } else {
-        ctx.reply("Não temos um arquivo log")
-    }
+bot.command("command", (ctx) => {
+    let command = ctx.message.text.replace("/command", "")
+    if (command === "") ctx.reply("Check you command");
+    else if (command === " ") ctx.reply("Check you command");
+    else {bds_command(command);ctx.reply("Check /log")}
 });
 bot.command("list", (ctx) =>{
     const current_user = JSON.parse(readFileSync(players_files, "utf8")),
