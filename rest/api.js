@@ -131,7 +131,7 @@ function api(port_api){
     app.listen(port, function (){
         console.log(`bds maneger api http port: ${port}`);
     });
-    return app
+    return true
 }
 
 function log(port_log){
@@ -184,7 +184,7 @@ function log(port_log){
     app.listen(port, function(){
         console.log(`bds maneger log http, port: ${port}`)
     });
-    return app
+    return true
 }
 
 // module exports
