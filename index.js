@@ -421,7 +421,10 @@ module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "b
 
 
 // Global commands
-module.exports.telegram = require("./scripts/telegram_bot")
+module.exports.telegram = function (){
+    console.error();("Moved to TelegramBOT https://github.com/The-Bds-Maneger/TelegramBot");
+    return "Moved to TelegramBOT https://github.com/The-Bds-Maneger/TelegramBot"
+}
 module.exports.token_register = () => {
     const QRCode = require("qrcode");
     const bds_token_path = path.join(bds_dir, "bds_tokens.json") 

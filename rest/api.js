@@ -49,7 +49,15 @@ function api(port_api){
         return res.send(json_http);
     });
     app.get("/players", (req, res) => {
-        res.json(JSON.parse(fs.readFileSync(bds.players_files, "utf8")));
+        const players_json = JSON.parse(fs.readFileSync(bds.players_files, "utf8"));
+        const params = req.query;
+        var formart = [];
+        if (params.connected === "") {
+            for (let index in players_json){
+                formart[players_json[index]] = true
+                res.json(formart);
+            }
+        } else res.json(players_json);
     });
     app.get("/", (req, res) => {
         return res.send(`<html>
