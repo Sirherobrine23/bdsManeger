@@ -88,7 +88,6 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.
 
     module.exports.drive_backup = () => {
         const file_json = require("./backups").Drive_backup()
-        console.log(file_json)
         const parent_id = bds.bds_config.Google_Drive_root_backup_id
         const path_file = file_json.file_path
         const name_d = file_json.file_name;
@@ -96,24 +95,26 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.
         const gd_secret = "";
         console.log(gd_secret)
         function upload_backup(auth) {
-        const drive = google.drive({version: "v3", auth});
-        var fileMetadata = {
-            name: name_d
-        }
-        if (parent_id !== undefined) fileMetadata.parents = [parent_id]
-        
-        var media = {
-            mimeType: "application/octet-stream",
-            body: fs.createReadStream(path_file)
-        }
-        drive.files.create({
-            resource: fileMetadata,
-            media: media,
-            fields: "id"
-        }, function (err, file) {
-            if (err) console.error(err)
-            else {global.backup_id = file.data.id;console.log("File: ", file.data.id);}
-        });
+            const drive = google.drive({version: "v3", auth});
+            var fileMetadata = {
+                name: name_d
+            }
+            if (parent_id === undefined) null
+            else if (parent_id === null) null
+            else if (parent_id === "") null
+            else fileMetadata.parents = [parent_id]
+            
+            drive.files.create({
+                resource: fileMetadata,
+                media: {
+                    mimeType: "application/octet-stream",
+                    body: fs.createReadStream(path_file)
+                },
+                fields: "id"
+            }, function (err, file) {
+                if (err) console.error(err)
+                else {global.backup_id = file.data.id;console.log(`https://drive.google.com/file/${file.data.id}`);}
+            });
         }
         return authorize(upload_backup);
         // End Upload Backup

@@ -3,17 +3,12 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN \
-uname -m; \
+echo "Arch: $(uname -m)"; \
 apt update && \
-apt install -y git curl openjdk-14-jdk openjdk-14-jre wget jq sudo unzip zip screen $(case $(uname -m) in "x86_64") echo "";; *) echo "qemu-user-static binfmt-support";; esac) nginx && \
-rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* && \
-mkdir -p /home/bds/ && \
-curl -fsSL https://deb.nodesource.com/setup_current.x | bash - && apt install -y nodejs && \
-rm -rfv /etc/nginx/sites-available/default && \
-case $(uname -m) in "x86_64") url="https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip";;"aarch64") url="https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-arm64.tgz";; *) exit 1;;esac; \
-wget "${url}" -O /tmp/ngrok.zip && unzip /tmp/ngrok.zip -d /bin/ && rm -fv /tmp/ngrok.zip
-
-
+apt install -y git curl openjdk-14-jdk openjdk-14-jre wget jq sudo unzip zip screen $(case $(uname -m) in "x86_64") echo "";; *) echo "qemu-user-static binfmt-support";; esac) nginx > /dev/null && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* && \
+mkdir -p /home/bds/ && curl -fsSL https://deb.nodesource.com/setup_current.x | bash - && apt install -y nodejs > /dev/null && rm -rfv /etc/nginx/sites-available/default && \
+case $(uname -m) in "x86_64") url="https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip";; "aarch64") url="https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-arm64.tgz";; esac; \
+if ! [-z "${url}" ] ;then wget "${url}" -O /tmp/ngrok.zip && unzip /tmp/ngrok.zip -d /bin/ && rm -fv /tmp/ngrok.zip; fi
 
 # Copy Files
 COPY ./Docker/base/ /base/

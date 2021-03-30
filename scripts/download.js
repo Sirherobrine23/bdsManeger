@@ -9,16 +9,13 @@ module.exports = function (version, force_install) {
         if (version === undefined) version="latest"
         const server_platform = bds_config.bds_platform
         var url;
-        var server_configs, permissions, whitelist
         if (force_install === undefined) null
         else if (force_install === false) null
         else if (force_install === "") null
-        else if (force_install === true) {
-            bds_config.platform_version.java = "latest"
-            bds_config.platform_version.bedrock = "latest"
-        }
+        else if (force_install === true) {bds_config.platform_version.java = "latest";bds_config.platform_version.bedrock = "latest"}
         else null
         if (server_platform === "bedrock"){
+            var server_configs, permissions, whitelist
             if (version === "latest") version = response.bedrock_latest
             if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");
             if (existsSync(join(bds_dir_bedrock, "permissions.json"))) permissions = readFileSync(join(bds_dir_bedrock, "permissions.json"), "utf8")
