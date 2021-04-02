@@ -192,6 +192,7 @@ if (fs.existsSync(bds_config_file)){
         if (bds_config.platform_version === undefined) bds_config.platform_version = {}
         bds_config = {
             "version": current_version_bds_core,
+            "bds_pages": (bds_config.bds_pages||"default"),
             "bds_platform": bds_config.bds_platform,
             "platform_version": {
                 "bedrock": (bds_config.platform_version.bedrock||"latest"),
@@ -213,6 +214,7 @@ if (fs.existsSync(bds_config_file)){
     if (ram_total >= 1000) ram_total = ram_total - 1000
     bds_config = {
         "version": current_version_bds_core,
+        "bds_pages": "default",
         "bds_platform": "bedrock",
         "platform_version": {
             "bedrock": "latest",
