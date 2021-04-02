@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "scripts to manage minecraft bedrock server",
   "private": false,
   "main": "index.js",
@@ -49,6 +49,7 @@
     "express-rate-limit": "^5.2.3",
     "googleapis": "^68.0.0",
     "minimist": "^1.2.5",
+    "node-cron": "^3.0.0",
     "node-fetch": "^2.6.1",
     "node-localstorage": "^2.1.6",
     "open": "^8.0.0",

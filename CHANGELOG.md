@@ -1,5 +1,13 @@
 # Bds Core
 
+## 1.8.3
+
+* Google Drive has been separated into two files (GoogleDrive.js, GoogleDriveAuth.js)
+
+* The backups of the worlds have been unified to a single script.
+
+* the string `electron` has been removed, now the scripts that need it will have to use `process.argv[0].includes("electron")`.
+
 ## 1.7.0
 
 * In this version we have minor modifications in downloads.js to skip the installation if it is already installed.

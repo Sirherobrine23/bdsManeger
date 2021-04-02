@@ -22,14 +22,6 @@ function date(fu) {
     else 
         return `${String(today.getDate()).padStart(2, "0")}-${String(today.getMonth() + 1).padStart(2, "0")}-${today.getFullYear()}_${today.getHours()}-${today.getSeconds()}`
 }
-var electron_de
-if (process.argv[0].includes("electron")){
-    electron_de = true;
-} else if (process.argv[0].includes("node")){
-    electron_de = undefined;
-} else {
-    electron_de = false;
-}
 
 // System Architect (X64 or ARM64)
 const arch = process.arch
@@ -66,7 +58,8 @@ if (process.platform == "win32") {
     tmp = "/tmp";
     system = "linux";
 } else if (process.platform == "darwin") {
-    require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
+    if (process.arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
+    else require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#macos-with-intel-processors")
     console.error("MacOS is not yet supported, wait until it is (You can use the docker)");
 
     home = process.env.HOME;
@@ -86,7 +79,7 @@ if (process.platform == "win32") {
  */
 module.exports.desktop = desktop
 
- /**
+/**
   * Identifying a system in the script can be simple with this variable
   */
 module.exports.system = system
@@ -95,11 +88,17 @@ module.exports.system = system
  * Temporary system directory
  */
 module.exports.tmp_dir = tmp
-/**
- * Detect if it is the Electron or NodeJS
- */
-module.exports.electron = electron_de
 
+/**
+ * this variable makes available the location of the user profile directory as
+ * 
+ * Linux: /home/USER/
+ * 
+ * Windows: C:\\Users\\USER\\
+ * 
+ * MacOS: In tests
+ */
+module.exports.home = home
 
 // save bds core files
 const bds_dir = resolve(home, "bds_core");
@@ -198,6 +197,7 @@ if (fs.existsSync(bds_config_file)){
                 "bedrock": (bds_config.platform_version.bedrock||"latest"),
                 "java": (bds_config.platform_version.java||"latest")
             },
+            "bds_ban": (bds_config.bds_ban||["Steve", "Alex", "steve", "alex"]),
             "telegram_token": bds_config.telegram_token,
             "Google_Drive_root_backup_id": bds_config.Google_Drive_root_backup_id,
             "telegram_admin": bds_config.telegram_admin,
@@ -218,6 +218,7 @@ if (fs.existsSync(bds_config_file)){
             "bedrock": "latest",
             "java": "latest"
         },
+        "bds_ban": ["Steve", "Alex", "steve", "alex"],
         "telegram_token": "not User defined",
         "Google_Drive_root_backup_id": undefined,
         "telegram_admin": [
@@ -299,11 +300,12 @@ bds_config_export()
  * @example change_platform("bedrock")
  */
 function platform_update(plate){
-    var complet_;
-    if (plate === "java") complet_ = true
-    else if (plate === "bedrock") complet_ = true
-    else throw new console.error(`platform not identified or does not exist, ${plate} informed platform`);
-    localStorage.setItem("nulle", complet_)
+    // Server platform detect
+    if (plate === "java") null;
+    else if (plate === "bedrock") null;
+    else throw new Error(`platform not identified or does not exist, ${plate} informed platform`);
+
+    // Platforma Update
     const bds_config = path.join(bds_dir, "bds_config.json")
     try {
         const config_load = JSON.parse(fs.readFileSync(bds_config))
@@ -322,8 +324,6 @@ if (process.env.SERVER !== undefined){
 }
 module.exports.change_platform = platform_update
 
-require("./scripts/GoogleDrive")
-
 const telegram_token_save = function (token) {
     try {
         const bds_config = path.join(bds_dir, "bds_config.json")
@@ -340,10 +340,10 @@ module.exports.telegram_token_save = telegram_token_save
 
 
 if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
-    console.log(`We identified the old telegram token file (${path.join (bds_dir, "telegram_token.txt")}), starting the immigration process`)
+    console.log(`We identified the old telegram token file (${path.join (bds_dir, "telegram_token.txt")}), starting the migration process`)
     try {
         const token = fs.readFileSync(path.join(bds_dir, "telegram_token.txt"), "utf8").split("\n").join("")
-        require("./index").telegram_token_save(token)
+        telegram_token_save(token)
         fs.rmSync(path.join(bds_dir, "telegram_token.txt"))
         console.log("We finished migrating the old telegram token file")
     } catch {
@@ -351,33 +351,14 @@ if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
     }
 }
 
-// Fetchs
+// Get server version
 fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(rawOUT => {
-    const bedrock_version = Object.getOwnPropertyNames(rawOUT.bedrock);
-    var select_version
-    for (let bed in bedrock_version){
-        if (select_version === undefined) select_version = `<option value="${bedrock_version[bed]}">${bedrock_version[bed]}</option>`
-        else select_version = ` <option value="${bedrock_version[bed]}">${bedrock_version[bed]}</option>`
-    }
-    module.exports.version_select = select_version
-    module.exports.bedrock_version_select = select_version
-    const java_version = Object.getOwnPropertyNames(rawOUT.bedrock);
-    select_version = ""
-    for (let bed in bedrock_version){
-        if (select_version === undefined) select_version = `<option value="${java_version[bed]}">${java_version[bed]}</option>`
-        else select_version = ` <option value="${java_version[bed]}">${java_version[bed]}</option>`
-    }
-    module.exports.java_version_select = select_version
-
-
     module.exports.bedrock_all_versions = Object.getOwnPropertyNames(rawOUT.bedrock);
     module.exports.java_all_versions = Object.getOwnPropertyNames(rawOUT.java);
-    module.exports.bds_latest = rawOUT.bedrock_lateste;
+    module.exports.bds_latest = (rawOUT.bedrock_lateste||rawOUT.bedrock_latest);
     module.exports.bedrock_latest = rawOUT.bedrock_latest;
     module.exports.java_latest = rawOUT.java_latest;
 })
-// Fetchs
-
 
 /**
  * Activate an API via expresss.js, to receive requests via http such as the log, send and receive commands
@@ -389,41 +370,20 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
 module.exports.api = require("./rest/api");
 module.exports.rest = require("./rest/api");
 
-// Module export
-/* Variaveis */
-/**
- * this variable makes available the location of the user profile directory as
- * 
- * Linux: /home/USER/
- * 
- * Windows: C:\\Users\\USER\\
- * 
- * MacOS: In tests
- */
-module.exports.home = home
-
+// ------------
+const user_file_connected = path.join(bds_dir, "bds_users.json")
 /**
  * get the location of the file where the player history connected to the server is saved
- * 
  */
-const user_file_connected = path.join(bds_dir, "bds_users.json")
 module.exports.players_files = user_file_connected
 if (!(fs.existsSync(user_file_connected))) fs.writeFileSync(user_file_connected, "[]")
 const file_user_check = fs.readFileSync(user_file_connected, "utf8");
-const primeira_letra = file_user_check.charAt(0)
-const ultima_letra = file_user_check.slice(-1)
-if (primeira_letra !== "[") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [and end with -->]")
-else if (ultima_letra !== "]") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [and end with -->]")
-else console.info("the files of the connected players are ok !!!")
-
-// module.exports.token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
+if (file_user_check.charAt(0) !== "[") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
+else if (file_user_check.slice(-1) !== "]") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
 module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
-
-
-// Global commands
+module.exports.internal_ip = require("./scripts/external_ip").internal_ip
 module.exports.telegram = require("./scripts/telegram_bot")
 module.exports.token_register = () => {
-    const QRCode = require("qrcode");
     const bds_token_path = path.join(bds_dir, "bds_tokens.json") 
     if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]")
 
@@ -437,8 +397,8 @@ module.exports.token_register = () => {
 
         console.log(`Bds Maneger API REST token: ${new_token}`);
         if (process.stdout.isTTY) {
-            QRCode.toString(new_token, {type:"terminal"}, function (err, url) {
-                if (err) console.warn(err)
+            require("qrcode").toString(new_token, {type: "terminal"}, function (err, url) {
+                if (err) throw Error(err)
                 console.log(url)
             })
         }
@@ -450,7 +410,7 @@ module.exports.date = date
  * 
  * @example bds.command("say hello from Bds Maneger")
  */
-module.exports.command = require("./scripts/command").command
+module.exports.command = require("./scripts/basic_server").BdsCommand
 // New management method
 
 /**
@@ -529,19 +489,17 @@ module.exports.set_config = require("./scripts/bds_settings").config
  */
 module.exports.get_config = require("./scripts/bds_settings").get_config
 
-setInterval(() => {
-    /**
-     * download the latest version of minecraft bedrock for android available, remember to use if you want ✌
-     * 
-     * you are taking responsibility for that
-     */
-    module.exports.mcpe_file = require("./scripts/GoogleDrive").mcpe
-    /**
-     * perform a backup of the map, some resources are still under construction in the code more works
-     * 
-     * on the bedrock platform, all maps will be backed up into the "worlds" folder
-     * 
-     * on the java platform the map selected in the server configuration will be backed up, any other map will have to change in the server settings to perform the backup
-     */
-    module.exports.drive_backup= require("./scripts/GoogleDrive").drive_backup
-}, 100);
+/**
+ * download the latest version of minecraft bedrock for android available, remember to use if you want ✌
+ * 
+ * you are taking responsibility for that
+ */
+module.exports.mcpe_file = require("./scripts/GoogleDrive").mcpe
+/**
+ * perform a backup of the map, some resources are still under construction in the code more works
+ * 
+ * on the bedrock platform, all maps will be backed up into the "worlds" folder
+ * 
+ * on the java platform the map selected in the server configuration will be backed up, any other map will have to change in the server settings to perform the backup
+ */
+module.exports.drive_backup= require("./scripts/GoogleDrive").drive_backup

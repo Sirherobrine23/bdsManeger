@@ -1,28 +1,20 @@
-(async () => {
-    if (typeof fetch === "undefined"){
-        global.fetch = require("node-fetch")
-    }
-    try {
-        // Plain
-        const plain_text = await fetch("https://ipecho.net/plain")
-        const plain_text_result = await plain_text.text()
-        const plain = await plain_text_result
+if (typeof fetch === "undefined"){
+    global.fetch = require("node-fetch")
+}
 
-        // apify
-        const ipify_request = await fetch("https://api.ipify.org/?format=json")
-        const ipify_test = await ipify_request.json()
-        const ipify = ipify_test.ip
-        
-        var ip;
-        if (plain !== ipify){
-            console.log("ipify")
-            ip = ipify
-        } else {
-            console.log("plain")
-            ip = plain
-        }
-        module.exports.ip = ip
-    } catch (error) {
-        console.error(error)
+fetch("https://ipecho.net/plain").then(response => response.text()).then(function (response) {module.exports.ip = response;}).catch(function (err){console.error(err)});
+
+const interfaces = require("os").networkInterfaces(),
+    keys = Object.getOwnPropertyNames(require("os").networkInterfaces())
+
+const internal_ip = []
+
+for (let index in keys){
+    const inter = interfaces[keys[index]]
+    for (let ind in inter){
+        if (inter[ind].address.includes("::")) internal_ip.push(`[${inter[ind].address}]`)
+        else internal_ip.push(inter[ind].address)
     }
-})()
+}
+
+module.exports.internal_ip = internal_ip

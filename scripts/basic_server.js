@@ -1,11 +1,33 @@
+const bds = require("../index")
+const Storage = localStorage;
+const {exec, execSync} = require("child_process");
+const fs = require("fs")
+const path = require("path")
+const {CheckBan} = require("./check")
+
 module.exports.start = () => {
-    const bds = require("../index")
-    const Storage = localStorage;
-    const {exec, execSync} = require("child_process");
-    const fs = require("fs")
-    const path = require("path")
-
-
+    function KickPlayer(player){
+        console.warn(`Player ${player} tried to connect to the server`)
+        let removeUser = `kick "${player}" Player banned: ${player}`
+        console.log(removeUser);
+        var stared_ban = setInterval(() => {
+            bds.command(removeUser)
+            const detect_exit = bds_log_string.split("\n")
+            for (let index in detect_exit) {
+                const element = detect_exit[index];
+                // Player disconnected: Steve alex,
+                if (element.includes("Player disconnected:")) {
+                    if (element.includes(removeUser)) {
+                        clearInterval(stared_ban)
+                        clearInterval(stared_ban)
+                        clearInterval(stared_ban)
+                        clearInterval(stared_ban)
+                        clearInterval(stared_ban)
+                    }
+                }
+            }
+        }, 5 * 1000);
+    }
     if (!(bds.detect())){
         const plat = bds.platform
         var start_server
@@ -41,9 +63,8 @@ module.exports.start = () => {
                 require("open")("https://account.mojang.com/documents/minecraft_eula");
                 const eula_file = path.join(bds.bds_dir_java, "eula.txt")
                 const eula_make_true = fs.readFileSync(eula_file, "utf8").replace("eula=false", "eula=true")
-                fs.writeFileSync(eula_file, eula_make_true)
-                const node_detect = process.argv[0]
-                if (node_detect.includes("node")){
+                fs.writeFileSync(eula_file, eula_make_true) 
+                if (process.argv[0].includes("node")){
                     console.warn("Ending the process")
                     setTimeout(() => {
                         process.exit(0)
@@ -55,63 +76,72 @@ module.exports.start = () => {
         var latestLog = require("fs").createWriteStream(path.join(bds.bds_dir, "log", "latest.log"), {flags: "w"});
         start_server.stdout.pipe(logConsoleStream);
         start_server.stdout.pipe(latestLog);
-        start_server.stdout.on("data", function(data){
-            data = data.split("\n")
-            var username;
-            for (let line in data){
-                const value = data[line].split(" ")
-                // const list_player = value
-                const status = value[2]
-                if (status === "connected:"){
-                    username = value[3]
-                    if (username.slice(-1) === ",") username = username.slice(0, -1)
-                    console.log("Server Username connected: "+username);
-                    const file_users = fs.readFileSync(bds.players_files);
-                    const users = JSON.parse(file_users, "utf-8")
-                    if (file_users.includes(username)){
+        if (bds.bds_config.bds_platform === "bedrock"){
+            start_server.stdout.on("data", function(data){
+                data = data.split("\n")
+                var username;
+                for (let line in data){
+                    const value = data[line].split(" ")
+                    // const list_player = value
+                    const status = value[2]
+                    if (status === "connected:"){
+                        if (value[3].includes(",")) username = value[3]
+                        else username = `${value[3]} ${value[4]}`
+                        if (username.slice(-1) === ",") username = username.slice(0, -1)
+                        //------------------
+                        if (CheckBan(username)) KickPlayer(username)
+                        else {
+                            console.log("Server Username connected: "+username);
+                            const file_users = fs.readFileSync(bds.players_files);
+                            const users = JSON.parse(file_users, "utf-8")
+                            if (file_users.includes(username)){
+                                for (let rem in users){
+                                    if (users[rem].player === username) {
+                                        users[rem].connected = true
+                                        users[rem].date = new Date()
+                                        users[rem].update.push({
+                                            date: new Date(),
+                                            connected: true
+                                        })
+                                    }
+                                }
+                            } else users.push({
+                                player: username,
+                                date: new Date(),
+                                connected: true,
+                                update: [
+                                    {
+                                        date: new Date(),
+                                        connected: true,
+                                    }
+                                ]
+                            })
+                            fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+                        }
+                        
+                    } else if (status === "disconnected:"){
+                        if (value[3].includes(",")) username = value[3]
+                        else username = `${value[3]} ${value[4]}`
+                        if (username.slice(-1) === ",") username = username.slice(0, -1)
+                        console.log("Server Username disconnected: "+username);
+                        const users = JSON.parse(fs.readFileSync(bds.players_files, "utf-8"))
                         for (let rem in users){
                             if (users[rem].player === username) {
-                                users[rem].connected = true
+                                users[rem].connected = false
                                 users[rem].date = new Date()
                                 users[rem].update.push({
                                     date: new Date(),
-                                    connected: true
+                                    connected: false
                                 })
                             }
                         }
+                        fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
                     }
-                    else users.push({
-                        player: username,
-                        date: new Date(),
-                        connected: true,
-                        update: [
-                            {
-                                date: new Date(),
-                                connected: true,
-                            }
-                        ]
-                    })
-                    
-                    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
-                } else if (status === "disconnected:"){
-                    username = value[3]
-                    if (username.slice(-1) === ",") username = username.slice(0, -1)
-                    console.log("Server Username disconnected: "+username);
-                    const users = JSON.parse(fs.readFileSync(bds.players_files, "utf-8"))
-                    for (let rem in users){
-                        if (users[rem].player === username) {
-                            users[rem].connected = false
-                            users[rem].date = new Date()
-                            users[rem].update.push({
-                                date: new Date(),
-                                connected: false
-                            })
-                        }
-                    }
-                    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
                 }
-            }
-        })
+            })
+        } else if (bds.bds_config.bds_platform === "java"){
+            console.log("Java is not yet supported the user list");
+        }
         if (typeof bds_log_string !== "undefined"){bds_log_string = ""}
         start_server.stdout.on("data", function(data){if (global.bds_log_string === undefined) global.bds_log_string = data;else global.bds_log_string += data})
         Storage.setItem("bds_status", true);
@@ -122,6 +152,17 @@ module.exports.start = () => {
         return "You already have a server running";
     }
 }
+
+module.exports.BdsCommand = function (command) {
+    if (typeof bds_server_string === "undefined") return false;
+    else {
+        if (command === undefined) return false;
+        else if (command === "") return false;
+        else bds_server_string.stdin.write(`${command}\n`);
+        return true
+    }
+};
+
 module.exports.stop = () => {
     if (typeof bds_server_string == "undefined"){
         const detect = process.argv[0];

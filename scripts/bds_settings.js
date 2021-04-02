@@ -87,6 +87,7 @@ player-movement-score-threshold=20
 player-movement-distance-threshold=0.3
 player-movement-duration-threshold-in-ms=500
 correct-player-movement=false
+server-authoritative-block-breaking=false
 
 # Created on Bds-Manager by Sirherobrine23`
     
