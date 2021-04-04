@@ -32,18 +32,18 @@ module.exports.start = () => {
         const plat = bds.platform
         var start_server
         if (plat === "bedrock"){
-            if (process.platform == "win32"){
-                start_server = exec("bedrock_server.exe", {cwd: bds.bds_dir_bedrock});
-            } else if (process.platform == "linux"){
-                console.log(execSync("chmod 777 bedrock_server", {cwd: bds.bds_dir_bedrock}).toString())
-                start_server = exec("./bedrock_server", {env: {PATH: process.env.PATH, LD_LIBRARY_PATH: bds.bds_dir_bedrock}, cwd: bds.bds_dir_bedrock});
-            } else {
-                process.exit(210)
-            }
+            if (process.platform == "win32") start_server = exec("bedrock_server.exe", {cwd: bds.bds_dir_bedrock});
+            else if (process.platform == "linux"){
+                execSync("chmod 777 bedrock_server", {cwd: bds.bds_dir_bedrock}).toString();
+                start_server = exec("./bedrock_server", {env: {
+                    ...process.env,
+                    LD_LIBRARY_PATH: bds.bds_dir_bedrock
+                }, cwd: bds.bds_dir_bedrock});
+            } else if (process.platform === "darwin") throw Error("We don't have MacOS support yet")
+            else process.exit(210)
         } else {
-            if (require("command-exists").sync("java")){
-                start_server = exec(`java -Xmx${bds.bds_config.java_config.max}M -Xms${bds.bds_config.java_config.max}M -jar server.jar nogui`, {cwd: bds.bds_dir_java});
-            } else {
+            if (require("command-exists").sync("java")) start_server = exec(`java -Xmx${bds.bds_config.java_config.max}M -Xms${bds.bds_config.java_config.max}M -jar server.jar nogui`, {cwd: bds.bds_dir_java});
+            else {
                 if (bds.system == "windows"){
                     require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#Windows");
                     console.log("http://docs.sirherobrine23.com/bds_maneger_api_java#Windows")
@@ -62,8 +62,7 @@ module.exports.start = () => {
                 const path = require("path");
                 require("open")("https://account.mojang.com/documents/minecraft_eula");
                 const eula_file = path.join(bds.bds_dir_java, "eula.txt")
-                const eula_make_true = fs.readFileSync(eula_file, "utf8").replace("eula=false", "eula=true")
-                fs.writeFileSync(eula_file, eula_make_true) 
+                fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").replace("eula=false", "eula=true")) 
                 if (process.argv[0].includes("node")){
                     console.warn("Ending the process")
                     setTimeout(() => {

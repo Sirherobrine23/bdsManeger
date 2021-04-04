@@ -49,13 +49,41 @@ function api(port_api){
         return res.send(json_http);
     });
     app.get("/players", (req, res) => {
-        res.json(JSON.parse(fs.readFileSync(bds.players_files, "utf8")));
+        const query = req.query,
+            status = query.status
+        const players_json = JSON.parse(fs.readFileSync(bds.players_files, "utf8"))
+        var response;
+        if (status === "online") {
+            response = []
+            for (let index  in players_json){
+                const check_online =  players_json[index]
+                if (check_online.connected === true) response.push(check_online.player)
+            }
+        } else if (status === "offline") {
+            for (let index  in players_json){
+                response = []
+                const check_online =  players_json[index]
+                if (check_online.connected === false) response.push(check_online.player)
+            }
+        } else response = players_json
+        res.json(response);
+    });
+    
+    app.get("/download_backup", (req, res) => {
+        const query = req.query
+        if (token_verify(query.token)){
+            const backup = bds.backup()
+            res.sendFile(backup.file_path)
+        } else res.json({
+            "token": (query.token||null),
+            "status": 404
+        })
     });
     app.get("/", (req, res) => {
         return res.send(`<html>
             <body>
                 <h1>Hello From Bds Maneger Core</h1>
-                <a>If this page has loaded it means that the API is working as planned, More information access the API documentation at: <a href="https://docs.srherobrine23.com/bds-maneger-api_whatis.html">Bds Maneger Core</a>. </a>
+                <a>If this page has loaded it means that the API is working as planned, More information access the API documentation at: <a href="https://github.com/The-Bds-Maneger/core/wiki">Bds Maneger Core</a>. </a>
                 <br><a>Version: ${require(path.resolve(__dirname, "..", "package.json")).version}</a>
             </body>
             <p>

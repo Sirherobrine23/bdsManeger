@@ -5,7 +5,6 @@ const { resolve } = require("path");
 const { error } = console;
 const shell = require("shelljs");
 
-
 const bds_core_package = resolve(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
 if (process.env.IS_BIN_BDS === undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
@@ -352,6 +351,17 @@ if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
         throw new error("It was not possible to move the old telegram token file to the new bds maneger api file")
     }
 }
+const getSize = require("get-folder-size")
+getSize(bds_dir_backup, function(err, info) {
+    if (err) throw err
+    function toGB(x) {return (x / (1024 * 1024 * 1024)).toFixed(1);}
+    /**
+     * The disk space is used for each backup made, and it is good to take a look at this information before creating another backup.
+     * 
+     * The return value will always be in gigabyte (GB)
+     */
+    module.exports.backup_folder_size = toGB(info)
+});
 
 // Get server version
 fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(rawOUT => {
