@@ -110,8 +110,13 @@ module.exports.backup_folder = bds_dir_backup
 
 // Move old configs to new folder
 if (fs.existsSync(old_bds_dir)){
-    console.log("Moving the old files to the new folder");
-    fs.renameSync(old_bds_dir, bds_dir);
+    if (fs.existsSync(bds_dir)) {
+        fs.renameSync(old_bds_dir, old_bds_dir+"_Conflit_"+Math.trunc(Math.random()* 10000 * Math.random()));
+        throw Error("Conflit folders check home dir")
+    } else {
+        console.log("Moving the old files to the new folder");
+        fs.renameSync(old_bds_dir, bds_dir);
+    }
 }
 
 // Create Main save files

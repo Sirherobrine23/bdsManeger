@@ -58,5 +58,5 @@ module.exports = function (version, force_install) {
                 if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
             }
         }
-    })
+    }).catch(function (err){if (err) throw err;})
 }

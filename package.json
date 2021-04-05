@@ -3,13 +3,16 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.8.5",
+  "version": "1.8.5.1",
   "description": "scripts to manage minecraft bedrock server",
   "private": false,
   "main": "index.js",
   "scripts": {
-    "test": "eslint .",
-    "test:fix": "eslint --fix ."
+    "test": "",
+    "eslint": "eslint .",
+    "eslint:fix": "eslint --fix .",
+    "start": "node bin/bds_maneger.js",
+    "debug": "node bin/debug.js"
   },
   "bin": {
     "bds_maneger": "./bin/bds_maneger.js"
