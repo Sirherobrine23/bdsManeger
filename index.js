@@ -26,7 +26,7 @@ function date(fu) {
 const arch = process.arch
 module.exports.arch = arch
 
-var LocalStorageFolder,home,desktop,tmp,system
+var LocalStorageFolder,home,desktop,tmp,system,valid_platform
 module.exports.package_path = bds_core_package
 if (process.platform == "win32") {
     home = process.env.USERPROFILE;
@@ -34,6 +34,10 @@ if (process.platform == "win32") {
     LocalStorageFolder = path.join(home, "AppData", "Roaming", "bds_core")
     tmp = process.env.TMP
     system = "windows";
+    valid_platform = {
+	"bedrock": true,
+	"java": true
+    }
 } else if (process.platform == "linux") {
     home = process.env.HOME;
     LocalStorageFolder = path.join(home, ".config", "bds_core");
@@ -56,16 +60,23 @@ if (process.platform == "win32") {
     else desktop = "/tmp"
     tmp = "/tmp";
     system = "linux";
+    valid_platform = {
+	"bedrock": true,
+	"java": true
+    }
 } else if (process.platform == "darwin") {
     if (process.arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
     else require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#macos-with-intel-processors")
     console.error("MacOS is not yet supported, wait until it is (You can use the docker)");
-
     home = process.env.HOME;
     LocalStorageFolder = resolve("/tmp", "bds_core");
     desktop = "/tmp"
     tmp = "/tmp";
-    system = "macos";
+    system = "macOS";
+    valid_platform = {
+	"bedrock": false,
+	"java": true
+    }
 } else {
     console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
     process.exit(254)
@@ -77,6 +88,11 @@ if (process.platform == "win32") {
  * With different languages ​​and systems we want to find the user's desktop for some link in the directory or even a nice shortcut
  */
 module.exports.desktop = desktop
+
+/**
+ * Platforms valid from deferents systems
+ */
+module.exports.valid_platform = valid_platform
 
 /**
   * Identifying a system in the script can be simple with this variable
