@@ -4,81 +4,76 @@ const fs = require("fs");
 const { resolve } = require("path");
 const { error } = console;
 const shell = require("shelljs");
+const {getDesktopFolder, getConfigHome} = require("platform-folders")
 
 const bds_core_package = resolve(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
 if (process.env.IS_BIN_BDS === undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
-function date(fu) {
-    var today = new Date();
-    if (fu == "year")
-        return `${today.getFullYear()}`
-    else if (fu == "day")
-        return `${String(today.getDate()).padStart(2, "0")}`
-    else if (fu == "month")
-        return `${String(today.getMonth() + 1).padStart(2, "0")}`
-    else if (fu == "hour")
-        return `${today.getHours()}_${today.getMinutes()}`
-    else 
-        return `${String(today.getDate()).padStart(2, "0")}-${String(today.getMonth() + 1).padStart(2, "0")}-${today.getFullYear()}_${today.getHours()}-${today.getSeconds()}`
+function date(format) {
+    const today = new Date(),
+        yaer = today.getFullYear(),
+        day = String(today.getDate()).padStart(2, "0"),
+        month = String(today.getMonth() + 1).padStart(2, "0"),
+        hour = today.getHours(),
+        minute = today.getMinutes();
+    // ---------------------------------------------------------
+    if (format === "year") return yaer
+    else if (format === "day") return day
+    else if (format === "month") return month
+    else if (format === "hour") return hour
+    else if (format === "minute") return minute
+    else if (format === "hour_minu") return `${hour}-${minute}`
+    else return `${day}-${month}-${yaer}_${hour}-${minute}`
 }
 
 // System Architect (X64 or ARM64)
 const arch = process.arch
 module.exports.arch = arch
 
-var LocalStorageFolder,home,desktop,tmp,system,valid_platform
+var LocalStorageFolder = path.join(getConfigHome(), "bds_core"),
+    home,
+    desktop = getDesktopFolder(),
+    tmp,
+    system,
+    valid_platform
 module.exports.package_path = bds_core_package
 if (process.platform == "win32") {
     home = process.env.USERPROFILE;
-    desktop = path.join(home, "Desktop")
-    LocalStorageFolder = path.join(home, "AppData", "Roaming", "bds_core")
     tmp = process.env.TMP
     system = "windows";
     valid_platform = {
-	"bedrock": true,
-	"java": true
+        "bedrock": true,
+        "java": true
     }
 } else if (process.platform == "linux") {
     home = process.env.HOME;
-    LocalStorageFolder = path.join(home, ".config", "bds_core");
-    var file = path.join(home, ".config", "user-dirs.dirs");var data = {};
-    if (fs.existsSync(file)){
-        let content = fs.readFileSync(file, "utf8");let lines = content.split(/\r?\n/g).filter((a)=> !a.startsWith("#"));
-        for(let line of lines){
-            let i = line.indexOf("=");
-            if(i >= 0){
-                try {data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))}
-                catch(e) {error(e)}
-            }
-        }
-    }
     if (process.env.BDS_DOCKER_IMAGE) desktop = "/home/bds/"
-    else if(data["XDG_DESKTOP_DIR"]){
-        desktop = data["XDG_DESKTOP_DIR"];
-        desktop = desktop.replace(/\$([A-Za-z\-_]+)|\$\{([^{^}]+)\}/g, (_, a, b) => (process.env[a || b] || ""))
-    }
     else desktop = "/tmp"
     tmp = "/tmp";
     system = "linux";
     valid_platform = {
-	"bedrock": true,
-	"java": true
+        "bedrock": true,
+        "java": true
     }
 } else if (process.platform == "darwin") {
-    if (process.arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
-    else require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#macos-with-intel-processors")
-    console.error("MacOS is not yet supported, wait until it is (You can use the docker)");
+    if (arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
+    else require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#macos-with-intel-processors");
     home = process.env.HOME;
-    LocalStorageFolder = resolve("/tmp", "bds_core");
-    desktop = "/tmp"
     tmp = "/tmp";
     system = "macOS";
     valid_platform = {
-	"bedrock": false,
-	"java": true
+        "bedrock": false,
+        "java": true
     }
 } else {
     console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
+    home = process.env.HOME;
+    tmp = "/tmp";
+    system = "macOS";
+    valid_platform = {
+        "bedrock": false,
+        "java": true
+    }
     process.exit(254)
 }
 
@@ -119,7 +114,6 @@ module.exports.home = home
 const bds_dir = resolve(home, "bds_core");
 const old_bds_dir = resolve(home, "bds_Server");
 
-
 // Bds Backups Folder
 var bds_dir_backup = path.join(bds_dir, "backups");
 module.exports.backup_folder = bds_dir_backup
@@ -152,7 +146,6 @@ if (!(fs.existsSync(bds_dir))){
  */
 module.exports.bds_dir = bds_dir
 
-
 // Servers Paths
 /* Java Path */
 const bds_dir_java = path.join(bds_dir, "java");
@@ -171,7 +164,6 @@ if (!(fs.existsSync(bds_dir_bedrock))){
     if (!(fs.existsSync(bds_dir_bedrock))) shell.mkdir("-p", bds_dir_bedrock);
 }
 module.exports.bds_dir_bedrock = bds_dir_bedrock
-
 
 // Create backup folder
 if (!(fs.existsSync(bds_dir_backup))){
@@ -204,26 +196,34 @@ if (typeof localStorage === "undefined") global.localStorage = new require("node
 // Configs
 var bds_config, bds_config_file = path.join(bds_dir, "bds_config.json");
 const current_version_bds_core = bds_maneger_version
+var default_porcess;
+if (process.platform.includes("win32", "linux")) default_porcess = "bedrock"
+else default_porcess = "java"
 if (fs.existsSync(bds_config_file)){
     bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     if (bds_config.version !== current_version_bds_core){
         let ram_total = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
         if (ram_total >= 1000) ram_total = ram_total - 1000
         if (bds_config.platform_version === undefined) bds_config.platform_version = {}
+        if (bds_config.bedrock_config === undefined) bds_config.platform_version = {}
         bds_config = {
             "version": current_version_bds_core,
             "bds_pages": (bds_config.bds_pages||"default"),
-            "bds_platform": bds_config.bds_platform,
+            "bds_platform": (bds_config.bds_platform||default_porcess),
             "platform_version": {
                 "bedrock": (bds_config.platform_version.bedrock||"latest"),
                 "java": (bds_config.platform_version.java||"latest")
             },
             "bds_ban": (bds_config.bds_ban||["Steve", "Alex", "steve", "alex"]),
-            "telegram_token": bds_config.telegram_token,
-            "Google_Drive_root_backup_id": bds_config.Google_Drive_root_backup_id,
-            "telegram_admin": bds_config.telegram_admin,
+            "telegram_token": (bds_config.telegram_token||undefined),
+            "Google_Drive_root_backup_id": (bds_config.Google_Drive_root_backup_id||undefined),
+            "telegram_admin": (bds_config.telegram_admin||["all_users"]),
             "java_config": {
                 "max": ram_total
+            },
+            "bedrock_config": {
+                "from": (bds_config.bedrock_config.from||"oficial"), // Use the official version provided by Mojang Studios AB
+                "url": (bds_config.bedrock_config.from||null) // JSON Array file with versions and download url
             }
         }
         fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
@@ -235,7 +235,7 @@ if (fs.existsSync(bds_config_file)){
     bds_config = {
         "version": current_version_bds_core,
         "bds_pages": "default",
-        "bds_platform": "bedrock",
+        "bds_platform": default_porcess,
         "platform_version": {
             "bedrock": "latest",
             "java": "latest"
@@ -248,6 +248,11 @@ if (fs.existsSync(bds_config_file)){
         ],
         "java_config": {
             "max": ram_total
+        },
+        // bedrock_config is not yet in use
+        "bedrock_config": {
+            "from": "oficial", // Bedrock Server software, such as the one provided by Mojang, lifeboat, pocketmine-mp. more information: https://github.com/The-Bds-Maneger/core/wiki/bedrock_software#minecraft-bedrock-servers
+            "url": undefined // JSON Array file with versions and download url
         }
     }
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
@@ -359,7 +364,6 @@ const telegram_token_save = function (token) {
     }
 }
 module.exports.telegram_token_save = telegram_token_save
-
 
 if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
     console.log(`We identified the old telegram token file (${path.join (bds_dir, "telegram_token.txt")}), starting the migration process`)
