@@ -205,7 +205,7 @@ if (fs.existsSync(bds_config_file)){
         let ram_total = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
         if (ram_total >= 1000) ram_total = ram_total - 1000
         if (bds_config.platform_version === undefined) bds_config.platform_version = {}
-        if (bds_config.bedrock_config === undefined) bds_config.platform_version = {}
+        if (bds_config.bedrock_config === undefined) bds_config.bedrock_config = {}
         bds_config = {
             "version": current_version_bds_core,
             "bds_pages": (bds_config.bds_pages||"default"),
