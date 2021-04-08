@@ -116,7 +116,7 @@ module.exports = function (version, force_install) {
                                     if (test.includes("extension_dir")) check_extension_dir = true;
                                     console.log(test);
                                 }
-                                if (check_extension_dir) console.log("Pulando configuração do php.ini");
+                                if (check_extension_dir) console.log("Skipping php.ini configuration");
                                 else {
                                     const phpExtensiosnsDir = resolve(bds_dir_pocketmine, "bin/php7/lib/php/extensions")
                                     const phpExtensiosns = readdirSync(phpExtensiosnsDir)

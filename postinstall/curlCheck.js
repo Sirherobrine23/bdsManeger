@@ -2,7 +2,7 @@ const { existsSync, mkdirSync, writeFileSync, chmodSync } = require("fs")
 const { resolve, join } = require("path")
 const binFolder = resolve((process.env.USERPROFILE||process.env.HOME), "bds_core", "bin")
 
-if (typeof fetch === "undefined") {var fetch = require("node-fetch")}
+if (typeof fetch === "undefined") {global.fetch = require("node-fetch")}
 (function (){
     if (require("command-exists").sync("curl")) {console.log("Curl is already installed.");process.exit(0)}
     else {

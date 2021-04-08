@@ -96,9 +96,7 @@ server-authoritative-block-breaking=false
     
 } else if (bds.platform === "java") {
     hardcore = "false"
-    if (gamemode === "survival") null
-    else if (gamemode === "creative") null
-    else {gamemode = 0;hardcore = "true"}
+    if (gamemode === "hardcore") {gamemode = 0;hardcore = "true"}
     config_file_content = `enable-jmx-monitoring=false
 rcon.port=25575
 level-seed=
