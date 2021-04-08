@@ -5,6 +5,7 @@ const { resolve } = require("path");
 const { error } = console;
 const shell = require("shelljs");
 const {getDesktopFolder, getConfigHome} = require("platform-folders")
+const { execSync } = require("child_process");
 
 const bds_core_package = resolve(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
@@ -40,9 +41,10 @@ module.exports.package_path = bds_core_package
 if (process.platform == "win32") {
     home = process.env.USERPROFILE;
     tmp = process.env.TMP
-    system = "windows";
+    system = "Windows";
     valid_platform = {
         "bedrock": true,
+        "pocketmine": true,
         "java": true
     }
 } else if (process.platform == "linux") {
@@ -50,9 +52,10 @@ if (process.platform == "win32") {
     if (process.env.BDS_DOCKER_IMAGE) desktop = "/home/bds/"
     else desktop = "/tmp"
     tmp = "/tmp";
-    system = "linux";
+    system = "Linux";
     valid_platform = {
         "bedrock": true,
+        "pocketmine": true,
         "java": true
     }
 } else if (process.platform == "darwin") {
@@ -60,9 +63,10 @@ if (process.platform == "win32") {
     else require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#macos-with-intel-processors");
     home = process.env.HOME;
     tmp = "/tmp";
-    system = "macOS";
+    system = "MacOS";
     valid_platform = {
         "bedrock": false,
+        "pocketmine": true,
         "java": true
     }
 } else {
@@ -165,6 +169,15 @@ if (!(fs.existsSync(bds_dir_bedrock))){
 }
 module.exports.bds_dir_bedrock = bds_dir_bedrock
 
+/* PocketMine Path */
+const bds_dir_pocketmine = path.join(bds_dir, "pocketmine");
+if (!(fs.existsSync(bds_dir_pocketmine))){
+    console.log("Creating the bds directory to Pocketmine")
+    fs.mkdirSync(bds_dir_pocketmine)
+    if (!(fs.existsSync(bds_dir_pocketmine))) shell.mkdir("-p", bds_dir_pocketmine);
+}
+module.exports.bds_dir_pocketmine = bds_dir_pocketmine
+
 // Create backup folder
 if (!(fs.existsSync(bds_dir_backup))){
     fs.mkdirSync(bds_dir_backup)
@@ -191,6 +204,18 @@ if (!(fs.existsSync(log_dir))){
 
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 if (typeof localStorage === "undefined") global.localStorage = new require("node-localstorage").LocalStorage(path.join(LocalStorageFolder, "Local_Storage"));
+
+/* Minecraft Servers URLs and depedencies */
+// urls
+const SERVER_URLs = JSON.parse(execSync("curl -sS \"https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json\"").toString())
+module.exports.SERVER_URLs = SERVER_URLs
+
+// PHP Bins
+const PHPbinsUrl = JSON.parse(execSync("curl -sS \"https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json\"").toString())
+module.exports.PHPbinsUrls = PHPbinsUrl
+console.log(PHPbinsUrl);
+const PHPurlNames = Object.getOwnPropertyNames(PHPbinsUrl)
+module.exports.PHPurlNames = PHPurlNames
 
 /* ---------------------------------------------------------------------------- Variables ---------------------------------------------------------------------------- */
 // Configs
@@ -376,7 +401,7 @@ if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
         throw new error("It was not possible to move the old telegram token file to the new bds maneger api file")
     }
 }
-const getSize = require("get-folder-size")
+const getSize = require("get-folder-size");
 getSize(bds_dir_backup, function(err, info) {
     if (err) throw err
     function toGB(x) {return (x / (1024 * 1024 * 1024)).toFixed(1);}

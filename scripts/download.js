@@ -2,9 +2,11 @@ var AdmZip = require("adm-zip");
 const { warn } = require("console");
 const {writeFileSync, existsSync, readFileSync} = require("fs");
 const { join } = require("path");
-const {bds_config, bds_dir_bedrock, bds_dir_java, platform_version_update, valid_platform} = require("../index")
+const {bds_config, bds_dir_bedrock, bds_dir_java, platform_version_update, valid_platform, PHPurlNames, bds_dir_pocketmine, PHPbinsUrls} = require("../index")
+const bdsSystem = require("../index").system
+const response = require("../index").SERVER_URLs
 module.exports = function (version, force_install) {
-    return fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(response => {
+    try {
         if (version === "") version="latest"
         if (version === undefined) version="latest"
         const server_platform = bds_config.bds_platform
@@ -61,6 +63,53 @@ module.exports = function (version, force_install) {
                     if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
                 }
             } else throw Error("Java not suported")
+        } else  if (server_platform === "pocketmine") {
+            if (valid_platform.pocketmine === true) {
+                if (version === "latest") version = response.PocketMine_latest
+                url = response.PocketMine[version].url
+                console.log(`Server data publish: ${response.PocketMine[version].data}`)
+                console.log(bds_dir_pocketmine);
+                fetch(url).then(response => response.arrayBuffer()).then(response => Buffer.from(response)).then(response => {
+                    writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), response, "binary")
+                    console.log("PocketMine-MP.phar saved");
+                    platform_version_update(version)
+                    const binFolder = join(bds_dir_pocketmine, "bin")
+                    if (!(existsSync(binFolder))) {
+                        var urlPHPBin;
+                        for (let index in PHPurlNames){
+                            const nameFile = PHPurlNames[index]
+                            var archS;
+                            if (process.platform === "linux") if (process.arch === "x64") archS = "x86_64";
+                            if (process.platform === "darwin") if (process.arch === "x64") archS = "x86_64";
+                            if (process.platform === "win32") if (process.arch === "x64") archS = "x64";
+                            var arch = false, system = false;
+                            if (nameFile.includes(bdsSystem)) system = true
+                            if (nameFile.includes(archS)) arch = true
+                            // -*-*-*-*-
+                            console.log({
+                                arch,
+                                system
+                            });
+                            if (arch === true && system === true){
+                                urlPHPBin = PHPbinsUrls[nameFile]
+                            }
+                        }
+                        if (urlPHPBin === undefined) throw Error("File not found")
+                        else {
+                            console.log(urlPHPBin);
+                            fetch(urlPHPBin).then(response => response.arrayBuffer()).then(response => Buffer.from(response)).then(response => {
+                                console.log("Download Sucess")
+                                var zipExtractBin = new AdmZip(response);
+                                zipExtractBin.extractAllTo(bds_dir_pocketmine, true)
+                                console.log("Extract Sucess")
+                                if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
+                            })
+                        }
+                    } else if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
+                })
+            } else throw Error("Pocketmine not suported")
         } else throw Error("Bds maneger Config file error")
-    }).catch(function (err){if (err) throw err;})
+    } catch (error) {
+        console.error(error);
+    }
 }

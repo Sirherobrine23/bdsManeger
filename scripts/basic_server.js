@@ -3,7 +3,8 @@ const Storage = localStorage;
 const {exec, execSync} = require("child_process");
 const fs = require("fs")
 const path = require("path")
-const {CheckBan} = require("./check")
+const {CheckBan} = require("./check");
+const { resolve } = require("path");
 
 module.exports.start = () => {
     function KickPlayer(player){
@@ -41,7 +42,7 @@ module.exports.start = () => {
                 }, cwd: bds.bds_dir_bedrock});
             } else if (process.platform === "darwin") throw Error("We don't have MacOS support yet")
             else process.exit(210)
-        } else {
+        } else if (plat === "java") {
             if (require("command-exists").sync("java")) start_server = exec(`java -Xmx${bds.bds_config.java_config.max}M -Xms${bds.bds_config.java_config.max}M -jar server.jar nogui`, {cwd: bds.bds_dir_java});
             else {
                 if (bds.system == "windows"){
@@ -55,7 +56,11 @@ module.exports.start = () => {
                     console.log("http://docs.sirherobrine23.com/scripts/_java")
                 }
             }
-        }
+        } else if (plat === "pocketmine") {
+            start_server = exec(`${resolve(bds.bds_dir_pocketmine, "bin/php7/bin/php")} ${resolve(bds.bds_dir_pocketmine, "PocketMine-MP.phar")}`, {env: {
+                ...process.env,
+            }, cwd: bds.bds_dir_pocketmine});
+        } else throw Error("")
         Storage.setItem("old_log_file", bds.log_file)
         start_server.stdout.on("data", function(data){
             if (data.includes("agree", "EULA")){
