@@ -4,7 +4,7 @@ const {exec, execSync} = require("child_process");
 const fs = require("fs")
 const path = require("path")
 const {CheckBan} = require("./check");
-const { resolve, join } = require("path");
+const { resolve } = require("path");
 const commandExists = require("command-exists").sync
 
 module.exports.start = () => {
@@ -115,7 +115,7 @@ module.exports.start = () => {
                     require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#Linux");
                     console.log("http://docs.sirherobrine23.com/bds_maneger_api_java#Linux")
                 } else {
-                    require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java");
+                    require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#MacOS");
                     console.log("http://docs.sirherobrine23.com/scripts/_java")
                 }
             }
@@ -133,7 +133,7 @@ module.exports.start = () => {
             }
             else throw Error("Reinstall Pocketmine-MP, PHP binaries not found")
             console.log(childPorcessEnv.PATH);
-            start_server = exec(`php ${join(bds.bds_dir_pocketmine, "PocketMine-MP.phar")}`, {env: {
+            start_server = exec("php ./PocketMine-MP.phar", {env: {
                 ...childPorcessEnv
             }, cwd: bds.bds_dir_pocketmine});
         } else throw Error("")
