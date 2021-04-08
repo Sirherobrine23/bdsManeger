@@ -1,10 +1,11 @@
 var AdmZip = require("adm-zip");
 const { warn } = require("console");
-const {writeFileSync, existsSync, readFileSync} = require("fs");
-const { join } = require("path");
+const {writeFileSync, existsSync, readFileSync, readdirSync} = require("fs");
+const { join, resolve } = require("path");
 const {bds_config, bds_dir_bedrock, bds_dir_java, platform_version_update, valid_platform, PHPurlNames, bds_dir_pocketmine, PHPbinsUrls} = require("../index")
 const bdsSystem = require("../index").system
 const response = require("../index").SERVER_URLs
+const commandExists = require("command-exists").sync
 module.exports = function (version, force_install) {
     try {
         if (version === "") version="latest"
@@ -74,7 +75,11 @@ module.exports = function (version, force_install) {
                     console.log("PocketMine-MP.phar saved");
                     platform_version_update(version)
                     const binFolder = join(bds_dir_pocketmine, "bin")
-                    if (!(existsSync(binFolder))) {
+                    var CheckBinPHPFolder;
+                    if (existsSync(binFolder)) CheckBinPHPFolder = false
+                    else if (commandExists("php")) CheckBinPHPFolder = false
+                    else CheckBinPHPFolder = true
+                    if (CheckBinPHPFolder||force_install) {
                         var urlPHPBin;
                         for (let index in PHPurlNames){
                             const nameFile = PHPurlNames[index]
@@ -102,6 +107,27 @@ module.exports = function (version, force_install) {
                                 var zipExtractBin = new AdmZip(response);
                                 zipExtractBin.extractAllTo(bds_dir_pocketmine, true)
                                 console.log("Extract Sucess")
+                                const phpBinFolder = resolve(bds_dir_pocketmine, "bin")
+                                const phpIni = readFileSync(join(phpBinFolder, "php7", "bin", "php.ini"), "utf-8")
+                                const phpIniSplit = phpIni.split("\n")
+                                var check_extension_dir = false
+                                for (let index in phpIniSplit){
+                                    let test = phpIniSplit[index]
+                                    if (test.includes("extension_dir")) check_extension_dir = true;
+                                    console.log(test);
+                                }
+                                if (check_extension_dir) console.log("Pulando configuração do php.ini");
+                                else {
+                                    const phpExtensiosnsDir = resolve(bds_dir_pocketmine, "bin/php7/lib/php/extensions")
+                                    const phpExtensiosns = readdirSync(phpExtensiosnsDir)
+                                    var exetensionZen;
+                                    for (let index2 in phpExtensiosns){
+                                        
+                                        if (phpExtensiosns[index2].includes("debug-zts")) exetensionZen = phpExtensiosns[index2]
+                                    }
+                                    phpIniSplit.push(`extension_dir="${resolve(phpExtensiosnsDir, exetensionZen)}"`)
+                                    writeFileSync(join(phpBinFolder, "php7", "bin", "php.ini"), phpIniSplit.join("\n"))
+                                }
                                 if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
                             })
                         }

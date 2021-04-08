@@ -54,7 +54,7 @@ if (!(existsSync(server_exec))) {
 if (bds_version){
   try {
     process.env.BDS_DOCKER_IMAGE = true
-    bds.download(bds_version)
+    bds.download(bds_version, true)
   } catch (error) {
     console.error(error)
     process.exit(165)

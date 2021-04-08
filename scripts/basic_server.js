@@ -5,6 +5,7 @@ const fs = require("fs")
 const path = require("path")
 const {CheckBan} = require("./check");
 const { resolve } = require("path");
+const commandExists = require("command-exists").sync
 
 module.exports.start = () => {
     function KickPlayer(player){
@@ -57,8 +58,21 @@ module.exports.start = () => {
                 }
             }
         } else if (plat === "pocketmine") {
-            start_server = exec(`${resolve(bds.bds_dir_pocketmine, "bin/php7/bin/php")} ${resolve(bds.bds_dir_pocketmine, "PocketMine-MP.phar")}`, {env: {
-                ...process.env,
+            let childPorcessEnv = process.env
+            const phpinCore = resolve(bds.bds_dir_pocketmine, "bin", "php7", "bin")
+            if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
+            else if (fs.existsSync(phpinCore)) {
+                console.log(phpinCore);
+                if (process.env.PATH.includes(phpinCore))console.log("PHP bin folder includes in PATH"); 
+                else {
+                    if (process.platform === "win32") childPorcessEnv.PATH += `;${phpinCore}`
+                    else childPorcessEnv.PATH += `:${phpinCore}`
+                }
+            }
+            else throw Error("Reinstall Pocketmine-MP, PHP binaries not found")
+            console.log(childPorcessEnv.PATH);
+            start_server = exec(`php ${resolve(bds.bds_dir_pocketmine, "PocketMine-MP.phar")}`, {env: {
+                ...childPorcessEnv
             }, cwd: bds.bds_dir_pocketmine});
         } else throw Error("")
         Storage.setItem("old_log_file", bds.log_file)

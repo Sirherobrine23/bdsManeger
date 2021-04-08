@@ -221,9 +221,9 @@ module.exports.PHPurlNames = PHPurlNames
 // Configs
 var bds_config, bds_config_file = path.join(bds_dir, "bds_config.json");
 const current_version_bds_core = bds_maneger_version
-var default_porcess;
-if (process.platform.includes("win32", "linux")) default_porcess = "bedrock"
-else default_porcess = "java"
+var default_platformConfig;
+if (process.platform.includes("win32", "linux")) default_platformConfig = "bedrock"
+else default_platformConfig = "java"
 if (fs.existsSync(bds_config_file)){
     bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     if (bds_config.version !== current_version_bds_core){
@@ -234,7 +234,7 @@ if (fs.existsSync(bds_config_file)){
         bds_config = {
             "version": current_version_bds_core,
             "bds_pages": (bds_config.bds_pages||"default"),
-            "bds_platform": (bds_config.bds_platform||default_porcess),
+            "bds_platform": (bds_config.bds_platform||default_platformConfig),
             "platform_version": {
                 "bedrock": (bds_config.platform_version.bedrock||"latest"),
                 "java": (bds_config.platform_version.java||"latest")
@@ -260,7 +260,7 @@ if (fs.existsSync(bds_config_file)){
     bds_config = {
         "version": current_version_bds_core,
         "bds_pages": "default",
-        "bds_platform": default_porcess,
+        "bds_platform": default_platformConfig,
         "platform_version": {
             "bedrock": "latest",
             "java": "latest"
