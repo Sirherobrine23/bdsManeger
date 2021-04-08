@@ -11,7 +11,7 @@ var backup_world = function () {
     if (bds.platform === "bedrock") dir_zip = path.join(bds.bds_dir_bedrock, "worlds")
     else dir_zip = path.join(bds.bds_dir_java, java_pro(readFileSync(path.join(bds.bds_dir_java, "server.properties"), "utf8").replaceAll("-", "_")).level_name)
     console.info("Please wait")
-    if (bds.bds_detect()) bds.stop()
+    if (process.env.BDS_DOCKER_IMAGE !== "true") if (bds.bds_detect()) bds.stop()
     var zip = new AdmZip();
     zip.addLocalFolder(dir_zip);
     zip.addZipComment("Backup Worlds, by The Bds Maneger Project©");
