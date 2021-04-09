@@ -106,7 +106,10 @@ module.exports.start = () => {
             } else if (process.platform === "darwin") throw Error("We don't have MacOS support yet")
             else process.exit(210)
         } else if (plat === "java") {
-            if (require("command-exists").sync("java")) start_server = exec(`java -Xmx${bds.bds_config.java_config.max}M -Xms${bds.bds_config.java_config.max}M -jar server.jar nogui`, {cwd: bds.bds_dir_java});
+            var ram_max = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
+            var ram_minimun = ram_max;
+            if (ram_max >= 1000) {ram_max = Math.trunc(ram_max / 10);ram_minimun = Math.trunc(ram_max / 50)}
+            if (require("command-exists").sync("java")) start_server = exec(`java -Xmx${ram_max}M -Xms${ram_minimun}M -jar server.jar nogui`, {cwd: bds.bds_dir_java});
             else {
                 if (bds.system == "windows"){
                     require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#Windows");

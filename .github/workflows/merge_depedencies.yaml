@@ -3,10 +3,6 @@ on:
   pull_request:
     branches:
       - dependabot/**
-  check_suite:
-    types:
-      - completed
-  status: {}
 jobs:
   automerge:
     runs-on: ubuntu-latest

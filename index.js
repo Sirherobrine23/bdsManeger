@@ -213,7 +213,8 @@ module.exports.SERVER_URLs = SERVER_URLs
 // PHP Bins
 const PHPbinsUrl = JSON.parse(execSync("curl -sS \"https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json\"").toString())
 module.exports.PHPbinsUrls = PHPbinsUrl
-console.log(PHPbinsUrl);
+
+// PHP bins System availble in Json File
 const PHPurlNames = Object.getOwnPropertyNames(PHPbinsUrl)
 module.exports.PHPurlNames = PHPurlNames
 
@@ -227,10 +228,9 @@ else default_platformConfig = "java"
 if (fs.existsSync(bds_config_file)){
     bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     if (bds_config.version !== current_version_bds_core){
-        let ram_total = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
-        if (ram_total >= 1000) ram_total = ram_total - 1000
+        
         if (bds_config.platform_version === undefined) bds_config.platform_version = {}
-        if (bds_config.bedrock_config === undefined) bds_config.bedrock_config = {}
+        // New Config JSon
         bds_config = {
             "version": current_version_bds_core,
             "bds_pages": (bds_config.bds_pages||"default"),
@@ -242,13 +242,8 @@ if (fs.existsSync(bds_config_file)){
             "bds_ban": (bds_config.bds_ban||["Steve", "Alex", "steve", "alex"]),
             "telegram_token": (bds_config.telegram_token||undefined),
             "Google_Drive_root_backup_id": (bds_config.Google_Drive_root_backup_id||undefined),
-            "telegram_admin": (bds_config.telegram_admin||["all_users"]),
             "java_config": {
                 "max": ram_total
-            },
-            "bedrock_config": {
-                "from": (bds_config.bedrock_config.from||"oficial"), // Use the official version provided by Mojang Studios AB
-                "url": (bds_config.bedrock_config.from||null) // JSON Array file with versions and download url
             }
         }
         fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
