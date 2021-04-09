@@ -21,8 +21,26 @@ if (typeof fetch === "undefined") {global.fetch = require("node-fetch")}
             })
         } else if (process.platform === "darwin") throw Error("You will have to install cURL manually, download page: https://curl.se/download.html");
         else if (process.platform === "win32") {
-            if (Math.trunc(require("os").release()) === "10") throw Error("Please make sure you are on the latest version of Windows 10");
-            else throw Error(`Please manually install curl for Windows ${Math.trunc(require("os").release())}, download page: https://curl.se/download.html`)
+            // Version                                    major.minor   
+            // ------------------------------------------ ------------- 
+            //  Windows 10, Windows Server 2016            10.0
+            //  Windows 8.1, Windows Server 2012 R2        6.3
+            //  Windows 8, Windows Server 2012             6.2
+            //  Windows 7, Windows Server 2008 R2          6.1
+            //  Windows Vista, Windows Server 2008         6.0
+            //  Windows XP Professional x64 Edition,       5.2
+            //  Windows Server 2003, Windows Home Server
+            //  Windows XP                                 5.1
+            //  Windows 2000                               5.0
+            var WindowsVersion = require("os").release()
+            if (WindowsVersion.includes("10.0")) WindowsVersion = 10
+            else if (WindowsVersion.includes("6.3")) WindowsVersion = 8.1
+            else if (WindowsVersion.includes("6.2")) WindowsVersion = 8
+            else if (WindowsVersion.includes("6.1")) WindowsVersion = 7
+            else WindowsVersion = "unsupported"
+
+            if (WindowsVersion === 10) throw Error("Please make sure you are on the latest version of Windows 10");
+            else throw Error(`Please manually install curl for Windows ${WindowsVersion}, download page: https://curl.se/download.html`)
         } else throw Error("Please install curl manually, download page: https://curl.se/download.html")
     }
 })()

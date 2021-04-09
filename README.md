@@ -38,3 +38,9 @@ bdsmaneger/maneger:latest
 ### Microsoft Azure Virtual machine
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FThe-Bds-Maneger%2FAzure_VMs%2Fmain%2Fdeploy.json) More Information Access the repository: [Azure VMs](https://github.com/The-Bds-Maneger/Azure_VMs)
+
+## Common Mistakes
+
+* ### On Windows if you are receiving any error from platform-tools, follow these [steps](https://github.com/nodejs/node-gyp#on-windows), and install [python](https://www.python.org/downloads/).
+
+* ### If you are using Branch main, there may be several errors and corrections may take time to arrive, I recommend using the Tags.

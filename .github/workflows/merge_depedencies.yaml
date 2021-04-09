@@ -1,6 +1,8 @@
 name: "Dependabot Automerge - Action"
 on:
   pull_request:
+    branches:
+      - dependabot/**
   check_suite:
     types:
       - completed

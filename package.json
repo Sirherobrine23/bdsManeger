@@ -8,12 +8,12 @@
   "private": false,
   "main": "index.js",
   "scripts": {
-    "test": "",
+    "test": "exit 0",
     "eslint": "eslint .",
     "eslint:fix": "eslint --fix .",
     "start": "node bin/bds_maneger.js",
     "debug": "node bin/debug.js",
-    "postinstall": "node ./postinstall/curlCheck.js"
+    "postinstall": "node curlCheck.js"
   },
   "bin": {
     "bds_maneger": "./bin/bds_maneger.js"
