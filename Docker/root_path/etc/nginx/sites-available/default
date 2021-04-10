@@ -2,20 +2,19 @@ server {
         listen [::]:80 ipv6only=on;
         listen 80;
         server_name _;
+        root /html;
+        index index.html;
         location /api/log {
                 proxy_pass http://localhost:6565/;
         }
         location /api {
-                proxy_pass http://localhost:1932;
+                proxy_pass http://localhost:1932/;
         }
         # 
         location /api/log/ {
                 proxy_pass http://localhost:6565/;
         }
         location /api/ {
-                proxy_pass http://localhost:1932;
-        }
-        location / {
-                root /html/
+                proxy_pass http://localhost:1932/;
         }
 }

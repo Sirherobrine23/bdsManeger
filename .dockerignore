@@ -1,3 +1,5 @@
-node_modules/
+# node_modules/
 Docker/
 !Docker/root_path
+.git/
+Docker.sh

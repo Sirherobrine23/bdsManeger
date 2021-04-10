@@ -6,17 +6,21 @@ var cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const token_verify = require("./token_api_check")
 const bodyParser = require("body-parser");
+const fileUpload = require("express-fileupload");
 
 function api(port_api){
     const app = express();
-    // Enable if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
+    // Enable if you"re behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
     // see https://expressjs.com/en/guide/behind-proxies.html
-    // app.set('trust proxy', 1);
+    // app.set("trust proxy", 1);
 
     const limiter = rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
         max: 100 // limit each IP to 100 requests per windowMs
     });
+    app.use(fileUpload({
+        limits: { fileSize: 512 * 1024 }
+    }));
     app.use(cors());
     app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.use(bodyParser.urlencoded({ extended: true }));
@@ -24,13 +28,6 @@ function api(port_api){
     // app.get("/configs", (req, res) => {return res.send(bds.get_config());});
     app.get("/info", (req, res) => {
         const config = bds.get_config()
-        var java;
-        if (bds.platform === "bedrock") java = {}
-        else java = {
-            java: {
-                "max_ram_memory": bds.bds_config.java_config.max
-            }
-        }
         var json_http = {
             "server": {
                 "bds_config_version": bds.bds_config.version,
@@ -40,7 +37,6 @@ function api(port_api){
                 "whitelist": config.white_list,
                 "xbox": config.online_mode,
                 "max_players": config.max_players,
-                ...java
             },
             "running": bds.detect(),
             "bds_platform": bds.bds_plataform,
@@ -136,23 +132,20 @@ function api(port_api){
             "message": EMN
         })
     });
-    app.post("/bds_command", (req, res) => {
-        const body = req.body
-        var pass = token_verify(body.token)
+    app.post("/upload_world", (req, res) => {
+        var pass = token_verify(req.headers.token)
         if (pass){
-            const command = body.command
-            const teste = bds.command(command)
-            res.send({
-                "status": 200,
-                "command": body.command,
-                "log": teste,
-                "message": `authorized to ${body.token}`
-            })
+            var fileWorld;
+            console.log(req.files);
+            if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.");
+            let files = Object.getOwnPropertyNames(req.files)
+            for (let file in files){
+                fileWorld = req.files[files[file]];
+                // Use the mv() method to place the file somewhere on your server
+                console.log(fileWorld.data);
+            }
         } else {
-            res.send({
-                "status": 401,
-                "message": "not authorized"
-            })
+            return res.status(400).send("Token is not valid!");
         }
     });
     const port = (port_api||1932)

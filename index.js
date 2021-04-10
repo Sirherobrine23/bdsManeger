@@ -58,6 +58,7 @@ if (process.platform == "win32") {
         "pocketmine": true,
         "java": true
     }
+    if (process.arch === "aarch64") valid_platform.pocketmine = false;
 } else if (process.platform == "darwin") {
     if (arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
     else require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#macos-with-intel-processors");
@@ -241,10 +242,7 @@ if (fs.existsSync(bds_config_file)){
             },
             "bds_ban": (bds_config.bds_ban||["Steve", "Alex", "steve", "alex"]),
             "telegram_token": (bds_config.telegram_token||undefined),
-            "Google_Drive_root_backup_id": (bds_config.Google_Drive_root_backup_id||undefined),
-            "java_config": {
-                "max": ram_total
-            }
+            "Google_Drive_root_backup_id": (bds_config.Google_Drive_root_backup_id||undefined)
         }
         fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
         bds_config_export()
@@ -265,15 +263,7 @@ if (fs.existsSync(bds_config_file)){
         "Google_Drive_root_backup_id": undefined,
         "telegram_admin": [
             "all_users"
-        ],
-        "java_config": {
-            "max": ram_total
-        },
-        // bedrock_config is not yet in use
-        "bedrock_config": {
-            "from": "oficial", // Bedrock Server software, such as the one provided by Mojang, lifeboat, pocketmine-mp. more information: https://github.com/The-Bds-Maneger/core/wiki/bedrock_software#minecraft-bedrock-servers
-            "url": undefined // JSON Array file with versions and download url
-        }
+        ]
     }
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
 }
@@ -284,6 +274,11 @@ module.exports.platform_version_update = function (version){
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
     bds_config_export()
 }
+
+
+/**
+ * Save ID Google Drive folder to Backups
+ */
 module.exports.save_google_id = function (id){
     let bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     bds_config.Google_Drive_root_backup_id = id
@@ -292,39 +287,12 @@ module.exports.save_google_id = function (id){
     return true
 }
 module.exports.platform = bds_config.bds_platform
-function update_java_memory(total){
-    if (total.includes("GB")) total = (total = Math.trunc(total / 1024))
-    else if (total.includes("GIB")) total = (total = Math.trunc(total / 1000))
-    else if (total.includes("gb")) total = (total = Math.trunc(total / 1024))
-    else if (total.includes("gib")) total = (total = Math.trunc(total / 1000))
-    else if (total.includes("MB")) total = (total = Math.trunc(total))
-    else if (total.includes("mb")) total = (total = Math.trunc(total))
-    else if (total.includes("mib")) total = (total = Math.trunc(total))
-    else if (total.includes("MIB")) total = (total = Math.trunc(total))
-    else throw new Error("Please enter a valid value such as: 1GB, 1gb, 1024mb ,1024MB, 1000MIB, 10000mib ,1GIB ,1gib")
-    if (bds_config.bds_platform === "java"){
-        bds_config.java_config.max = 
-        fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
-    }
-}
-
-const log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_log.log`);
-module.exports.log_file = log_file
 
 /**
- * Update the value of how much java will use ram when the java platform is selected
- * 
- * the following values ​​are: 1024mb, 1024MB, 1000MIB, 1000mib, 1GB, 1gb, 1GIB, 1gib
+ * Bds Maneger Latest log file.
  */
-module.exports.memory_for_the_java = update_java_memory
-
-if (process.env.AUTOUPDATE_JAVA_RAM !== undefined||undefined){
-    setInterval(() => {
-        let ram_total = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
-        if (ram_total >= 1000) ram_total = ram_total - 1000
-        update_java_memory(ram_total+"mb")
-    }, 2500);
-}
+const log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_log.log`);
+module.exports.log_file = log_file
 
 function bds_config_export (){
     /**

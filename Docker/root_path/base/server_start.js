@@ -1,10 +1,9 @@
 const bds = require("/opt/bdsCore/index");
-// const {bds_dir} = require("/opt/bdsCore/index");
 const { existsSync, readFileSync } = require("fs")
 const { resolve, join } = require("path")
 
 // Enable APIs
-bds.api();
+bds.rest();
 
 // Log function
 function output(dados){var out = dados; if (out.slice(-1) == "\n") out = out.slice(0, -1); console.log(out)}

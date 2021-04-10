@@ -71,21 +71,11 @@
                     }
                 </script>
                 <fieldset>
-                    <span>Bds Maneger REST port:</span><input class="bds_aiptoken" value="1932" disabled id="rest_port" type="number">
-                    <p><span>Bds Maneger Log port:</span><input class="bds_aiptoken" value="6565" disabled id="log_port" type="number"></p>
-                    <div class="config_space"></div>
-                    <p>
-                        <span>Bds Maneger address:</span>
-                            <input class="bds_aiptoken" type="text" placeholder="mcpe.sh23.org" id="bds_addr" oninput="saveAddress();" onchange="saveAddress();">
-                        <div class="config_space"></div>
-                        <span>Bds Maneger Token:</span><input class="bds_aiptoken" type="text" id="bds_token" oninput="changeToken();" onchange="changeToken();">
+                    <span>Bds Maneger Token:</span><input class="bds_aiptoken" type="text" id="bds_token" oninput="changeToken();" onchange="changeToken();">
                         <p><a style="display: none;" id="ReloadPage" onclick="location.reload()">Reload Page</a></p>
-                    </p>
+                    <!------------------------------------------------------------------------------------------------------------>
                     <div class="config_space">
-                        <input type="file" accept="image/*" disabled id="qrcodeinput">
-                        <script>
-                            
-                        </script>
+                        <input type="file" accept="application/zip" id="WorldUpload" onchange="UploadWorld(this)">
                     </div>
                 </fieldset>
             <!--  -->
