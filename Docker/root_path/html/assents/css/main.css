@@ -1,0 +1,253 @@
+@font-face {
+  font-family: minecraft;
+  src: url(Minecraft.ttf);
+}
+@font-face {
+  font-family: minecraft-bold;
+  src: url(Mojang-Bold.ttf);
+}
+@font-face {
+  font-family: minecraft-regular;
+  src: url(Mojang-Regular.ttf);
+}
+
+*{
+  font-family: "minecraft", "minecraft-bold", "minecraft-regular";
+  color: var(--text-primary)
+}
+
+.Log_div_Title {
+  text-align: center;
+  font-size: 4vh;
+  margin-bottom: 1.5vh;
+}
+
+.bds_log{
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  font-family: minecraft;
+  font-size: 2.4vh !important;
+  border-radius: 2px;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+/* .bds_log{
+  line-height: 4.5vh;
+} */
+
+fieldset{
+  border-radius: 5px;
+  min-height: 100%;
+  min-width: 90%;
+}
+
+input{
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  font-size: 2.4vh;
+}
+
+input[type="text"], input[type="number"], input[type="file"]{
+  min-width: 90%;
+  max-width: 1%;
+}
+
+.bds_aiptoken{
+  border-radius: 12px;
+  margin-left: 6px;
+  height: 18px;
+  text-align: center;
+  width: 10rem;
+}
+
+select{
+  color: var(--text-primary);
+  background-color: var(--bg-secondary)
+}
+button{
+  color: var(--text-primary);
+  background-color: var(--bg-secondary)
+}
+label,div{
+  color: var(--text-primary);
+}
+
+div,html{
+  background-color: var(--bg-primary);
+}
+
+:root {
+  /* font-size: 16px; */
+  color: var(--text-primary);
+  --transition-speed: 600ms;
+}
+
+.command_area {
+  height: 100%;
+  width: 80%;
+}
+
+.command_send {
+  height: 100%;
+  font-size: 2.4vh;
+  margin-left: 1vh;
+}
+
+.root{
+  align-content: center;
+  display: flex;
+  justify-content: center;
+  margin-right: -1.3vh;
+}
+
+.buttons {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.bds_service {
+  margin-top: 12px;
+  width: 10rem;
+  height: 90%;
+  border-color: var(--bg-secondary);
+  background-color: var(--bg-secondary);
+  text-align: center;
+  border-radius: 12rem;
+  cursor: pointer;
+}
+.space {
+  width: 10px;
+}
+
+body {
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  margin-right: 1rem;
+  /* margin-left: 0.5rem; */
+  padding: 0;
+}
+
+
+
+@media only screen and (min-height: 1000px) {
+  .bds_log {
+    height: 10rem;
+  } 
+}
+
+*::-webkit-scrollbar {
+width: 0.45rem;
+}
+*::-webkit-scrollbar-track {
+background: var(--bg-secondary);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--text-primary);
+}
+
+.dark {
+  --text-primary: #b6b6b6;
+  --text-secondary: #ececec;
+  --bg-primary: #23232e;
+  --bg-secondary: #141418;
+  --box-primary: rgba(0,0,0,0.4);
+  --border-color: rgba(255, 255, 255, 0.5);
+}
+
+.light {
+  --text-primary: #1f1f1f;
+  --text-secondary: #000000;
+  --bg-primary: #ffffff;
+  --bg-secondary: #e4e4e4;
+  --box-primary: rgba(0,0,0,0.4);
+  --border-color: rgba(0,0,0,0.5);
+}
+
+.system{
+  --text-primary: #fff;
+  --text-secondary: #fff;
+  --bg-primary: #1d1d1d;
+  --bg-secondary: #3e3e3e;
+  --box-primary: rgba(0,0,0,0.4);
+  --border-color: rgba(0,0,0,0.5);
+}
+
+.loading {
+  z-index: 1;
+  font-size: 3rem !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 100vh;
+  /* ------------------------------------------------------- */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 10px; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  display: none;
+  cursor: progress;
+}
+
+@media only screen and (max-width: 970px) {
+  .config_space {
+    margin-top: 15px;
+    display: block !important;
+  }
+}
+.config_space {
+  display: none;
+  background-color: var(--bg-secondary);
+}
+.config {
+  z-index: 1;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  padding-top: 10px;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: rgba(124, 124, 124, 0.635);
+  display: none;
+}
+.config_conatainer {
+  border-radius: 0.5rem;
+  width: 90%;
+  height: 90%;
+  margin-left: 5%;
+  margin-right: 10;
+  margin-top: 1%;
+  background-color: var(--bg-secondary);
+}
+.config_root {
+  background: var(--bg-secondary);
+  background-color: var(--bg-secondary);
+  padding-left: 1vh;
+  padding-right: 4vh;
+  padding-top: 4vh;
+}
+.close {
+  float: right;
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  margin-right: 12px;
+  margin-left: 12px;
+  margin-top: 12px;
+  border-radius: 1rem;
+  cursor: pointer;
+}

@@ -6,7 +6,9 @@ function bds_config(json_config){
 
     var Server_Config;
     if (bds.platform === "java") Server_Config = path.join(bds.bds_dir_java, "server.properties");
-    else Server_Config = path.join(bds.bds_dir_bedrock, "server.properties");
+    else if (bds.platform === "bedrock") Server_Config = path.join(bds.bds_dir_bedrock, "server.properties");
+    else if (bds.platform === "pocketmine") Server_Config = path.join(bds.bds_dir_pocketmine, "server.properties");
+    else throw Error("Bds Maneger Config, Platforms not valid: "+bds.platform)
 
     var CPU
     if (2 < cpuCount - 2) CPU = cpuCount - 2;
@@ -18,8 +20,8 @@ function bds_config(json_config){
 
     // 
     var
-    description_name = "Dedicated Server",
-    level_name = "Bedrock level",
+    description_name = "A minecraft server",
+    level_name = "Minecraft World",
     gamemode = "survival",
     difficulty = "easy",
     allow_cheats = false,
@@ -29,7 +31,8 @@ function bds_config(json_config){
     server_port = 19132,
     server_portv6 = 19133,
     player_permission = "member",
-    tick = 0
+    tick = 0,
+    hardcore;
 
     if (config.description !== undefined) description_name = config.description;
 
@@ -91,7 +94,9 @@ server-authoritative-block-breaking=false
 
 # Created on Bds-Manager by Sirherobrine23`
     
-} else {
+} else if (bds.platform === "java") {
+    hardcore = "false"
+    if (gamemode === "hardcore") {gamemode = 0;hardcore = "true"}
     config_file_content = `enable-jmx-monitoring=false
 rcon.port=25575
 level-seed=
@@ -101,7 +106,7 @@ enable-query=true
 generator-settings=
 level-name=${level_name}
 motd=${description_name}
-query.port=${server_port}
+query.port=${server_port+1}
 pvp=true
 generate-structures=true
 difficulty=${difficulty}
@@ -128,7 +133,7 @@ rcon.password=25as65d3
 player-idle-timeout=0
 force-gamemode=false
 rate-limit=0
-hardcore=false
+hardcore=${hardcore}
 white-list=${white_list}
 broadcast-console-to-ops=true
 spawn-npcs=true
@@ -144,10 +149,39 @@ spawn-protection=16
 max-world-size=29999984
 #
 # Created on Bds-Manager by Sirherobrine23`
-}
-// console.log(config_file_content);
-fs.writeFileSync(Server_Config, config_file_content);
-return true
+} else if (bds.platform === "pocketmine") {
+    hardcore = "off"
+    if (gamemode === "survival") gamemode = 0
+    else if (gamemode === "creative") gamemode = 1
+    else {gamemode = 0;hardcore = "on"}
+    config_file_content = `language=eng
+motd=${description_name}
+server-port=${server_port}
+white-list=off
+announce-player-achievements=on
+spawn-protection=16
+max-players=${max_players}
+gamemode=${gamemode}
+force-gamemode=off
+hardcore=${hardcore}
+pvp=on
+difficulty=2
+generator-settings=
+level-name=${level_name}
+level-seed=
+level-type=DEFAULT
+enable-query=on
+enable-rcon=off
+rcon.password=F/deZ5kefY
+auto-save=on
+view-distance=${tick}
+xbox-auth=on
+#
+# Created on Bds-Manager by Sirherobrine23`
+} else throw Error("Plaforms not valid: "+bds.platform)
+    // Write file
+    fs.writeFileSync(Server_Config, config_file_content);
+    return true
 }
 function bds_get_config(){
     var fs = require("fs");

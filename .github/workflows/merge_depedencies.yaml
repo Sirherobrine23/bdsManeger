@@ -1,10 +1,8 @@
 name: "Dependabot Automerge - Action"
 on:
   pull_request:
-  check_suite:
-    types:
-      - completed
-  status: {}
+    branches:
+      - dependabot/**
 jobs:
   automerge:
     runs-on: ubuntu-latest

@@ -1,0 +1,11 @@
+.svg_sucess {
+    --svg-color: #1fff1f;
+}
+.svg_erro {
+    --svg-color: red;
+}
+
+.svg_color {
+    fill: var(--svg-color);
+    display: none;
+}
