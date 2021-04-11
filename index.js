@@ -270,7 +270,7 @@ if (fs.existsSync(bds_config_file)){
 module.exports.platform_version_update = function (version){
     let bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     if (bds_config.bds_platform === "bedrock") bds_config.platform_version.bedrock = version
-    else bds_config.platform_version.java = version
+    else if (bds_config.bds_platform === "java") bds_config.platform_version.java = version
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
     bds_config_export()
 }
@@ -318,6 +318,7 @@ function platform_update(plate){
     // Server platform detect
     if (plate === "java") null;
     else if (plate === "bedrock") null;
+    else if (plate === "pocketmine") null;
     else throw new Error(`platform not identified or does not exist, ${plate} informed platform`);
 
     // Platforma Update

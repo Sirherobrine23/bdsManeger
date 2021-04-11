@@ -21,9 +21,16 @@ var bds_software = false;
 if (existsSync(join(bds.bds_dir_bedrock, "bedrock_server"))) bds_software = true
 else if (existsSync(join(bds.bds_dir_bedrock, "bedrock_server.exe"))) bds_software = true
 else if (existsSync(join(bds.bds_dir_java, "server.jar"))) bds_software = true
+// else if (existsSync(join(bds.bds_dir_pocketmine, "server.jar"))) bds_software = true
 
 if (bds_software){
     // ------------------------------
-    /* Install version */if (process.env.BDS_REINSTALL === "true") bds.download("latest");/* Skipping */ else console.log("Skipping reinstallation")
+    /* Install version */
+    if (process.env.BDS_REINSTALL === "true") {
+        bds.download("latest");
+        bds.platform_update(process.env.SERVER)
+    }
+    /* Skip installation */
+    else console.log("Skipping reinstallation")
     // ------------------------------
 } else bds.download(process.env.BDS_VERSION)

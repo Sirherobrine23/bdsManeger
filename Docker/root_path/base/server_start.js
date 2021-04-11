@@ -38,4 +38,4 @@ if (bds_software){
         output(`\n\n\nExit with code ${code}`);
         process.exit(1)
     })
-} else new Error("The server was not installed correctly")
+} else throw Error("The server was not installed correctly")
