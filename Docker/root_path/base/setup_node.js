@@ -31,7 +31,7 @@ if (bds_software){
     // ------------------------------
     /* Install version */
     if (process.env.BDS_REINSTALL === "true") {
-        bds.platform_update(process.env.SERVER)
+        //bds.platform_update(process.env.SERVER)
         bds.download("latest");
     }
     /* Skip installation */
