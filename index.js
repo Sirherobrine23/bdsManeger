@@ -409,20 +409,31 @@ else if (file_user_check.slice(-1) !== "]") console.warn("ok, we have an error i
 module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
 module.exports.internal_ip = require("./scripts/external_ip").internal_ip
 module.exports.telegram = require("./scripts/telegram_bot")
-module.exports.token_register = () => {
+
+
+const token_register = function (username, passworld) {
     const bds_token_path = path.join(bds_dir, "bds_tokens.json") 
     if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]")
-
-    require("crypto").randomBytes(10, function(err, buffer) {
+    function getRandomNumber (){
+        const number = Math.trunc(15 * (10 * Math.random()))
+        if (number < 10) return getRandomNumber()
+        else if (number > 15) return getRandomNumber()
+        else return number
+    }
+    let number = getRandomNumber()
+    require("crypto").randomBytes(number, function(err, buffer) {
         if (err) console.warn(err);
         const new_token = buffer.toString("hex");
 
         var tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
-        tokens.push({"token": new_token});
+        tokens.push({
+            "token": (passworld||new_token),
+            "user": (username||"all")
+        });
         fs.writeFileSync(bds_token_path, JSON.stringify(tokens, null, 4), "utf8");
 
-        console.log(`Bds Maneger API REST token: ${new_token}`);
-        if (process.stdout.isTTY) {
+        console.log(`Bds Maneger API REST token: "${new_token}"`);
+        if (process.stdout.isTTY === false) {
             require("qrcode").toString(new_token, {type: "terminal"}, function (err, url) {
                 if (err) throw Error(err)
                 console.log(url)
@@ -430,6 +441,17 @@ module.exports.token_register = () => {
         }
     })
 }
+
+/**
+ * Register tokens to use in Bds Maneger REST and other supported applications
+ * 
+ * @example token_register()
+ */
+module.exports.token_register = token_register
+
+/**
+ * Take the current date
+ */
 module.exports.date = date
 /**
  * sending commands more simply to the server
@@ -490,12 +512,11 @@ module.exports.download = require("./scripts/download")
  */
 module.exports.kill = require("./scripts/kill_server")
 module.exports.config_example = require("./scripts/bds_settings").config_example
+
 /**
  * use this command to modify server settings
  * 
- * @example
- * 
- * bds.set_config({
+ * @example bds.set_config({
         name: "Bedrock our Java",
         description: "BDS Maneger",
         gamemode: "survival",
@@ -521,6 +542,7 @@ module.exports.get_config = require("./scripts/bds_settings").get_config
  * you are taking responsibility for that
  */
 module.exports.mcpe_file = require("./scripts/GoogleDrive").mcpe
+
 /**
  * perform a backup of the map, some resources are still under construction in the code more works
  * 

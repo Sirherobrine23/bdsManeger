@@ -22,7 +22,7 @@ function init_2(){
         const list = data.list
         for (let pid in list) {
             var coomand = list[pid].command
-            if (coomand.includes("bedrock_server", "bedrock_server.exe", "server.jar")){
+            if (coomand.includes("bedrock_server", "bedrock_server.exe", "MinecraftServerJava.jar")){
                 module.exports.bds_cpu = Math.trunc(list[pid].cpu)
                 module.exports.bds_ram = Math.trunc(list[pid].mem)
             } else {

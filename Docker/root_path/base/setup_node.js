@@ -17,20 +17,24 @@ bds.set_config(JSON.stringify({
     "xbox": process.env.XBOX_ACCOUNT
 }))
 
-var bds_software = false;
+var bds_software;
 if (existsSync(join(bds.bds_dir_bedrock, "bedrock_server"))) bds_software = true
 else if (existsSync(join(bds.bds_dir_bedrock, "bedrock_server.exe"))) bds_software = true
-else if (existsSync(join(bds.bds_dir_java, "server.jar"))) bds_software = true
-// else if (existsSync(join(bds.bds_dir_pocketmine, "server.jar"))) bds_software = true
+else if (existsSync(join(bds.bds_dir_java, "MinecraftServerJava.jar"))) bds_software = true
+else if (existsSync(join(bds.bds_dir_pocketmine, "PocketMine-MP.phar"))) bds_software = true
+else {
+    console.error("No software was detected, using the latest version available !!");
+    bds_software = false;
+}
 
 if (bds_software){
     // ------------------------------
     /* Install version */
     if (process.env.BDS_REINSTALL === "true") {
-        bds.download("latest");
         bds.platform_update(process.env.SERVER)
+        bds.download("latest");
     }
     /* Skip installation */
     else console.log("Skipping reinstallation")
     // ------------------------------
-} else bds.download(process.env.BDS_VERSION)
+} else bds.download("latest")

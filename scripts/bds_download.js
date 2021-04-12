@@ -59,7 +59,7 @@ module.exports = (Vdown) => {
         } else {
             if (Vdown === "latest") Vdown = versions.java_latest
             versions_get = versions.java[Vdown].url
-            mine_name = "server.jar"
+            mine_name = "MinecraftServerJava.jar"
 
             console.log("Starting download")
             const exec = require("child_process").exec

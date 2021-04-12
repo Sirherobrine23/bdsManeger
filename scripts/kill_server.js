@@ -9,9 +9,9 @@ module.exports = () => {
             else if (process.platform == "linux") killbds = spawn("kill $(ps aux|grep -v \"grep\"|grep \"bedrock_server\"|awk '{print $2}')", {shell: true});
         } else {
             if (process.platform == "win32") {
-                killbds = spawn("tasklist /fi \"imagename eq server.jar\" | find /i \"server.jar\" > nul & if not errorlevel 1 (taskkill /f /im \"server.jar\" > nul && exit 0) else (exit 1)");
+                killbds = spawn("tasklist /fi \"imagename eq MinecraftServerJava.jar\" | find /i \"MinecraftServerJava.jar\" > nul & if not errorlevel 1 (taskkill /f /im \"MinecraftServerJava.jar\" > nul && exit 0) else (exit 1)");
             } else if (process.platform == "linux") {
-                killbds = spawn("kill $(ps aux|grep -v \"grep\"|grep \"server.jar\"|awk '{print $2}')", {shell: true});
+                killbds = spawn("kill $(ps aux|grep -v \"grep\"|grep \"MinecraftServerJava.jar\"|awk '{print $2}')", {shell: true});
             }
         }
         killbds.on("exit", function () {

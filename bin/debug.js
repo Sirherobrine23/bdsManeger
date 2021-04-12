@@ -1,5 +1,8 @@
-const {rest, bds_dir, bds_detect, bds_dir_bedrock, bds_dir_java} = require("../index")
-console.log(`Bds Maneher Detect Run: ${bds_detect()}`);
-console.log("Initialize the REST API");
-rest()
-console.log(`Bds Maneger CORE dir: ${bds_dir}. ${bds_dir_bedrock}, ${bds_dir_java}`);
+const { bds_dir, bds_detect, bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine } = require("../index")
+console.log(`Bds Maneger Detect Run: ${bds_detect()}`);
+console.log(`Bds Maneger Core dir: ${JSON.stringify({
+    "Core": bds_dir,
+    "Bedrock": bds_dir_bedrock,
+    "Java": bds_dir_java,
+    "Pocketmine": bds_dir_pocketmine
+}, null, 4)}`);

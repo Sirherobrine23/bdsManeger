@@ -1,21 +1,25 @@
 module.exports = () => {
-    var spawn = require("child_process").execSync;
+    var {execSync} = require("child_process");
     const bds = require("../index")
-    var killbds
-    if (bds.platform === "bedrock"){
-        if (process.platform == "win32") {
-            killbds = spawn("tasklist /fi \"imagename eq bedrock_server.exe\" | find /i \"bedrock_server.exe\" > nul & if not errorlevel 1 (echo 0) else (echo 1)");
-        } else if (process.platform == "linux") {
-            killbds = spawn("ps aux|grep -v \"grep\"|grep \"bedrock_server\"|grep -q \"bedrock_server\";echo $?", {shell: true});
-        }
-    } else {
-        if (process.platform == "win32") {
-            killbds = spawn("tasklist /fi \"imagename eq server.jar\" | find /i \"server.jar\" > nul & if not errorlevel 1 (echo 0) else (echo 1)");
-        } else if (process.platform == "linux") {
-            killbds = spawn("ps aux|grep \"jar server.jar\"|grep -v 'grep'|grep -q \"jar server.jar\";echo $?", {shell: true});
-        }
+    var platformKiller, command
+    
+    if (bds.bds_config.bds_platform === "bedrock") {
+        if (process.platform === "win32") platformKiller = "bedrock_server.exe"
+        else platformKiller = "bedrock_server"
     }
-    // 
-    if (process.env.DEBUG === "true") console.debug(`Detect code ${killbds}`)
-    if (killbds == 0){return true} else {return false}
+    else if (bds.bds_config.bds_platform === "java") platformKiller = "MinecraftServerJava.jar"
+    else if (bds.bds_config.bds_platform === "pocketmine") platformKiller = "PocketMine-MP.phar"
+    else throw Error("Bds Config Platform Error")
+    //-------------------------------------------------------------------------------------------------
+    if (process.platform === "win32") command = `tasklist /fi "imagename eq ${platformKiller}" | find /i "${platformKiller}" > nul & if not errorlevel 1 (echo 0) else (echo 1)`
+    else command = `if (ps aux | grep "${platformKiller}" | grep -v "grep" | grep -q "${platformKiller}";);then echo "0";else echo "1";fi`
+    // Command
+    let detect_status = execSync(command)
+    let JsonReturn = {
+        "status": parseInt(detect_status.toString().replaceAll("\n", "")),
+        "command": command
+    }
+    if (process.env.debug === "true") console.log(JsonReturn);
+    if (JsonReturn.status === 0) return true;
+    else return false
 };

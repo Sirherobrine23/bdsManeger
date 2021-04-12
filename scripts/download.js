@@ -54,7 +54,7 @@ module.exports = function (version, force_install) {
                     console.log(`Server data publish: ${response.java[version].data}`)
                     fetch(url).then(response => response.arrayBuffer()).then(response => Buffer.from(response)).then(response => {
                         console.log("Download Sucess")
-                        writeFileSync(join(bds_dir_java, "server.jar"), response, "binary")
+                        writeFileSync(join(bds_dir_java, "MinecraftServerJava.jar"), response, "binary")
                         console.log("Save sucess");
                         platform_version_update(version)
                         if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);

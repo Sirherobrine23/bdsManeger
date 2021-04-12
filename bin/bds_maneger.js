@@ -45,7 +45,7 @@ if (server) {
 // check is installed
 var server_exec;
 if (bds_config.bds_platform === "bedrock") {var file; if (process.platform === "linux") file = "bedrock_server"; else file = "bedrock_server.exe"; server_exec = join(bds.bds_dir_bedrock, file)}
-else server_exec = join(bds.bds_dir_java, "server.jar");
+else server_exec = join(bds.bds_dir_java, "MinecraftServerJava.jar");
 if (!(existsSync(server_exec))) {
   console.warn("Installing the latest version of the server, anything you can install with bds_maneger -V [version], wait ...");
   bds_version = "latest"

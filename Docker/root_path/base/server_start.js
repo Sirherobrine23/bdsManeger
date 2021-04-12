@@ -28,7 +28,7 @@ else  bds.telegram.launch()
 var bds_software
 if (existsSync(join(bds.bds_dir_bedrock, "bedrock_server"))) bds_software = true
 else if (existsSync(join(bds.bds_dir_bedrock, "bedrock_server.exe"))) bds_software = true
-else if (existsSync(join(bds.bds_dir_java, "server.jar"))) bds_software = true
+else if (existsSync(join(bds.bds_dir_java, "MinecraftServerJava.jar"))) bds_software = true
 else bds_software = false
 
 if (bds_software){

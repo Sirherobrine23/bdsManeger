@@ -109,7 +109,7 @@ module.exports.start = () => {
             var ram_max = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
             var ram_minimun = ram_max;
             if (ram_max >= 1000) {ram_max = Math.trunc(ram_max / 10);ram_minimun = Math.trunc(ram_max / 50)}
-            if (require("command-exists").sync("java")) start_server = exec(`java -Xmx${ram_max}M -Xms${ram_minimun}M -jar server.jar nogui`, {cwd: bds.bds_dir_java});
+            if (require("command-exists").sync("java")) start_server = exec(`java -Xmx${ram_max}M -Xms${ram_minimun}M -jar MinecraftServerJava.jar nogui`, {cwd: bds.bds_dir_java});
             else {
                 if (bds.system == "windows"){
                     require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#Windows");
@@ -123,37 +123,28 @@ module.exports.start = () => {
                 }
             }
         } else if (plat === "pocketmine") {
-            let childPorcessEnv = process.env
             const phpinCore = resolve(bds.bds_dir_pocketmine, "bin", "php7", "bin")
             if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
-            else if (fs.existsSync(phpinCore)) {
-                console.log(phpinCore);
-                if (process.env.PATH.includes(phpinCore))console.log("PHP bin folder includes in PATH"); 
-                else {
-                    if (process.platform === "win32") childPorcessEnv.PATH += `;${phpinCore}`
-                    else childPorcessEnv.PATH += `:${phpinCore}`
-                }
-            }
+            else if (fs.existsSync(phpinCore)) 
+                if (!(process.env.PATH.includes(phpinCore))) 
+                    if (process.platform === "win32") process.env.PATH += `;${phpinCore}`; else process.env.PATH += `:${phpinCore}`;
             else throw Error("Reinstall Pocketmine-MP, PHP binaries not found")
-            console.log(childPorcessEnv.PATH);
-            start_server = exec("php ./PocketMine-MP.phar", {env: {
-                ...childPorcessEnv
-            }, cwd: bds.bds_dir_pocketmine});
-        } else throw Error("")
+            start_server = exec("php ./PocketMine-MP.phar", {env: process.env, cwd: bds.bds_dir_pocketmine});
+        } else throw Error("Bds Config Error")
+        // Post Start
         Storage.setItem("old_log_file", bds.log_file)
         start_server.stdout.on("data", function(data){
-            if (data.includes("agree", "EULA")){
-                const path = require("path");
-                require("open")("https://account.mojang.com/documents/minecraft_eula");
-                const eula_file = path.join(bds.bds_dir_java, "eula.txt")
-                fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").replace("eula=false", "eula=true")) 
-                if (process.argv[0].includes("node")){
-                    console.warn("Ending the process")
-                    setTimeout(() => {
+            if (data.includes("agree"))
+                if (data.includes("EULA")){
+                    const path = require("path");
+                    require("open")("https://account.mojang.com/documents/minecraft_eula");
+                    const eula_file = path.join(bds.bds_dir_java, "eula.txt")
+                    fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").replace("eula=false", "eula=true")) 
+                    if (process.argv[0].includes("node")){
+                        console.warn("Ending the process")
                         process.exit(0)
-                    }, 1000);
+                    }
                 }
-            }
         });
         start_server.stdout.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
         start_server.stdout.pipe(fs.createWriteStream(path.join(bds.bds_dir, "log", "latest.log"), {flags: "w"}));
