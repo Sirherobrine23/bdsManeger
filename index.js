@@ -4,7 +4,7 @@ const fs = require("fs");
 const { resolve } = require("path");
 const { error } = console;
 const shell = require("shelljs");
-const {getDesktopFolder, getConfigHome} = require("platform-folders")
+const { getDesktopFolder, getConfigHome } = require("./GetPlatformFolder")
 const { execSync } = require("child_process");
 
 const bds_core_package = resolve(__dirname, "package.json")
@@ -31,12 +31,7 @@ function date(format) {
 const arch = process.arch
 module.exports.arch = arch
 
-var LocalStorageFolder = path.join(getConfigHome(), "bds_core"),
-    home,
-    desktop = getDesktopFolder(),
-    tmp,
-    system,
-    valid_platform
+var home, tmp, system, valid_platform
 module.exports.package_path = bds_core_package
 if (process.platform == "win32") {
     home = process.env.USERPROFILE;
@@ -49,8 +44,6 @@ if (process.platform == "win32") {
     }
 } else if (process.platform == "linux") {
     home = process.env.HOME;
-    if (process.env.BDS_DOCKER_IMAGE) desktop = "/home/bds/"
-    else desktop = "/tmp"
     tmp = "/tmp";
     system = "Linux";
     valid_platform = {
@@ -71,12 +64,13 @@ if (process.platform == "win32") {
         "java": true
     }
 } else {
-    console.log(`Please use an operating system (OS) compatible with Minecraft Bedrock Server ${process.platform} is not supported`);
+    console.log(`The Bds Maneger Core does not support ${process.platform} systems, as no tests have been done.`);
     home = process.env.HOME;
     tmp = "/tmp";
-    system = "macOS";
+    system = "Other";
     valid_platform = {
         "bedrock": false,
+        "pocketmine": false,
         "java": true
     }
     process.exit(254)
@@ -84,6 +78,8 @@ if (process.platform == "win32") {
 
 /* ------------------------------------------------------------ Take the variables of different systems ------------------------------------------------------------ */
 
+
+const desktop = getDesktopFolder()
 /**
  * With different languages ​​and systems we want to find the user's desktop for some link in the directory or even a nice shortcut
  */
@@ -185,10 +181,12 @@ if (!(fs.existsSync(bds_dir_backup))){
     if (!(fs.existsSync(bds_dir_backup))) shell.mkdir("-p", bds_dir_backup);
 }
 
-// Create localStorage folder
-if (!(fs.existsSync(LocalStorageFolder))) shell.mkdir("-p", LocalStorageFolder);
-if (!(fs.existsSync(LocalStorageFolder))) fs.mkdirSync(LocalStorageFolder)
-module.exports.api_dir = LocalStorageFolder
+// Link Bds Dir in Desktop
+const BdsCoreInDesktop = resolve(desktop, "Bds Maneger Core")
+if (!(fs.existsSync(BdsCoreInDesktop))) {
+    console.log("Creating a Bds Core shortcut on the Desktop")
+    fs.symlinkSync(bds_dir, BdsCoreInDesktop)
+}
 
 // Log Dir
 const log_dir = path.join(bds_dir, "log");
@@ -204,7 +202,12 @@ if (!(fs.existsSync(log_dir))){
 }
 
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
-if (typeof localStorage === "undefined") global.localStorage = new require("node-localstorage").LocalStorage(path.join(LocalStorageFolder, "Local_Storage"));
+if (typeof localStorage === "undefined") {
+    let LocalStorageFolder = path.join(getConfigHome(), "bds_core")
+    // Create localStorage folder
+    if (!(fs.existsSync(LocalStorageFolder))) shell.mkdir("-p", LocalStorageFolder);
+    if (!(fs.existsSync(LocalStorageFolder))) fs.mkdirSync(LocalStorageFolder)
+    global.localStorage = new require("node-localstorage").LocalStorage(path.join(LocalStorageFolder, "Local_Storage"));}
 
 /* Minecraft Servers URLs and depedencies */
 // urls
