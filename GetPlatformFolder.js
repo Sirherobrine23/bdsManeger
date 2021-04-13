@@ -14,21 +14,15 @@ function getDesktopFolder(){
         var desktop;
         var XDG_File = join(process.env.HOME, ".config", "user-dirs.dirs");
         if (existsSync(XDG_File)){
-            const lines = readFileSync(XDG_File, "utf8").split(/\r?\n/g).filter((a) => !a.startsWith("#"));
+            const lines = readFileSync(XDG_File, "utf8").replace(/\$([A-Za-z\-_]+)|\$\{([^{^}]+)\}/g, process.env.HOME).split(/\r?\n/g);
             var data = {};
             for(let line of lines){
-                const i = line.indexOf("=");
-                if(i >= 0){
-                    try {
-                        data[line.substring(0,i)] = JSON.parse(line.substring(i + 1))
-                    }
-                    catch(e) {error(e)}
+                if (!(line.startsWith("#")||line === "")) {
+                    line = line.split("=");
+                    if (line.length === 2) data[line[0]] = JSON.parse(line[1]); else console.log(line);
                 }
             }
-            if (data["XDG_DESKTOP_DIR"]){
-                desktop = data["XDG_DESKTOP_DIR"];
-                desktop = desktop.replace(/\$([A-Za-z\-_]+)|\$\{([^{^}]+)\}/g, process.env.HOME)
-            }
+            if (data["XDG_DESKTOP_DIR"]) desktop = data["XDG_DESKTOP_DIR"];
         }
         // Check Desktop string
         if (desktop === undefined) {
