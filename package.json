@@ -48,6 +48,7 @@
     "body-parser": "^1.19.0",
     "command-exists": "^1.2.9",
     "cors": "^2.8.5",
+    "create-desktop-shortcuts": "^1.4.0",
     "crypto": "^1.0.1",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",

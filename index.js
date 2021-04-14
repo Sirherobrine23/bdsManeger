@@ -182,10 +182,18 @@ if (!(fs.existsSync(bds_dir_backup))){
 }
 
 // Link Bds Dir in Desktop
-const BdsCoreInDesktop = resolve(desktop, "Bds Maneger Core")
+let fileShortcut;
+if (process.platform === "win32") fileShortcut = ".lnk";else fileShortcut = "";
+const BdsCoreInDesktop = resolve(desktop, "Bds Maneger Core"+fileShortcut)
 if (!(fs.existsSync(BdsCoreInDesktop))) {
     console.log("Creating a Bds Core shortcut on the Desktop")
-    fs.symlinkSync(bds_dir, BdsCoreInDesktop)
+    if (process.platform === "win32") require("create-desktop-shortcuts")({
+        windows: {
+            filePath: bds_dir,
+            name: "Bds Maneger Core"
+        }
+    });
+    else fs.symlinkSync(bds_dir, BdsCoreInDesktop)
 }
 
 // Log Dir
