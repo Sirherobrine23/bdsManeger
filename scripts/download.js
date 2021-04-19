@@ -7,16 +7,16 @@ const bdsSystem = require("../index").system
 const response = require("../index").SERVER_URLs
 const commandExists = require("command-exists").sync
 module.exports = function (version, force_install) {
+    if (force_install === true) {
+        bds_config.platform_version.java = "latest";
+        bds_config.platform_version.bedrock = "latest"
+        bds_config.platform_version.pocketmine = "latest"
+    }
     try {
         if (version === "") version="latest"
         if (version === undefined) version="latest"
         const server_platform = bds_config.bds_platform
         var url;
-        if (force_install === undefined) null
-        else if (force_install === false) null
-        else if (force_install === "") null
-        else if (force_install === true) {bds_config.platform_version.java = "latest";bds_config.platform_version.bedrock = "latest"}
-        else null
         if (server_platform === "bedrock") {
             if (valid_platform.bedrock === true){
                 var server_configs, permissions, whitelist
@@ -81,8 +81,7 @@ module.exports = function (version, force_install) {
                     else CheckBinPHPFolder = true
                     if (CheckBinPHPFolder||force_install) {
                         var urlPHPBin;
-                        for (let index in PHPurlNames){
-                            const nameFile = PHPurlNames[index]
+                        for (let nameFile of PHPurlNames){
                             var archS;
                             if (process.platform === "linux") if (process.arch === "x64") archS = "x86_64";
                             if (process.platform === "darwin") if (process.arch === "x64") archS = "x86_64";

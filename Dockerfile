@@ -24,6 +24,7 @@ BDS_VERSION="latest" \
 SERVER="bedrock" \
 BDS_REINSTALL="true" \
 Docker_Debug_Script="false"
+
 EXPOSE 80/tcp 19132/udp 19133/udp
 ENV BDS_DOCKER_IMAGE="true" HOME="/home/bds/"
 
@@ -32,7 +33,7 @@ COPY ./Docker/root_path/ /
 COPY ./ /opt/bdsCore/
 RUN cd /opt/bdsCore/ && npm install --no-save
 
-RUN mkdir -p /home/bds/.config/bds_core
+RUN mkdir -p /home/bds/.config/@the-bds-maneger/core
 
 # Entrypint
 WORKDIR /home/bds/

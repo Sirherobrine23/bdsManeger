@@ -1,11 +1,10 @@
-const bds = require("../index")
-const Storage = localStorage;
+const bds = require("../index");
 const {exec, execSync} = require("child_process");
-const fs = require("fs")
-const path = require("path")
+const fs = require("fs");
+const path = require("path");
 const {CheckBan} = require("./check");
 const { resolve } = require("path");
-const commandExists = require("command-exists").sync
+const commandExists = require("command-exists").sync;
 
 module.exports.start = () => {
     function KickPlayer(player){
@@ -56,8 +55,8 @@ module.exports.start = () => {
                             if (CheckBan(username)) KickPlayer(username)
                             else {
                                 console.log("Server Username connected: "+username);
-                                const file_users = fs.readFileSync(bds.players_files);
-                                const users = JSON.parse(file_users, "utf-8")
+                                const file_users = fs.readFileSync(bds.players_files, "utf8");
+                                const users = JSON.parse(file_users)
                                 if (file_users.includes(username)){
                                     for (let rem in users){
                                         if (users[rem].player === username) {
@@ -132,7 +131,6 @@ module.exports.start = () => {
             start_server = exec("php ./PocketMine-MP.phar", {env: process.env, cwd: bds.bds_dir_pocketmine});
         } else throw Error("Bds Config Error")
         // Post Start
-        Storage.setItem("old_log_file", bds.log_file)
         start_server.stdout.on("data", function(data){
             if (data.includes("agree"))
                 if (data.includes("EULA")){
@@ -149,8 +147,7 @@ module.exports.start = () => {
         start_server.stdout.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
         start_server.stdout.pipe(fs.createWriteStream(path.join(bds.bds_dir, "log", "latest.log"), {flags: "w"}));
         if (typeof bds_log_string !== "undefined"){bds_log_string = ""}
-        start_server.stdout.on("data", function(data){if (global.bds_log_string === undefined) global.bds_log_string = data;else global.bds_log_string += data})
-        Storage.setItem("bds_status", true);
+        start_server.stdout.on("data", function(data){if (global.bds_log_string === undefined) global.bds_log_string = data;else global.bds_log_string += data});
         global.bds_server_string = start_server;
         return start_server;
     } else {
@@ -170,17 +167,7 @@ module.exports.BdsCommand = function (command) {
 };
 
 module.exports.stop = () => {
-    if (typeof bds_server_string == "undefined"){
-        const detect = process.argv[0];
-        if (detect === "electron") alert("The server is stopped!");
-        else console.log("The server is stopped!");
-    } else {
-        bds_server_string.stdin.write("stop\n");
-        bds_server_string.stdout.on("data", function (data){
-            if (data.includes("Quit correctly")){
-                localStorage.setItem("bds_status", false)
-            }
-        });
-    }
-    return
+    if (typeof bds_server_string == "undefined") return false;
+    else bds_server_string.stdin.write("stop\n");
+    return true
 }

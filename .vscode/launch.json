@@ -8,12 +8,8 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "env": {
-                "debug": "true",
-                "enable_apis": "true"
-            },
             "sourceMaps": false,
-            "program": "${workspaceFolder}/bin/debug.js"
+            "program": "${workspaceFolder}/BuildRunDocker.js"
         }
     ]
 }

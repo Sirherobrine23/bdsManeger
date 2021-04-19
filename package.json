@@ -3,8 +3,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.8.7",
-  "description": "scripts to manage minecraft bedrock server",
+  "version": "1.8.8.3",
+  "description": "Scripts to manage minecraft server's",
   "private": false,
   "main": "index.js",
   "scripts": {
@@ -35,25 +35,27 @@
     "bds-server",
     "bedrock",
     "java",
-    "server_mode"
+    "pocketmine",
+    "server_mode",
+    "rest"
   ],
   "author": "Sirherobrine23",
   "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/Bds-Maneger/bds_maneger_api/issues"
   },
-  "homepage": "https://docs.srherobrine23.com/bds-maneger-api_whatis.html",
+  "homepage": "https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki",
   "dependencies": {
     "adm-zip": "^0.5.1",
     "body-parser": "^1.19.0",
     "command-exists": "^1.2.9",
     "cors": "^2.8.5",
     "create-desktop-shortcuts": "^1.4.0",
+    "cron": "^1.8.2",
     "crypto": "^1.0.1",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "express-rate-limit": "^5.2.3",
-    "get-folder-size": "^3.0.0",
     "googleapis": "^71.0.0",
     "minimist": "^1.2.5",
     "node-cron": "^3.0.0",

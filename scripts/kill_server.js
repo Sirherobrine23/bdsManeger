@@ -1,26 +1,20 @@
 module.exports = () => {
     const bds = require("../index")
-    var spawn = require("child_process").exec;
-    const Storage = localStorage
+    var {execSync} = require("child_process");
     if (bds.bds_detect()){
-        var killbds
-        if (bds.platform === "bedrock"){
-            if (process.platform == "win32") killbds = spawn("tasklist /fi \"imagename eq bedrock_server.exe\" | find /i \"bedrock_server.exe\" > nul & if not errorlevel 1 (taskkill /f /im \"bedrock_server.exe\" > nul && exit 0) else (exit 1)");
-            else if (process.platform == "linux") killbds = spawn("kill $(ps aux|grep -v \"grep\"|grep \"bedrock_server\"|awk '{print $2}')", {shell: true});
-        } else {
-            if (process.platform == "win32") {
-                killbds = spawn("tasklist /fi \"imagename eq MinecraftServerJava.jar\" | find /i \"MinecraftServerJava.jar\" > nul & if not errorlevel 1 (taskkill /f /im \"MinecraftServerJava.jar\" > nul && exit 0) else (exit 1)");
-            } else if (process.platform == "linux") {
-                killbds = spawn("kill $(ps aux|grep -v \"grep\"|grep \"MinecraftServerJava.jar\"|awk '{print $2}')", {shell: true});
-            }
+        var ToKill, KillMinecraftPlatform;
+        if (bds.platform === "bedrock") {
+            if (process.platform === "linux") ToKill = "bedrock_server"
+            else if (process.platform === "win32") ToKill = "bedrock_server.exe"
+            else throw new Error("Bedrock Platform not supported");
         }
-        killbds.on("exit", function () {
-            killbds.stdin.end();
-        });
-        Storage.setItem("bds_status", false);
-        return true
-    } else {
-        Storage.setItem("bds_status", false);
-        return false
-    }
+        else if (bds.platform === "java") ToKill = "MinecraftServerJava.jar"
+        else if (bds.platform === "pocketmine") ToKill = "PocketMine-MP.phar"
+        else throw new Error("Platform Error")
+        
+        if (process.platform == "win32") KillMinecraftPlatform = `tasklist /fi "imagename eq ${ToKill}" | find /i "${ToKill}" > nul & if not errorlevel 1 (taskkill /f /im "${ToKill}" > nul && exit 0) else (exit 1)`
+        else if (process.platform === "linux" || process.platform === "darwin") KillMinecraftPlatform = `kill $(ps aux|grep -v "grep" | grep "${ToKill}" | awk '{print $2}')`
+
+        try {execSync(KillMinecraftPlatform);return true;} catch (error) {console.error(error);return false;}
+    } else return false;
 };

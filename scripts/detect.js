@@ -1,18 +1,18 @@
 module.exports = () => {
     var {execSync} = require("child_process");
     const bds = require("../index")
-    var platformKiller, command
+    var platformDetect, command
     
     if (bds.bds_config.bds_platform === "bedrock") {
-        if (process.platform === "win32") platformKiller = "bedrock_server.exe"
-        else platformKiller = "bedrock_server"
+        if (process.platform === "win32") platformDetect = "bedrock_server.exe"
+        else platformDetect = "bedrock_server"
     }
-    else if (bds.bds_config.bds_platform === "java") platformKiller = "MinecraftServerJava.jar"
-    else if (bds.bds_config.bds_platform === "pocketmine") platformKiller = "PocketMine-MP.phar"
+    else if (bds.bds_config.bds_platform === "java") platformDetect = "MinecraftServerJava.jar"
+    else if (bds.bds_config.bds_platform === "pocketmine") platformDetect = "PocketMine-MP.phar"
     else throw Error("Bds Config Platform Error")
     //-------------------------------------------------------------------------------------------------
-    if (process.platform === "win32") command = `tasklist /fi "imagename eq ${platformKiller}" | find /i "${platformKiller}" > nul & if not errorlevel 1 (echo 0) else (echo 1)`
-    else command = `if (ps aux | grep "${platformKiller}" | grep -v "grep" | grep -q "${platformKiller}";);then echo "0";else echo "1";fi`
+    if (process.platform === "win32") command = `tasklist /fi "imagename eq ${platformDetect}" | find /i "${platformDetect}" > nul & if not errorlevel 1 (echo 0) else (echo 1)`
+    else command = `if (ps aux | grep "${platformDetect}" | grep -v "grep" | grep -q "${platformDetect}";);then echo "0";else echo "1";fi`
     // Command
     let detect_status = execSync(command)
     let JsonReturn = {

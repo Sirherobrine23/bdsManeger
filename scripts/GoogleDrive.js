@@ -20,11 +20,7 @@ module.exports.drive_backup = () => {
             },
             fields: "id"
         }
-        if (parent_id === undefined) null;
-        else if (parent_id === null) null;
-        else if (parent_id === "") null;
-        else UploadFile.resource.parents = [parent_id];
-
+        if (!(parent_id === undefined || parent_id === null || parent_id === "")) UploadFile.resource.parents = [parent_id];
         drive.files.create(UploadFile, function (err, file) {
             if (err) throw Error(err)
             else {
@@ -36,7 +32,7 @@ module.exports.drive_backup = () => {
     // End Upload Backup
 };
 
-module.exports.mcpe = () => {
+module.exports.mcpe = function () {
     const authorize = require("./GoogleDriveAuth").authorize
     return authorize(function (auth) {
         const drive = google.drive({version: "v3", auth});

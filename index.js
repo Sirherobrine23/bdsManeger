@@ -1,11 +1,12 @@
 /* eslint-disable no-irregular-whitespace */
+const { resolve, join } = require("path");
+const { error } = console;
+const { execSync } = require("child_process");
+const { CronJob } = require("cron");
 const path = require("path")
 const fs = require("fs");
-const { resolve } = require("path");
-const { error } = console;
 const shell = require("shelljs");
 const { getDesktopFolder, getConfigHome } = require("./GetPlatformFolder")
-const { execSync } = require("child_process");
 
 const bds_core_package = resolve(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
@@ -30,7 +31,6 @@ function date(format) {
 // System Architect (X64 or ARM64)
 const arch = process.arch
 module.exports.arch = arch
-
 var home, tmp, system, valid_platform
 module.exports.package_path = bds_core_package
 if (process.platform == "win32") {
@@ -75,10 +75,7 @@ if (process.platform == "win32") {
     }
     process.exit(254)
 }
-
 /* ------------------------------------------------------------ Take the variables of different systems ------------------------------------------------------------ */
-
-
 const desktop = getDesktopFolder()
 /**
  * With different languages ​​and systems we want to find the user's desktop for some link in the directory or even a nice shortcut
@@ -107,22 +104,32 @@ module.exports.tmp_dir = tmp
  * 
  * Windows: C:\\Users\\USER\\
  * 
- * MacOS: In tests
+ * MacOS: undefined
  */
 module.exports.home = home
 
 // save bds core files
-const bds_dir = resolve(home, "bds_core");
-const old_bds_dir = resolve(home, "bds_Server");
+const bds_dir = join(home, "bds_core");
+/**
+ * The most important directory of this project, here are saved some important things like:
+ * 
+ * The server software
+ * 
+ * configuration of the Bds Manager API
+ * 
+ * Backups etc ...
+ */
+module.exports.bds_dir = bds_dir
 
 // Bds Backups Folder
-var bds_dir_backup = path.join(bds_dir, "backups");
+const bds_dir_backup = path.join(bds_dir, "backups");
 module.exports.backup_folder = bds_dir_backup
 
 // Move old configs to new folder
+const old_bds_dir = resolve(home, "bds_Server");
 if (fs.existsSync(old_bds_dir)){
     if (fs.existsSync(bds_dir)) {
-        fs.renameSync(old_bds_dir, old_bds_dir+"_Conflit_"+Math.trunc(Math.random()* 10000 * Math.random()));
+        fs.renameSync(old_bds_dir, `${old_bds_dir}_Conflit_${Math.trunc(Math.abs(Math.random()) * 10000 * Math.random())}`);
         throw Error("Conflit folders check home dir")
     } else {
         console.log("Moving the old files to the new folder");
@@ -136,44 +143,34 @@ if (!(fs.existsSync(bds_dir))){
     fs.mkdirSync(bds_dir)
     if (!(fs.existsSync(bds_dir))) shell.mkdir("-p", bds_dir);
 }
-/**
- * The most important directory of this project, here are saved some important things like:
- * 
- * The server software
- * 
- * configuration of the Bds Manager API
- * 
- * Backups etc ...
- */
-module.exports.bds_dir = bds_dir
 
 // Servers Paths
 /* Java Path */
 const bds_dir_java = path.join(bds_dir, "java");
+module.exports.bds_dir_java = bds_dir_java
 if (!(fs.existsSync(bds_dir_java))){
     console.log("Creating the bds directory to Java")
     fs.mkdirSync(bds_dir_java)
     if (!(fs.existsSync(bds_dir_java))) shell.mkdir("-p", bds_dir_java);
 }
-module.exports.bds_dir_java = bds_dir_java
 
 /* Bedrock Path */
 const bds_dir_bedrock = path.join(bds_dir, "bedrock");
+module.exports.bds_dir_bedrock = bds_dir_bedrock
 if (!(fs.existsSync(bds_dir_bedrock))){
     console.log("Creating the bds directory to Bedrock")
     fs.mkdirSync(bds_dir_bedrock)
     if (!(fs.existsSync(bds_dir_bedrock))) shell.mkdir("-p", bds_dir_bedrock);
 }
-module.exports.bds_dir_bedrock = bds_dir_bedrock
 
 /* PocketMine Path */
 const bds_dir_pocketmine = path.join(bds_dir, "pocketmine");
+module.exports.bds_dir_pocketmine = bds_dir_pocketmine
 if (!(fs.existsSync(bds_dir_pocketmine))){
     console.log("Creating the bds directory to Pocketmine")
     fs.mkdirSync(bds_dir_pocketmine)
     if (!(fs.existsSync(bds_dir_pocketmine))) shell.mkdir("-p", bds_dir_pocketmine);
 }
-module.exports.bds_dir_pocketmine = bds_dir_pocketmine
 
 // Create backup folder
 if (!(fs.existsSync(bds_dir_backup))){
@@ -211,11 +208,13 @@ if (!(fs.existsSync(log_dir))){
 
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 if (typeof localStorage === "undefined") {
-    let LocalStorageFolder = path.join(getConfigHome(), "bds_core")
+    let Bdsname = JSON.parse(fs.readFileSync(resolve(__dirname, "package.json"))).name;
+    let LocalStorageFolder = path.join(getConfigHome(), Bdsname)
     // Create localStorage folder
     if (!(fs.existsSync(LocalStorageFolder))) shell.mkdir("-p", LocalStorageFolder);
     if (!(fs.existsSync(LocalStorageFolder))) fs.mkdirSync(LocalStorageFolder)
-    global.localStorage = new require("node-localstorage").LocalStorage(path.join(LocalStorageFolder, "Local_Storage"));}
+    let Local = require("node-localstorage")
+    global.localStorage = new Local.LocalStorage(path.join(LocalStorageFolder, "Local_Storage"));}
 
 /* Minecraft Servers URLs and depedencies */
 // urls
@@ -253,14 +252,16 @@ if (fs.existsSync(bds_config_file)){
             },
             "bds_ban": (bds_config.bds_ban||["Steve", "Alex", "steve", "alex"]),
             "telegram_token": (bds_config.telegram_token||undefined),
-            "Google_Drive_root_backup_id": (bds_config.Google_Drive_root_backup_id||undefined)
+            "Google_Drive_root_backup_id": (bds_config.Google_Drive_root_backup_id||undefined),
+            "BackupCron": (bds_config.BackupCron||[]),
+            "telegram_admin": [
+                "all_users"
+            ]
         }
         fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
         bds_config_export()
     }
 } else {
-    let ram_total = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
-    if (ram_total >= 1000) ram_total = ram_total - 1000
     bds_config = {
         "version": current_version_bds_core,
         "bds_pages": "default",
@@ -272,6 +273,7 @@ if (fs.existsSync(bds_config_file)){
         "bds_ban": ["Steve", "Alex", "steve", "alex"],
         "telegram_token": "not User defined",
         "Google_Drive_root_backup_id": undefined,
+        "BackupCron": [],
         "telegram_admin": [
             "all_users"
         ]
@@ -298,6 +300,7 @@ module.exports.save_google_id = function (id){
     return true
 }
 module.exports.platform = bds_config.bds_platform
+module.exports.bds_platform = bds_config.bds_platform
 
 /**
  * Bds Maneger Latest log file.
@@ -313,9 +316,15 @@ function bds_config_export (){
      * 
      * * it updates every second
      */
-    module.exports.bds_config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json")))
+    module.exports.bds_config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"), "utf8"))
 }
 bds_config_export()
+
+function getBdsConfig (){
+    const Config = fs.readFileSync(path.join(bds_dir, "bds_config.json"), "utf8")
+    return JSON.parse(Config)
+}
+module.exports.getBdsConfig = getBdsConfig
 
 /**
  * with this command we can change the platform with this script
@@ -327,13 +336,9 @@ bds_config_export()
  */
 function platform_update(plate){
     // Server platform detect
-    if (plate === "java") null;
-    else if (plate === "bedrock") null;
-    else if (plate === "pocketmine") null;
-    else throw new Error(`platform not identified or does not exist, ${plate} informed platform`);
-
+    if (!(plate === "java" || plate === "bedrock" || plate === "pocketmine")) throw new Error(`platform not identified or does not exist, ${plate} informed platform`);
     // Platforma Update
-    const bds_config = path.join(bds_dir, "bds_config.json")
+    const bds_config = path.join(bds_dir, "bds_config.json");
     try {
         const config_load = JSON.parse(fs.readFileSync(bds_config))
         config_load.bds_platform = plate
@@ -345,11 +350,15 @@ function platform_update(plate){
         throw new Error(`Something happened error code: ${error}`)
     }
 }
-if (process.env.SERVER !== undefined){
-    if ((process.env.SERVER || "bedrock").includes("java", "JAVA")) platform_update("java");
-    else platform_update("bedrock");
-}
 module.exports.change_platform = platform_update
+module.exports.platform_update = platform_update
+if (process.env.SERVER !== undefined){
+    let PlaformSelectServer = (process.env.SERVER || "bedrock")
+    if (PlaformSelectServer.includes("java", "JAVA")) platform_update("java");
+    else if (PlaformSelectServer.includes("bedrock", "BEDROCK")) platform_update("bedrock");
+    else if (PlaformSelectServer.includes("pocketmine", "POCKETMINE", "pocketmine-mp", "POCKETMINE-MP")) platform_update("pocketmine");
+    else throw new Error("Server Plaform Error: "+process.env.SERVER)
+}
 
 const telegram_token_save = function (token) {
     try {
@@ -376,17 +385,6 @@ if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
         throw new error("It was not possible to move the old telegram token file to the new bds maneger api file")
     }
 }
-const getSize = require("get-folder-size");
-getSize(bds_dir_backup, function(err, info) {
-    if (err) throw err
-    function toGB(x) {return (x / (1024 * 1024 * 1024)).toFixed(1);}
-    /**
-     * The disk space is used for each backup made, and it is good to take a look at this information before creating another backup.
-     * 
-     * The return value will always be in gigabyte (GB)
-     */
-    module.exports.backup_folder_size = toGB(info)
-});
 
 // Get server version
 fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(rawOUT => {
@@ -421,7 +419,6 @@ module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "b
 module.exports.internal_ip = require("./scripts/external_ip").internal_ip
 module.exports.telegram = require("./scripts/telegram_bot")
 
-
 const token_register = function (username, passworld) {
     const bds_token_path = path.join(bds_dir, "bds_tokens.json") 
     if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]")
@@ -453,6 +450,21 @@ const token_register = function (username, passworld) {
     })
 }
 
+// Requires
+const { World_BAckup } = require("./scripts/backups");
+const { stop, BdsCommand } = require("./scripts/basic_server");
+const { config, get_config, config_example } = require("./scripts/bds_settings");
+const { mcpe, drive_backup } = require("./scripts/GoogleDrive");
+const download = require("./scripts/download")
+
+const Jobs = {};
+for (let index of bds_config.BackupCron) {
+    Jobs[index] = new CronJob(index, function() {
+        World_BAckup()
+    });
+}
+module.exports.CronBackups = Jobs
+
 /**
  * Register tokens to use in Bds Maneger REST and other supported applications
  * 
@@ -469,7 +481,7 @@ module.exports.date = date
  * 
  * @example bds.command("say hello from Bds Maneger")
  */
-module.exports.command = require("./scripts/basic_server").BdsCommand
+module.exports.command = BdsCommand
 // New management method
 
 /**
@@ -482,11 +494,11 @@ module.exports.start = require("./scripts/basic_server").start
 /**
  * use this command for the server, that's all
  */
-module.exports.stop = require("./scripts/basic_server").stop
+module.exports.stop = stop
 /**
  * backup your map locally
  */
-module.exports.backup = require("./scripts/backups").World_BAckup
+module.exports.backup = World_BAckup
 /**
  * identify if there are any servers running in the background
  * 
@@ -496,13 +508,6 @@ module.exports.backup = require("./scripts/backups").World_BAckup
  */
 module.exports.detect = require("./scripts/detect")
 module.exports.bds_detect = require("./scripts/detect")
-
-/**
- * @deprecated
- * 
- * use bds.download
- */
-module.exports.version_Download = require("./scripts/bds_download")
 
 /**
  * download some version of the java and Bedrock servers in the highest possible form
@@ -516,13 +521,13 @@ module.exports.version_Download = require("./scripts/bds_download")
  * 
  * any platform: bds.download("latest") // It will download the latest version available for download
  */
-module.exports.download = require("./scripts/download")
+module.exports.download = download
 
 /**
  * this function will be used to kill the server in the background
  */
 module.exports.kill = require("./scripts/kill_server")
-module.exports.config_example = require("./scripts/bds_settings").config_example
+module.exports.config_example = config_example
 
 /**
  * use this command to modify server settings
@@ -541,18 +546,18 @@ module.exports.config_example = require("./scripts/bds_settings").config_example
         port6: 19133
     })
  */
-module.exports.set_config = require("./scripts/bds_settings").config
+module.exports.set_config = config
 /**
  * takes the server settings in JSON format
  */
-module.exports.get_config = require("./scripts/bds_settings").get_config
+module.exports.get_config = get_config
 
 /**
  * download the latest version of minecraft bedrock for android available, remember to use if you want ✌
  * 
  * you are taking responsibility for that
  */
-module.exports.mcpe_file = require("./scripts/GoogleDrive").mcpe
+module.exports.mcpe_file = mcpe
 
 /**
  * perform a backup of the map, some resources are still under construction in the code more works
@@ -561,4 +566,4 @@ module.exports.mcpe_file = require("./scripts/GoogleDrive").mcpe
  * 
  * on the java platform the map selected in the server configuration will be backed up, any other map will have to change in the server settings to perform the backup
  */
-module.exports.drive_backup= require("./scripts/GoogleDrive").drive_backup
+module.exports.drive_backup = drive_backup

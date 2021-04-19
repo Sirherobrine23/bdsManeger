@@ -25,7 +25,6 @@ function api(port_api){
     app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(limiter);
-    // app.get("/configs", (req, res) => {return res.send(bds.get_config());});
     app.get("/info", (req, res) => {
         const config = bds.get_config()
         var json_http = {
@@ -139,14 +138,17 @@ function api(port_api){
             console.log(req.files);
             if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.");
             let files = Object.getOwnPropertyNames(req.files)
-            for (let file in files){
-                fileWorld = req.files[files[file]];
-                // Use the mv() method to place the file somewhere on your server
+            
+            for (let file of files){
+                fileWorld = req.files[file];
                 console.log(fileWorld.data);
             }
         } else {
             return res.status(400).send("Token is not valid!");
         }
+    });
+    app.get("*", (req, res) => {
+        return res.status(404).json(["Not Found"]);
     });
     const port = (port_api||1932)
     app.listen(port, function (){
