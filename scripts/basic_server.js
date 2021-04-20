@@ -2,33 +2,10 @@ const bds = require("../index");
 const {exec, execSync} = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const {CheckBan} = require("./check");
 const { resolve } = require("path");
 const commandExists = require("command-exists").sync;
 
 module.exports.start = () => {
-    function KickPlayer(player){
-        console.warn(`Player ${player} tried to connect to the server`)
-        let removeUser = `kick "${player}" Player banned: ${player}`
-        console.log(removeUser);
-        var stared_ban = setInterval(() => {
-            bds.command(removeUser)
-            const detect_exit = bds_log_string.split("\n")
-            for (let index in detect_exit) {
-                const element = detect_exit[index];
-                // Player disconnected: Steve alex,
-                if (element.includes("Player disconnected:")) {
-                    if (element.includes(removeUser)) {
-                        clearInterval(stared_ban)
-                        clearInterval(stared_ban)
-                        clearInterval(stared_ban)
-                        clearInterval(stared_ban)
-                        clearInterval(stared_ban)
-                    }
-                }
-            }
-        }, 5 * 1000);
-    }
     if (!(bds.detect())){
         const plat = bds.platform
         var start_server
@@ -40,68 +17,7 @@ module.exports.start = () => {
                     ...process.env,
                     LD_LIBRARY_PATH: bds.bds_dir_bedrock
                 }, cwd: bds.bds_dir_bedrock});
-                start_server.stdout.on("data", function(data){
-                    data = data.split("\n")
-                    var username;
-                    for (let line in data){
-                        const value = data[line].split(" ")
-                        // const list_player = value
-                        const status = value[2]
-                        if (status === "connected:"){
-                            if (value[3].includes(",")) username = value[3]
-                            else username = `${value[3]} ${value[4]}`
-                            if (username.slice(-1) === ",") username = username.slice(0, -1)
-                            //------------------
-                            if (CheckBan(username)) KickPlayer(username)
-                            else {
-                                console.log("Server Username connected: "+username);
-                                const file_users = fs.readFileSync(bds.players_files, "utf8");
-                                const users = JSON.parse(file_users)
-                                if (file_users.includes(username)){
-                                    for (let rem in users){
-                                        if (users[rem].player === username) {
-                                            users[rem].connected = true
-                                            users[rem].date = new Date()
-                                            users[rem].update.push({
-                                                date: new Date(),
-                                                connected: true
-                                            })
-                                        }
-                                    }
-                                } else users.push({
-                                    player: username,
-                                    date: new Date(),
-                                    connected: true,
-                                    update: [
-                                        {
-                                            date: new Date(),
-                                            connected: true,
-                                        }
-                                    ]
-                                })
-                                fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
-                            }
-                            
-                        } else if (status === "disconnected:"){
-                            if (value[3].includes(",")) username = value[3]
-                            else username = `${value[3]} ${value[4]}`
-                            if (username.slice(-1) === ",") username = username.slice(0, -1)
-                            console.log("Server Username disconnected: "+username);
-                            const users = JSON.parse(fs.readFileSync(bds.players_files, "utf-8"))
-                            for (let rem in users){
-                                if (users[rem].player === username) {
-                                    users[rem].connected = false
-                                    users[rem].date = new Date()
-                                    users[rem].update.push({
-                                        date: new Date(),
-                                        connected: false
-                                    })
-                                }
-                            }
-                            fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
-                        }
-                    }
-                })
+                start_server.stdout.on("data", data => require("./SaveUserInJson").bedrock(data))
             } else if (process.platform === "darwin") throw Error("We don't have MacOS support yet")
             else process.exit(210)
         } else if (plat === "java") {
@@ -121,6 +37,7 @@ module.exports.start = () => {
                     console.log("http://docs.sirherobrine23.com/scripts/_java")
                 }
             }
+            start_server.stdout.on("data", data => require("./SaveUserInJson").java(data))
         } else if (plat === "pocketmine") {
             const phpinCore = resolve(bds.bds_dir_pocketmine, "bin", "php7", "bin")
             if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
@@ -129,6 +46,7 @@ module.exports.start = () => {
                     if (process.platform === "win32") process.env.PATH += `;${phpinCore}`; else process.env.PATH += `:${phpinCore}`;
             else throw Error("Reinstall Pocketmine-MP, PHP binaries not found")
             start_server = exec("php ./PocketMine-MP.phar", {env: process.env, cwd: bds.bds_dir_pocketmine});
+            start_server.stdout.on("data", data => require("./SaveUserInJson").pocketmine(data))
         } else throw Error("Bds Config Error")
         // Post Start
         start_server.stdout.on("data", function(data){

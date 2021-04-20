@@ -309,6 +309,7 @@ const log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_lo
 module.exports.log_file = log_file
 
 function bds_config_export (){
+    const Config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"), "utf8"))
     /**
      * Get current bds core config
      * 
@@ -316,7 +317,8 @@ function bds_config_export (){
      * 
      * * it updates every second
      */
-    module.exports.bds_config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"), "utf8"))
+    module.exports.bds_config = Config
+    module.exports.platform = Config.bds_platform
 }
 bds_config_export()
 
