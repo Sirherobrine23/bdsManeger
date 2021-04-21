@@ -31,8 +31,14 @@ jobs:
           sed "s|$old|\"version\": \"$new_version\",|g" package.json > package2.json
           cat package2.json > package.json
           rm -rfv package2.json
+
       - name: Install Packages
         run: npm install
+
+      - name: NPM Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   Docker:
     runs-on: ubuntu-latest

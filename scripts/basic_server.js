@@ -32,11 +32,15 @@ module.exports.start = () => {
             } else if (process.platform === "darwin") throw Error("We don't have MacOS support yet")
             else process.exit(210)
         } else if (plat === "java") {
-            var ram_max = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
+            var ram_max = Math.trunc(Math.abs((require("os").freemem() / 1024 / 1024) / 1.5))
             var ram_minimun = ram_max;
-            if (ram_max >= 1000) {ram_max = Math.trunc(ram_max / 10);ram_minimun = Math.trunc(ram_max / 50)}
+            
+            // Check low ram
+            if (ram_max <= 300) throw new Error("Low ram memorie");
+
+            if (ram_max >= 1000) ram_max = Math.trunc(ram_max / 10);
             if (require("command-exists").sync("java")) {
-                Command = `java -Xmx${ram_max}M -Xms${ram_minimun}M -jar MinecraftServerJava.jar nogui`;
+                Command = `java -Xmx${ram_max}M -Xms${ram_minimun || ram_max}M -jar MinecraftServerJava.jar nogui`;
                 Options = {
                     cwd: bds.bds_dir_java
                 };
@@ -66,23 +70,21 @@ module.exports.start = () => {
                     cwd: bds.bds_dir_pocketmine
                 };
         } else throw Error("Bds Config Error")
-        
+
         // Start Command
         const start_server = exec(Command, Options)
+        
         // Post Start
-        start_server.stdout.on("data", function(data){
-            if (data.includes("agree"))
-                if (data.includes("EULA")){
-                    const path = require("path");
-                    require("open")("https://account.mojang.com/documents/minecraft_eula");
-                    const eula_file = path.join(bds.bds_dir_java, "eula.txt")
-                    fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").replace("eula=false", "eula=true")) 
-                    if (process.argv[0].includes("node")){
-                        console.warn("Ending the process")
-                        process.exit(0)
+        if (bds.platform === "java") {
+            start_server.stdout.on("data", function(data){
+                if (data.includes("agree"))
+                    if (data.includes("EULA")){
+                        const eula_file = path.join(bds.bds_dir_java, "eula.txt");
+                        fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").replace("eula=false", "eula=true"));
+                        throw new Error("Restart application/CLI")
                     }
-                }
-        });
+            });
+        }
         start_server.stdout.on("data", data => saveUser(data))
         start_server.stdout.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
         start_server.stdout.pipe(fs.createWriteStream(path.join(bds.bds_dir, "log", "latest.log"), {flags: "w"}));
