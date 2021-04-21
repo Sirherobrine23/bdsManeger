@@ -52,7 +52,8 @@ function backup_world() {
         "bds_config.json",
         "bds_maneger-config.json",
         "bds_tokens.json",
-        "bds_users.json"
+        "bds_users.json",
+        "bds_usersV2.json"
     ]) if (existsSync(join(bds.bds_dir, index))) zip.addLocalFile(join(bds.bds_dir, index));
 
     zip.addZipComment("Settings and World Backups, by The Bds Maneger Project©");

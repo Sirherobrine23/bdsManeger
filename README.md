@@ -6,7 +6,7 @@ For now we are in a version qualified for general use and implementations in com
 
 ## CI/CD tests
 
-[![CodeQL](https://github.com/Bds-Maneger/bds_maneger_api/workflows/CodeQL/badge.svg)](https://github.com/The-Bds-Maneger/core/actions/workflows/codeql-analysis.yml)
+[![CodeQL](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/workflows/CodeQL/badge.svg)](https://github.com/The-Bds-Maneger/core/actions/workflows/codeql-analysis.yml)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/alerts/)
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/context:javascript)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/4d19af8fe5b146608a8f4a5e2092f66d)](https://www.codacy.com/gh/The-Bds-Maneger/Bds-Maneger-Core/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=The-Bds-Maneger/Bds-Maneger-Core&amp;utm_campaign=Badge_Grade)

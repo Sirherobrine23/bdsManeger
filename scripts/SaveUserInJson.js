@@ -1,102 +1,85 @@
 const bds = require("../index")
 const {CheckBan} = require("./check");
-const fs = require("fs")
+const fs = require("fs");
 
-function KickPlayer(player){
+function MytypeKill(player) {
     console.warn(`Player ${player} tried to connect to the server`)
-    let removeUser = `kick "${player}" Player banned: ${player}`
+    let removeUser = `tp "${player}" ~ ~9999999999999999999999999 ~`
     console.log(removeUser);
-    var stared_ban = setInterval(() => {
-        bds.command(removeUser)
-        const detect_exit = bds_log_string.split("\n")
-        for (let index in detect_exit) {
-            const element = detect_exit[index];
-            // Player disconnected: Steve alex,
-            if (element.includes("Player disconnected:")) {
-                if (element.includes(removeUser)) {
-                    clearInterval(stared_ban)
-                    clearInterval(stared_ban)
-                    clearInterval(stared_ban)
-                    clearInterval(stared_ban)
-                    clearInterval(stared_ban)
-                }
+    var RemoveUser = setInterval(() => {
+        bds.command(removeUser);
+        bds_server_string.stdout.on("data", (data) => {
+            if (data.includes("disconnected:")) {
+                if (data.includes(player)) clearInterval(RemoveUser);
             }
-        }
-    }, 5 * 1000);
+        })
+        
+    }, 6 * 1000);
+    return RemoveUser;
 }
 
-const bedrock = function (data){
-    data = data.split("\n")
-    var username;
-    for (let line in data){
-        const value = data[line].split(" ")
-        // const list_player = value
-        const status = value[2]
-        if (status === "connected:"){
-            if (value[3].includes(",")) username = value[3]
-            else username = `${value[3]} ${value[4]}`
-            if (username.slice(-1) === ",") username = username.slice(0, -1)
-            //------------------
-            if (CheckBan(username)) KickPlayer(username)
-            else {
-                console.log("Server Username connected: "+username);
-                const file_users = fs.readFileSync(bds.players_files, "utf8");
-                const users = JSON.parse(file_users)
-                if (file_users.includes(username)){
-                    for (let rem in users){
-                        if (users[rem].player === username) {
-                            users[rem].connected = true
-                            users[rem].date = new Date()
-                            users[rem].update.push({
-                                date: new Date(),
-                                connected: true
-                            })
-                        }
-                    }
-                } else users.push({
-                    player: username,
-                    date: new Date(),
+const Bedrock = function (data){
+    data = data.split(/\r?\n/g)
+    const file_users = fs.readFileSync(bds.players_files, "utf8");
+    const users = JSON.parse(file_users);
+    
+    for (let line of data)
+        if (line.includes("connected:")) {
+            line = line.replace("[INFO] Player ", "")
+            
+            let GetSatatus = line.trim().split(/\s+/g)[0]
+            console.log(GetSatatus);
+            var Connected, Disconnected;
+            // Connected in bedrock server
+            if (GetSatatus === "connected:") Connected = true;
+            // Disconeccted in bedrock server
+            else if (GetSatatus === "disconnected:") Disconnected = true;
+            else throw new Error("Log Error")
+            
+            const CurrentData = new Date();
+            const GetValue = [];for (let index of line.trim().replace("connected:", "").replace("dis", "").trim().split(", xuid:")) if (index !== "") GetValue.push(index.trim());
+            // -------------------------------------------------
+            var username = GetValue[0];
+            console.log(GetValue);
+            // User Connected
+            if (Connected) {
+                //------------------
+                if (CheckBan(username)) MytypeKill(username)
+                else if (users[username] === undefined) users[username] = {
+                    date: CurrentData,
                     connected: true,
                     update: [
                         {
-                            date: new Date(),
+                            date: CurrentData,
                             connected: true,
                         }
                     ]
-                })
-                fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
-            }
-            
-        } else if (status === "disconnected:"){
-            if (value[3].includes(",")) username = value[3]
-            else username = `${value[3]} ${value[4]}`
-            if (username.slice(-1) === ",") username = username.slice(0, -1)
-            console.log("Server Username disconnected: "+username);
-            const users = JSON.parse(fs.readFileSync(bds.players_files, "utf-8"))
-            for (let rem in users){
-                if (users[rem].player === username) {
-                    users[rem].connected = false
-                    users[rem].date = new Date()
-                    users[rem].update.push({
-                        date: new Date(),
-                        connected: false
+                }; else {
+                    users[username].connected = true
+                    users[username].date = CurrentData
+                    users[username].update.push({
+                        date: CurrentData,
+                        connected: true,
                     })
                 }
             }
-            fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+            // User Disconnected
+            else if (Disconnected) {
+                users[username].connected = false
+                users[username].date = CurrentData
+                users[username].update.push({
+                    date: CurrentData,
+                    connected: false,
+                })
+            }
         }
-    }
-    return data
+    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+    return
 }
 
-const java = function (data){
-    return data
-}
-
-const pocketmine = function (data){
-    return data
-}
-
-module.exports.bedrock = bedrock
-module.exports.java = java
-module.exports.pocketmine = pocketmine
+module.exports = function (data){
+    if (bds.platform === "bedrock") return Bedrock(data);
+    else if (bds.platform === "java") return false;
+    else if (bds.platform === "pocketmine") return false
+    else throw new Error("Plafotform Error !!")
+};

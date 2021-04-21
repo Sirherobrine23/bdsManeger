@@ -4,50 +4,71 @@ const fs = require("fs");
 const path = require("path");
 const { resolve } = require("path");
 const commandExists = require("command-exists").sync;
+const saveUser = require("./SaveUserInJson")
 
 module.exports.start = () => {
     if (!(bds.detect())){
         const plat = bds.platform
-        var start_server
+        var Command, Options = {};
+
         if (plat === "bedrock"){
-            if (process.platform == "win32") start_server = exec("bedrock_server.exe", {cwd: bds.bds_dir_bedrock});
+            if (process.platform == "win32") {
+                Command = "bedrock_server.exe"
+                Options = {
+                    cwd: bds.bds_dir_bedrock
+                }
+            }
             else if (process.platform == "linux"){
                 execSync("chmod 777 bedrock_server", {cwd: bds.bds_dir_bedrock}).toString();
-                start_server = exec("./bedrock_server", {env: {
-                    ...process.env,
-                    LD_LIBRARY_PATH: bds.bds_dir_bedrock
-                }, cwd: bds.bds_dir_bedrock});
-                start_server.stdout.on("data", data => require("./SaveUserInJson").bedrock(data))
+                Command = "./bedrock_server";
+                Options = {
+                    env: {
+                        ...process.env,
+                        LD_LIBRARY_PATH: bds.bds_dir_bedrock
+                    },
+                    cwd: bds.bds_dir_bedrock
+                }
+
             } else if (process.platform === "darwin") throw Error("We don't have MacOS support yet")
             else process.exit(210)
         } else if (plat === "java") {
             var ram_max = Math.trunc((require("os").freemem() / 1000 / 1000) - 212)
             var ram_minimun = ram_max;
             if (ram_max >= 1000) {ram_max = Math.trunc(ram_max / 10);ram_minimun = Math.trunc(ram_max / 50)}
-            if (require("command-exists").sync("java")) start_server = exec(`java -Xmx${ram_max}M -Xms${ram_minimun}M -jar MinecraftServerJava.jar nogui`, {cwd: bds.bds_dir_java});
-            else {
-                if (bds.system == "windows"){
-                    require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#Windows");
-                    console.log("http://docs.sirherobrine23.com/bds_maneger_api_java#Windows")
-                } else if (bds.system === "linux"){
-                    require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#Linux");
-                    console.log("http://docs.sirherobrine23.com/bds_maneger_api_java#Linux")
-                } else {
-                    require("open")("http://docs.sirherobrine23.com/bds_maneger_api_java#MacOS");
-                    console.log("http://docs.sirherobrine23.com/scripts/_java")
-                }
+            if (require("command-exists").sync("java")) {
+                Command = `java -Xmx${ram_max}M -Xms${ram_minimun}M -jar MinecraftServerJava.jar nogui`;
+                Options = {
+                    cwd: bds.bds_dir_java
+                };
             }
-            start_server.stdout.on("data", data => require("./SaveUserInJson").java(data))
+            else {
+                var url = bds.package_json.docs_base;
+                if (bds.system == "windows") url += "Java-Download#windows"
+                else if (bds.system === "linux") url = "Java-Download#linux"
+                else if (process.platform === "darwin") url = "Java-Download#macos"
+                else url = "Java-Download"
+                console.info(`Open: ${url}`)
+                if (typeof open === "undefined") require("open")(url); else open(url);
+            }
         } else if (plat === "pocketmine") {
             const phpinCore = resolve(bds.bds_dir_pocketmine, "bin", "php7", "bin")
             if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
-            else if (fs.existsSync(phpinCore)) 
-                if (!(process.env.PATH.includes(phpinCore))) 
-                    if (process.platform === "win32") process.env.PATH += `;${phpinCore}`; else process.env.PATH += `:${phpinCore}`;
-            else throw Error("Reinstall Pocketmine-MP, PHP binaries not found")
-            start_server = exec("php ./PocketMine-MP.phar", {env: process.env, cwd: bds.bds_dir_pocketmine});
-            start_server.stdout.on("data", data => require("./SaveUserInJson").pocketmine(data))
+            else if (fs.existsSync(phpinCore)) {
+                if (!(process.env.PATH.includes(phpinCore))) {
+                    if (process.platform === "win32") process.env.PATH += `;${phpinCore}`;
+                    else process.env.PATH += `:${phpinCore}`;
+                }
+            }
+            else throw Error("Reinstall Pocketmine-MP, PHP binaries folder not found")
+                Command = "php ./PocketMine-MP.phar";
+                Options = {
+                    env: process.env,
+                    cwd: bds.bds_dir_pocketmine
+                };
         } else throw Error("Bds Config Error")
+        
+        // Start Command
+        const start_server = exec(Command, Options)
         // Post Start
         start_server.stdout.on("data", function(data){
             if (data.includes("agree"))
@@ -62,10 +83,16 @@ module.exports.start = () => {
                     }
                 }
         });
+        start_server.stdout.on("data", data => saveUser(data))
         start_server.stdout.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
         start_server.stdout.pipe(fs.createWriteStream(path.join(bds.bds_dir, "log", "latest.log"), {flags: "w"}));
-        if (typeof bds_log_string !== "undefined"){bds_log_string = ""}
-        start_server.stdout.on("data", function(data){if (global.bds_log_string === undefined) global.bds_log_string = data;else global.bds_log_string += data});
+        if (typeof bds_log_string !== "undefined"){global.bds_log_string = ""}
+        start_server.stdout.on("data", function(data){
+            if (global.bds_log_string === undefined)
+                global.bds_log_string = data;
+            else
+                global.bds_log_string += data
+        });
         global.bds_server_string = start_server;
         return start_server;
     } else {

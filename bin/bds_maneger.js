@@ -78,10 +78,6 @@ const rl = readline.createInterface({
   output: process.stdout
 })
 rl.on("line", (input) => {
+  if (input === "stop") {rl.close();console.log("------------------------ Going out ------------------------");}
   bds.command(input)
-  if (input === "stop") {
-    rl.close()
-    console.log("------------------------ Going out ------------------------")
-  }
-  else console.log("------------------------------------------------");
 });

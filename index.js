@@ -407,16 +407,19 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
 module.exports.api = require("./rest/api");
 module.exports.rest = require("./rest/api");
 
+module.exports.package_json = JSON.parse(fs.readFileSync(resolve(__dirname, "package.json")))
+
 // ------------
-const user_file_connected = path.join(bds_dir, "bds_users.json")
+const user_file_connected = path.join(bds_dir, "bds_usersV2.json")
 /**
  * get the location of the file where the player history connected to the server is saved
  */
 module.exports.players_files = user_file_connected
-if (!(fs.existsSync(user_file_connected))) fs.writeFileSync(user_file_connected, "[]")
+
+if (!(fs.existsSync(user_file_connected))) fs.writeFileSync(user_file_connected, "{}")
 const file_user_check = fs.readFileSync(user_file_connected, "utf8");
-if (file_user_check.charAt(0) !== "[") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
-else if (file_user_check.slice(-1) !== "]") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
+if (file_user_check.charAt(0) !== "{") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
+else if (file_user_check.slice(-1) !== "}") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
 module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
 module.exports.internal_ip = require("./scripts/external_ip").internal_ip
 module.exports.telegram = require("./scripts/telegram_bot")
