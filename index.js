@@ -329,6 +329,11 @@ function getBdsConfig (){
 module.exports.getBdsConfig = getBdsConfig
 
 /**
+ * Get system CPU and ram memorie utilazations
+ */
+module.exports.system_monitor = require("./scripts/system_monitor")
+
+/**
  * with this command we can change the platform with this script
  * 
  * bedrock change_platform("bedrock")
