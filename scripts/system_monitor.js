@@ -28,7 +28,9 @@ function init_2(){
 
 init_1()
 init_2()
-setInterval(() => {
-    init_1()
-    init_2()
-}, 3000);
+module.exports.start_system_monitor = function (){
+    return setInterval(() => {
+        init_1()
+        init_2()
+    }, 3000);
+}

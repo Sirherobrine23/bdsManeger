@@ -10,7 +10,7 @@ const { getDesktopFolder, getConfigHome } = require("./GetPlatformFolder")
 
 const bds_core_package = resolve(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
-if (process.env.IS_BIN_BDS === undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
+if (process.env.SHOW_BDS_VERSION !== undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
 function date(format) {
     const today = new Date(),
         yaer = today.getFullYear(),
@@ -51,7 +51,6 @@ if (process.platform == "win32") {
         "pocketmine": true,
         "java": true
     }
-    if (process.arch === "aarch64") valid_platform.pocketmine = false;
 } else if (process.platform == "darwin") {
     if (arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
     else require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#macos-with-intel-processors");
@@ -394,13 +393,11 @@ if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
 }
 
 // Get server version
-fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").then(response => response.json()).then(rawOUT => {
-    module.exports.bedrock_all_versions = Object.getOwnPropertyNames(rawOUT.bedrock);
-    module.exports.java_all_versions = Object.getOwnPropertyNames(rawOUT.java);
-    module.exports.bds_latest = (rawOUT.bedrock_lateste||rawOUT.bedrock_latest);
-    module.exports.bedrock_latest = rawOUT.bedrock_latest;
-    module.exports.java_latest = rawOUT.java_latest;
-})
+module.exports.bedrock_all_versions = Object.getOwnPropertyNames(SERVER_URLs.bedrock);
+module.exports.java_all_versions = Object.getOwnPropertyNames(SERVER_URLs.java);
+module.exports.bds_latest = (SERVER_URLs.bedrock_lateste||SERVER_URLs.bedrock_latest);
+module.exports.bedrock_latest = SERVER_URLs.bedrock_latest;
+module.exports.java_latest = SERVER_URLs.java_latest;
 
 /**
  * Activate an API via expresss.js, to receive requests via http such as the log, send and receive commands
@@ -412,7 +409,7 @@ fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
 module.exports.api = require("./rest/api");
 module.exports.rest = require("./rest/api");
 
-module.exports.package_json = JSON.parse(fs.readFileSync(resolve(__dirname, "package.json")))
+module.exports.package_json = JSON.parse(fs.readFileSync(bds_core_package))
 
 // ------------
 const user_file_connected = path.join(bds_dir, "bds_usersV2.json")
