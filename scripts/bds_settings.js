@@ -180,7 +180,7 @@ function bds_get_config(){
         JsonConfig.portv4 = parseInt(config["server-port"]);
         JsonConfig.portv6 = parseInt(config["server-portv6"]);
         JsonConfig.seed = config["level-seed"];
-        JsonConfig.commands = config["allow-cheats"];
+        JsonConfig.commands = (config["allow-cheats"] === "true");
         // JsonConfig.worldtype = "default";
     }
     else if (bds.platform === "java") {
@@ -199,7 +199,7 @@ function bds_get_config(){
         JsonConfig.portv4 = parseInt(config["server-port"]);
         JsonConfig.portv6 = parseInt(config["server-port"]);
         JsonConfig.seed = config["level-seed"];
-        JsonConfig.commands = config["enable-command-block"];
+        JsonConfig.commands = (config["enable-command-block"] === "true");
         // JsonConfig.worldtype = config["level-type"];
     }
     else if (bds.platform === "pocketmine") {
