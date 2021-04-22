@@ -2,7 +2,12 @@ name: "Dependabot Automerge - Action"
 on:
   push:
     branches:
-      - dependabot**
+      dependabot**
+  
+  pull_request:
+    branches:
+      dependabot**
+      
 jobs:
   automerge:
     runs-on: ubuntu-latest
