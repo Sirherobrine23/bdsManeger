@@ -1,4 +1,5 @@
 const bds = require("/opt/bdsCore/index");
+const { bds_dir, bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine } = require("/opt/bdsCore/bdsgetPaths");
 const { existsSync, readFileSync } = require("fs")
 const { resolve, join } = require("path")
 
@@ -10,7 +11,7 @@ function output(dados){var out = dados; if (out.slice(-1) == "\n") out = out.sli
 // --------------------------------------------------------------------------------------------------------------------
 
 // Bds Maneger Core Token API REST
-const bds_tokens = resolve(bds.bds_dir, "bds_tokens.json") 
+const bds_tokens = resolve(bds_dir, "bds_tokens.json") 
 if (existsSync(bds_tokens)) {
     let JSON_ = JSON.parse(readFileSync(bds_tokens, "utf-8"))
     for (let ind in JSON_){
@@ -26,9 +27,9 @@ else  bds.telegram.launch()
 
 // Detect whether the server has been installed
 var bds_software
-if (existsSync(join(bds.bds_dir_bedrock, "bedrock_server"))) bds_software = true
-else if (existsSync(join(bds.bds_dir_bedrock, "bedrock_server.exe"))) bds_software = true
-else if (existsSync(join(bds.bds_dir_java, "MinecraftServerJava.jar"))) bds_software = true
+if (existsSync(join(bds_dir_bedrock, "bedrock_server"))) bds_software = true
+else if (existsSync(join(bds_dir_bedrock, "bedrock_server.exe"))) bds_software = true
+else if (existsSync(join(bds_dir_java, "MinecraftServerJava.jar"))) bds_software = true
 else bds_software = false
 
 if (bds_software){

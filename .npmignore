@@ -1,0 +1,5 @@
+docs/
+Docker/
+.docker*
+.github/
+.devconatiner/

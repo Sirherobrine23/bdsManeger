@@ -1,9 +1,14 @@
 if (typeof fetch === "undefined"){
     global.fetch = require("node-fetch")
 }
-fetch("https://ipecho.net/plain").then(response => response.text()).then(function (response) {module.exports.ip = response;}).catch(function (err){console.error(err)});
-const interfaces = require("os").networkInterfaces(),
-    keys = Object.getOwnPropertyNames(require("os").networkInterfaces())
+
+fetch("https://ipecho.net/plain").then(res => {if (res.ok) return res;else throw new Error(res);}).then(response => response.text()).then((response) => {
+    module.exports.ip = response;
+    module.exports.external_ip = response;
+}).catch(function (err){console.error(err)});
+
+const interfaces = require("os").networkInterfaces();
+const keys = Object.getOwnPropertyNames(require("os").networkInterfaces());
 
 const internal_ip = []
 

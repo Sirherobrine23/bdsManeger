@@ -1,37 +1,37 @@
-const bds = require("../index");
-const {exec, execSync} = require("child_process");
+const { exec, execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { resolve } = require("path");
 const commandExists = require("command-exists").sync;
-const saveUser = require("./SaveUserInJson")
+const saveUser = require("./SaveUserInJson");
+const bds = require("../index");
+const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, log_dir } = require("../bdsgetPaths");
 
 module.exports.start = () => {
     if (!(bds.detect())){
-        const plat = bds.platform
         var Command, Options = {};
 
-        if (plat === "bedrock"){
+        if (bds.platform === "bedrock"){
             if (process.platform == "win32") {
                 Command = "bedrock_server.exe"
                 Options = {
-                    cwd: bds.bds_dir_bedrock
+                    cwd: bds_dir_bedrock
                 }
             }
             else if (process.platform == "linux"){
-                execSync("chmod 777 bedrock_server", {cwd: bds.bds_dir_bedrock}).toString();
+                execSync("chmod 777 bedrock_server", {cwd: bds_dir_bedrock}).toString();
                 Command = "./bedrock_server";
                 Options = {
                     env: {
                         ...process.env,
-                        LD_LIBRARY_PATH: bds.bds_dir_bedrock
+                        LD_LIBRARY_PATH: bds_dir_bedrock
                     },
-                    cwd: bds.bds_dir_bedrock
+                    cwd: bds_dir_bedrock
                 }
 
             } else if (process.platform === "darwin") throw Error("We don't have MacOS support yet")
             else process.exit(210)
-        } else if (plat === "java") {
+        } else if (bds.platform === "java") {
             var ram_max = Math.trunc(Math.abs((require("os").freemem() / 1024 / 1024) / 1.5))
             var ram_minimun = ram_max;
             
@@ -42,7 +42,7 @@ module.exports.start = () => {
             if (require("command-exists").sync("java")) {
                 Command = `java -Xmx${ram_max}M -Xms${ram_minimun || ram_max}M -jar MinecraftServerJava.jar nogui`;
                 Options = {
-                    cwd: bds.bds_dir_java
+                    cwd: bds_dir_java
                 };
             }
             else {
@@ -54,8 +54,8 @@ module.exports.start = () => {
                 console.info(`Open: ${url}`)
                 if (typeof open === "undefined") require("open")(url); else open(url);
             }
-        } else if (plat === "pocketmine") {
-            const phpinCore = resolve(bds.bds_dir_pocketmine, "bin", "php7", "bin")
+        } else if (bds.platform === "pocketmine") {
+            const phpinCore = resolve(bds_dir_pocketmine, "bin", "php7", "bin")
             if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
             else if (fs.existsSync(phpinCore)) {
                 if (!(process.env.PATH.includes(phpinCore))) {
@@ -67,7 +67,7 @@ module.exports.start = () => {
                 Command = "php ./PocketMine-MP.phar";
                 Options = {
                     env: process.env,
-                    cwd: bds.bds_dir_pocketmine
+                    cwd: bds_dir_pocketmine
                 };
         } else throw Error("Bds Config Error")
 
@@ -79,21 +79,19 @@ module.exports.start = () => {
             start_server.stdout.on("data", function(data){
                 if (data.includes("agree"))
                     if (data.includes("EULA")){
-                        const eula_file = path.join(bds.bds_dir_java, "eula.txt");
-                        fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").replace("eula=false", "eula=true"));
+                        const eula_file = path.join(bds_dir_java, "eula.txt");
+                        fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").split("eula=false").join("eula=true"));
                         throw new Error("Restart application/CLI")
                     }
             });
         }
         start_server.stdout.on("data", data => saveUser(data))
         start_server.stdout.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
-        start_server.stdout.pipe(fs.createWriteStream(path.join(bds.bds_dir, "log", "latest.log"), {flags: "w"}));
-        if (typeof bds_log_string !== "undefined"){global.bds_log_string = ""}
+        start_server.stdout.pipe(fs.createWriteStream(path.join(log_dir, "latest.log"), {flags: "w"}));
+        global.bds_log_string = ""
         start_server.stdout.on("data", function(data){
-            if (global.bds_log_string === undefined)
-                global.bds_log_string = data;
-            else
-                global.bds_log_string += data
+            if (global.bds_log_string === undefined || global.bds_log_string === "") global.bds_log_string = data;
+            else global.bds_log_string += data
         });
         global.bds_server_string = start_server;
         return start_server;

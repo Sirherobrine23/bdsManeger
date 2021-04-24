@@ -3,8 +3,10 @@ const path = require("path")
 const {google} = require("googleapis");
 const bds =  require("../index");
 require("./GoogleDriveAuth")
-module.exports.drive_backup = () => {
-    const authorize = require("./GoogleDriveAuth").authorize
+const { authorize } = require("./GoogleDriveAuth");
+const { tmp_dir } = require("../bdsgetPaths");
+
+module.exports.drive_backup = (BackupCallback) => {
     const file_json = require("./backups").Drive_backup()
     const parent_id = bds.bds_config.Google_Drive_root_backup_id
     
@@ -21,11 +23,11 @@ module.exports.drive_backup = () => {
             fields: "id"
         }
         if (!(parent_id === undefined || parent_id === null || parent_id === "")) UploadFile.resource.parents = [parent_id];
-        drive.files.create(UploadFile, function (err, file) {
+        drive.files.create(UploadFile, (err, file) => {
             if (err) throw Error(err)
             else {
-                global.backup_id = file.data.id;
-                console.log(`https://drive.google.com/file/${file.data.id}`);
+                console.log(`File URL: https://drive.google.com/file/d/${file.data.id}/`);
+                if (typeof BackupCallback === "function") BackupCallback(file);
             }
         });
     });
@@ -33,16 +35,18 @@ module.exports.drive_backup = () => {
 };
 
 module.exports.mcpe = function () {
-    const authorize = require("./GoogleDriveAuth").authorize
     return authorize(function (auth) {
         const drive = google.drive({version: "v3", auth});
-        var fileId = "11jJjMZRtrQus3Labo_kr85EgtgSVRPLI";
-        const SaveAPKintmp = path.join(bds.tmp_dir, "mcpe.apk")
-        var dest = fs.createWriteStream(SaveAPKintmp);
-        drive.files.get({fileId: fileId, alt: "media"}, {responseType: "stream"},function(err, res){res.data.on("end", () => {
-            console.log(`Done, Save in ${SaveAPKintmp}`);
-        }).on("error", err => {
-            console.error(`Error: ${err}`)
-        }).pipe(dest)});
+        const SaveAPKintmp = path.join(tmp_dir, "MinecraftBedrockAndroid.apk")
+        
+        const LocalSave = fs.createWriteStream(SaveAPKintmp);
+
+        drive.files.get({fileId: "11jJjMZRtrQus3Labo_kr85EgtgSVRPLI",alt: "media"}, {responseType: "stream"}, (err, res) => {
+            res.data.on("end", () => {
+                console.log(`Done, Save in ${SaveAPKintmp}`);
+            }).on("error", err => {
+                throw new Error(err)
+            }).pipe(LocalSave)
+        });
     });
 }

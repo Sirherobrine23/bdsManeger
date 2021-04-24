@@ -1,7 +1,8 @@
 const fs = require("fs");
 const {join} = require("path")
 const {google} = require("googleapis");
-const bds =  require("../index");
+const { bds_dir } = require("../bdsgetPaths")
+const { GoogleDriveCredentials } = require("../index")
 const express = require("express");
 const app = express();
 var cors = require("cors");
@@ -16,12 +17,9 @@ const DefaultLoginDrive = {
 }
 
 // -------------------------------------------------------------
-const PathToToken = join(bds.bds_dir, "google_user_token.json");
+const PathToToken = join(bds_dir, "google_user_token.json");
 
-// Rename Old File
-if (fs.existsSync(PathToToken)) fs.renameSync(PathToToken, join(bds.bds_dir, "google_token.json"))
-
-function expressGetGoogleDriveToken(callback, Google_Drive_creential){
+function expressGetGoogleDriveToken(callback){
     // Settings
     const limiter = rateLimit({
         windowMs: 1 * 60 * 1000, // minutes
@@ -33,9 +31,9 @@ function expressGetGoogleDriveToken(callback, Google_Drive_creential){
     app.use(cors());
     // Urls
     app.get("/request", (req, res) => {
-        const secret = Google_Drive_creential.installed.client_secret;
-        const client = Google_Drive_creential.installed.client_id;
-        const redirect = Google_Drive_creential.installed.redirect_uris[0].split("@PORT_REDIRECT").join(6658).split("@URLREDIRECT").join(req.headers.host.replace("http://", "").replace("https://", ""));
+        const secret = GoogleDriveCredentials.installed.client_secret;
+        const client = GoogleDriveCredentials.installed.client_id;
+        const redirect = `${req.protocol}://${req.headers.host}/save`;
         const oAuth2Client = new google.auth.OAuth2(client, secret, redirect);
         res.redirect(oAuth2Client.generateAuthUrl(DefaultLoginDrive))
         app.get("/save", (req, res) => {
@@ -45,10 +43,17 @@ function expressGetGoogleDriveToken(callback, Google_Drive_creential){
                 if (err) return console.error("Error accessing keys and saving, Error:", err);
                 oAuth2Client.setCredentials(save_token);
                 // Save Token File
-                fs.writeFile(PathToToken, JSON.stringify(save_token, null, 2), function (err){
-                    if (err) {close_server();return console.error("We were unable to save json, please try again later")}
+                fs.writeFile(PathToToken, JSON.stringify(save_token, null, 4), function (err){
+                    if (err) {
+                        console.error("We were unable to save json, please try again later");
+                        return close_server();
+                    }
+                        
                     callback(oAuth2Client);
-                    res.send({status: "sucess"})
+                    res.json({
+                        "token": save_token,
+                        status: "success"
+                    })
                     close_server();
                 });
             });
@@ -60,25 +65,21 @@ function expressGetGoogleDriveToken(callback, Google_Drive_creential){
     return 6658
 }
 
-fetch("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").then(response => response.json()).then(Google_Drive_creential => {
-    function authorize(callback) {
-        const client_secret = Google_Drive_creential.installed.client_secret;
-        const client_id = Google_Drive_creential.installed.client_id;
-        const redirect_uris = Google_Drive_creential.installed.redirect_uris[0].split("@PORT_REDIRECT").join(6658).split("@URLREDIRECT").join("localhost");
-        const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris);
-        fs.readFile(PathToToken, (err, user_cred) => {
-            if (err) {
-                var GetReturn = expressGetGoogleDriveToken(callback, Google_Drive_creential);
-                console.log("Open one of these links in your browser:");
-                console.log("http://localhost:6658/request");
-                console.log(`http://${Ips.ip}:6658/request`);
-                for (let index of Ips.internal_ip) console.log(`http://${index}:6658/request`)
-                return GetReturn
-            }
-            oAuth2Client.setCredentials(JSON.parse(user_cred));
-            callback(oAuth2Client);
-        });
-    }
-    module.exports.authorize = authorize
-})
-
+module.exports.authorize = function (callback) {
+    const client_secret = GoogleDriveCredentials.installed.client_secret;
+    const client_id = GoogleDriveCredentials.installed.client_id;
+    const redirect_uris = GoogleDriveCredentials.installed.redirect_uris[0].split("@PORT_REDIRECT").join(6658).split("@URLREDIRECT").join("localhost");
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris);
+    fs.readFile(PathToToken, (err, user_cred) => {
+        if (err) {
+            var GetReturn = expressGetGoogleDriveToken(callback);
+            if (process.argv0 === "electron") open("http://localhost:6658/request")
+            console.log("Open one of these links in your browser:");
+            console.log("http://localhost:6658/request");
+            for (let index of Ips.internal_ip) console.log(`http://${index}:6658/request`)
+            return GetReturn
+        }
+        oAuth2Client.setCredentials(JSON.parse(user_cred));
+        callback(oAuth2Client);
+    });
+}

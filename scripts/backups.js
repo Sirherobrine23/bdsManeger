@@ -1,4 +1,5 @@
 const bds = require("../index")
+const bdsPaths = require("../bdsgetPaths")
 const path = require("path")
 const { join } = require("path");
 const {readdirSync, existsSync} = require("fs")
@@ -9,34 +10,34 @@ function backup_world() {
     console.info("Please wait");
     // Names And Path"s
     const name = `Bds_Maneger-Backups_${bds.date()}.zip`
-    const PathBackup = path.join(bds.backup_folder, name);
+    const PathBackup = path.join(bdsPaths.backup_folder, name);
     if (process.env.BDS_DOCKER_IMAGE !== "true") if (bds.bds_detect()) bds.stop();
 
     // Bedrock
-    if (existsSync(join(bds.bds_dir_bedrock, (function (){var bedrockExec;if (process.platform === "win32") bedrockExec = "bedrock_server.exe";else if (process.platform === "linux") bedrockExec = "bedrock_server";return bedrockExec;})()))) {
-        zip.addLocalFolder(path.join(bds.bds_dir_bedrock, "worlds"), join("bedrock", "worlds"));
+    if (existsSync(join(bdsPaths.bds_dir_bedrock, (() => {if (process.platform === "win32") return  "bedrock_server.exe";else if (process.platform === "linux") return  "bedrock_server";})()))) {
+        zip.addLocalFolder(path.join(bdsPaths.bds_dir_bedrock, "worlds"), join("bedrock", "worlds"));
         for (let index of [
             "server.properties",
             "permissions.json",
             "whitelist.json"
-        ]) if (existsSync(join(bds.bds_dir_bedrock, index))) zip.addLocalFile(join(bds.bds_dir_bedrock, index), "bedrock");
+        ]) if (existsSync(join(bdsPaths.bds_dir_bedrock, index))) zip.addLocalFile(join(bdsPaths.bds_dir_bedrock, index), "bedrock");
     }
     else console.info("Skipping the bedrock as it was not installed");
     // Java
-    if (existsSync(join(bds.bds_dir_java, "MinecraftServerJava.jar"))) {
-        let javaDir = readdirSync(bds.bds_dir_java).filter(function(value) {if (value === "banned-ips.json" || value === "banned-players.json" || value === "eula.txt" || value === "logs" || value === "ops.json" || value === "server.jar" || value === "MinecraftServerJava.jar" || value === "server.properties" || value === "usercache.json" || value === "whitelist.json") return false;return true});
-        for (let index of javaDir) zip.addLocalFolder(join(bds.bds_dir_java, index), join("java", index))
+    if (existsSync(join(bdsPaths.bds_dir_java, "MinecraftServerJava.jar"))) {
+        let javaDir = readdirSync(bdsPaths.bds_dir_java).filter(function(value) {if (value === "banned-ips.json" || value === "banned-players.json" || value === "eula.txt" || value === "logs" || value === "ops.json" || value === "server.jar" || value === "MinecraftServerJava.jar" || value === "server.properties" || value === "usercache.json" || value === "whitelist.json") return false;return true});
+        for (let index of javaDir) zip.addLocalFolder(join(bdsPaths.bds_dir_java, index), join("java", index))
         for (let index of [
             "banned-ips.json",
             "banned-players.json",
             "ops.json",
             "server.properties",
             "whitelist.json"
-        ]) if (existsSync(join(bds.bds_dir_java, index))) zip.addLocalFile(join(bds.bds_dir_java, index), "java");
+        ]) if (existsSync(join(bdsPaths.bds_dir_java, index))) zip.addLocalFile(join(bdsPaths.bds_dir_java, index), "java");
     } else console.info("Skipping the java as it was not installed");
     // PocketMine
-    if (existsSync(join(bds.bds_dir_pocketmine, "PocketMine-MP.phar"))) {
-        zip.addLocalFolder(join(bds.bds_dir_pocketmine, "worlds"), join("pocketmine", "worlds"));
+    if (existsSync(join(bdsPaths.bds_dir_pocketmine, "PocketMine-MP.phar"))) {
+        zip.addLocalFolder(join(bdsPaths.bds_dir_pocketmine, "worlds"), join("pocketmine", "worlds"));
         for (let index of [
             "pocketmine.yml",
             "server.properties",

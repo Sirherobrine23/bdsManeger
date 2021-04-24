@@ -1,5 +1,9 @@
+#!/usr/bin/env node
 const commandExist = require("command-exists").sync
-if (commandExist("curl")) {console.log("Curl is already installed.");process.exit(0)}
+if (commandExist("curl") || commandExist("wget")) {
+    console.log("Curl/Wget is already installed.");
+    process.exit(0)
+}
 else {
     if (process.platform === "linux") throw Error("Linux Users: https://github.com/The-Bds-Maneger/core/wiki/Curl-Command#linux")
     else if (process.platform === "darwin") throw Error("https://github.com/The-Bds-Maneger/core/wiki/Curl-Command#macos");

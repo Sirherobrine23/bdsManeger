@@ -1,12 +1,13 @@
 /* eslint-disable no-irregular-whitespace */
-const { resolve, join } = require("path");
+const { resolve } = require("path");
 const { error } = console;
 const { execSync } = require("child_process");
 const { CronJob } = require("cron");
 const path = require("path")
 const fs = require("fs");
 const shell = require("shelljs");
-const { getDesktopFolder, getConfigHome } = require("./GetPlatformFolder")
+const { getConfigHome } = require("./GetPlatformFolder")
+const commandExistsSync = require("command-exists").sync;
 
 const bds_core_package = resolve(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
@@ -27,15 +28,18 @@ function date(format) {
     else if (format === "hour_minu") return `${hour}-${minute}`
     else return `${day}-${month}-${yaer}_${hour}-${minute}`
 }
+module.exports.package_path = bds_core_package
 
-// System Architect (X64 or ARM64)
+const { bds_dir, log_dir } = require("./bdsgetPaths");
+module.exports = require("./bdsgetPaths");
+
+// System Architect (x64, aarch64 and others)
 const arch = process.arch
 module.exports.arch = arch
-var home, tmp, system, valid_platform
-module.exports.package_path = bds_core_package
+
+// -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+var system, valid_platform
 if (process.platform == "win32") {
-    home = process.env.USERPROFILE;
-    tmp = process.env.TMP
     system = "Windows";
     valid_platform = {
         "bedrock": true,
@@ -43,8 +47,6 @@ if (process.platform == "win32") {
         "java": true
     }
 } else if (process.platform == "linux") {
-    home = process.env.HOME;
-    tmp = "/tmp";
     system = "Linux";
     valid_platform = {
         "bedrock": true,
@@ -54,8 +56,6 @@ if (process.platform == "win32") {
 } else if (process.platform == "darwin") {
     if (arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
     else require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#macos-with-intel-processors");
-    home = process.env.HOME;
-    tmp = "/tmp";
     system = "MacOS";
     valid_platform = {
         "bedrock": false,
@@ -64,8 +64,6 @@ if (process.platform == "win32") {
     }
 } else {
     console.log(`The Bds Maneger Core does not support ${process.platform} systems, as no tests have been done.`);
-    home = process.env.HOME;
-    tmp = "/tmp";
     system = "Other";
     valid_platform = {
         "bedrock": false,
@@ -75,11 +73,6 @@ if (process.platform == "win32") {
     process.exit(254)
 }
 /* ------------------------------------------------------------ Take the variables of different systems ------------------------------------------------------------ */
-const desktop = getDesktopFolder()
-/**
- * With different languages ​​and systems we want to find the user's desktop for some link in the directory or even a nice shortcut
- */
-module.exports.desktop = desktop
 
 /**
  * Platforms valid from deferents systems
@@ -91,119 +84,9 @@ module.exports.valid_platform = valid_platform
   */
 module.exports.system = system
 
-/**
- * Temporary system directory
- */
-module.exports.tmp_dir = tmp
-
-/**
- * this variable makes available the location of the user profile directory as
- * 
- * Linux: /home/USER/
- * 
- * Windows: C:\\Users\\USER\\
- * 
- * MacOS: undefined
- */
-module.exports.home = home
-
-// save bds core files
-const bds_dir = join(home, "bds_core");
-/**
- * The most important directory of this project, here are saved some important things like:
- * 
- * The server software
- * 
- * configuration of the Bds Manager API
- * 
- * Backups etc ...
- */
-module.exports.bds_dir = bds_dir
-
-// Bds Backups Folder
-const bds_dir_backup = path.join(bds_dir, "backups");
-module.exports.backup_folder = bds_dir_backup
-
-// Move old configs to new folder
-const old_bds_dir = resolve(home, "bds_Server");
-if (fs.existsSync(old_bds_dir)){
-    if (fs.existsSync(bds_dir)) {
-        fs.renameSync(old_bds_dir, `${old_bds_dir}_Conflit_${Math.trunc(Math.abs(Math.random()) * 10000 * Math.random())}`);
-        throw Error("Conflit folders check home dir")
-    } else {
-        console.log("Moving the old files to the new folder");
-        fs.renameSync(old_bds_dir, bds_dir);
-    }
-}
-
-// Create Main save files
-if (!(fs.existsSync(bds_dir))){
-    console.log("Creating the bds directory")
-    fs.mkdirSync(bds_dir)
-    if (!(fs.existsSync(bds_dir))) shell.mkdir("-p", bds_dir);
-}
-
-// Servers Paths
-/* Java Path */
-const bds_dir_java = path.join(bds_dir, "java");
-module.exports.bds_dir_java = bds_dir_java
-if (!(fs.existsSync(bds_dir_java))){
-    console.log("Creating the bds directory to Java")
-    fs.mkdirSync(bds_dir_java)
-    if (!(fs.existsSync(bds_dir_java))) shell.mkdir("-p", bds_dir_java);
-}
-
-/* Bedrock Path */
-const bds_dir_bedrock = path.join(bds_dir, "bedrock");
-module.exports.bds_dir_bedrock = bds_dir_bedrock
-if (!(fs.existsSync(bds_dir_bedrock))){
-    console.log("Creating the bds directory to Bedrock")
-    fs.mkdirSync(bds_dir_bedrock)
-    if (!(fs.existsSync(bds_dir_bedrock))) shell.mkdir("-p", bds_dir_bedrock);
-}
-
-/* PocketMine Path */
-const bds_dir_pocketmine = path.join(bds_dir, "pocketmine");
-module.exports.bds_dir_pocketmine = bds_dir_pocketmine
-if (!(fs.existsSync(bds_dir_pocketmine))){
-    console.log("Creating the bds directory to Pocketmine")
-    fs.mkdirSync(bds_dir_pocketmine)
-    if (!(fs.existsSync(bds_dir_pocketmine))) shell.mkdir("-p", bds_dir_pocketmine);
-}
-
-// Create backup folder
-if (!(fs.existsSync(bds_dir_backup))){
-    fs.mkdirSync(bds_dir_backup)
-    if (!(fs.existsSync(bds_dir_backup))) shell.mkdir("-p", bds_dir_backup);
-}
-
-// Link Bds Dir in Desktop
-let fileShortcut;
-if (process.platform === "win32") fileShortcut = ".lnk";else fileShortcut = "";
-const BdsCoreInDesktop = resolve(desktop, "Bds Maneger Core"+fileShortcut)
-if (!(fs.existsSync(BdsCoreInDesktop))) {
-    console.log("Creating a Bds Core shortcut on the Desktop")
-    if (process.platform === "win32") require("create-desktop-shortcuts")({
-        windows: {
-            filePath: bds_dir,
-            name: "Bds Maneger Core"
-        }
-    });
-    else fs.symlinkSync(bds_dir, BdsCoreInDesktop)
-}
-
-// Log Dir
-const log_dir = path.join(bds_dir, "log");
 const log_date = date();
-module.exports.log_date = log_date
-module.exports.latest_log = path.join(bds_dir, "log", "latest.log")
-if (!(fs.existsSync(log_dir))){
-    fs.mkdirSync(log_dir)
-    if (!fs.existsSync(log_dir)){
-        console.log(`Creating the bds log dir (${log_dir})`)
-        if (!(fs.existsSync(log_dir))) shell.mkdir("-p", log_dir)
-    }
-}
+module.exports.log_date = log_date;
+module.exports.latest_log = path.join(bds_dir, "log", "latest.log");
 
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 if (typeof localStorage === "undefined") {
@@ -217,16 +100,26 @@ if (typeof localStorage === "undefined") {
 
 /* Minecraft Servers URLs and depedencies */
 // urls
-const SERVER_URLs = JSON.parse(execSync("curl -sS \"https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json\"").toString())
+
+var CurlWgetCommand;
+if (commandExistsSync("wget")) CurlWgetCommand = "wget -qO-";
+else if (commandExistsSync("curl")) CurlWgetCommand = "curl -sS";
+else throw new Error("Curl or Wget command not found")
+
+const SERVER_URLs = JSON.parse(execSync(`${CurlWgetCommand} "https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"`).toString())
 module.exports.SERVER_URLs = SERVER_URLs
 
 // PHP Bins
-const PHPbinsUrl = JSON.parse(execSync("curl -sS \"https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json\"").toString())
+const PHPbinsUrl = JSON.parse(execSync(`${CurlWgetCommand} "https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json"`).toString())
 module.exports.PHPbinsUrls = PHPbinsUrl
 
 // PHP bins System availble in Json File
 const PHPurlNames = Object.getOwnPropertyNames(PHPbinsUrl)
 module.exports.PHPurlNames = PHPurlNames
+
+// Google Drive Credentials
+const GoogleDriveCredentials = JSON.parse(execSync("curl -sS \"https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json\"").toString())
+module.exports.GoogleDriveCredentials = GoogleDriveCredentials
 
 /* ---------------------------------------------------------------------------- Variables ---------------------------------------------------------------------------- */
 // Configs
@@ -279,14 +172,21 @@ if (fs.existsSync(bds_config_file)){
     }
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
 }
+
+/**
+ * Update bds config version installed
+ * 
+ * @param bedrock
+ * @param java
+ * @param pocketmine
+ */
 module.exports.platform_version_update = function (version){
     let bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     if (bds_config.bds_platform === "bedrock") bds_config.platform_version.bedrock = version
     else if (bds_config.bds_platform === "java") bds_config.platform_version.java = version
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
     bds_config_export()
-}
-
+};
 
 /**
  * Save ID Google Drive folder to Backups
@@ -298,6 +198,7 @@ module.exports.save_google_id = function (id){
     bds_config_export()
     return true
 }
+
 module.exports.platform = bds_config.bds_platform
 module.exports.bds_platform = bds_config.bds_platform
 
@@ -312,9 +213,8 @@ function bds_config_export (){
     /**
      * Get current bds core config
      * 
-     * @example bds.bds_config.bds_platform // return bedrock or java
+     * @example bds_config.bds_platform // return bedrock, java or pocketmine
      * 
-     * * it updates every second
      */
     module.exports.bds_config = Config
     module.exports.platform = Config.bds_platform
@@ -339,6 +239,10 @@ module.exports.system_monitor = require("./scripts/system_monitor")
  * 
  * java change_platform("java")
  * @example change_platform("bedrock")
+ * 
+ * @param "bedrock"
+ * @param "java"
+ * @param "pocketmine"
  */
 function platform_update(plate){
     // Server platform detect
@@ -353,11 +257,13 @@ function platform_update(plate){
         bds_config_export()
         return true
     } catch (error) {
-        throw new Error(`Something happened error code: ${error}`)
+        throw new Error(`Something happened error: ${error}`)
     }
 }
+
 module.exports.change_platform = platform_update
 module.exports.platform_update = platform_update
+
 if (process.env.SERVER !== undefined){
     let PlaformSelectServer = (process.env.SERVER || "bedrock")
     if (PlaformSelectServer.includes("java", "JAVA")) platform_update("java");
@@ -422,8 +328,12 @@ if (!(fs.existsSync(user_file_connected))) fs.writeFileSync(user_file_connected,
 const file_user_check = fs.readFileSync(user_file_connected, "utf8");
 if (file_user_check.charAt(0) !== "{") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
 else if (file_user_check.slice(-1) !== "}") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
-module.exports.telegram_token = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"))).telegram_token
+
+module.exports.telegram_token = bds_config.telegram_token
+
 module.exports.internal_ip = require("./scripts/external_ip").internal_ip
+module.exports.external_ip = require("./scripts/external_ip").ip
+
 module.exports.telegram = require("./scripts/telegram_bot")
 
 const token_register = function (username, passworld) {
@@ -462,7 +372,8 @@ const { World_BAckup } = require("./scripts/backups");
 const { stop, BdsCommand } = require("./scripts/basic_server");
 const { config, get_config, config_example } = require("./scripts/bds_settings");
 const { mcpe, drive_backup } = require("./scripts/GoogleDrive");
-const download = require("./scripts/download")
+const download = require("./scripts/download");
+
 
 const Jobs = {};
 for (let index of bds_config.BackupCron) {

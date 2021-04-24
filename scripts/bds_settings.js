@@ -3,6 +3,7 @@ const path = require("path");
 const bds = require("../index");
 const propertiesToJSON = require("properties-to-json");
 const { join } = require("path");
+const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine } = require("../bdsgetPaths");
 const bedrockCPUThread = require("os").cpus().length;
 
 function bds_config(NewConfig){
@@ -44,7 +45,7 @@ function bds_config(NewConfig){
 
     var Config, ConfigFile;
     if (bds.platform === "bedrock") {
-        ConfigFile = join(bds.bds_dir_bedrock, "server.properties");
+        ConfigFile = join(bds_dir_bedrock, "server.properties");
         Config = [
             `level-name=${JsonConfig.world}`,
             `server-name=${JsonConfig.description}`,
@@ -73,7 +74,7 @@ function bds_config(NewConfig){
             "server-authoritative-block-breaking=false"
         ]
     } else if (bds.platform === "java") {
-        ConfigFile = join(bds.bds_dir_java, "server.properties");
+        ConfigFile = join(bds_dir_java, "server.properties");
         Config = [
             `level-name=${JsonConfig.world}`,
             `motd=${JsonConfig.description}`,
@@ -127,7 +128,7 @@ function bds_config(NewConfig){
             "max-world-size=29999984"
         ]
     } else if (bds.platform === "pocketmine") {
-        ConfigFile = join(bds.bds_dir_pocketmine, "server.properties");
+        ConfigFile = join(bds_dir_pocketmine, "server.properties");
         Config = [
             "language=eng",
             `level-name=${JsonConfig.world}`,
@@ -165,7 +166,7 @@ function bds_get_config(){
     const JsonConfig = {};
     
     if (bds.platform === "bedrock") {
-        config = propertiesToJSON(fs.readFileSync(path.join(bds.bds_dir_bedrock, "server.properties"), "utf8"));
+        config = propertiesToJSON(fs.readFileSync(path.join(bds_dir_bedrock, "server.properties"), "utf8"));
         
         // Players
         JsonConfig.world = config["level-name"];
@@ -184,7 +185,7 @@ function bds_get_config(){
         // JsonConfig.worldtype = "default";
     }
     else if (bds.platform === "java") {
-        config = propertiesToJSON(fs.readFileSync(path.join(bds.bds_dir_java, "server.properties"), "utf8"));
+        config = propertiesToJSON(fs.readFileSync(path.join(bds_dir_java, "server.properties"), "utf8"));
         
         // Players
         JsonConfig.world = config["level-name"];
@@ -203,7 +204,7 @@ function bds_get_config(){
         // JsonConfig.worldtype = config["level-type"];
     }
     else if (bds.platform === "pocketmine") {
-        config = propertiesToJSON(fs.readFileSync(path.join(bds.bds_dir_pocketmine, "server.properties"), "utf8"));
+        config = propertiesToJSON(fs.readFileSync(path.join(bds_dir_pocketmine, "server.properties"), "utf8"));
         
         // Players
         JsonConfig.world = config["level-name"];
