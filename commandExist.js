@@ -1,6 +1,4 @@
 const { readdirSync, existsSync } = require("fs");
-const { resolve, join } = require("path");
-
 function getBins() {
     var PATHs;
     if (process.platform === "win32") PATHs = process.env.PATH.split(/;/g);
