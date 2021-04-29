@@ -5,6 +5,7 @@ function getBins() {
     const PATHs = process.env.PATH.split(/;?:/g);
     const bin = []
     for (let path of PATHs){
+        if (path.includes("\\")) path = path.replaceAll("\\", "/")
         if (existsSync(path))
             for (let binS of readdirSync(resolve(path))) bin.push(binS)
     }
