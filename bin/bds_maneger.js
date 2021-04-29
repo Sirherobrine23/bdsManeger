@@ -23,7 +23,7 @@ if (argv.h || argv.help) {
         "  -k  --kill             Detect and kill bds servers",
         "  -p  --platform         Select server platform",
         "  -d  --server_download  server version to install, default \"latest\"",
-        "  -S --system_info      System info and test",
+        "  -S  --system_info      System info and test",
         "  -h  --help             Print this list and exit.",
         "  -v  --version          Print the version and exit."
     ].join("\n"));

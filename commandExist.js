@@ -1,20 +1,26 @@
 const { readdirSync, existsSync } = require("fs");
-const { resolve } = require("path");
+const { resolve, join } = require("path");
 
 function getBins() {
-    const PATHs = process.env.PATH.split(/;?:/g);
+    var PATHs;
+    if (process.platform === "win32") PATHs = process.env.PATH.split(/;/g);
+    else PATHs = process.env.PATH.split(/:/g);
     const bin = []
     for (let path of PATHs){
-        if (path.includes("\\")) path = path.replaceAll("\\", "/")
         if (existsSync(path))
-            for (let binS of readdirSync(resolve(path))) bin.push(binS)
+            for (let binS of readdirSync(path)) {
+                bin.push(binS)
+            }
     }
     return bin
 }
 
 function commdExist(command){
     let bin = getBins()
-    for (let index of bin) if (index === command) return true
+    for (let index of bin) {
+        if (index === command) return true;
+        else if (process.platform === "win32" && !command.includes(".exe")) {if (index === command+".exe") return true;}
+    }
     return false
 }
 

@@ -130,7 +130,7 @@ const current_version_bds_core = bds_maneger_version
 
 // Set default platform for bds maneger
 var default_platformConfig;
-if (process.platform.includes("win32", "linux")) default_platformConfig = "bedrock";else default_platformConfig = "java"
+if (valid_platform["bedrock"]) default_platformConfig = "bedrock";else if (valid_platform["java"]) default_platformConfig = "java"; else if (valid_platform["pocketmine"]) default_platformConfig = "pocketmine"; else default_platformConfig = "jsprismarine"
 
 // Config File
 if (fs.existsSync(bds_config_file)) bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"));else bds_config = {platform_version: {}, telegram_admin: ["all_users"]}
