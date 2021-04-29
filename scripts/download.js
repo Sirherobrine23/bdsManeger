@@ -2,10 +2,13 @@ var AdmZip = require("adm-zip");
 const { warn, info } = require("console");
 const { writeFileSync, existsSync, readFileSync, readdirSync } = require("fs");
 const { join, resolve } = require("path");
-const { platform_version_update, valid_platform, PHPbinsUrls } = require("../index")
-const { bds_config, bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine } = require("../bdsgetPaths")
+const bds = require("../index")
+const { platform_version_update, valid_platform, PHPbinsUrls } = bds
+const { bds_config, bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine } = require("../bdsgetPaths")
 const response = require("../index").SERVER_URLs
-const commandExists = require("command-exists").sync
+const commandExists = require("command-exists").sync;
+const { cloneSync } = require("../git_simples");
+const { execSync } = require("child_process");
 module.exports = function (version, force_install) {
     if (force_install === true) {
         info("Bds Maneger core force install")
@@ -18,7 +21,7 @@ module.exports = function (version, force_install) {
     var url;
 
     // Bedrock Installer Script
-    if (bds_config.bds_platform === "bedrock") {
+    if (bds.platform === "bedrock") {
         if (valid_platform.bedrock === true){
             var server_configs, permissions, whitelist;
             if (version === "latest") version = response.bedrock_latest
@@ -47,7 +50,7 @@ module.exports = function (version, force_install) {
         } else throw Error("Bedrock Not suported")
     }
     // java Installer Script
-    else if (bds_config.bds_platform === "java") {
+    else if (bds.platform === "java") {
         if (valid_platform.java === true){
             if (version === "latest") version = response.java_latest
             if (version !== bds_config.platform_version.java){
@@ -67,7 +70,7 @@ module.exports = function (version, force_install) {
         } else throw Error("Java not suported")
     }
     // Pocketmine-MP Installer Script
-    else  if (bds_config.bds_platform === "pocketmine") {
+    else  if (bds.platform === "pocketmine") {
         if (valid_platform.pocketmine === true) {
             if (version === "latest") version = response.PocketMine_latest
             url = response.PocketMine[version].url
@@ -120,5 +123,18 @@ module.exports = function (version, force_install) {
                 } else if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
             })
         } else throw Error("Pocketmine not suported")
+    } else if (bds.platform === "jsprismarine") {
+        if (valid_platform.jsprismarine === true) {
+            console.log("At work")
+            console.log("Cloning the repository");
+            cloneSync("https://github.com/JSPrismarine/JSPrismarine.git", bds_dir_jsprismarine, 1)
+            console.log("Copying the server");
+            for (let command of [
+                "npm install",
+                "npx -y lerna bootstrap",
+                "npm run build"
+            ]) console.log(execSync(command, {cwd: bds_dir_jsprismarine}).toString("ascii"));
+            
+        } else throw Error("jsprismarine not suported")
     } else throw Error("Bds maneger Config file error")
 }

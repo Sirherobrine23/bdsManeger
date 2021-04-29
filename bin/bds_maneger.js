@@ -5,9 +5,11 @@ const bds = require("../index")
 const readline = require("readline");
 var argv = require("minimist")(process.argv.slice(2));
 
+if (Object.getOwnPropertyNames(argv).length === 1 || Object.getOwnPropertyNames(argv).length === 0) argv.help = "a"
 var server =  (argv.p || argv.platform );
 var version = (argv.v || argv.version);
-var bds_version = (argv.V || argv.server_version);
+var SystemCheck = (argv.SS || argv.system_info);
+var bds_version = (argv.d || argv.server_download);
 var start = (argv.s || argv.server_version);
 
 // Bds Maneger CLI Help
@@ -16,12 +18,13 @@ if (argv.h || argv.help) {
         "usage: bds_maneger [options]",
         "",
         "options:",
-        "  -s --start           Start Server",
-        "  -k --kill            Detect and kill bds servers",
-        "  -p --platform        Select server platform",
-        "  -V --server_version  server version to install, default \"latest\"",
-        "  -h --help            Print this list and exit.",
-        "  -v --version         Print the version and exit."
+        "  -s  --start            Start Server",
+        "  -k  --kill             Detect and kill bds servers",
+        "  -p  --platform         Select server platform",
+        "  -d  --server_download  server version to install, default \"latest\"",
+        "  -SS --system_info      System info and test",
+        "  -h  --help             Print this list and exit.",
+        "  -v  --version          Print the version and exit."
     ].join("\n"));
     process.exit();
 }
@@ -32,14 +35,24 @@ if (version) {
     process.exit();
 }
 
+if (SystemCheck) {
+    console.log([
+        `System: ${process.platform}`,
+        `Arch: ${process.arch}`,
+        `Bds Maneger core Platforms: ${JSON.stringify(bds.valid_platform, null, 4)}`
+    ].join("\n"))
+}
+
+// Bds kill
 if (argv.k || argv.kill ) bds.kill();
 
 // Set Bds Platform
-if (server || server !== "") {
+if (server) {
     if (server === "BEDROCK"||server === "bedrock") bds.change_platform("bedrock");
     else if (server === "POCKETMINE-MP" || server === "pocketmine" || server === "pocketmine" || server === "POCKETMINE") bds.change_platform("pocketmine");
     else if (server === "JAVA"||server === "java") bds.change_platform("java");
-    else console.warn("Invalid platform, supported platforms are bedrock, java and pocketmine")
+    else if (server === "JSPrismarine" || server === "JSPRISMARINE" || server === "jsprismarine") bds.platform_update("jsprismarine");
+    else console.log("Add one of the valid platforms: bedrock, pocketmine, java, jsprismarine");
 }
 
 // Download server
@@ -51,24 +64,25 @@ if (bds_version){
         console.error(error)
         process.exit(165)
     }
-} else {
-    if (start) {
-        console.info("Send a \"stop\" command to stop the server and exit");
-        console.info("Use CTRL + C to force exit");
-        const bds_server = bds.start();
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-        bds_server.stdout.on("data", data => {if (data.slice(-1) === "\n") data = data.slice(0, -1);console.log(data);})
-        bds_server.on("exit", function (code){
-            console.log("leaving the server, status code: " ,code)
-            process.exit(code)
-        })
-        bds.api();
-        rl.on("line", (input) => {
-            if (input === "stop") {rl.close();console.log("\n************ ------------ Going out ------------ ************\n");}
-            bds.command(input)
-        });
-    } else {console.log("Start with bds-maneger -s");process.exit(1)}
+}
+
+// Start server
+if (start) {
+    console.info("Send a \"stop\" command to stop the server and exit");
+    console.info("Use CTRL + C to force exit");
+    const bds_server = bds.start();
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    bds_server.stdout.on("data", data => {if (data.slice(-1) === "\n") data = data.slice(0, -1);console.log(data);})
+    bds_server.on("exit", function (code){
+        console.log("leaving the server, status code: " ,code)
+        process.exit(code)
+    })
+    bds.api();
+    rl.on("line", (input) => {
+        if (input === "stop") {rl.close();console.log("\n************ ------------ Going out ------------ ************\n");}
+        bds.command(input)
+    });
 }

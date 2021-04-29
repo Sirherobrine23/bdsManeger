@@ -3,7 +3,8 @@ module.exports = () => {
     var KillMinecraftPlatform;
     var ToKill = [
         "MinecraftServerJava.jar",
-        "PocketMine-MP.phar"
+        "PocketMine-MP.phar",
+        "Server.js"
     ];
     if (process.platform === "linux") ToKill.push("bedrock_server")
     else if (process.platform === "win32") ToKill.push("bedrock_server.exe")

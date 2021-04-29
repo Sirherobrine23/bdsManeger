@@ -78,5 +78,6 @@ module.exports = function (data){
     if (bds.platform === "bedrock") return Bedrock(data);
     else if (bds.platform === "java") return false;
     else if (bds.platform === "pocketmine") return false
+    else if (bds.platform === "jsprismarine") return false
     else throw new Error("Plafotform Error !!")
 };

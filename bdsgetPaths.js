@@ -72,6 +72,9 @@ module.exports.bds_dir_java = bds_dir_java
 const bds_dir_pocketmine = path.join(bds_dir, "pocketmine");
 module.exports.bds_dir_pocketmine = bds_dir_pocketmine
 
+const bds_dir_jsprismarine = path.join(bds_dir, "jsprismarine");
+module.exports.bds_dir_jsprismarine = bds_dir_jsprismarine
+
 // Move old configs to new folder
 const old_bds_dir = resolve(home, "bds_Server");
 if (fs.existsSync(old_bds_dir)){
@@ -111,6 +114,13 @@ if (!(fs.existsSync(bds_dir_pocketmine))){
     console.log("Creating the bds directory to Pocketmine")
     fs.mkdirSync(bds_dir_pocketmine)
     if (!(fs.existsSync(bds_dir_pocketmine))) shell.mkdir("-p", bds_dir_pocketmine);
+}
+
+/* JSPrismarine Path */
+if (!(fs.existsSync(bds_dir_jsprismarine))){
+    console.log("Creating the bds directory to JSPrismarine")
+    fs.mkdirSync(bds_dir_jsprismarine)
+    if (!(fs.existsSync(bds_dir_jsprismarine))) shell.mkdir("-p", bds_dir_jsprismarine);
 }
 
 // Create backup folder

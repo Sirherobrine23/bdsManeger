@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.9.0",
+  "version": "1.9.1.2",
   "description": "Scripts to manage minecraft server's",
   "private": false,
   "main": "index.js",
@@ -74,7 +74,8 @@
     "telegraf": "^4.0.0"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=14",
+    "npm": ">=7"
   },
   "devDependencies": {
     "eslint": "^7.19.0"

@@ -41,17 +41,20 @@ module.exports.arch = arch
 var system, valid_platform
 if (process.platform == "win32") {
     system = "Windows";
+    // ia32
     valid_platform = {
         "bedrock": true,
         "pocketmine": true,
-        "java": true
+        "java": true,
+        "jsprismarine": true
     }
 } else if (process.platform == "linux") {
     system = "Linux";
     valid_platform = {
         "bedrock": true,
         "pocketmine": true,
-        "java": true
+        "java": true,
+        "jsprismarine": true
     }
 } else if (process.platform == "darwin") {
     if (arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
@@ -60,7 +63,8 @@ if (process.platform == "win32") {
     valid_platform = {
         "bedrock": false,
         "pocketmine": true,
-        "java": true
+        "java": true,
+        "jsprismarine": true
     }
 } else {
     console.log(`The Bds Maneger Core does not support ${process.platform} systems, as no tests have been done.`);
@@ -68,7 +72,8 @@ if (process.platform == "win32") {
     valid_platform = {
         "bedrock": false,
         "pocketmine": false,
-        "java": true
+        "java": true,
+        "jsprismarine": false
     }
     process.exit(254)
 }
@@ -125,53 +130,31 @@ module.exports.GoogleDriveCredentials = GoogleDriveCredentials
 // Configs
 var bds_config, bds_config_file = path.join(bds_dir, "bds_config.json");
 const current_version_bds_core = bds_maneger_version
+
+// Set default platform for bds maneger
 var default_platformConfig;
-if (process.platform.includes("win32", "linux")) default_platformConfig = "bedrock"
-else default_platformConfig = "java"
-if (fs.existsSync(bds_config_file)){
-    bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
-    if (bds_config.version !== current_version_bds_core){
-        
-        if (bds_config.platform_version === undefined) bds_config.platform_version = {}
-        // New Config JSon
-        bds_config = {
-            "version": current_version_bds_core,
-            "bds_pages": (bds_config.bds_pages||"default"),
-            "bds_platform": (bds_config.bds_platform||default_platformConfig),
-            "platform_version": {
-                "bedrock": (bds_config.platform_version.bedrock||"latest"),
-                "java": (bds_config.platform_version.java||"latest")
-            },
-            "bds_ban": (bds_config.bds_ban||["Steve", "Alex", "steve", "alex"]),
-            "telegram_token": (bds_config.telegram_token||undefined),
-            "Google_Drive_root_backup_id": (bds_config.Google_Drive_root_backup_id||undefined),
-            "BackupCron": (bds_config.BackupCron||[]),
-            "telegram_admin": [
-                "all_users"
-            ]
-        }
-        fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
-        bds_config_export()
-    }
-} else {
-    bds_config = {
-        "version": current_version_bds_core,
-        "bds_pages": "default",
-        "bds_platform": default_platformConfig,
-        "platform_version": {
-            "bedrock": "latest",
-            "java": "latest"
-        },
-        "bds_ban": ["Steve", "Alex", "steve", "alex"],
-        "telegram_token": "not User defined",
-        "Google_Drive_root_backup_id": undefined,
-        "BackupCron": [],
-        "telegram_admin": [
-            "all_users"
-        ]
-    }
-    fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
+if (process.platform.includes("win32", "linux")) default_platformConfig = "bedrock";else default_platformConfig = "java"
+
+// Config File
+if (fs.existsSync(bds_config_file)) bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"));else bds_config = {platform_version: {}, telegram_admin: ["all_users"]}
+bds_config = {
+    "version": current_version_bds_core,
+    "bds_pages": (bds_config.bds_pages || "default"),
+    "bds_platform": (bds_config.bds_platform || default_platformConfig),
+    "platform_version": {
+        "bedrock": (bds_config.platform_version.bedrock || "latest"),
+        "java": (bds_config.platform_version.java || "latest"),
+        "pocketmine": (bds_config.platform_version.pocketmine || "latest"),
+        "jsprismarine": "latest"
+    },
+    "bds_ban": (bds_config.bds_ban || ["Steve", "Alex", "steve", "alex"]),
+    "telegram_token": (bds_config.telegram_token || "not User defined"),
+    "Google_Drive_root_backup_id": (bds_config.Google_Drive_root_backup_id || undefined),
+    "BackupCron": (bds_config.BackupCron||[]),
+    "telegram_admin": bds_config.telegram_admin
 }
+fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
+bds_config_export()
 
 /**
  * Update bds config version installed
@@ -184,6 +167,8 @@ module.exports.platform_version_update = function (version){
     let bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"))
     if (bds_config.bds_platform === "bedrock") bds_config.platform_version.bedrock = version
     else if (bds_config.bds_platform === "java") bds_config.platform_version.java = version
+    else if (bds_config.bds_platform === "pocketmine") bds_config.platform_version.pocketmine = version
+    else if (bds_config.bds_platform === "jsprismarine") bds_config.platform_version.jsprismarine = version
     fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
     bds_config_export()
 };
@@ -213,7 +198,7 @@ function bds_config_export (){
     /**
      * Get current bds core config
      * 
-     * @example bds_config.bds_platform // return bedrock, java or pocketmine
+     * @example bds_config.bds_platform // return bedrock, java, pocketmine or jsprismarine
      * 
      */
     module.exports.bds_config = Config
@@ -238,15 +223,21 @@ module.exports.system_monitor = require("./scripts/system_monitor")
  * bedrock change_platform("bedrock")
  * 
  * java change_platform("java")
+ * 
+ * pocketmine change_platform("pocketmine")
+ * 
+ * jsprismarine change_platform("jsprismarine")
+ * 
  * @example change_platform("bedrock")
  * 
  * @param "bedrock"
  * @param "java"
  * @param "pocketmine"
+ * @param "jsprismarine"
  */
 function platform_update(plate){
     // Server platform detect
-    if (!(plate === "java" || plate === "bedrock" || plate === "pocketmine")) throw new Error(`platform not identified or does not exist, ${plate} informed platform`);
+    if (!(plate === "java" || plate === "bedrock" || plate === "pocketmine" || plate === "jsprismarine")) throw new Error(`platform not identified or does not exist, ${plate} informed platform`);
     // Platforma Update
     const bds_config = path.join(bds_dir, "bds_config.json");
     try {
@@ -269,6 +260,7 @@ if (process.env.SERVER !== undefined){
     if (PlaformSelectServer.includes("java", "JAVA")) platform_update("java");
     else if (PlaformSelectServer.includes("bedrock", "BEDROCK")) platform_update("bedrock");
     else if (PlaformSelectServer.includes("pocketmine", "POCKETMINE", "pocketmine-mp", "POCKETMINE-MP")) platform_update("pocketmine");
+    else if (PlaformSelectServer.includes("JSPrismarine", "JSPRISMARINE", "jsprismarine")) platform_update("jsprismarine");
     else throw new Error("Server Plaform Error: "+process.env.SERVER)
 }
 

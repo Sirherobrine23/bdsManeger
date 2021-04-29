@@ -5,7 +5,7 @@ const { resolve } = require("path");
 const commandExists = require("command-exists").sync;
 const saveUser = require("./SaveUserInJson");
 const bds = require("../index");
-const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, log_dir } = require("../bdsgetPaths");
+const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine ,log_dir } = require("../bdsgetPaths");
 
 module.exports.start = () => {
     if (!(bds.detect())){
@@ -69,6 +69,11 @@ module.exports.start = () => {
                     env: process.env,
                     cwd: bds_dir_pocketmine
                 };
+        } else if (bds.platform === "jsprismarine") {
+            Command = "node ./packages/server/dist/Server.js --warning --circular";
+                Options = {
+                    cwd: bds_dir_jsprismarine
+                };
         } else throw Error("Bds Config Error")
 
         // Start Command
@@ -85,9 +90,23 @@ module.exports.start = () => {
                     }
             });
         }
+
+        // save User in Json
         start_server.stdout.on("data", data => saveUser(data))
+        start_server.stderr.on("data", data => saveUser(data))
+
+        // Clear latest.log
+        fs.writeFileSync(path.join(log_dir, "latest.log"), "")
+
+        // stdout
         start_server.stdout.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
-        start_server.stdout.pipe(fs.createWriteStream(path.join(log_dir, "latest.log"), {flags: "w"}));
+        start_server.stdout.pipe(fs.createWriteStream(path.join(log_dir, "latest.log"), {flags: "a"}));
+
+        // stderr
+        start_server.stderr.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
+        start_server.stderr.pipe(fs.createWriteStream(path.join(log_dir, "latest.log"), {flags: "a"}));
+
+        // Global and Run
         global.bds_log_string = ""
         start_server.stdout.on("data", function(data){
             if (global.bds_log_string === undefined || global.bds_log_string === "") global.bds_log_string = data;

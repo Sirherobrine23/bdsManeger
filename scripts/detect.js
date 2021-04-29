@@ -3,7 +3,8 @@ module.exports = () => {
     var command;
     const detectFilesExec = [
         "MinecraftServerJava.jar",
-        "PocketMine-MP.phar"
+        "PocketMine-MP.phar",
+        "Server.js"
     ];
     if (process.platform === "linux") detectFilesExec.push("bedrock_server");else if (process.platform === "win32") detectFilesExec.push("bedrock_server.exe")
 
@@ -18,7 +19,7 @@ module.exports = () => {
                 "command": command
             }
             if (process.env.debug === "true") console.log(JsonReturn);
-            if (JsonReturn.status === 0) {console.warn(`${index} Detected`);return true}
+            if (JsonReturn.status === 0) return true
         } catch (error) {
             console.log(error);
         }
