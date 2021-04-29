@@ -1,5 +1,5 @@
 const { execSync, exec } = require("child_process")
-const commandExists = require("command-exists").sync
+const commandExists = require("./commandExist").sync
 const { resolve } = require("path")
 const { getConfigHome } = require("./GetPlatformFolder")
 

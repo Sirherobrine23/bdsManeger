@@ -3,12 +3,13 @@
 process.env.IS_BIN_BDS = true;process.title = "Bds Maneger CLI";
 const bds = require("../index")
 const readline = require("readline");
+const { execSync } = require("child_process");
 var argv = require("minimist")(process.argv.slice(2));
 
 if (Object.getOwnPropertyNames(argv).length === 1 || Object.getOwnPropertyNames(argv).length === 0) argv.help = "a"
 var server =  (argv.p || argv.platform );
 var version = (argv.v || argv.version);
-var SystemCheck = (argv.SS || argv.system_info);
+var SystemCheck = (argv.S || argv.system_info);
 var bds_version = (argv.d || argv.server_download);
 var start = (argv.s || argv.server_version);
 
@@ -22,7 +23,7 @@ if (argv.h || argv.help) {
         "  -k  --kill             Detect and kill bds servers",
         "  -p  --platform         Select server platform",
         "  -d  --server_download  server version to install, default \"latest\"",
-        "  -SS --system_info      System info and test",
+        "  -S --system_info      System info and test",
         "  -h  --help             Print this list and exit.",
         "  -v  --version          Print the version and exit."
     ].join("\n"));
@@ -37,10 +38,18 @@ if (version) {
 
 if (SystemCheck) {
     console.log([
-        `System: ${process.platform}`,
-        `Arch: ${process.arch}`,
-        `Bds Maneger core Platforms: ${JSON.stringify(bds.valid_platform, null, 4)}`
+        `Bds Maneger core version: ${bds.package_json.version}`,
+        `System: ${process.platform}, Arch: ${process.arch}`,
+        "Bds Maneger core Platforms:",
+        `   - Bedrock:        ${bds.valid_platform.bedrock}`,
+        `   - Java:           ${bds.valid_platform.java}`,
+        `   - Pocketmine:     ${bds.valid_platform.pocketmine}`,
+        `   - JSPrismarine:   ${bds.valid_platform.jsprismarine}`,
+        `cURL installed: ${require("../commandExist")("curl")}, Wget installed: ${require("../commandExist")("wget")}`,
+        `Java installed: ${require("../commandExist")("java")}`,
+        `NodeJS version: ${process.versions.node}, v8: ${process.versions.v8}, npm version: ${execSync("npm -v").toString("ascii")}`,
     ].join("\n"))
+    process.exit(0)
 }
 
 // Bds kill

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const commandExist = require("command-exists").sync
+const commandExist = require("./commandExist")
 if (commandExist("curl") || commandExist("wget")) {
     console.log("Curl/Wget is already installed.");
     process.exit(0)

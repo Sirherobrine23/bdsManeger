@@ -2,7 +2,7 @@ const { exec, execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { resolve } = require("path");
-const commandExists = require("command-exists").sync;
+const commandExists = require("../commandExist").sync;
 const saveUser = require("./SaveUserInJson");
 const bds = require("../index");
 const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine ,log_dir } = require("../bdsgetPaths");
@@ -39,7 +39,7 @@ module.exports.start = () => {
             if (ram_max <= 300) throw new Error("Low ram memorie");
 
             if (ram_max >= 1000) ram_max = Math.trunc(ram_max / 10);
-            if (require("command-exists").sync("java")) {
+            if (require("../commandExist").sync("java")) {
                 Command = `java -Xmx${ram_max}M -Xms${ram_minimun || ram_max}M -jar MinecraftServerJava.jar nogui`;
                 Options = {
                     cwd: bds_dir_java

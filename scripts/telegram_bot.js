@@ -6,8 +6,6 @@ function boot_telegram_bot(){
     const IsElectron = process.argv[0].includes("electron");
     const {readFileSync} = require("fs");
     const {resolve} = require("path");
-    var monitor = require("./system_monitor");
-
     // Set Telegram Bot
     const bot = new Telegraf(telegram_token)
     bot.start((ctx) => {
@@ -81,14 +79,6 @@ Message Control: ❌`
             if (current_user[con].connected) {connected = connected + 1;player += `- ${current_user[con].player}\n\n`}
         }
     const text = `-------- Bds Core --------
------------- CPU ------------
-- Bds CPU usage: ${monitor.bds_cpu}%
-- Total CPU utilization: ${monitor.current_cpu}%
-
------------- Ram memory ------------
-- Total ram memory: ${monitor.ram_total} GB
-- Total free ram memory: ${monitor.ram_free} GB
-
 ------------ Players ------------
 
 - Players currently logged on to the server: ${connected}

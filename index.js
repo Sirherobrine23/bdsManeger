@@ -7,7 +7,7 @@ const path = require("path")
 const fs = require("fs");
 const shell = require("shelljs");
 const { getConfigHome } = require("./GetPlatformFolder")
-const commandExistsSync = require("command-exists").sync;
+const commandExistsSync = require("./commandExist").sync;
 
 const bds_core_package = resolve(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
@@ -38,51 +38,40 @@ const arch = process.arch
 module.exports.arch = arch
 
 // -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-var system, valid_platform
+var system,
+    valid_platform = {
+        bedrock: true,
+        pocketmine: true,
+        java: true,
+        jsprismarine: true
+    }
 if (process.platform == "win32") {
     system = "Windows";
     // ia32
-    valid_platform = {
-        "bedrock": true,
-        "pocketmine": true,
-        "java": true,
-        "jsprismarine": true
+    if (process.arch !== "x64") {
+        valid_platform["bedrock"] = false
+        valid_platform["pocketmine"] = false
     }
 } else if (process.platform == "linux") {
     system = "Linux";
-    valid_platform = {
-        "bedrock": true,
-        "pocketmine": true,
-        "java": true,
-        "jsprismarine": true
+    if (!(process.arch === "x64" || process.arch === "aarch64")) {
+        valid_platform["bedrock"] = false
+        valid_platform["pocketmine"] = false
     }
 } else if (process.platform == "darwin") {
     if (arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
     else require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#macos-with-intel-processors");
     system = "MacOS";
-    valid_platform = {
-        "bedrock": false,
-        "pocketmine": true,
-        "java": true,
-        "jsprismarine": true
-    }
+    valid_platform["bedrock"] = false
 } else if (process.platform === "android") {
     system = "Android";
-    valid_platform = {
-	"bedrock": false,
-	"pocketmine": true,
-	"java": false,
-	"jsprismarine": true
-    }
+    valid_platform["bedrock"] = false
+    valid_platform["java"] = false
 } else {
     console.log(`The Bds Maneger Core does not support ${process.platform} systems, as no tests have been done.`);
     system = "Other";
-    valid_platform = {
-        "bedrock": false,
-        "pocketmine": false,
-        "java": true,
-        "jsprismarine": false
-    }
+    valid_platform["bedrock"] = false
+    valid_platform["pocketmine"] = false
     process.exit(254)
 }
 /* ------------------------------------------------------------ Take the variables of different systems ------------------------------------------------------------ */
@@ -219,11 +208,6 @@ function getBdsConfig (){
     return JSON.parse(Config)
 }
 module.exports.getBdsConfig = getBdsConfig
-
-/**
- * Get system CPU and ram memorie utilazations
- */
-module.exports.system_monitor = require("./scripts/system_monitor")
 
 /**
  * with this command we can change the platform with this script
