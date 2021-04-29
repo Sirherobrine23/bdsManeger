@@ -4,7 +4,7 @@ const { existsSync, readFileSync, mkdirSync } = require("fs");
 function getAppDate(){
     if (process.platform === "win32") return resolve(process.env.USERPROFILE, "AppData", "Roaming");
     else if (process.platform === "darwin") return resolve(process.env.HOME, "Library", "Application Support");
-    else if (process.platform === "linux") return resolve(process.env.HOME, ".local", "share");
+    else if (process.platform === "linux" || process.platform === "android") return resolve(process.env.HOME, ".local", "share");
 }
 
 var LinuxXDGJson = {};
@@ -24,6 +24,7 @@ if (process.platform === "linux") {
 function getDesktopFolder(){
     if (process.platform === "win32") return resolve(process.env.USERPROFILE, "Desktop");
     else if (process.platform === "darwin") return  resolve(process.env.HOME, "Desktop");
+    else if (process.platform === "android") return resolve(process.env.HOME);
     else if (process.platform === "linux") {
         var desktop;
         if (LinuxXDGJson["XDG_DESKTOP_DIR"]) desktop = LinuxXDGJson["XDG_DESKTOP_DIR"];

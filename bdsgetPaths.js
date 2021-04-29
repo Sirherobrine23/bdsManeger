@@ -15,7 +15,7 @@ module.exports.package_path = bds_core_package
 if (process.platform == "win32") {
     home = process.env.USERPROFILE;
     tmp = process.env.TMP
-} else if (process.platform === "linux" || process.platform === "darwin" || process.platform === "freebsd" || process.platform === "openbsd") {
+} else if (process.platform === "linux" || process.platform === "android" || process.platform === "darwin" || process.platform === "freebsd" || process.platform === "openbsd") {
     home = (process.env.HOME || "/root")
     tmp = (process.env.TMPDIR || "/tmp")
 }

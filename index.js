@@ -66,6 +66,14 @@ if (process.platform == "win32") {
         "java": true,
         "jsprismarine": true
     }
+} else if (process.platform === "android") {
+    system = "Android";
+    valid_platform = {
+	"bedrock": false,
+	"pocketmine": true,
+	"java": false,
+	"jsprismarine": true
+    }
 } else {
     console.log(`The Bds Maneger Core does not support ${process.platform} systems, as no tests have been done.`);
     system = "Other";
