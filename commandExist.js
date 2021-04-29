@@ -1,11 +1,12 @@
-const { readdirSync } = require("fs");
+const { readdirSync, existsSync } = require("fs");
 const { resolve } = require("path");
 
 function getBins() {
     const PATHs = process.env.PATH.split(/;?:/g);
     const bin = []
     for (let path of PATHs){
-        for (let binS of readdirSync(resolve(path))) bin.push(binS)
+        if (existsSync(path))
+            for (let binS of readdirSync(resolve(path))) bin.push(binS)
     }
     return bin
 }
