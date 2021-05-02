@@ -26,4 +26,4 @@ function commdExist(command){
 }
 
 module.exports = commdExist
-module.exports.sync = 
+module.exports.sync = commdExist
