@@ -28,7 +28,7 @@ module.exports = function (version, force_install) {
             if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");
             if (existsSync(join(bds_dir_bedrock, "permissions.json"))) permissions = readFileSync(join(bds_dir_bedrock, "permissions.json"), "utf8");
             if (existsSync(join(bds_dir_bedrock, "whitelist.json"))) whitelist = readFileSync(join(bds_dir_bedrock, "whitelist.json"), "utf8");
-            url = response.bedrock[version][bds.arch][process.platform]
+            url = response.bedrock[version]["x64"][process.platform]
             if (response.bedrock[version].data) console.log(`Server data publish: ${response.bedrock[version].data}`)
             if (bds_config.platform_version.bedrock !== version) {
                 fetch(url).then(response => response.arrayBuffer()).then(response => Buffer.from(response)).then(response => {

@@ -40,7 +40,7 @@ function sendLogToTelemetry(){
         text: fs.readFileSync(infolog, "utf8")
     };
     fs.writeFileSync(infolog, "");
-    const telemetryUrl = `${package_json.telemetry_url[1]}/id/${bds_config.TelemetryID}/error`;
+    const telemetryUrl = `${package_json.telemetry_url[0]}/id/${bds_config.TelemetryID}/error`;
     fetch(telemetryUrl, {method: "POST", mode: "cors", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})
 }
 
