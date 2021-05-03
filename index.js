@@ -33,9 +33,9 @@ module.exports.package_path = bds_core_package
 
 const { bds_dir, log_dir } = require("./bdsgetPaths");
 
-
 // System Architect (x64, aarch64 and others)
-const arch = process.arch
+var arch;
+if (process.arch === "arm64") arch = "aarch64"; else arch = process.arch
 module.exports.arch = arch
 
 // -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -93,6 +93,8 @@ module.exports.system = system
 const log_date = date();
 module.exports.log_date = log_date;
 module.exports.latest_log = path.join(bds_dir, "log", "latest.log");
+
+module.exports.package_json = JSON.parse(fs.readFileSync(bds_core_package))
 
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 if (typeof localStorage === "undefined") {
@@ -159,21 +161,7 @@ bds_config = {
 fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
 bds_config_export()
 
-// function sendLogToTelemetry(){
-//     try {
-//         fetch(`https://telemetry.the-bds-maneger.org/error/${bds_config.TelemetryID}`, {
-//             body: JSON.stringify({
-//                 text: fs.readFileSync(BdsManegerLogFile, "utf8")
-//             }),
-//             mode: "cors"
-//         }).then(res => {if (!res.ok) throw new Error(res);else return res.json();}).then(text => console.log(text))
-//     } catch (error) {
-//         console.log(error);
-//     }
-// }
-// if (bds_config.LoadTelemetry) {
-//     [ "uncaughtException", "unhandledRejection", "exit", "SIGQUIT", "SIGILL", "SIGTERM"].forEach((interruptSignal) => process.on(interruptSignal, function (){sendLogToTelemetry();}));
-// }
+require("./logger")
 
 /**
  * Update bds config version installed
@@ -320,8 +308,6 @@ module.exports.java_latest = SERVER_URLs.java_latest;
  */
 module.exports.api = require("./rest/api");
 module.exports.rest = require("./rest/api");
-
-module.exports.package_json = JSON.parse(fs.readFileSync(bds_core_package))
 
 // ------------
 const user_file_connected = path.join(bds_dir, "bds_usersV2.json")

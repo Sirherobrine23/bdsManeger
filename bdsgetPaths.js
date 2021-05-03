@@ -74,9 +74,6 @@ module.exports.bds_dir_pocketmine = bds_dir_pocketmine
 const bds_dir_jsprismarine = path.join(bds_dir, "jsprismarine");
 module.exports.bds_dir_jsprismarine = bds_dir_jsprismarine
 
-const BdsManegerLogFile = join(tmp, "BdsManegerLog.log")
-module.exports.BdsManegerLogFile = BdsManegerLogFile
-
 // Move old configs to new folder
 const old_bds_dir = resolve(home, "bds_Server");
 if (fs.existsSync(old_bds_dir)){

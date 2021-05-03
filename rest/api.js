@@ -39,7 +39,7 @@ function api(port_api){
             },
             "running": bds.detect(),
             "bds_platform": bds.bds_plataform,
-            "system_arch": process.arch
+            "system_arch": bds.arch
         }
         return res.send(json_http);
     });

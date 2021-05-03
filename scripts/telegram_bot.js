@@ -1,11 +1,12 @@
-function boot_telegram_bot(){
-    const { Telegraf } = require("telegraf");
+const { Telegraf } = require("telegraf");
     const {start, stop, detect, players_files, telegram_token} = require("../index");
     const bds_command = require("../index").command;
     const {checkUser} = require("./check");
     const IsElectron = process.argv[0].includes("electron");
     const {readFileSync} = require("fs");
     const {resolve} = require("path");
+function boot_telegram_bot(){
+    console.warn("git add ")
     // Set Telegram Bot
     const bot = new Telegraf(telegram_token)
     bot.start((ctx) => {

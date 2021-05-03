@@ -6,7 +6,7 @@ const bds = require("../index")
 const { platform_version_update, valid_platform, PHPbinsUrls } = bds
 const { bds_config, bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine } = require("../bdsgetPaths")
 const response = require("../index").SERVER_URLs
-const commandExists = require("../commandExist").sync;
+const commandExists = require("../commandExist");
 const { cloneSync } = require("../git_simples");
 const { execSync } = require("child_process");
 module.exports = function (version, force_install) {
@@ -28,7 +28,7 @@ module.exports = function (version, force_install) {
             if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");
             if (existsSync(join(bds_dir_bedrock, "permissions.json"))) permissions = readFileSync(join(bds_dir_bedrock, "permissions.json"), "utf8");
             if (existsSync(join(bds_dir_bedrock, "whitelist.json"))) whitelist = readFileSync(join(bds_dir_bedrock, "whitelist.json"), "utf8");
-            url = response.bedrock[version][process.arch][process.platform]
+            url = response.bedrock[version][bds.arch][process.platform]
             if (response.bedrock[version].data) console.log(`Server data publish: ${response.bedrock[version].data}`)
             if (bds_config.platform_version.bedrock !== version) {
                 fetch(url).then(response => response.arrayBuffer()).then(response => Buffer.from(response)).then(response => {
@@ -86,12 +86,12 @@ module.exports = function (version, force_install) {
                 if (CheckBinPHPFolder||force_install) {
                     var urlPHPBin;
                     try {
-                        urlPHPBin = PHPbinsUrls[process.platform][process.arch];
+                        urlPHPBin = PHPbinsUrls[process.platform][bds.arch];
                     } catch (error) {
                         throw new Error({
                             error: "Not found to platform",
                             platform: process.platform,
-                            arch: process.arch,
+                            arch: bds.arch,
                             Others_support: PHPbinsUrls.other
                         })
                     }

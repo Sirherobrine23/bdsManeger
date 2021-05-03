@@ -2,7 +2,7 @@ const { exec, execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { resolve } = require("path");
-const commandExists = require("../commandExist").sync;
+const commandExists = require("../commandExist");
 const saveUser = require("./SaveUserInJson");
 const bds = require("../index");
 const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine ,log_dir } = require("../bdsgetPaths");
@@ -10,7 +10,7 @@ const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine 
 module.exports.start = () => {
     if (!(bds.detect())){
         var Command, Options = {};
-
+        // ---------------------------------------------
         if (bds.platform === "bedrock"){
             if (process.platform == "win32") {
                 Command = "bedrock_server.exe"
@@ -21,6 +21,7 @@ module.exports.start = () => {
             else if (process.platform == "linux"){
                 execSync("chmod 777 bedrock_server", {cwd: bds_dir_bedrock}).toString();
                 Command = "./bedrock_server";
+                if (process.platform === "linux" && bds.arch !== "x64") {if (commandExists("qemu-x86_64-static")) Command = `qemu-x86_64-static ${Command}`}
                 Options = {
                     env: {
                         ...process.env,
@@ -38,8 +39,8 @@ module.exports.start = () => {
             // Check low ram
             if (ram_max <= 300) throw new Error("Low ram memorie");
 
-            if (ram_max >= 1000) ram_max = Math.trunc(ram_max / 10);
-            if (require("../commandExist").sync("java")) {
+            if (ram_max >= 1000) ram_max = Math.trunc(ram_max / 2);
+            if (commandExists("java")) {
                 Command = `java -Xmx${ram_max}M -Xms${ram_minimun || ram_max}M -jar MinecraftServerJava.jar nogui`;
                 Options = {
                     cwd: bds_dir_java
@@ -59,8 +60,7 @@ module.exports.start = () => {
             if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
             else if (fs.existsSync(phpinCore)) {
                 if (!(process.env.PATH.includes(phpinCore))) {
-                    if (process.platform === "win32") process.env.PATH += `;${phpinCore}`;
-                    else process.env.PATH += `:${phpinCore}`;
+                    if (process.platform === "win32") process.env.PATH += `;${phpinCore}`;else process.env.PATH += `:${phpinCore}`;
                 }
             }
             else throw Error("Reinstall Pocketmine-MP, PHP binaries folder not found")
