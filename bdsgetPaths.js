@@ -62,7 +62,6 @@ module.exports.backup_folder = bds_dir_backup
 const log_dir = path.join(bds_dir, "log");
 module.exports.log_dir = log_dir
 
-
 const bds_dir_bedrock = path.join(bds_dir, "bedrock");
 module.exports.bds_dir_bedrock = bds_dir_bedrock
 
@@ -74,6 +73,9 @@ module.exports.bds_dir_pocketmine = bds_dir_pocketmine
 
 const bds_dir_jsprismarine = path.join(bds_dir, "jsprismarine");
 module.exports.bds_dir_jsprismarine = bds_dir_jsprismarine
+
+const BdsManegerLogFile = join(tmp, "BdsManegerLog.log")
+module.exports.BdsManegerLogFile = BdsManegerLogFile
 
 // Move old configs to new folder
 const old_bds_dir = resolve(home, "bds_Server");

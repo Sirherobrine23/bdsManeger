@@ -7,10 +7,11 @@ const path = require("path")
 const fs = require("fs");
 const shell = require("shelljs");
 const { getConfigHome } = require("./GetPlatformFolder")
-const commandExistsSync = require("./commandExist").sync;
-
+const commandExistsSync = require("./commandExist");
 const bds_core_package = resolve(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
+
+module.exports = require("./bdsgetPaths");
 if (process.env.SHOW_BDS_VERSION !== undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
 function date(format) {
     const today = new Date(),
@@ -31,7 +32,7 @@ function date(format) {
 module.exports.package_path = bds_core_package
 
 const { bds_dir, log_dir } = require("./bdsgetPaths");
-module.exports = require("./bdsgetPaths");
+
 
 // System Architect (x64, aarch64 and others)
 const arch = process.arch
@@ -54,7 +55,10 @@ if (process.platform == "win32") {
     }
 } else if (process.platform == "linux") {
     system = "Linux";
-    if (!(process.arch === "x64" || process.arch === "aarch64")) {
+    if (commandExistsSync("qemu-x86_64-static")) {
+        valid_platform["bedrock"] = true
+        valid_platform["pocketmine"] = true
+    } else if (process.arch !== "x64") {
         valid_platform["bedrock"] = false
         valid_platform["pocketmine"] = false
     }
@@ -138,6 +142,8 @@ bds_config = {
     "version": current_version_bds_core,
     "bds_pages": (bds_config.bds_pages || "default"),
     "bds_platform": (bds_config.bds_platform || default_platformConfig),
+    "LoadTelemetry": (() => {if (bds_config.LoadTelemetry === undefined) return true ;else return bds_config.LoadTelemetry})(),
+    "TelemetryID": (bds_config.TelemetryID || execSync("curl -sS https://telemetry.the-bds-maneger.org/getid").toString()),
     "platform_version": {
         "bedrock": (bds_config.platform_version.bedrock || "latest"),
         "java": (bds_config.platform_version.java || "latest"),
@@ -152,6 +158,22 @@ bds_config = {
 }
 fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
 bds_config_export()
+
+// function sendLogToTelemetry(){
+//     try {
+//         fetch(`https://telemetry.the-bds-maneger.org/error/${bds_config.TelemetryID}`, {
+//             body: JSON.stringify({
+//                 text: fs.readFileSync(BdsManegerLogFile, "utf8")
+//             }),
+//             mode: "cors"
+//         }).then(res => {if (!res.ok) throw new Error(res);else return res.json();}).then(text => console.log(text))
+//     } catch (error) {
+//         console.log(error);
+//     }
+// }
+// if (bds_config.LoadTelemetry) {
+//     [ "uncaughtException", "unhandledRejection", "exit", "SIGQUIT", "SIGILL", "SIGTERM"].forEach((interruptSignal) => process.on(interruptSignal, function (){sendLogToTelemetry();}));
+// }
 
 /**
  * Update bds config version installed
