@@ -8,7 +8,7 @@ const infolog = join(tmp_dir, "bdsManegerLog.log")
 const writelog = async function (data){
     var old;
     if (fs.existsSync(infolog)) old = fs.readFileSync(infolog, "utf8");
-    const newData = `${old||""}${data.join("\n")}\n`;
+    const newData = `${old || ""}${data.join("\n")}\n`;
     fs.writeFileSync(infolog, newData);
 }
 

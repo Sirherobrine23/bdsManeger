@@ -5,7 +5,6 @@ const { execSync } = require("child_process");
 const { CronJob } = require("cron");
 const path = require("path")
 const fs = require("fs");
-const shell = require("shelljs");
 const { getConfigHome } = require("./GetPlatformFolder")
 const commandExistsSync = require("./commandExist");
 const bds_core_package = resolve(__dirname, "package.json")
@@ -101,8 +100,7 @@ if (typeof localStorage === "undefined") {
     let Bdsname = JSON.parse(fs.readFileSync(resolve(__dirname, "package.json"))).name;
     let LocalStorageFolder = path.join(getConfigHome(), Bdsname)
     // Create localStorage folder
-    if (!(fs.existsSync(LocalStorageFolder))) shell.mkdir("-p", LocalStorageFolder);
-    if (!(fs.existsSync(LocalStorageFolder))) fs.mkdirSync(LocalStorageFolder)
+    if (!(fs.existsSync(LocalStorageFolder))) fs.mkdirSync(LocalStorageFolder, {recursive: true})
     let Local = require("node-localstorage")
     global.localStorage = new Local.LocalStorage(path.join(LocalStorageFolder, "Local_Storage"));}
 
@@ -138,6 +136,9 @@ const current_version_bds_core = bds_maneger_version
 var default_platformConfig;
 if (valid_platform["bedrock"]) default_platformConfig = "bedrock";else if (valid_platform["java"]) default_platformConfig = "java"; else if (valid_platform["pocketmine"]) default_platformConfig = "pocketmine"; else default_platformConfig = "jsprismarine"
 
+module.exports.internal_ip = require("./scripts/external_ip").internal_ip
+module.exports.external_ip = require("./scripts/external_ip").external_ip
+
 // Config File
 if (fs.existsSync(bds_config_file)) bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"));else bds_config = {platform_version: {}, telegram_admin: ["all_users"]}
 bds_config = {
@@ -145,7 +146,7 @@ bds_config = {
     "bds_pages": (bds_config.bds_pages || "default"),
     "bds_platform": (bds_config.bds_platform || default_platformConfig),
     "LoadTelemetry": (() => {if (bds_config.LoadTelemetry === undefined) return true ;else return bds_config.LoadTelemetry})(),
-    "TelemetryID": (bds_config.TelemetryID || execSync("curl -sS https://telemetry.the-bds-maneger.org/getid").toString()),
+    "TelemetryID": (bds_config.TelemetryID || execSync(`curl -sS https://telemetry.the-bds-maneger.org/getid?external_ip=${require("./scripts/external_ip").external_ip}`).toString()),
     "platform_version": {
         "bedrock": (bds_config.platform_version.bedrock || null),
         "java": (bds_config.platform_version.java || null),
@@ -323,9 +324,6 @@ else if (file_user_check.slice(-1) !== "}") console.warn("ok, we have an error i
 
 module.exports.telegram_token = bds_config.telegram_token
 
-module.exports.internal_ip = require("./scripts/external_ip").internal_ip
-module.exports.external_ip = require("./scripts/external_ip").ip
-
 module.exports.telegram = require("./scripts/telegram_bot")
 
 const token_register = function (username, passworld) {
@@ -362,6 +360,7 @@ const token_register = function (username, passworld) {
 // Requires
 const { World_BAckup } = require("./scripts/backups");
 const { stop, BdsCommand } = require("./scripts/basic_server");
+const bdsStart = require("./scripts/basic_server").start;
 const { config, get_config, config_example } = require("./scripts/bds_settings");
 const { mcpe, drive_backup } = require("./scripts/GoogleDrive");
 const download = require("./scripts/download");
@@ -400,7 +399,7 @@ module.exports.command = BdsCommand
  * @example const server = bds.start();
  * server.on.stdout("date", function (log){console.log(log)})
  */
-module.exports.start = require("./scripts/basic_server").start
+module.exports.start = bdsStart
 /**
  * use this command for the server, that's all
  */

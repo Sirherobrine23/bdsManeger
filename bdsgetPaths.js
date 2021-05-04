@@ -2,16 +2,11 @@
 const path = require("path")
 const { resolve, join } = path;
 const fs = require("fs");
-const shell = require("shelljs");
 const { getDesktopFolder } = require("./GetPlatformFolder")
 
-const bds_core_package = resolve(__dirname, "package.json")
-const bds_maneger_version = require(bds_core_package).version
-if (process.env.SHOW_BDS_VERSION !== undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
 const desktop = getDesktopFolder()
-
 var home, tmp
-module.exports.package_path = bds_core_package
+
 if (process.platform == "win32") {
     home = process.env.USERPROFILE;
     tmp = process.env.TMP
@@ -20,6 +15,9 @@ if (process.platform == "win32") {
     tmp = (process.env.TMPDIR || "/tmp")
 }
 /* ------------------------------------------------------------ Take the variables of different systems ------------------------------------------------------------ */
+
+var bds_core_package = resolve(__dirname, "package.json")
+module.exports.package_path = bds_core_package
 
 /**
  * With different languages ​​and systems we want to find the user's desktop for some link in the directory or even a nice shortcut
@@ -89,43 +87,37 @@ if (fs.existsSync(old_bds_dir)){
 // Create Main save files
 if (!(fs.existsSync(bds_dir))){
     console.log("Creating the bds directory")
-    fs.mkdirSync(bds_dir)
-    if (!(fs.existsSync(bds_dir))) shell.mkdir("-p", bds_dir);
+    fs.mkdirSync(bds_dir, {recursive: true})
 }
 
 // Servers Paths
 /* Bedrock Path */
 if (!(fs.existsSync(bds_dir_bedrock))){
     console.log("Creating the bds directory to Bedrock")
-    fs.mkdirSync(bds_dir_bedrock)
-    if (!(fs.existsSync(bds_dir_bedrock))) shell.mkdir("-p", bds_dir_bedrock);
+    fs.mkdirSync(bds_dir_bedrock, {recursive: true})
 }
 
 /* Java Path */
 if (!(fs.existsSync(bds_dir_java))){
     console.log("Creating the bds directory to Java")
-    fs.mkdirSync(bds_dir_java)
-    if (!(fs.existsSync(bds_dir_java))) shell.mkdir("-p", bds_dir_java);
+    fs.mkdirSync(bds_dir_java, {recursive: true})
 }
 
 /* PocketMine Path */
 if (!(fs.existsSync(bds_dir_pocketmine))){
     console.log("Creating the bds directory to Pocketmine")
-    fs.mkdirSync(bds_dir_pocketmine)
-    if (!(fs.existsSync(bds_dir_pocketmine))) shell.mkdir("-p", bds_dir_pocketmine);
+    fs.mkdirSync(bds_dir_pocketmine, {recursive: true})
 }
 
 /* JSPrismarine Path */
 if (!(fs.existsSync(bds_dir_jsprismarine))){
     console.log("Creating the bds directory to JSPrismarine")
-    fs.mkdirSync(bds_dir_jsprismarine)
-    if (!(fs.existsSync(bds_dir_jsprismarine))) shell.mkdir("-p", bds_dir_jsprismarine);
+    fs.mkdirSync(bds_dir_jsprismarine, {recursive: true})
 }
 
 // Create backup folder
 if (!(fs.existsSync(bds_dir_backup))){
-    fs.mkdirSync(bds_dir_backup)
-    if (!(fs.existsSync(bds_dir_backup))) shell.mkdir("-p", bds_dir_backup);
+    fs.mkdirSync(bds_dir_backup, {recursive: true})
 }
 
 // Link Bds Dir in Desktop
@@ -145,9 +137,6 @@ if (!(fs.existsSync(BdsCoreInDesktop))) {
 
 // Log Dir
 if (!(fs.existsSync(log_dir))){
-    fs.mkdirSync(log_dir)
-    if (!fs.existsSync(log_dir)){
-        console.log(`Creating the bds log dir (${log_dir})`)
-        if (!(fs.existsSync(log_dir))) shell.mkdir("-p", log_dir)
-    }
+    console.log(`Creating the bds log dir (${log_dir})`)
+    fs.mkdirSync(log_dir, {recursive: true})
 }

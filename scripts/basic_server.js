@@ -128,7 +128,7 @@ module.exports.BdsCommand = function (command) {
     }
 };
 
-module.exports.stop = () => {
+module.exports.stop = function () {
     if (typeof bds_server_string == "undefined") return false;
     else bds_server_string.stdin.write("stop\n");
     return true
