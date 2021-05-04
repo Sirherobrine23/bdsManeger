@@ -4,17 +4,23 @@ const { bds_config, package_json } = require("./index")
 const { tmp_dir } = require("./bdsgetPaths");
 const infolog = join(tmp_dir, "bdsManegerLog.log")
 
+const writelog = async function (data){
+    const old = fs.readFileSync(infolog, "utf8");
+    const newData = `${old}${data.join("\n")}\n`;
+    fs.writeFileSync(infolog, newData);
+}
+
 const oldStdout = console.log;
 const logS = (...messages) => {
     oldStdout.apply(console, messages);
-    fs.appendFileSync(infolog, messages.join("\n"));
+    writelog(messages);
 }
 global.console.log = logS;
 
 const oldStderr = console.error;
 const errorS = (...messages) => {
     oldStderr.apply(console, messages);
-    fs.appendFileSync(infolog, messages.join("\n"));
+    writelog(messages);
     sendLogToTelemetry()
 }
 global.console.error = errorS;
@@ -22,7 +28,7 @@ global.console.error = errorS;
 const oldinfo = console.info;
 const infoS = (...messages) => {
     oldinfo.apply(console, messages);
-    fs.appendFileSync(infolog, messages.join("\n"));
+    writelog(messages);
     sendLogToTelemetry()
 }
 global.console.info = infoS;
@@ -30,7 +36,7 @@ global.console.info = infoS;
 const oldwarn = console.warn;
 const warnS = (...messages) => {
     oldwarn.apply(console, messages);
-    fs.appendFileSync(infolog, messages.join("\n"));
+    writelog(messages);
     sendLogToTelemetry()
 }
 global.console.warn = warnS;
