@@ -7,6 +7,8 @@ const rateLimit = require("express-rate-limit");
 const token_verify = require("./token_api_check")
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
+const commandExist = require("../commandExist");
+const kerneldetect = require("../linuxDetectKernel");
 
 function api(port_api){
     const app = express();
@@ -27,21 +29,22 @@ function api(port_api){
     app.use(limiter);
     app.get("/info", (req, res) => {
         const config = bds.get_config()
-        var json_http = {
+        var info = {
             "server": {
                 "bds_config_version": bds.bds_config.version,
-                "port": config.server_port,
-                "port6": config.server_portv6,
-                "world_name": config.level_name,
-                "whitelist": config.white_list,
-                "xbox": config.online_mode,
-                "max_players": config.max_players,
+                "world_name": config.world,
+                "port": config.portv4,
+                "port6": config.portv6,
+                "max_players": config.players,
+                "whitelist": config.whitelist,
             },
             "running": bds.detect(),
-            "bds_platform": bds.bds_plataform,
-            "system_arch": bds.arch
+            "bds platform": bds.bds_plataform,
+            "system arch": bds.arch,
+            "system": process.platform
         }
-        return res.send(json_http);
+        if (commandExist("uname")) info["Linux Kernel"] = kerneldetect()
+        return res.send(info);
     });
     app.get("/players", (req, res) => {
         const query = req.query,

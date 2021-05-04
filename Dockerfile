@@ -2,15 +2,22 @@ FROM bdsmaneger/node_image:latest
 USER root
 ENV DEBIAN_FRONTEND=noninteractive
 
+RUN echo "Arch: $(uname -m)"
+
 RUN \
-echo "Arch: $(uname -m)"; \
 apt update && \
-apt install -y git curl openjdk-14-jdk openjdk-14-jre wget jq sudo unzip zip screen nginx python make build-essential $(case $(uname -m) in "x86_64") echo "";; *) echo "qemu-user-static binfmt-support";; esac) && \
-case $(uname -m) in "x86_64") echo "";; \
-*) wget https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/linux_libries.zip -O /tmp/libries.zip && unzip /tmp/libries.zip -d / && rm -rfv /tmp/libries.zip ;; \
-esac ;\
-rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* && \
-mkdir -p /home/bds/ && rm -rfv /etc/nginx/sites-*/default
+apt install -y git curl openjdk-14-jdk openjdk-14-jre wget jq sudo unzip zip screen nginx python make build-essential && \
+rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /etc/nginx/sites-*/default && mkdir -p /home/bds/
+
+RUN case $(uname -m) in \
+    "x86_64") echo "Do not need dependency on the x86_64";;\
+    *) apt install -y qemu-user-static binfmt-support && \
+    wget https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/linux_libries.zip -O /tmp/libries.zip && \
+    unzip /tmp/libries.zip -d / && \
+    rm -rfv /tmp/libries.zip && \
+    mkdir -p /lib64 && \
+    ln -s /lib/x86_64-linux-gnu/ld-2.31.so /lib64/ld-linux-x86-64.so.2 ;; \
+esac
 
 ENV \
 TELEGRAM_TOKEN="null" \

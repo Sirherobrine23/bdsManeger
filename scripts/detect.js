@@ -4,7 +4,7 @@ module.exports = () => {
     const detectFilesExec = [
         "MinecraftServerJava.jar",
         "PocketMine-MP.phar",
-        "Server.js"
+        "packages/server/dist/Server.js"
     ];
     if (process.platform === "linux") detectFilesExec.push("bedrock_server");else if (process.platform === "win32") detectFilesExec.push("bedrock_server.exe")
 
