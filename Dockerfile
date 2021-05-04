@@ -11,7 +11,7 @@ rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /etc/nginx/sites-*/
 
 RUN case $(uname -m) in \
     "x86_64") echo "Do not need dependency on the x86_64";;\
-    *) apt install -y qemu-user-static binfmt-support && \
+    *) apt install -y qemu-user-static && \
     wget https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/linux_libries.zip -O /tmp/libries.zip && \
     unzip /tmp/libries.zip -d / && \
     rm -rfv /tmp/libries.zip && \

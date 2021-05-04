@@ -35,9 +35,8 @@ module.exports.start = () => {
         } else if (bds.platform === "java") {
             var ram_max = Math.trunc(Math.abs((require("os").freemem() / 1024 / 1024) / 1.5))
             var ram_minimun = ram_max;
-            
             // Check low ram
-            if (ram_max <= 300) throw new Error("Low ram memorie");
+            if (ram_max <= 300) throw new Error("Low ram memorie")	;
 
             if (ram_max >= 1000) ram_max = Math.trunc(ram_max / 2);
             if (commandExists("java")) {
@@ -78,7 +77,6 @@ module.exports.start = () => {
 
         // Start Command
         const start_server = exec(Command, Options)
-        
         // Post Start
         if (bds.platform === "java") {
             start_server.stdout.on("data", function(data){

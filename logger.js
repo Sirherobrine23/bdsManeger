@@ -4,9 +4,11 @@ const { bds_config, package_json } = require("./index")
 const { tmp_dir } = require("./bdsgetPaths");
 const infolog = join(tmp_dir, "bdsManegerLog.log")
 
+//if (!(fs.existsSync(infolog))) fs.writeFileSync(infolog, "")
 const writelog = async function (data){
-    const old = fs.readFileSync(infolog, "utf8");
-    const newData = `${old}${data.join("\n")}\n`;
+    var old;
+    if (fs.existsSync(infolog)) old = fs.readFileSync(infolog, "utf8");
+    const newData = `${old||""}${data.join("\n")}\n`;
     fs.writeFileSync(infolog, newData);
 }
 

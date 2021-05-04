@@ -119,9 +119,9 @@ module.exports = function (version, force_install) {
                         }
                         if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
                         // End Phph bin
-                    })
+                    }).catch( error => console.error(error))
                 } else if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
-            })
+            }).catch (err => console.log(err))
         } else throw Error("Pocketmine not suported")
     } else if (bds.platform === "jsprismarine") {
         if (valid_platform.jsprismarine === true) {

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-"use strict";
 process.env.IS_BIN_BDS = true;process.title = "Bds Maneger CLI";
 process.env.IS_BDS_CLI = true
 const bds = require("../index")

@@ -15,7 +15,7 @@ module.exports = () => {
             else command = `if (ps aux | grep "${index}" | grep -v "grep" | grep -q "${index}");then echo "0";else echo "1";fi`
             let detect_status = execSync(command)
             let JsonReturn = {
-                "status": parseInt(detect_status.toString().replaceAll("\n", "")),
+                "status": parseInt(detect_status.toString().split("\n").join("")),
                 "command": command
             }
             if (process.env.debug === "true") console.log(JsonReturn);
