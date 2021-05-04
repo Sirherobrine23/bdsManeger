@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 "use strict";
 process.env.IS_BIN_BDS = true;process.title = "Bds Maneger CLI";
+process.env.IS_BDS_CLI = true
 const bds = require("../index")
 const readline = require("readline");
 var argv = require("minimist")(process.argv.slice(2));
 
 if (Object.getOwnPropertyNames(argv).length === 1 || Object.getOwnPropertyNames(argv).length === 0) argv.help = true
-var server =  (argv.p || argv.platform );
-var version = (argv.v || argv.version);
-var SystemCheck = (argv.S || argv.system_info);
-var bds_version = (argv.d || argv.server_download);
-var start = (argv.s || argv.server_version);
+const server =  (argv.p || argv.platform ),
+    version = (argv.v || argv.version),
+    SystemCheck = (argv.S || argv.system_info),
+    bds_version = (argv.d || argv.server_download),
+    start = (argv.s || argv.server_version)
 
 // Bds Maneger CLI Help
 if (argv.h || argv.help) {
@@ -51,7 +52,7 @@ if (SystemCheck) {
         `cURL installed: ${commandExits("curl")}`,
         `wget installed: ${commandExits("wget")}`
     ]
-    if ((process.platform === "linux" || process.platform === "darwin") && bds.arch !== "x64") help.push(`qemu-user-static insttaled: ${commandExits("qemu-x86_64-static")}`)
+    if ((process.platform === "linux" || process.platform === "darwin") && bds.arch !== "x64") help.push(`qemu-x86_64-static insttaled to emulate X64 arch: ${commandExits("qemu-x86_64-static")}`)
     console.log(help.join("\n"))
     process.exit(0)
 }
@@ -81,6 +82,7 @@ if (bds_version){
 
 // Start server
 if (start) {
+    bds.api();
     console.log("Send a \"stop\" command to stop the server and exit\nUse CTRL + C to force exit\n\n");
     const bds_server = bds.start();
     const rl = readline.createInterface({
@@ -91,8 +93,7 @@ if (start) {
     bds_server.on("exit", function (code){
         console.log("leaving the server, status code: ", code)
         process.exit(code)
-    })
-    bds.api();
+    });
     rl.on("line", (input) => {
         if (input === "stop") {rl.close();console.log("\n************ ------------ Going out ------------ ************\n");}
         bds.command(input)

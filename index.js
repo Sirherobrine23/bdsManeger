@@ -147,9 +147,9 @@ bds_config = {
     "LoadTelemetry": (() => {if (bds_config.LoadTelemetry === undefined) return true ;else return bds_config.LoadTelemetry})(),
     "TelemetryID": (bds_config.TelemetryID || execSync("curl -sS https://telemetry.the-bds-maneger.org/getid").toString()),
     "platform_version": {
-        "bedrock": (bds_config.platform_version.bedrock || "latest"),
-        "java": (bds_config.platform_version.java || "latest"),
-        "pocketmine": (bds_config.platform_version.pocketmine || "latest"),
+        "bedrock": (bds_config.platform_version.bedrock || null),
+        "java": (bds_config.platform_version.java || null),
+        "pocketmine": (bds_config.platform_version.pocketmine || null),
         "jsprismarine": "latest"
     },
     "bds_ban": (bds_config.bds_ban || ["Steve", "Alex", "steve", "alex"]),

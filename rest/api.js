@@ -1,14 +1,13 @@
 const express = require("express");
 const bds = require("../index");
 const fs = require("fs");
-const path = require("path");
 var cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const token_verify = require("./token_api_check")
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
-const commandExist = require("../commandExist");
-const kerneldetect = require("../linuxDetectKernel");
+const kerneldetect = require("../DetectKernel");
+const commandExist = require("../commandExist")
 
 function api(port_api){
     const app = express();
@@ -28,22 +27,37 @@ function api(port_api){
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(limiter);
     app.get("/info", (req, res) => {
-        const config = bds.get_config()
+        const config = bds.get_config();
         var info = {
-            "server": {
-                "bds_config_version": bds.bds_config.version,
-                "world_name": config.world,
-                "port": config.portv4,
-                "port6": config.portv6,
-                "max_players": config.players,
-                "whitelist": config.whitelist,
+            version: bds.package_json.version,
+            server: {
+                platform: bds.platform,
+                world_name: config.world,
+                running: bds.detect(),
+                port: config.portv4,
+                port6: config.portv6,
+                max_players: config.players,
+                whitelist: config.whitelist,
             },
-            "running": bds.detect(),
-            "bds platform": bds.bds_plataform,
-            "system arch": bds.arch,
-            "system": process.platform
-        }
-        if (commandExist("uname")) info["Linux Kernel"] = kerneldetect()
+            sys: {
+                arch: bds.arch,
+                system: process.platform,
+                Kernel: kerneldetect(),
+                IS_CLI: JSON.parse(process.env.IS_BDS_CLI || false),
+                IS_DOCKER: JSON.parse(process.env.BDS_DOCKER_IMAGE || false),
+                QEMU_STATIC: {
+                    "x64": commandExist("qemu-x86_64-static"),
+                    "arm64": commandExist("qemu-aarch64-static"),
+                    "arm": commandExist("qemu-arm-static"),
+                    "x86": commandExist("qemu-i386-static"),
+                }
+            },
+            bds_maneger_core: {
+                server_versions: bds.bds_config.platform_version,
+                server_ban: bds.bds_config.bds_ban,
+                telegram_admin: bds.bds_config.telegram_admin
+            }
+        };
         return res.send(info);
     });
     app.get("/players", (req, res) => {
@@ -82,11 +96,14 @@ function api(port_api){
             <body>
                 <h1>Hello From Bds Maneger Core</h1>
                 <a>If this page has loaded it means that the API is working as planned, More information access the API documentation at: <a href="https://github.com/The-Bds-Maneger/core/wiki">Bds Maneger Core</a>. </a>
-                <br><a>Version: ${require(path.resolve(__dirname, "..", "package.json")).version}</a>
+                <p><span>Bds Maneger core Version: ${bds.package_json.version}</span></p>
+                <p><h3>GET</h3></p>
+                <p><a href="/info">Basic Info server and System</a></p>
+                <p><a href="/players">Players who logged on to the server</a></p>
+                <p><h3>POST</h3></p>
+                <p><a href="/service">basic Services: Stop, start and restart</a></p>
             </body>
-            <p>
-                by <a href="https://github.com/Sirherobrine23">Sirherobrine23</a>
-            </p>
+            <p>by <a href="https://github.com/Sirherobrine23">Sirherobrine23</a></p>
         </html>`);
     });
     app.post("/service", (req, res) => {
