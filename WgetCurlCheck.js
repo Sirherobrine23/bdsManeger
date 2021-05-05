@@ -4,7 +4,7 @@ const commandExist = require("./commandExist")
 if (process.platform === "linux") {
     if (!(commandExist("curl") || commandExist("wget"))) throw Error("Linux Users: https://github.com/The-Bds-Maneger/core/wiki/Curl-Command#linux")
 }
-if (process.platform === "android") {
+else if (process.platform === "android") {
     if (!(commandExist("curl") || commandExist("wget"))) throw Error("Linux Users: https://github.com/The-Bds-Maneger/core/wiki/Curl-Command#linux")
 }
 else if (process.platform === "darwin") {
