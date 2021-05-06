@@ -23,6 +23,93 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  Binarie-Linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 15.x
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install Depedencies
+        run: npm install
+
+      - name: Install nexe
+        run: sudo npm i nexe -g
+
+      - name: Build Bin
+        run: nexe --build ./bin/bds_maneger.js --output ./BdsManegerCliLinux
+
+      - name: Releases
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: Bds Maneger Version ${{ env.BDS_VER }}
+          tag_name: ${{ github.ref }}
+          files: BdsManegerCliLinux*
+          body: |
+            Binarie Bds Maneger CLI to Linux
+
+  Binarie-Macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 15.x
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install Depedencies
+        run: npm install
+
+      - name: Install nexe
+        run: sudo npm i nexe -g
+
+      - name: Build Bin
+        run: nexe --build ./bin/bds_maneger.js --output ./BdsManegerCLIMacOS
+
+      - name: Releases
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: Bds Maneger Version ${{ env.BDS_VER }}
+          tag_name: ${{ github.ref }}
+          files: BdsManegerCLIMacOS*
+          body: |
+            Binarie Bds Maneger CLI to MacOS
+
+  Binarie-Win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 15.x
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install Depedencies
+        run: npm install
+
+      - name: Install nexe
+        run: sudo npm i nexe -g
+
+      - name: Build Bin
+        run: nexe --build bin\bds_maneger.js --output BdsManegerCliWindows
+
+      - name: Releases
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: Bds Maneger Version ${{ env.BDS_VER }}
+          tag_name: ${{ github.ref }}
+          files: BdsManegerCliWindows*
+          body: |
+            Binarie to Windows x64
+
   Docker:
     runs-on: ubuntu-latest
     name: Docker Core Image
