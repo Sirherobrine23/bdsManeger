@@ -311,11 +311,21 @@ module.exports.api = require("./rest/api");
 module.exports.rest = require("./rest/api");
 
 // ------------
-const user_file_connected = path.join(bds_dir, "bds_usersV2.json")
+const user_file_connected = path.join(bds_dir, "bds_usersV3.json")
 /**
  * get the location of the file where the player history connected to the server is saved
  */
 module.exports.players_files = user_file_connected
+
+if (!(fs.existsSync(user_file_connected))) {
+    let config = {};
+    config["bedrock"] = {};
+    config["java"] = {};
+    config["pocketmine"] = {};
+    config["jsprismarine"] = {};
+    let NewJson = JSON.stringify(config, null, 4);
+    fs.writeFileSync(user_file_connected, NewJson);
+}
 
 if (!(fs.existsSync(user_file_connected))) fs.writeFileSync(user_file_connected, "{}")
 const file_user_check = fs.readFileSync(user_file_connected, "utf8");

@@ -1,14 +1,18 @@
 const { execSync } = require("child_process");
+const { readdirSync } = require("fs");
 const commadExist = require("./commandExist")
+const { release } = require("os")
+
 function kerneldetect() {
     if (process.platform === "win32") {
-        const kernelVersion = parseFloat(require("os").release());
+        const kernelVersion = parseFloat(release());
         if (kernelVersion <= 6.1) return "Windows 7 NT";
         else if (kernelVersion <= 6.2) return "Windows 8 NT";
         else if (kernelVersion <= 6.3) return "Windows 8.1 NT";
         else if (kernelVersion <= 10.0) return "Windows 10 NT";
         else return "Other Windows NT";
-    } else if (commadExist("uname")){
+    } else if (process.platform === "android") return `${release()}, CPU Core ${readdirSync("/sys/devices/system/cpu/").filter(function (data){if (/cpu[0-9]/.test(data)) return true;else return false}).length}`;
+    else if (commadExist("uname")){
         const str = execSync("uname -r").toString("ascii");
         switch (true) {
             // amazon aws EC2

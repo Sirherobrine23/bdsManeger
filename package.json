@@ -51,7 +51,7 @@
     "email": "support@the-bds-maneger.org"
   },
   "homepage": "https://github.com/The-Bds-Maneger/Bds-Maneger-Core/",
-  "docs_base": "https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/",
+  "docs_base": "https://docs.the-bds-maneger.org/Bds Maneger core/",
   "engines": {
     "node": ">=14",
     "npm": ">=7"

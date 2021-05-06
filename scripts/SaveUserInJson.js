@@ -34,9 +34,9 @@ const Bedrock = function (data){
             // User Connected
             if (GetSatatus === "connected:") {
                 if (CheckBan(username)) MytypeKill(username)
-                else if (users[username] === undefined) {
+                else if (users.bedrock[username] === undefined) {
                     var xuid = GetUser[1];
-                    users[username] = {
+                    users.bedrock[username] = {
                         date: CurrentData,
                         connected: true,
                         xboxID: xuid,
@@ -48,9 +48,9 @@ const Bedrock = function (data){
                         ]
                     }
                 } else {
-                    users[username].connected = true
-                    users[username].date = CurrentData
-                    users[username].update.push({
+                    users.bedrock[username].connected = true
+                    users.bedrock[username].date = CurrentData
+                    users.bedrock[username].update.push({
                         date: CurrentData,
                         connected: true,
                     })
@@ -59,9 +59,9 @@ const Bedrock = function (data){
             // User Disconnected
             else if (GetSatatus === "disconnected:") {
                 if (!(CheckBan(username))){
-                    users[username].connected = false
-                    users[username].date = CurrentData
-                    users[username].update.push({
+                    users.bedrock[username].connected = false
+                    users.bedrock[username].date = CurrentData
+                    users.bedrock[username].update.push({
                         date: CurrentData,
                         connected: false,
                     })
@@ -70,7 +70,7 @@ const Bedrock = function (data){
         }
     }
     fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
-    if (users[username]) return true
+    if (users.bedrock[username]) return true
     else return false
 }
 

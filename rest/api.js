@@ -1,13 +1,16 @@
 const express = require("express");
 const bds = require("../index");
 const fs = require("fs");
-var cors = require("cors");
+const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const token_verify = require("./token_api_check")
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const kerneldetect = require("../DetectKernel");
-const commandExist = require("../commandExist")
+const commandExist = require("../commandExist");
+const { join } = require("path");
+const bdsPaths = require("../bdsgetPaths")
+const admzip = require("adm-zip")
 
 function api(port_api){
     const app = express();
@@ -15,17 +18,13 @@ function api(port_api){
     // see https://expressjs.com/en/guide/behind-proxies.html
     // app.set("trust proxy", 1);
 
-    const limiter = rateLimit({
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 100 // limit each IP to 100 requests per windowMs
-    });
-    app.use(fileUpload({
-        limits: { fileSize: 512 * 1024 }
-    }));
     app.use(cors());
     app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.use(bodyParser.urlencoded({ extended: true }));
-    app.use(limiter);
+    app.use(rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100 // limit each IP to 100 requests per windowMs
+    }));
     app.get("/info", (req, res) => {
         const config = bds.get_config();
         var info = {
@@ -60,21 +59,16 @@ function api(port_api){
         return res.send(info);
     });
     app.get("/players", (req, res) => {
-        const query = req.query,
-            status = query.status
-        const players_json = JSON.parse(fs.readFileSync(bds.players_files, "utf8"))
-        var response;
-        if (status === "online") {
-            response = []
-            for (let index  in players_json){
-                const check_online =  players_json[index]
-                if (check_online.connected === true) response.push(check_online.player)
-            }
-        } else if (status === "offline") {
-            for (let index  in players_json){
-                response = []
-                const check_online =  players_json[index]
-                if (check_online.connected === false) response.push(check_online.player)
+        const query = req.query;
+        const players_json = JSON.parse(fs.readFileSync(bds.players_files, "utf8"))[(query.platform || bds.platform)];
+        var response = {};
+        
+        if (query.status) {
+            const status = (() => {if (query.status === "online") return true; else return false})()
+            for (let index of Object.getOwnPropertyNames(players_json)){
+                if (players_json[index].connected === status) {
+                    response[index] = players_json[index]
+                }
             }
         } else response = players_json
         res.json(response);
@@ -105,66 +99,78 @@ function api(port_api){
             <p>by <a href="https://github.com/Sirherobrine23">Sirherobrine23</a></p>
         </html>`);
     });
-    app.post("/service", (req, res) => {
-        const body = req.body
-        const command_bds = body.command
-        
-        var pass = token_verify(body.token)
-
-        if (pass){
-            var command_status
-            if (command_bds === "start"){
-                bds.start()
-                command_status = "Bds Started"
-            } else if (command_bds === "stop"){
+    app.all("/service", (req, res) => {
+        const body = (() => {if (req.body && (Object.getOwnPropertyNames(req.body).length >= 1)) return req.body;else return req.query})()
+        const argV0 = process.argv0.split(/\\\\/).join("/").split(/\//)[process.argv0.split(/\\\\/).join("/").split(/\//).length -1];
+        const JsonReturn = {
+            text: `Not authorized: ${body.token}`,
+            httpStatus: 401
+        }
+        if (token_verify(body.token)){
+            if (body.command === "start"){
+                if (argV0 === "node") {
+                    if (JSON.parse(process.env.IS_BDS_CLI || false) || (process.env.npm_lifecycle_event === "npx")) {
+                        const start = bds.start()
+                        start.stdout.on("data", data => console.log(data))
+                        start.stderr.on("data", data => console.log(data))
+                        JsonReturn.httpStatus = 200
+                        JsonReturn.text = "Started"
+                    } else {
+                        JsonReturn.httpStatus = 400
+                        JsonReturn.text = "We can't start"
+                    }
+                } else {
+                    JsonReturn.httpStatus = 400
+                    JsonReturn.text = "It is not a node process"
+                }
+            } else if (body.command === "stop"){
                 bds.stop()
-                command_status = "Stopping the bds server"
+                JsonReturn.httpStatus = 200
+                JsonReturn.text = "Started"
             } else {
-                command_status = "no command identified"
+                JsonReturn.httpStatus = 406
+                JsonReturn.text = "Command does not exist"
             }
-            res.send({
-                "status": 200,
-                "bds_status": command_status
-            })
-        } else {
-            res.send({
-                "status": 401,
-                "message": `Not authorized: ${body.token}`
-            })
         }
+        res.status(JsonReturn.httpStatus).send(JsonReturn.text)
     });
-    app.post("/bds_download", (req, res) => {
+    app.all("/bds_download", (req, res) => {
         const body = req.body
-        const ver = body.version
-        var pass = token_verify(body.token)
-        var STA,EMN
-        if (pass){
-            STA = "wait"
-            EMN = bds.download(ver)
-        } else {
-            STA = "401",
-            EMN = "Unauthorized Token"
+        const status = {
+            "status": null,
+            "message": null
         }
-        res.send({
-            "status": STA,
-            "message": EMN
-        })
+        if (token_verify(body.token)){
+            status.message = bds.download(body.version)
+            status.status = 200
+        } else {
+            status.message = "Unauthorized Token"
+            status.status = 401
+        }
+        res.send(status)
     });
+
+    app.use(fileUpload({limits: { fileSize: 512 * 1024 }}));
     app.post("/upload_world", (req, res) => {
-        var pass = token_verify(req.headers.token)
-        if (pass){
-            var fileWorld;
-            console.log(req.files);
+        if (token_verify(req.headers.token)){
             if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.");
-            let files = Object.getOwnPropertyNames(req.files)
-            
-            for (let file of files){
-                fileWorld = req.files[file];
-                console.log(fileWorld.data);
+            for (let index of Object.getOwnPropertyNames(req.files)){
+                const fileWorld = req.files[index];
+                const BufferWorld = Buffer.from(req.files[index].data);
+                const unzip = new admzip(BufferWorld);
+                for (let index of unzip.getEntries()){
+                    if (index.name === "config.json") {
+                        const loadConfig = JSON.parse(index.getData().toString())
+                        console.log(`To: ${loadConfig.to}`);
+                        unzip.extractAllTo(join(bdsPaths.tmp_dir, fileWorld.name))
+                        for (let world of loadConfig.worlds) {
+                            fs.renameSync(join(bdsPaths.tmp_dir, fileWorld.name, world), join(bdsPaths.bds_dir, loadConfig.to))
+                        }
+                    }
+                }
             }
-        } else {
-            return res.status(400).send("Token is not valid!");
-        }
+            res.send("Ok")
+        } else res.status(400).send("Token is not valid!");
     });
     app.get("*", (req, res) => {
         return res.status(404).json(["Not Found"]);

@@ -5,15 +5,8 @@ const fs = require("fs");
 const { getDesktopFolder } = require("./GetPlatformFolder")
 
 const desktop = getDesktopFolder()
-var home, tmp
-
-if (process.platform == "win32") {
-    home = process.env.USERPROFILE;
-    tmp = process.env.TMP
-} else if (process.platform === "linux" || process.platform === "android" || process.platform === "darwin" || process.platform === "freebsd" || process.platform === "openbsd") {
-    home = (process.env.HOME || "/root")
-    tmp = (process.env.TMPDIR || "/tmp")
-}
+const home = require("os").homedir()
+const tmp = require("os").tmpdir()
 /* ------------------------------------------------------------ Take the variables of different systems ------------------------------------------------------------ */
 
 var bds_core_package = resolve(__dirname, "package.json")
@@ -36,7 +29,7 @@ module.exports.tmp_dir = tmp
  * 
  * Windows: C:\\Users\\USER\\
  * 
- * MacOS: undefined
+ * MacOS: /users/USER/
  */
 module.exports.home = home
 
@@ -121,9 +114,7 @@ if (!(fs.existsSync(bds_dir_backup))){
 }
 
 // Link Bds Dir in Desktop
-let fileShortcut;
-if (process.platform === "win32") fileShortcut = ".lnk";else fileShortcut = "";
-const BdsCoreInDesktop = resolve(desktop, "Bds Maneger Core"+fileShortcut)
+const BdsCoreInDesktop = resolve(desktop, `Bds Maneger Core${(function (){if (process.platform === "win32") return ".lnk";else return "";})()}`)
 if (!(fs.existsSync(BdsCoreInDesktop))) {
     console.log("Creating a Bds Core shortcut on the Desktop")
     if (process.platform === "win32") require("create-desktop-shortcuts")({
