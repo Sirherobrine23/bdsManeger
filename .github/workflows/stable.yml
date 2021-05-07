@@ -94,7 +94,7 @@ jobs:
         run: npm install
 
       - name: Install nexe
-        run: sudo npm i nexe -g
+        run: npm i nexe -g
 
       - name: Build Bin
         run: nexe --build bin\bds_maneger.js --output BdsManegerCliWindows
