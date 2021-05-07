@@ -1,6 +1,5 @@
 /* eslint-disable no-irregular-whitespace */
 const { resolve } = require("path");
-const { error } = console;
 const { execSync } = require("child_process");
 const { CronJob } = require("cron");
 const path = require("path")
@@ -114,6 +113,14 @@ else throw new Error("Curl or Wget command not found")
 
 const SERVER_URLs = JSON.parse(execSync(`${CurlWgetCommand} "https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"`).toString())
 module.exports.SERVER_URLs = SERVER_URLs
+module.exports.ServerJson = SERVER_URLs
+
+// Get server version
+module.exports.bedrock_all_versions = Object.getOwnPropertyNames(SERVER_URLs.bedrock);
+module.exports.java_all_versions = Object.getOwnPropertyNames(SERVER_URLs.java);
+module.exports.bds_latest = (SERVER_URLs.bedrock_lateste||SERVER_URLs.bedrock_latest);
+module.exports.bedrock_latest = SERVER_URLs.bedrock_latest;
+module.exports.java_latest = SERVER_URLs.java_latest;
 
 // PHP Bins
 const PHPbinsUrl = JSON.parse(execSync(`${CurlWgetCommand} "https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json"`).toString())
@@ -124,7 +131,7 @@ const PHPurlNames = Object.getOwnPropertyNames(PHPbinsUrl)
 module.exports.PHPurlNames = PHPurlNames
 
 // Google Drive Credentials
-const GoogleDriveCredentials = JSON.parse(execSync("curl -sS \"https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json\"").toString())
+const GoogleDriveCredentials = JSON.parse(execSync(`${CurlWgetCommand} "https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json"`).toString())
 module.exports.GoogleDriveCredentials = GoogleDriveCredentials
 
 /* ---------------------------------------------------------------------------- Variables ---------------------------------------------------------------------------- */
@@ -289,16 +296,9 @@ if (require("fs").existsSync(path.join(bds_dir, "telegram_token.txt"))){
         fs.rmSync(path.join(bds_dir, "telegram_token.txt"))
         console.log("We finished migrating the old telegram token file")
     } catch {
-        throw new error("It was not possible to move the old telegram token file to the new bds maneger api file")
+        throw new Error("It was not possible to move the old telegram token file to the new bds maneger api file")
     }
 }
-
-// Get server version
-module.exports.bedrock_all_versions = Object.getOwnPropertyNames(SERVER_URLs.bedrock);
-module.exports.java_all_versions = Object.getOwnPropertyNames(SERVER_URLs.java);
-module.exports.bds_latest = (SERVER_URLs.bedrock_lateste||SERVER_URLs.bedrock_latest);
-module.exports.bedrock_latest = SERVER_URLs.bedrock_latest;
-module.exports.java_latest = SERVER_URLs.java_latest;
 
 /**
  * Activate an API via expresss.js, to receive requests via http such as the log, send and receive commands
@@ -329,8 +329,11 @@ if (!(fs.existsSync(user_file_connected))) {
 
 if (!(fs.existsSync(user_file_connected))) fs.writeFileSync(user_file_connected, "{}")
 const file_user_check = fs.readFileSync(user_file_connected, "utf8");
-if (file_user_check.charAt(0) !== "{") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
-else if (file_user_check.slice(-1) !== "}") console.warn("ok, we have an error in the file of the connected players, please check the file, it should start on the first line with --> [ ,and end with -->]")
+try {
+    JSON.parse(file_user_check)
+} catch (error) {
+    fs.renameSync(user_file_connected,  `${user_file_connected}_old_${Math.random()}_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}.json`)
+}
 
 module.exports.telegram_token = bds_config.telegram_token
 

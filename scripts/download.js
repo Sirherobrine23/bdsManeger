@@ -74,16 +74,14 @@ module.exports = function (version, force_install) {
         if (valid_platform.pocketmine === true) {
             if (version === "latest") version = response.PocketMine_latest
             url = response.PocketMine[version].url
-            console.log(`Server data publish: ${response.PocketMine[version].data}`)
-            console.log(bds_dir_pocketmine);
-            fetch(url).then(response => response.arrayBuffer()).then(response => Buffer.from(response)).then(response => {
+            console.log(`Server data publish: ${response.PocketMine[version].data}`);
+            fetch(url).then(response => {if (response.ok) return response.arrayBuffer(); else throw new Error(response)}).then(response => Buffer.from(response)).then(response => {
                 writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), response, "binary")
                 console.log("PocketMine-MP.phar saved");
                 platform_version_update(version)
                 const binFolder = join(bds_dir_pocketmine, "bin")
-                var CheckBinPHPFolder;
-                if (existsSync(binFolder)) CheckBinPHPFolder = false ;else if (commandExists("php")) CheckBinPHPFolder = false ;else CheckBinPHPFolder = true
-                if (CheckBinPHPFolder||force_install) {
+                if (commandExists("php")) throw new Error("Unistall php from system, or use docker image")
+                else if ((!existsSync(binFolder)) || force_install) {
                     var urlPHPBin;
                     try {
                         urlPHPBin = PHPbinsUrls[process.platform][bds.arch];
@@ -95,8 +93,8 @@ module.exports = function (version, force_install) {
                             Others_support: PHPbinsUrls.other
                         })
                     }
-                    fetch(urlPHPBin).then(res => {if (res.ok) return res; else throw new Error(res)}).then(response => response.arrayBuffer()).then(response => Buffer.from(response)).then(php => {
-                        console.log("Downloading PHP Binaries");
+                    console.log("Downloading PHP Binaries");
+                    fetch(urlPHPBin).then(res => {if (res.ok) return res.arrayBuffer(); else throw new Error(res)}).then(response => Buffer.from(response)).then(php => {
                         const zipExtractBin = new AdmZip(php);
                         // Extract bin
                         zipExtractBin.extractAllTo(bds_dir_pocketmine, true)
@@ -119,9 +117,9 @@ module.exports = function (version, force_install) {
                         }
                         if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
                         // End Phph bin
-                    }).catch( error => console.error(error))
+                    }).catch( error => console.error(JSON.stringify(error)))
                 } else if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
-            }).catch (err => console.log(err))
+            }).catch (err => console.log(JSON.stringify(err)))
         } else throw Error("Pocketmine not suported")
     } else if (bds.platform === "jsprismarine") {
         if (valid_platform.jsprismarine === true) {

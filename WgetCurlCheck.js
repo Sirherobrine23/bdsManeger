@@ -6,7 +6,7 @@ if (process.platform === "linux") {
     if (!(commandExist("curl") || commandExist("wget"))) throw Error("Linux Users: https://docs.the-bds-maneger.org/docs/Bds Maneger core/CurlWget/#linux")
 }
 else if (process.platform === "android") {
-    if (!(commandExist("curl") || commandExist("wget"))) throw Error("Linux Users: https://docs.the-bds-maneger.org/docs/Bds Maneger core/CurlWget/#linux")
+    if (!(commandExist("curl") || commandExist("wget"))) throw Error("Linux Users: https://docs.the-bds-maneger.org/docs/Bds Maneger core/CurlWget/#android")
 }
 else if (process.platform === "darwin") {
     if (!(commandExist("curl") || commandExist("wget"))) throw Error("https://docs.the-bds-maneger.org/docs/Bds Maneger core/CurlWget/#macos")

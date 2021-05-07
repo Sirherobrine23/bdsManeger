@@ -6,9 +6,13 @@ const commandExists = require("../commandExist");
 const saveUser = require("./SaveUserInJson");
 const bds = require("../index");
 const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine ,log_dir } = require("../bdsgetPaths");
+const BdsDetect = require("./detect")
 
-module.exports.start = () => {
-    if (!(bds.detect())){
+function start() {
+    if (BdsDetect()){
+        console.warn("You already have a server running");
+        return "You already have a server running";
+    } else {
         var Command, Options = {};
         // ---------------------------------------------
         if (bds.platform === "bedrock"){
@@ -57,19 +61,16 @@ module.exports.start = () => {
         } else if (bds.platform === "pocketmine") {
             const phpinCore = resolve(bds_dir_pocketmine, "bin", "php7", "bin")
             if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
-            else if (fs.existsSync(phpinCore)) {
-                if (!(process.env.PATH.includes(phpinCore))) {
-                    if (process.platform === "win32") process.env.PATH += `;${phpinCore}`;else process.env.PATH += `:${phpinCore}`;
-                }
-            }
-            else throw Error("Reinstall Pocketmine-MP, PHP binaries folder not found")
+            else if (!fs.existsSync(phpinCore)) throw Error("Reinstall Pocketmine-MP, PHP binaries folder not found");
                 Command = "php ./PocketMine-MP.phar";
+                const currentEnv = process.env
+                if (process.platform === "win32") currentEnv.PATH += `;${phpinCore}`;else currentEnv.PATH += `:${phpinCore}`;
                 Options = {
-                    env: process.env,
+                    env: currentEnv,
                     cwd: bds_dir_pocketmine
                 };
         } else if (bds.platform === "jsprismarine") {
-            Command = "node ./packages/server/dist/Server.js --warning --circular";
+            Command = "node --warning --circular ./packages/server/dist/Server.js";
                 Options = {
                     cwd: bds_dir_jsprismarine
                 };
@@ -107,18 +108,35 @@ module.exports.start = () => {
         // Global and Run
         global.bds_log_string = ""
         start_server.stdout.on("data", function(data){
-            if (global.bds_log_string === undefined || global.bds_log_string === "") global.bds_log_string = data;
-            else global.bds_log_string += data
+            if (global.bds_log_string === undefined || global.bds_log_string === "") global.bds_log_string = data; else global.bds_log_string += data
         });
         global.bds_server_string = start_server;
-        return start_server;
-    } else {
-        console.warn("You already have a server running");
-        return "You already have a server running";
+
+        const returnFuntion = {};
+        returnFuntion["exec"] = start_server;
+        returnFuntion["stop"] = function (){start_server.stdin.write("stop\n")};
+        returnFuntion["command"] = function (command, callback){
+            const oldLog = global.bds_log_string;
+            start_server.stdin.write(`${command}\n`);
+            if (typeof callback === "function") {
+                setTimeout(() => {
+                    // Run commands from command run in server;
+                    callback(global.bds_log_string.replace(oldLog, "").split(/\r/).filter(data => {if (data === "") return false; else return true;}).join("\n"))
+                }, 1000);
+            }
+        }
+        returnFuntion["stdout"] = start_server.stdout.on;
+        returnFuntion["stderr"] = start_server.stderr.on;
+        returnFuntion["on"] = start_server.on;
+        
+        returnFuntion["log"] = function (callback){start_server.stdout.on("data", data => callback(data)); start_server.stderr.on("data", data => callback(data));}
+        returnFuntion["exit"] = function (callback){start_server.on("exit", code => callback(code))}
+        
+        return returnFuntion
     }
 }
 
-module.exports.BdsCommand = function (command) {
+function BdsCommand(command) {
     if (typeof bds_server_string === "undefined") return false;
     else {
         if (command === undefined) return false;
@@ -126,10 +144,16 @@ module.exports.BdsCommand = function (command) {
         else bds_server_string.stdin.write(`${command}\n`);
         return true
     }
-};
+}
 
-module.exports.stop = function () {
+function stop() {
     if (typeof bds_server_string == "undefined") return false;
     else bds_server_string.stdin.write("stop\n");
     return true
+}
+
+module.exports = {
+    start,
+    BdsCommand,
+    stop
 }
