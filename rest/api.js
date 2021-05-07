@@ -132,7 +132,7 @@ function api(port_api){
                 JsonReturn.text = "Command does not exist"
             }
         }
-        res.status(JsonReturn.httpStatus).send(`Text: ${JsonReturn.text}`)
+        res.status(JsonReturn.httpStatus).send(`Text: ${encodeURI(JsonReturn.text)}`)
     });
     app.all("/bds_download", (req, res) => {
         const body = req.body
