@@ -1,14 +1,15 @@
 /* eslint-disable no-irregular-whitespace */
-const { resolve } = require("path");
+const { resolve, join } = require("path");
 const { execSync } = require("child_process");
 const { CronJob } = require("cron");
 const path = require("path")
 const fs = require("fs");
 const { getConfigHome } = require("./GetPlatformFolder")
 const commandExistsSync = require("./commandExist");
-const bds_core_package = resolve(__dirname, "package.json")
-const bds_maneger_version = require(bds_core_package).version
+const FetchSync = require("sync-fetch")
 
+const bds_core_package = join(__dirname, "package.json")
+const bds_maneger_version = require(bds_core_package).version
 module.exports = require("./bdsgetPaths");
 if (process.env.SHOW_BDS_VERSION !== undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
 function date(format) {
@@ -106,12 +107,7 @@ if (typeof localStorage === "undefined") {
 /* Minecraft Servers URLs and depedencies */
 // urls
 
-var CurlWgetCommand;
-if (commandExistsSync("wget")) CurlWgetCommand = "wget -qO-";
-else if (commandExistsSync("curl")) CurlWgetCommand = "curl -sS";
-else throw new Error("Curl or Wget command not found")
-
-const SERVER_URLs = JSON.parse(execSync(`${CurlWgetCommand} "https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"`).toString())
+const SERVER_URLs = FetchSync("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").json()
 module.exports.SERVER_URLs = SERVER_URLs
 module.exports.ServerJson = SERVER_URLs
 
@@ -123,7 +119,7 @@ module.exports.bedrock_latest = SERVER_URLs.bedrock_latest;
 module.exports.java_latest = SERVER_URLs.java_latest;
 
 // PHP Bins
-const PHPbinsUrl = JSON.parse(execSync(`${CurlWgetCommand} "https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json"`).toString())
+const PHPbinsUrl = FetchSync("https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json").json()
 module.exports.PHPbinsUrls = PHPbinsUrl
 
 // PHP bins System availble in Json File
@@ -131,7 +127,7 @@ const PHPurlNames = Object.getOwnPropertyNames(PHPbinsUrl)
 module.exports.PHPurlNames = PHPurlNames
 
 // Google Drive Credentials
-const GoogleDriveCredentials = JSON.parse(execSync(`${CurlWgetCommand} "https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json"`).toString())
+const GoogleDriveCredentials = FetchSync("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").json()
 module.exports.GoogleDriveCredentials = GoogleDriveCredentials
 
 /* ---------------------------------------------------------------------------- Variables ---------------------------------------------------------------------------- */
