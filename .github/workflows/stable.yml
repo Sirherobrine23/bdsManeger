@@ -96,6 +96,9 @@ jobs:
       - name: Install nexe
         run: npm i nexe -g
 
+      - name: Set up NASM
+        uses: ilammy/setup-nasm@v1.2.0
+
       - name: Build Bin
         run: nexe --build bin\bds_maneger.js --output BdsManegerCliWindows
 
