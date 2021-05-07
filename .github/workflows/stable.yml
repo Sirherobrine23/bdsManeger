@@ -41,13 +41,19 @@ jobs:
       - name: Build Bin
         run: nexe --build ./bin/bds_maneger.js --output ./BdsManegerCliLinux
 
+      - uses: actions/github-script@v4
+        id: set-result
+        with:
+          script: return "${{ github.ref }}".split("refs/tags/").join("")
+          result-encoding: string
+
       - name: Releases
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: Bds Maneger Version ${{ env.BDS_VER }}
-          tag_name: ${{ github.ref }}
+          tag_name: ${{steps.set-result.outputs.result}}
           files: BdsManegerCliLinux*
           body: |
             Binarie Bds Maneger CLI to Linux
@@ -70,13 +76,19 @@ jobs:
       - name: Build Bin
         run: nexe --build ./bin/bds_maneger.js --output ./BdsManegerCLIMacOS
 
+      - uses: actions/github-script@v4
+        id: set-result
+        with:
+          script: return "${{ github.ref }}".split("refs/tags/").join("")
+          result-encoding: string
+
       - name: Releases
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: Bds Maneger Version ${{ env.BDS_VER }}
-          tag_name: ${{ github.ref }}
+          tag_name: ${{steps.set-result.outputs.result}}
           files: BdsManegerCLIMacOS*
           body: |
             Binarie Bds Maneger CLI to MacOS
@@ -102,13 +114,19 @@ jobs:
       - name: Build Bin
         run: nexe --build bin\bds_maneger.js --output BdsManegerCliWindows
 
+      - uses: actions/github-script@v4
+        id: set-result
+        with:
+          script: return "${{ github.ref }}".split("refs/tags/").join("")
+          result-encoding: string
+
       - name: Releases
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: Bds Maneger Version ${{ env.BDS_VER }}
-          tag_name: ${{ github.ref }}
+          tag_name: ${{steps.set-result.outputs.result}}
           files: BdsManegerCliWindows*
           body: |
             Binarie to Windows x64

@@ -21,6 +21,5 @@ jobs:
         with:
           file: Dockerfile
           push: false
-          tags: |
-            bdsmaneger:test_${{ github.run_id }}
+          tags: bdsmaneger:test_${{ github.run_id }}
           platforms: linux/amd64,linux/arm64
