@@ -2,11 +2,11 @@ name: "Dependabot Automerge - Action"
 on:
   push:
     branches:
-      dependabot**
+      - dependabot*
   
   pull_request:
     branches:
-      dependabot**
+      - dependabot*
       
 jobs:
   automerge:
