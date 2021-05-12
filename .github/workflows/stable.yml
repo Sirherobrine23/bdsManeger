@@ -41,7 +41,7 @@ jobs:
       - name: Build Bin
         run: nexe --build ./bin/bds_maneger.js --output ./BdsManegerCliLinux
 
-      - uses: actions/github-script@v4
+      - uses: actions/github-script@v4.0.2
         id: set-result
         with:
           script: return "${{ github.ref }}".split("refs/tags/").join("")
@@ -76,7 +76,7 @@ jobs:
       - name: Build Bin
         run: nexe --build ./bin/bds_maneger.js --output ./BdsManegerCLIMacOS
 
-      - uses: actions/github-script@v4
+      - uses: actions/github-script@v4.0.2
         id: set-result
         with:
           script: return "${{ github.ref }}".split("refs/tags/").join("")
@@ -114,7 +114,7 @@ jobs:
       - name: Build Bin
         run: nexe --build bin\bds_maneger.js --output BdsManegerCliWindows
 
-      - uses: actions/github-script@v4
+      - uses: actions/github-script@v4.0.2
         id: set-result
         with:
           script: return "${{ github.ref }}".split("refs/tags/").join("")
