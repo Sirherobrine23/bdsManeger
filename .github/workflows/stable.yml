@@ -10,7 +10,7 @@ jobs:
     container: bdsmaneger/node_image:latest
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2.1.5
         with:
           node-version: 15.x
           registry-url: https://registry.npmjs.org/
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2.1.5
         with:
           node-version: 15.x
           registry-url: https://registry.npmjs.org/
@@ -62,7 +62,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2.1.5
         with:
           node-version: 15.x
           registry-url: https://registry.npmjs.org/
@@ -97,7 +97,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2.1.5
         with:
           node-version: 15.x
           registry-url: https://registry.npmjs.org/
