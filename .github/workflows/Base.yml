@@ -1,8 +1,6 @@
 name: Base BDS Docker bases
 on:
   push:
-    paths:
-      - "base/*"
   schedule:
     - cron: 0 0 * * */1
 jobs:
