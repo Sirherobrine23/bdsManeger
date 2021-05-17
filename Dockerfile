@@ -10,7 +10,9 @@ libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxc
 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils libgbm-dev git wget curl sudo && \
 apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /root/.gnupg /tmp/library-scripts /tmp/*
 
-RUN curl -fsSL https://deb.nodesource.com/setup_current.x | bash - && apt install -y nodejs && npm install -g -f npm && \
+RUN wget -qO- https://deb.nodesource.com/setup_current.x | bash - && \
+apt install -y nodejs && \
+npm install -g -f npm && \
 npm install -g eslint && \
 npm cache clean --force > /dev/null 2>&1 && \
 apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /root/.gnupg /tmp/*
