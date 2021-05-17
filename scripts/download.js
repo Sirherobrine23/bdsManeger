@@ -9,7 +9,7 @@ const response = require("../index").SERVER_URLs
 const commandExists = require("../commandExist");
 const { cloneSync } = require("../git_simples");
 const { execSync } = require("child_process");
-module.exports = function (version, force_install) {
+module.exports = function (version, force_install, callback) {
     if (force_install === true) {
         info("Bds Maneger core force install")
         bds_config.platform_version.java = "latest";
@@ -41,11 +41,13 @@ module.exports = function (version, force_install) {
                     if (permissions) writeFileSync(join(bds_dir_bedrock, "permissions.json"), permissions)
                     if (whitelist) writeFileSync(join(bds_dir_bedrock, "whitelist.json"), whitelist)
                     platform_version_update(version)
-                    if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
+                    if (typeof callback === "function") callback(true);
+                    return true
                 })
             } else {
                 warn("Jumping, installed version")
-                if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
+                if (typeof callback === "function") callback(true);
+                return true
             }
         } else throw Error("Bedrock Not suported")
     }
@@ -115,11 +117,12 @@ module.exports = function (version, force_install) {
                             phpConfigInit.push(`extension_dir="${resolve(phpExtensiosnsDir, exetensionZen)}"`)
                             writeFileSync(join(phpFolder, "php7", "bin", "php.ini"), phpConfigInit.join("\n"))
                         }
-                        if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
+                        if (typeof callback === "function") callback(true);
+                        return true
                         // End Phph bin
-                    }).catch( error => console.error(JSON.stringify(error)))
-                } else if (process.env.BDS_DOCKER_IMAGE === "true") process.exit(0);
-            }).catch (err => console.log(JSON.stringify(err)))
+                    })
+                } else if (typeof callback === "function") callback(true);
+            }).catch( error => {if (typeof callback === "function") callback(false);console.error(JSON.stringify(error))})
         } else throw Error("Pocketmine not suported")
     } else if (bds.platform === "jsprismarine") {
         if (valid_platform.jsprismarine === true) {
@@ -132,7 +135,8 @@ module.exports = function (version, force_install) {
                 "npx -y lerna bootstrap",
                 "npm run build"
             ]) console.log(execSync(command, {cwd: bds_dir_jsprismarine}).toString("ascii"));
-            
+            if (typeof callback === "function") callback(true);
+            return true
         } else throw Error("jsprismarine not suported")
     } else throw Error("Bds maneger Config file error")
 }

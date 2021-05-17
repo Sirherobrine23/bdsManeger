@@ -25,7 +25,7 @@ function start() {
             else if (process.platform == "linux"){
                 execSync("chmod 777 bedrock_server", {cwd: bds_dir_bedrock}).toString();
                 Command = "./bedrock_server";
-                if (process.platform === "linux" && bds.arch !== "x64") {if (commandExists("qemu-x86_64-static")) Command = `qemu-x86_64-static ${Command}`}
+                if (process.platform === "linux" && bds.require_qemu) {if (commandExists("qemu-x86_64-static")) Command = `qemu-x86_64-static ${Command}`}
                 Options = {
                     env: {
                         ...process.env,
@@ -89,6 +89,8 @@ function start() {
                     }
             });
         }
+
+        if (typeof global.bdsexecs === "undefined") global.bdsexecs = [{exec: start_server, name: Math.random()}]; else global.bdsexecs.push({exec: start_server, name: Math.random()})
 
         // save User in Json
         start_server.stdout.on("data", data => saveUser(data))

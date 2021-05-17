@@ -37,29 +37,42 @@ var arch;
 if (process.arch === "arm64") arch = "aarch64"; else arch = process.arch
 module.exports.arch = arch
 
+const SERVER_URLs = FetchSync("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").json()
+const PHPbinsUrl = FetchSync("https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json").json()
+const GoogleDriveCredentials = FetchSync("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").json()
+
 // -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 var system,
-    valid_platform = {
-        bedrock: true,
-        pocketmine: true,
-        java: true,
-        jsprismarine: true
-    }
+require_qemu = false,
+valid_platform = {
+    bedrock: true,
+    pocketmine: true,
+    java: true,
+    jsprismarine: true
+}
+
+// check php bin
+if (PHPbinsUrl[process.platform]) {
+    if (PHPbinsUrl[process.platform][arch]) valid_platform["pocketmine"] = true; else valid_platform["pocketmine"] = false
+} else valid_platform["pocketmine"] = false
+
+// SoSystem X
 if (process.platform == "win32") {
     system = "Windows";
-    // ia32
-    if (process.arch !== "x64") {
-        valid_platform["bedrock"] = false
-        valid_platform["pocketmine"] = false
-    }
+    // arm64 and X64
+    if (!(arch === "x64" || arch === "aarch64")) valid_platform["bedrock"] = false;
 } else if (process.platform == "linux") {
     system = "Linux";
-    if (commandExistsSync("qemu-x86_64-static")) {
-        valid_platform["bedrock"] = true
-        valid_platform["pocketmine"] = true
-    } else if (process.arch !== "x64") {
-        valid_platform["bedrock"] = false
-        valid_platform["pocketmine"] = false
+    if (SERVER_URLs.bedrock[SERVER_URLs.bedrock_latest][arch]) {
+        if (SERVER_URLs.bedrock[SERVER_URLs.bedrock_latest][arch][process.platform]) valid_platform["bedrock"] = true; else valid_platform["bedrock"] = false;
+    } else valid_platform["bedrock"] = false
+    
+    if (valid_platform["bedrock"] === false) {
+        if (commandExistsSync("qemu-x86_64-static")) {
+            console.warn("The Minecraft Bedrock Server is only being validated because you can use 'qemu-x86_64-static'");
+            valid_platform["bedrock"] = true
+            require_qemu = true
+        }
     }
 } else if (process.platform == "darwin") {
     if (arch === "arm64") require("open")("https://github.com/The-Bds-Maneger/core/wiki/system_support#information-for-users-of-macbooks-and-imacs-with-m1-processor")
@@ -84,6 +97,8 @@ if (process.platform == "win32") {
  */
 module.exports.valid_platform = valid_platform
 
+
+module.exports.require_qemu = require_qemu
 /**
   * Identifying a system in the script can be simple with this variable
   */
@@ -107,7 +122,6 @@ if (typeof localStorage === "undefined") {
 /* Minecraft Servers URLs and depedencies */
 // urls
 
-const SERVER_URLs = FetchSync("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json").json()
 module.exports.SERVER_URLs = SERVER_URLs
 module.exports.ServerJson = SERVER_URLs
 
@@ -119,7 +133,6 @@ module.exports.bedrock_latest = SERVER_URLs.bedrock_latest;
 module.exports.java_latest = SERVER_URLs.java_latest;
 
 // PHP Bins
-const PHPbinsUrl = FetchSync("https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json").json()
 module.exports.PHPbinsUrls = PHPbinsUrl
 
 // PHP bins System availble in Json File
@@ -127,7 +140,6 @@ const PHPurlNames = Object.getOwnPropertyNames(PHPbinsUrl)
 module.exports.PHPurlNames = PHPurlNames
 
 // Google Drive Credentials
-const GoogleDriveCredentials = FetchSync("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").json()
 module.exports.GoogleDriveCredentials = GoogleDriveCredentials
 
 /* ---------------------------------------------------------------------------- Variables ---------------------------------------------------------------------------- */

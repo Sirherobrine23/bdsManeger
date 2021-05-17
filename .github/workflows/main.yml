@@ -64,4 +64,4 @@ jobs:
           tags: |
             sirherobrine23/bdsmaneger:nightly
             bdsmaneger/maneger:nightly
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/arm/v7

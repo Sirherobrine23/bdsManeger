@@ -7,7 +7,10 @@ const { resolve, join } = require("path")
 bds.rest();
 
 // Log function
-function output(dados){var out = dados; if (out.slice(-1) == "\n") out = out.slice(0, -1); console.log(out)}
+function output(dados){
+    dados = dados.split("\n").filter(data => {if (data === "") return false; else return true}).join(/\n/);
+    console.log(dados);
+}
 // --------------------------------------------------------------------------------------------------------------------
 
 // Bds Maneger Core Token API REST
@@ -26,17 +29,17 @@ else if (process.env.TELEGRAM_TOKEN === "") console.log("Telegram bot disabled, 
 else  bds.telegram.launch()
 
 // Detect whether the server has been installed
-var bds_software
+var bds_software = false
 if (existsSync(join(bds_dir_bedrock, "bedrock_server"))) bds_software = true
-else if (existsSync(join(bds_dir_bedrock, "bedrock_server.exe"))) bds_software = true
-else if (existsSync(join(bds_dir_java, "MinecraftServerJava.jar"))) bds_software = true
-else bds_software = false
+if (existsSync(join(bds_dir_bedrock, "bedrock_server.exe"))) bds_software = true
+if (existsSync(join(bds_dir_java, "MinecraftServerJava.jar"))) bds_software = true
+if (existsSync(join(bds_dir_pocketmine, "MinecraftServerJava.jar"))) bds_software = true
 
 if (bds_software){
     const server = bds.start()
-    server.stdout.on("data", function (data) {output(data)});
-    server.on("exit", function(code){
+    server.log(data => output(data));
+    server.exit("exit", function(code){
         output(`\n\n\nExit with code ${code}`);
-        process.exit(1)
+        process.exit(code)
     })
 } else throw Error("The server was not installed correctly")

@@ -91,10 +91,10 @@ function api(port_api){
                 <a>If this page has loaded it means that the API is working as planned, More information access the API documentation at: <a href="https://github.com/The-Bds-Maneger/core/wiki">Bds Maneger Core</a>. </a>
                 <p><span>Bds Maneger core Version: ${bds.package_json.version}</span></p>
                 <p><h3>GET</h3></p>
-                <p><a href="/info">Basic Info server and System</a></p>
-                <p><a href="/players">Players who logged on to the server</a></p>
+                <p><a href="./info">Basic Info server and System</a></p>
+                <p><a href="./players">Players who logged on to the server</a></p>
                 <p><h3>POST</h3></p>
-                <p><a href="/service">basic Services: Stop, start and restart</a></p>
+                <p><a href="./service">basic Services: Stop, start and restart</a></p>
             </body>
             <p>by <a href="https://github.com/Sirherobrine23">Sirherobrine23</a></p>
         </html>`);

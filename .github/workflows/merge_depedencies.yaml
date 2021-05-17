@@ -3,11 +3,11 @@ on:
   push:
     branches:
       - dependabot*
-  
+      - main
   pull_request:
     branches:
       - dependabot*
-      
+      - main
 jobs:
   automerge:
     runs-on: ubuntu-latest
