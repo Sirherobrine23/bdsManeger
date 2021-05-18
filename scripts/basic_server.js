@@ -6,7 +6,8 @@ const commandExists = require("../commandExist");
 const saveUser = require("./SaveUserInJson");
 const bds = require("../index");
 const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine ,log_dir } = require("../bdsgetPaths");
-const BdsDetect = require("./detect")
+const BdsDetect = require("./detect");
+const { warn } = require("console");
 
 function start() {
     if (BdsDetect()){
@@ -114,31 +115,34 @@ function start() {
         });
         global.bds_server_string = start_server;
 
-        const returnFuntion = {};
-        returnFuntion["exec"] = start_server;
-        returnFuntion["stop"] = function (){start_server.stdin.write("stop\n")};
-        returnFuntion["command"] = function (command, callback){
-            const oldLog = global.bds_log_string;
-            start_server.stdin.write(`${command}\n`);
-            if (typeof callback === "function") {
-                setTimeout(() => {
-                    // Run commands from command run in server;
-                    callback(global.bds_log_string.replace(oldLog, "").split(/\r/).filter(data => {if (data === "") return false; else return true;}).join("\n"))
-                }, 1000);
+        const returnFuntion = {
+            exec: start_server,
+            stop: function (){start_server.stdin.write("stop\n")},
+            command: function (command, callback){
+                const oldLog = global.bds_log_string;
+                start_server.stdin.write(`${command}\n`);
+                if (typeof callback === "function") {
+                    setTimeout(() => {
+                        // Run commands from command run in server;
+                        callback(global.bds_log_string.replace(oldLog, "").split(/\r/).filter(data => {if (data === "") return false; else return true;}).join("\n"))
+                    }, 1000);
+                }
+            },
+            log: function (callback){
+                if (typeof callback !== "function") {warn("The log callback is not a function using console.log");callback = (data) => console.log(data);}
+                start_server.stdout.on("data", data => callback(data));
+                start_server.stderr.on("data", data => callback(data));
+            },
+            exit: function (callback){
+                start_server.on("exit", code => callback(code))
             }
         }
-        returnFuntion["stdout"] = start_server.stdout.on;
-        returnFuntion["stderr"] = start_server.stderr.on;
-        returnFuntion["on"] = start_server.on;
-        
-        returnFuntion["log"] = function (callback){start_server.stdout.on("data", data => callback(data)); start_server.stderr.on("data", data => callback(data));}
-        returnFuntion["exit"] = function (callback){start_server.on("exit", code => callback(code))}
-        
         return returnFuntion
     }
 }
 
 function BdsCommand(command) {
+    warn("Command is almost out of date, use the ones provided by the 'start' command instead");
     if (typeof bds_server_string === "undefined") return false;
     else {
         if (command === undefined) return false;

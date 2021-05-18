@@ -4,10 +4,13 @@ on:
     tags:
       - v**
       - V**
+
+env:
+  DOCKER_ARCHS: linux/amd64,linux/arm64
+
 jobs:
   Publish:
     runs-on: ubuntu-latest
-    container: bdsmaneger/node_image:latest
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@v2.1.5
@@ -53,7 +56,7 @@ jobs:
             sirherobrine23/bdsmaneger:${{ github.run_id }}
             bdsmaneger/maneger:latest
             bdsmaneger/maneger:${{ github.run_id }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: ${{ env.DOCKER_ARCHS }}
 
   Binarie-Linux:
     runs-on: ubuntu-latest

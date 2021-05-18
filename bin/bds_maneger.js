@@ -38,20 +38,23 @@ if (version) {
 
 if (SystemCheck) {
     const commandExits = require("../commandExist")
+    var checkothearch = "";
+    if ((process.platform === "linux" || process.platform === "android") && bds.arch !== "x64"){checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExits("qemu-x86_64-static")}\n`}
     const help = [
         `Bds Maneger core version: ${bds.package_json.version}`,
         `System: ${process.platform}, Arch: ${bds.arch}`,
-        "Bds Maneger core Platforms:",
-        `   - Bedrock:        ${bds.valid_platform.bedrock}`,
-        `   - Java:           ${bds.valid_platform.java}`,
-        `   - Pocketmine:     ${bds.valid_platform.pocketmine}`,
-        `   - JSPrismarine:   ${bds.valid_platform.jsprismarine}`,
-        `NodeJS version: ${process.versions.node}, v8: ${process.versions.v8}`,
         `Java installed: ${commandExits("java")}`,
-        `cURL installed: ${commandExits("curl")}`,
-        `wget installed: ${commandExits("wget")}`
-    ]
-    if ((process.platform === "linux" || process.platform === "darwin") && bds.arch !== "x64") help.push(`qemu-x86_64-static insttaled to emulate X64 arch: ${commandExits("qemu-x86_64-static")}`)
+        `NodeJS version: ${process.versions.node}, v8: ${process.versions.v8}`,
+        checkothearch,
+        "**************************************************************",
+        `* Server support for ${bds.arch} architecture:`,
+        `*   - Bedrock:          ${bds.valid_platform.bedrock}`,
+        `*   - Java:             ${bds.valid_platform.java}`,
+        `*   - Pocketmine:       ${bds.valid_platform.pocketmine}`,
+        `*   - JSPrismarine:     ${bds.valid_platform.jsprismarine}`,
+        "*",
+        "**************************************************************"
+    ];
     console.log(help.join("\n"))
     process.exit(0)
 }

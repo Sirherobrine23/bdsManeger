@@ -1,6 +1,5 @@
 /* eslint-disable no-irregular-whitespace */
 const { resolve, join } = require("path");
-const { execSync } = require("child_process");
 const { CronJob } = require("cron");
 const path = require("path")
 const fs = require("fs");
@@ -48,7 +47,7 @@ valid_platform = {
     bedrock: true,
     pocketmine: true,
     java: true,
-    jsprismarine: true
+    jsprismarine: commandExistsSync("node")
 }
 
 // check php bin
@@ -109,6 +108,7 @@ module.exports.log_date = log_date;
 module.exports.latest_log = path.join(bds_dir, "log", "latest.log");
 
 module.exports.package_json = JSON.parse(fs.readFileSync(bds_core_package))
+module.exports.extra_json = JSON.parse(fs.readFileSync(resolve(__dirname, "extra.json")))
 
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 if (typeof localStorage === "undefined") {
@@ -151,28 +151,31 @@ const current_version_bds_core = bds_maneger_version
 var default_platformConfig;
 if (valid_platform["bedrock"]) default_platformConfig = "bedrock";else if (valid_platform["java"]) default_platformConfig = "java"; else if (valid_platform["pocketmine"]) default_platformConfig = "pocketmine"; else default_platformConfig = "jsprismarine"
 
-module.exports.internal_ip = require("./scripts/external_ip").internal_ip
-module.exports.external_ip = require("./scripts/external_ip").external_ip
+const maneger_ips = require("./scripts/external_ip")
+
+module.exports.internal_ip = maneger_ips.internal_ip
+module.exports.external_ip = maneger_ips.external_ip
 
 // Config File
-if (fs.existsSync(bds_config_file)) bds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"));else bds_config = {platform_version: {}, telegram_admin: ["all_users"]}
+var Oldbds_config
+if (fs.existsSync(bds_config_file)) Oldbds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"));else Oldbds_config = {platform_version: {}, telegram_admin: ["all_users"]}
 bds_config = {
     "version": current_version_bds_core,
-    "bds_pages": (bds_config.bds_pages || "default"),
-    "bds_platform": (bds_config.bds_platform || default_platformConfig),
-    "LoadTelemetry": (() => {if (bds_config.LoadTelemetry === undefined) return true ;else return bds_config.LoadTelemetry})(),
-    "TelemetryID": (bds_config.TelemetryID || execSync(`curl -sS https://telemetry.the-bds-maneger.org/getid?external_ip=${require("./scripts/external_ip").external_ip}`).toString()),
+    "bds_pages": (Oldbds_config.bds_pages || "default"),
+    "bds_platform": (Oldbds_config.bds_platform || default_platformConfig),
+    "LoadTelemetry": (() => {if (Oldbds_config.LoadTelemetry === undefined) return true ;else return Oldbds_config.LoadTelemetry})(),
+    "TelemetryID": (Oldbds_config.TelemetryID || FetchSync(`https://telemetry.the-bds-maneger.org/getid?external_ip=${maneger_ips.external_ip}`).toString()),
     "platform_version": {
-        "bedrock": (bds_config.platform_version.bedrock || null),
-        "java": (bds_config.platform_version.java || null),
-        "pocketmine": (bds_config.platform_version.pocketmine || null),
+        "bedrock": (Oldbds_config.platform_version.bedrock || null),
+        "java": (Oldbds_config.platform_version.java || null),
+        "pocketmine": (Oldbds_config.platform_version.pocketmine || null),
         "jsprismarine": "latest"
     },
-    "bds_ban": (bds_config.bds_ban || ["Steve", "Alex", "steve", "alex"]),
-    "telegram_token": (bds_config.telegram_token || "not User defined"),
-    "Google_Drive_root_backup_id": (bds_config.Google_Drive_root_backup_id || undefined),
-    "BackupCron": (bds_config.BackupCron||[]),
-    "telegram_admin": bds_config.telegram_admin
+    "bds_ban": (Oldbds_config.bds_ban || ["Steve", "Alex", "steve", "alex"]),
+    "telegram_token": (Oldbds_config.telegram_token || "not User defined"),
+    "Google_Drive_root_backup_id": (Oldbds_config.Google_Drive_root_backup_id || undefined),
+    "BackupCron": (Oldbds_config.BackupCron||[]),
+    "telegram_admin": Oldbds_config.telegram_admin
 }
 fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
 bds_config_export()
