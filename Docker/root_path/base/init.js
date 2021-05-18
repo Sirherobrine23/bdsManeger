@@ -1,5 +1,6 @@
-#!/usr/bin/node --circular --no-warnings
+#!/usr/bin/node --no-warnings
 const bds = require("/opt/bdsCore/index");
+// const bds = require("../../../index");
 const { bds_dir, bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine } = bds
 const { existsSync, readFileSync } = require("fs")
 const { resolve, join } = require("path")
@@ -10,14 +11,20 @@ else if (process.env.TELEGRAM_TOKEN === "") console.warn("Telegram bot disabled,
 else  bds.telegram_token_save(process.env.TELEGRAM_TOKEN)
 
 bds.kill()
-bds.set_config(JSON.stringify({
-    "description": process.env.DESCRIPTION,
-    "name": process.env.WORLD_NAME,
-    "gamemode": process.env.GAMEMODE,
-    "difficulty": process.env.DIFFICULTY,
-    "players": process.env.PLAYERS,
-    "xbox": process.env.XBOX_ACCOUNT
-}))
+bds.change_platform(process.env.SERVER)
+bds.set_config({
+    world: process.env.WORLD_NAME,
+    description: process.env.DESCRIPTION,
+    gamemode: process.env.GAMEMODE,
+    difficulty: process.env.DIFFICULTY,
+    players: parseInt(process.env.PLAYERS),
+    commands: false,
+    account: JSON.parse(process.env.XBOX_ACCOUNT),
+    whitelist: false,
+    port: 19132,
+    portv6: 19133,
+    // seed: NewConfig.seed
+})
 
 bds.download("latest", false, function(status){
     if (status) {
@@ -26,7 +33,7 @@ bds.download("latest", false, function(status){
 
         // Log function
         function output(dados){
-            dados = dados.split("\n").filter(data => {if (data === "") return false; else return true}).join(/\n/);
+            dados = dados.split("\n").filter(data => {if (data === "") return false; else return true}).join("\n");
             console.log(dados);
         }
         // --------------------------------------------------------------------------------------------------------------------
@@ -59,6 +66,9 @@ bds.download("latest", false, function(status){
             server.exit("exit", function(code){
                 output(`\n\n\nExit with code ${code}`);
                 process.exit(code)
+            })
+            process.on("exit", function (){
+                server.stop()
             })
         } else throw Error("The server was not installed correctly")
     }
