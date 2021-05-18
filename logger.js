@@ -1,9 +1,9 @@
 const { join } = require("path");
 const fs = require("fs");
-const { bds_config, package_json } = require("./index")
+const { bds_config, extra_json } = require("./index")
 const { tmp_dir } = require("./bdsgetPaths");
-const infolog = join(tmp_dir, "bdsManegerLog.log")
 
+const infolog = join(tmp_dir, `${Math.random()}_bdsManegerLog.log`)
 //if (!(fs.existsSync(infolog))) fs.writeFileSync(infolog, "")
 const writelog = async function (data){
     var old;
@@ -11,13 +11,6 @@ const writelog = async function (data){
     const newData = `${old || ""}${data.join("\n")}\n`;
     fs.writeFileSync(infolog, newData);
 }
-
-const oldStdout = console.log;
-const logS = (...messages) => {
-    oldStdout.apply(console, messages);
-    writelog(messages);
-}
-global.console.log = logS;
 
 const oldStderr = console.error;
 const errorS = (...messages) => {
@@ -44,12 +37,14 @@ const warnS = (...messages) => {
 global.console.warn = warnS;
 
 function sendLogToTelemetry(){
-    const body = {
-        text: fs.readFileSync(infolog, "utf8")
-    };
-    fs.writeFileSync(infolog, "");
-    const telemetryUrl = `${package_json.telemetry_url[0]}/id/${bds_config.TelemetryID}/error`;
-    fetch(telemetryUrl, {method: "POST", mode: "cors", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})
+    if (fs.existsSync(infolog)){ 
+        const body = {
+            text: fs.readFileSync(infolog, "utf8")
+        };
+        fs.writeFileSync(infolog, "");
+        const telemetryUrl = `${extra_json.telemetry_url[0]}/id/${bds_config.TelemetryID}/error`;
+        fetch(telemetryUrl, {method: "POST", mode: "cors", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})
+    }
 }
 
 for (let interruptSignal of ["exit", "SIGQUIT", "SIGTERM"]){

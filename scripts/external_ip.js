@@ -1,10 +1,5 @@
-const { execSync } = require("child_process");
-
-if (typeof fetch === "undefined"){
-    global.fetch = require("node-fetch")
-}
-
-module.exports.external_ip = module.exports.ip = execSync("curl -sS https://ipecho.net/plain").toString("ascii");
+const fetchSync = require("sync-fetch");
+module.exports.external_ip = module.exports.ip = fetchSync("https://ipecho.net/plain").text()
 
 const interfaces = require("os").networkInterfaces();
 const internal_ip = []

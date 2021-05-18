@@ -10,6 +10,10 @@ on:
       - '.devcontainer/**'
       - 'CHANGELOG.md'
       - 'Docker/*/**'
+
+env:
+  DOCKER_ARCHS: linux/amd64,linux/arm64
+
 jobs:
   Npm-Publish-Dev:
     runs-on: ubuntu-latest
@@ -64,4 +68,4 @@ jobs:
           tags: |
             sirherobrine23/bdsmaneger:nightly
             bdsmaneger/maneger:nightly
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: ${{ env.DOCKER_ARCHS }}

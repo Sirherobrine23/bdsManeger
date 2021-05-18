@@ -1,0 +1,13 @@
+{
+    "telemetry_url": [
+        "https://telemetry.the-bds-maneger.org",
+        "http://localhost:1178"
+    ],
+    "contributors": [
+        {
+            "name": "Matheus Sampaio Queiroga",
+            "email": "srherobrine20@gmail.com",
+            "url": "https://sirherobrine23.org/?from=the-bds-maneger-project"
+        }
+    ]
+}

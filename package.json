@@ -3,18 +3,14 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.9.3",
+  "version": "1.9.16",
   "description": "Scripts to manage minecraft server's",
   "private": false,
   "main": "index.js",
-  "telemetry_url": [
-    "https://telemetry.the-bds-maneger.org",
-    "http://localhost:1178"
-  ],
+  
   "scripts": {
     "start": "node bin/bds_maneger.js -s",
     "stop": "node -p 'if (require(\"./\").kill()) console.log(\"Killeds\");else console.log(\"Not runs\");'",
-    "postinstall": "node WgetCurlCheck.js",
     "test": "exit 0",
     "eslint": "eslint --debug .",
     "eslint:debug": "eslint --debug .",
@@ -23,13 +19,6 @@
   "bin": {
     "bds_maneger": "./bin/bds_maneger.js"
   },
-  "contributors": [
-    {
-      "name": "Matheus Sampaio Queiroga",
-      "email": "srherobrine20@gmail.com",
-      "url": "https://sirherobrine23.org/?from=the-bds-maneger-project"
-    }
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/The-Bds-Maneger/Bds-Maneger-Core.git"

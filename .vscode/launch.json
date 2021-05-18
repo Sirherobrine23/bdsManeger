@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Build Docker And Run",
             "sourceMaps": false,
             "program": "${workspaceFolder}/BuildRunDocker.js"
         }
