@@ -53,14 +53,27 @@ Docker_Debug_Script="false"
 EXPOSE 80/tcp 19132/udp 19133/udp
 ENV BDS_DOCKER_IMAGE="true" HOME="/home/bds/"
 
+# Non Root User
+RUN \
+export username="thebds" && \
+export password="123aa3456s7" && \
+pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); \
+useradd -m -p "$pass" "$username"; \
+addgroup ${username} sudo; \
+usermod --shell /bin/bash --home /tmp/ ${username}; \
+echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+mkdir -p /home/ /opt/bdsCore/ /base/
+
 # Copy Files
 COPY ./Docker/root_path/ /
 COPY ./ /opt/bdsCore/
+RUN chmod -R 7777 /home/ /opt/bdsCore/ /base/ && chown thebds:thebds -R /home/ /opt/bdsCore/ /base/
+USER thebds
 RUN cd /opt/bdsCore/ && npm install --no-save
 
 RUN mkdir -p /home/bds/.config/@the-bds-maneger/core
 
 # Entrypint
 WORKDIR /home/bds/
-RUN chmod +x /base/init.sh
+RUN chmod +x /base/init.js
 ENTRYPOINT ["/base/init.js"]
