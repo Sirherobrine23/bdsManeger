@@ -3,13 +3,13 @@ const { resolve, join } = require("path");
 const { CronJob } = require("cron");
 const path = require("path")
 const fs = require("fs");
-const { getConfigHome } = require("./GetPlatformFolder")
+const { getConfigHome } = require("./GetPlatformFolder");
 const commandExistsSync = require("./commandExist");
-const FetchSync = require("sync-fetch")
+module.exports = require("./bdsgetPaths");
+const FetchSync = require("./fetchSync")
 
 const bds_core_package = join(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
-module.exports = require("./bdsgetPaths");
 if (process.env.SHOW_BDS_VERSION !== undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
 function date(format) {
     const today = new Date(),
