@@ -3,6 +3,7 @@ process.env.IS_BIN_BDS = true;process.title = "Bds Maneger CLI";
 process.env.IS_BDS_CLI = true
 const bds = require("../index")
 const readline = require("readline");
+const { bds_dir } = require("../bdsgetPaths");
 var argv = require("minimist")(process.argv.slice(2));
 
 if (Object.getOwnPropertyNames(argv).length === 1 || Object.getOwnPropertyNames(argv).length === 0) argv.help = true
@@ -39,12 +40,14 @@ if (version) {
 if (SystemCheck) {
     const commandExits = require("../commandExist")
     var checkothearch = "";
-    if ((process.platform === "linux" || process.platform === "android") && bds.arch !== "x64"){checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExits("qemu-x86_64-static")}\n`}
+    if (process.platform === "linux" && bds.arch !== "x64"){checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExits("qemu-x86_64-static")}\n`}
+    if (process.platform === "android" && bds.arch !== "x64"){checkothearch = `qemu-x86_64 is installed to emulate an x64 system: ${commandExits("qemu-x86_64")}\n`}
     const help = [
         `Bds Maneger core version: ${bds.package_json.version}`,
         `System: ${process.platform}, Arch: ${bds.arch}`,
         `Java installed: ${commandExits("java")}`,
         `NodeJS version: ${process.versions.node}, v8: ${process.versions.v8}`,
+        `Bds Maneger dir: ${bds_dir}`,
         checkothearch,
         "**************************************************************",
         `* Server support for ${bds.arch} architecture:`,
