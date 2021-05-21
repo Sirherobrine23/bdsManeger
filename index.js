@@ -6,7 +6,8 @@ const fs = require("fs");
 const { getConfigHome } = require("./GetPlatformFolder");
 const commandExistsSync = require("./commandExist");
 module.exports = require("./bdsgetPaths");
-const FetchSync = require("./fetchSync")
+const FetchSync = require("./fetchSync");
+const { randomBytes } = require("crypto")
 
 const bds_core_package = join(__dirname, "package.json")
 const bds_maneger_version = require(bds_core_package).version
@@ -178,6 +179,19 @@ bds_config = {
     "telegram_admin": Oldbds_config.telegram_admin
 }
 fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
+
+function bds_config_export (){
+    const Config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"), "utf8"))
+    /**
+     * Get current bds core config
+     * 
+     * @example bds_config.bds_platform // return bedrock, java, pocketmine or jsprismarine
+     * 
+     */
+    module.exports.bds_config = Config
+    module.exports.telegram_token = Config.telegram_toke
+    module.exports.platform = Config.bds_platform
+}
 bds_config_export()
 
 require("./logger")
@@ -218,18 +232,6 @@ module.exports.bds_platform = bds_config.bds_platform
  */
 const log_file = path.join(log_dir, `${date()}_${bds_config.bds_platform}_Bds_log.log`);
 module.exports.log_file = log_file
-
-function bds_config_export (){
-    const Config = JSON.parse(fs.readFileSync(path.join(bds_dir, "bds_config.json"), "utf8"))
-    /**
-     * Get current bds core config
-     * 
-     * @example bds_config.bds_platform // return bedrock, java, pocketmine or jsprismarine
-     * 
-     */
-    module.exports.bds_config = Config
-    module.exports.platform = Config.bds_platform
-}
 bds_config_export()
 
 function getBdsConfig (){
@@ -338,7 +340,6 @@ if (!(fs.existsSync(user_file_connected))) {
     fs.writeFileSync(user_file_connected, NewJson);
 }
 
-if (!(fs.existsSync(user_file_connected))) fs.writeFileSync(user_file_connected, "{}")
 const file_user_check = fs.readFileSync(user_file_connected, "utf8");
 try {
     JSON.parse(file_user_check)
@@ -348,47 +349,25 @@ try {
 
 module.exports.telegram_token = bds_config.telegram_token
 
-module.exports.telegram = require("./scripts/telegram_bot")
-
-const token_register = function (username, passworld) {
-    const bds_token_path = path.join(bds_dir, "bds_tokens.json") 
-    if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]")
-    function getRandomNumber (){
-        const number = Math.trunc(15 * (10 * Math.random()))
-        if (number < 10) return getRandomNumber()
-        else if (number > 15) return getRandomNumber()
-        else return number
-    }
-    let number = getRandomNumber()
-    require("crypto").randomBytes(number, function(err, buffer) {
-        if (err) console.warn(err);
+function token_register() {
+    const bds_token_path = path.join(bds_dir, "bds_tokens.json");
+    if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]");
+    randomBytes((Math.trunc(15 * (10 * Math.random()))), function(err, buffer) {
+        if (err) return console.warn(err);
         const new_token = buffer.toString("hex");
-
         var tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
-        tokens.push({
-            "token": (passworld||new_token),
-            "user": (username||"all")
-        });
+        tokens.push({token: new_token});
         fs.writeFileSync(bds_token_path, JSON.stringify(tokens, null, 4), "utf8");
-
         console.log(`Bds Maneger API REST token: "${new_token}"`);
-        if (process.stdout.isTTY === false) {
-            require("qrcode").toString(new_token, {type: "terminal"}, function (err, url) {
-                if (err) throw Error(err)
-                console.log(url)
-            })
-        }
     })
 }
 
 // Requires
 const { World_BAckup } = require("./scripts/backups");
-const { stop, BdsCommand } = require("./scripts/basic_server");
-const bdsStart = require("./scripts/basic_server").start;
 const { config, get_config, config_example } = require("./scripts/bds_settings");
 const { mcpe, drive_backup } = require("./scripts/GoogleDrive");
 const download = require("./scripts/download");
-
+const { start, stop, BdsCommand } = require("./scripts/basic_server")
 
 const Jobs = {};
 for (let index of bds_config.BackupCron) {
@@ -421,9 +400,9 @@ module.exports.command = BdsCommand
  * to start the server here in the sera script with child_process, then you will have to use the return function for your log custumization or anything else
  * 
  * @example const server = bds.start();
- * server.on.stdout("date", function (log){console.log(log)})
+ * server.log(function (log){console.log(log)})
  */
-module.exports.start = bdsStart
+module.exports.start = start
 /**
  * use this command for the server, that's all
  */
@@ -500,3 +479,8 @@ module.exports.mcpe_file = mcpe
  * on the java platform the map selected in the server configuration will be backed up, any other map will have to change in the server settings to perform the backup
  */
 module.exports.drive_backup = drive_backup
+
+/**
+ * This is telegram bot
+ */
+module.exports.telegram = require("./scripts/telegram_bot")

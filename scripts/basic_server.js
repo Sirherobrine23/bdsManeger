@@ -8,6 +8,10 @@ const bds = require("../index");
 const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine ,log_dir } = require("../bdsgetPaths");
 const BdsDetect = require("./detect");
 const { warn } = require("console");
+const { v4 } = require("uuid")
+
+// Set bdsexec functions
+global.bdsexecs = []
 
 function start() {
     if (BdsDetect()){
@@ -90,24 +94,21 @@ function start() {
                     }
             });
         }
-
-        if (typeof global.bdsexecs === "undefined") global.bdsexecs = [{exec: start_server, name: Math.random()}]; else global.bdsexecs.push({exec: start_server, name: Math.random()})
-
         // save User in Json
         start_server.stdout.on("data", data => saveUser(data))
         start_server.stderr.on("data", data => saveUser(data))
-
+        // ---------------------------------------------------
         // Clear latest.log
         fs.writeFileSync(path.join(log_dir, "latest.log"), "")
-
+        // ---------------------------------------------------
         // stdout
         start_server.stdout.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
         start_server.stdout.pipe(fs.createWriteStream(path.join(log_dir, "latest.log"), {flags: "a"}));
-
+        // ---------------------------------------------------
         // stderr
         start_server.stderr.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
         start_server.stderr.pipe(fs.createWriteStream(path.join(log_dir, "latest.log"), {flags: "a"}));
-
+        // ---------------------------------------------------
         // Global and Run
         global.bds_log_string = ""
         start_server.stdout.on("data", function(data){
@@ -115,7 +116,9 @@ function start() {
         });
         global.bds_server_string = start_server;
 
+        // Functions return
         const returnFuntion = {
+            uuid: v4(),
             exec: start_server,
             stop: function (){start_server.stdin.write("stop\n")},
             command: function (command, callback){
@@ -137,6 +140,10 @@ function start() {
                 start_server.on("exit", code => callback(code))
             }
         }
+        global.bdsexecs.push({
+            bds: returnFuntion,
+            ...returnFuntion
+        })
         return returnFuntion
     }
 }
