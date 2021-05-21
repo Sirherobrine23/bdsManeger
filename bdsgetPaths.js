@@ -34,10 +34,7 @@ module.exports.tmp_dir = tmp
 module.exports.home = home
 
 // save bds core files
-var bdsDir;
-if (fs.existsSync(join(home, "storage", "shared"))) bdsDir = join(home, "storage", "shared", "bds_core")
-else bdsDir = join(home, "bds_core");
-const bds_dir = bdsDir
+const bds_dir = join(home, "bds_core");
 /**
  * The most important directory of this project, here are saved some important things like:
  * 
