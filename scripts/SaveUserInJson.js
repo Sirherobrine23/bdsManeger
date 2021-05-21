@@ -121,7 +121,7 @@ function Pocketmine(data){
             }
         }
     }
-    console.log(users);
+    // console.log(users);
     fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
     return users
 }
