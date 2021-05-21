@@ -18,7 +18,7 @@ function MytypeKill(player) {
     return RemoveUser;
 }
 
-const Bedrock = function (data){
+function Bedrock(data){
     const file_users = fs.readFileSync(bds.players_files, "utf8");
     const users = JSON.parse(file_users);
     const CurrentData = new Date();
@@ -74,10 +74,62 @@ const Bedrock = function (data){
     else return false
 }
 
+function Pocketmine(data){
+    const UTF8Users = fs.readFileSync(bds.players_files, "utf8");
+    const users = JSON.parse(UTF8Users);
+    const CurrentData = new Date();
+
+    // Init
+    for (let line of data.split(/\r?\n/g)) {
+        line = line.replace(/\[[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\] \[Server thread\/INFO\]: /, "").trim();
+        const currenttosave = {
+            username: line.replace(/\[[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\] \[Server thread\/INFO\]: /, "").trim().replace("joined the game", "").trim().replace("left the game", "").trim(),
+            join: line.includes("joined"),
+            left: line.includes("left")
+        }
+        if (currenttosave.join){
+            const username = currenttosave.username;
+            if (users.pocketmine[username]) {
+                users.pocketmine[username].connected = true
+                users.pocketmine[username].date = CurrentData
+                users.pocketmine[username].update.push({
+                    date: CurrentData,
+                    connected: true,
+                })
+            } else {
+                users.pocketmine[username] = {
+                    connected: true,
+                    date: CurrentData,
+                    update: [
+                        {
+                            date: CurrentData,
+                            connected: true,
+                        }
+                    ]
+                }
+            }
+        }
+        else if (currenttosave.left){
+            const username = currenttosave.username;
+            if (users.pocketmine[username]) {
+                users.pocketmine[username].connected = false
+                users.pocketmine[username].date = CurrentData
+                users.pocketmine[username].update.push({
+                    date: CurrentData,
+                    connected: false,
+                })
+            }
+        }
+    }
+    console.log(users);
+    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+    return users
+}
+
 module.exports = function (data){
     if (bds.platform === "bedrock") return Bedrock(data);
     else if (bds.platform === "java") return false;
-    else if (bds.platform === "pocketmine") return false
+    else if (bds.platform === "pocketmine") return Pocketmine(data);
     else if (bds.platform === "jsprismarine") return false
     else throw new Error("Plafotform Error !!")
 };
