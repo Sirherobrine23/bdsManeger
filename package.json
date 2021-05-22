@@ -9,7 +9,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node bin/bds_maneger.js -s",
-    "stop": "node -p 'if (require(\"./\").kill()) console.log(\"Killeds\");else console.log(\"Not runs\");'",
+    "stop": "node -p 'console.log(require(\"./\").kill());'",
     "test": "exit 0",
     "eslint": "eslint --debug .",
     "eslint:debug": "eslint --debug .",
