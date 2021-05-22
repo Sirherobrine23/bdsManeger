@@ -83,7 +83,7 @@ function Pocketmine(data){
     for (let line of data.split(/\r?\n/g)) {
         line = line.replace(/\[[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\] \[Server thread\/INFO\]: /, "").trim();
         const currenttosave = {
-            username: line.replace(/\[[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\] \[Server thread\/INFO\]: /, "").trim().replace("joined the game", "").trim().replace("left the game", "").trim(),
+            username: line.replace("joined the game", "").replace("left the game", "").trim(),
             join: line.includes("joined"),
             left: line.includes("left")
         }
@@ -121,14 +121,64 @@ function Pocketmine(data){
             }
         }
     }
-    // console.log(users);
+    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+    return users
+}
+
+function java(data){
+    const UTF8Users = fs.readFileSync(bds.players_files, "utf8");
+    const users = JSON.parse(UTF8Users);
+    const CurrentData = new Date();
+
+    // Init
+    for (let line of data.split(/\r?\n/g)) {
+        line = line.replace(/\[[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\] \[Server thread\/INFO\]:/, "").trim();
+        const currenttosave = {
+            username: line.replace("joined the game", "").replace("left the game", "").trim(),
+            join: line.includes("joined the"),
+            left: line.includes("left the")
+        }
+        if (currenttosave.join){
+            const username = currenttosave.username;
+            if (users.java[username]) {
+                users.java[username].connected = true
+                users.java[username].date = CurrentData
+                users.java[username].update.push({
+                    date: CurrentData,
+                    connected: true,
+                })
+            } else {
+                users.java[username] = {
+                    connected: true,
+                    date: CurrentData,
+                    update: [
+                        {
+                            date: CurrentData,
+                            connected: true,
+                        }
+                    ]
+                }
+            }
+        }
+        else if (currenttosave.left){
+            const username = currenttosave.username;
+            if (users.java[username]) {
+                users.java[username].connected = false
+                users.java[username].date = CurrentData
+                users.java[username].update.push({
+                    date: CurrentData,
+                    connected: false,
+                })
+            }
+        }
+    }
     fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
     return users
 }
 
 module.exports = function (data){
     if (bds.platform === "bedrock") return Bedrock(data);
-    else if (bds.platform === "java") return false;
+    else if (bds.platform === "java") return java(data);
     else if (bds.platform === "pocketmine") return Pocketmine(data);
     else if (bds.platform === "jsprismarine") return false
     else throw new Error("Plafotform Error !!")
