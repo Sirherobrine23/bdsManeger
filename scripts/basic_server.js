@@ -42,14 +42,13 @@ function start() {
             } else if (process.platform === "darwin") throw Error("We don't have MacOS support yet")
             else process.exit(210)
         } else if (bds.platform === "java") {
-            var ram_max = Math.trunc(Math.abs((require("os").freemem() / 1024 / 1024) / 1.5))
-            var ram_minimun = ram_max;
+            const ramMax = Math.trunc(Math.abs(require("os").freemem() / 1024 / 1024));
+            var ram_max, ram_min;
             // Check low ram
-            if (ram_max <= 300) throw new Error("Low ram memorie")	;
-
-            if (ram_max >= 1000) ram_max = Math.trunc(ram_max / 2);
+            if (ramMax <= 300) throw new Error("Low ram memorie")	;
+            if (ramMax >= 1024) {ram_max = "1G"; ram_min = "1G"}
             if (commandExists("java")) {
-                Command = `java -Xmx${ram_max}M -Xms${ram_minimun || ram_max}M -jar MinecraftServerJava.jar nogui`;
+                Command = `java -jar -Xmx${ram_max} -Xms${ram_min} MinecraftServerJava.jar nogui`;
                 Options = {
                     cwd: bds_dir_java
                 };
