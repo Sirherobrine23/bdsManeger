@@ -86,7 +86,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Bds Maneger Version ${{ env.BDS_VER }}
+          name: Bds Maneger Core ${{steps.set-result.outputs.result}}
           tag_name: ${{steps.set-result.outputs.result}}
           files: Linux-Bin*
           body: |
@@ -120,7 +120,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Bds Maneger Version ${{ env.BDS_VER }}
+          name: Bds Maneger Core ${{steps.set-result.outputs.result}}
           tag_name: ${{steps.set-result.outputs.result}}
           files: Macos-Bin*
           body: |
@@ -157,7 +157,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Bds Maneger Version ${{ env.BDS_VER }}
+          name: Bds Maneger Core ${{steps.set-result.outputs.result}}
           tag_name: ${{steps.set-result.outputs.result}}
           files: Windows-Bin*
           body: |
