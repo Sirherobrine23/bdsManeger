@@ -13,6 +13,8 @@ const server =  (argv.p || argv.platform ),
     bds_version = (argv.d || argv.server_download),
     start = (argv.s || argv.server_version)
 
+console.log(process.argv);
+
 // Bds Maneger CLI Help
 if (argv.h || argv.help) {
     let help = [
