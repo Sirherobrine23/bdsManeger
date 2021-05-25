@@ -17,7 +17,7 @@ npm install -g eslint && \
 npm cache clean --force > /dev/null 2>&1 && \
 apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /root/.gnupg /tmp/*
 
-FROM bdsbase
+FROM bdsbase AS bdscore
 RUN echo "Arch System: $(uname -m)"
 
 RUN apt update && \

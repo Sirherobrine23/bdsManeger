@@ -65,7 +65,7 @@ jobs:
         with:
           push: true
           file: Dockerfile
+          target: bdscore
           tags: |
-            sirherobrine23/bdsmaneger:nightly
             bdsmaneger/maneger:nightly
           platforms: ${{ env.DOCKER_ARCHS }}

@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.9.16",
+  "version": "1.10.0",
   "description": "Scripts to manage minecraft server's",
   "private": false,
   "main": "index.js",
@@ -13,7 +13,8 @@
     "test": "exit 0",
     "eslint": "eslint --debug .",
     "eslint:debug": "eslint --debug .",
-    "eslint:fix": "eslint --fix ."
+    "eslint:fix": "eslint --fix .",
+    "nexe": "nexe --build -i \"bin/bds_maneger.js\" --output \"BdsManager-bin\" -r \"package.json\" -r \"rest/\" -r \"scripts/\" -r \"*.js\" -r \"*.json\""
   },
   "bin": {
     "bds_maneger": "./bin/bds_maneger.js"
@@ -67,6 +68,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "eslint": "^7.19.0"
+    "eslint": "^7.19.0",
+    "nexe": "*"
   }
 }

@@ -51,14 +51,14 @@ jobs:
         with:
           push: true
           file: Dockerfile
+          target: bdscore
           tags: |
-            sirherobrine23/bdsmaneger:latest
-            sirherobrine23/bdsmaneger:${{ github.run_id }}
             bdsmaneger/maneger:latest
             bdsmaneger/maneger:${{ github.run_id }}
           platforms: ${{ env.DOCKER_ARCHS }}
 
-  Binarie-Linux:
+  # Bin Files
+  Binarie-Linux-x64:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
@@ -70,11 +70,10 @@ jobs:
       - name: Install Depedencies
         run: npm install
 
-      - name: Install nexe
-        run: sudo npm i nexe -g
-
       - name: Build Bin
-        run: nexe --build ./bin/bds_maneger.js --output ./BdsManegerCliLinux
+        run: |
+          npm run nexe
+          mv -fv BdsManager-bin Linux-Bin
 
       - uses: actions/github-script@v4.0.2
         id: set-result
@@ -89,9 +88,9 @@ jobs:
         with:
           name: Bds Maneger Version ${{ env.BDS_VER }}
           tag_name: ${{steps.set-result.outputs.result}}
-          files: BdsManegerCliLinux*
+          files: Linux-Bin*
           body: |
-            Binarie Bds Maneger CLI to Linux
+            Binarie Bds Maneger CLI to Linux x64
 
   Binarie-Macos:
     runs-on: macos-latest
@@ -105,11 +104,10 @@ jobs:
       - name: Install Depedencies
         run: npm install
 
-      - name: Install nexe
-        run: sudo npm i nexe -g
-
       - name: Build Bin
-        run: nexe --build ./bin/bds_maneger.js --output ./BdsManegerCLIMacOS
+        run: |
+          npm run nexe
+          mv -fv BdsManager-bin Macos-Bin
 
       - uses: actions/github-script@v4.0.2
         id: set-result
@@ -124,7 +122,7 @@ jobs:
         with:
           name: Bds Maneger Version ${{ env.BDS_VER }}
           tag_name: ${{steps.set-result.outputs.result}}
-          files: BdsManegerCLIMacOS*
+          files: Macos-Bin*
           body: |
             Binarie Bds Maneger CLI to MacOS
 
@@ -140,14 +138,13 @@ jobs:
       - name: Install Depedencies
         run: npm install
 
-      - name: Install nexe
-        run: npm i nexe -g
-
       - name: Set up NASM
         uses: ilammy/setup-nasm@v1.2.0
 
       - name: Build Bin
-        run: nexe --build bin\bds_maneger.js --output BdsManegerCliWindows
+        run: |
+          npm run nexe
+          Ren "BdsManager-bin.exe" "Windows-Bin.exe"
 
       - uses: actions/github-script@v4.0.2
         id: set-result
@@ -162,6 +159,6 @@ jobs:
         with:
           name: Bds Maneger Version ${{ env.BDS_VER }}
           tag_name: ${{steps.set-result.outputs.result}}
-          files: BdsManegerCliWindows*
+          files: Windows-Bin*
           body: |
             Binarie to Windows x64
