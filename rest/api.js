@@ -10,7 +10,7 @@ const kerneldetect = require("../DetectKernel");
 const commandExist = require("../commandExist");
 const { join } = require("path");
 const bdsPaths = require("../bdsgetPaths")
-const admzip = require("adm-zip")
+const admzip = require("adm-zip");
 
 function api(port_api){
     const app = express();
@@ -58,6 +58,22 @@ function api(port_api){
         };
         return res.send(info);
     });
+
+    app.post("/bds_command", (req, res) => {
+        const body = req.body;
+        var comand = body.command
+        const status = {
+            code: 401,
+            status: false
+        }
+        if (token_verify(body.token)) {
+            bds.command(comand)
+            status.code = 201
+            status.status = true
+        }
+        res.status(status.code).send(status)
+    });
+
     app.get("/players", (req, res) => {
         const query = req.query;
         const players_json = JSON.parse(fs.readFileSync(bds.players_files, "utf8"))[(query.platform || bds.platform)];

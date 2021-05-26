@@ -36,13 +36,12 @@ function bds_config(NewConfig){
     if (NewConfig.gamemode) JsonConfig.gamemode = NewConfig.gamemode
     if (NewConfig.difficulty) JsonConfig.difficulty = NewConfig.difficulty
     if (NewConfig.players) JsonConfig.players = NewConfig.players
-    if (NewConfig.commands) JsonConfig.commands = NewConfig.commands
-    if (NewConfig.account) JsonConfig.account = NewConfig.account
-    if (NewConfig.whitelist) JsonConfig.whitelist = NewConfig.whitelist
+    if (NewConfig.commands || NewConfig.commands === false) JsonConfig.commands = NewConfig.commands
+    if (NewConfig.account || NewConfig.account === false) JsonConfig.account = NewConfig.account
+    if (NewConfig.whitelist || NewConfig.whitelist === false) JsonConfig.whitelist = NewConfig.whitelist
     if (NewConfig.port) JsonConfig.port = NewConfig.port
     if (NewConfig.portv6) JsonConfig.portv6 = NewConfig.portv6
     if (NewConfig.seed) JsonConfig.seed = NewConfig.seed
-
     var Config, ConfigFile;
     if (bds.platform === "bedrock") {
         ConfigFile = join(bds_dir_bedrock, "server.properties");

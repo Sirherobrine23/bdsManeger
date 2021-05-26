@@ -126,16 +126,22 @@ function start() {
                 if (typeof callback === "function") {
                     setTimeout(() => {
                         // Run commands from command run in server;
-                        callback(global.bds_log_string.replace(oldLog, "").split(/\r/).filter(data => {if (data === "") return false; else return true;}).join("\n"))
-                    }, 1000);
+                        const log = global.bds_log_string.replace(oldLog, "").split(/\r/).filter(data => {if (data === "") return false; else return true;}).join("\n") 
+                        if (log.length >= 1) callback(log); else callback("no log")
+                    }, 1555);
                 }
             },
             log: function (logCallback){
-                if (typeof callback !== "function") {warn("The log callback is not a function using console.log");logCallback = (data) => console.log(data);}
+                if (typeof logCallback !== "function") {
+                    warn("The log callback is not a function using console.log");
+                    logCallback = (data) => console.log(data);
+                }
                 start_server.stdout.on("data", data => logCallback(data));
                 start_server.stderr.on("data", data => logCallback(data));
             },
-            exit: function (exitCallback){if (typeof exitCallback === "function") start_server.on("exit", code => exitCallback(code));}
+            exit: function (exitCallback){if (
+                typeof exitCallback === "function") start_server.on("exit", code => exitCallback(code));
+            }
         }
         global.BdsExecs[returnFuntion.uuid] = returnFuntion
         return returnFuntion
