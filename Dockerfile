@@ -21,7 +21,7 @@ FROM bdsbase AS bdscore
 RUN echo "Arch System: $(uname -m)"
 
 RUN apt update && \
-apt install -y git curl openjdk-11-jdk openjdk-11-jre wget jq sudo unzip zip screen nginx python make build-essential && \
+apt install -y git curl openjdk-11-jdk openjdk-11-jre wget jq sudo unzip zip screen nginx python make build-essential procps && \
 rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /etc/nginx/sites-*/default && mkdir -p /home/bds/
 
 RUN case $(uname -m) in \
