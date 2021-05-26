@@ -137,7 +137,7 @@ function start() {
             },
             exit: function (exitCallback){if (typeof exitCallback === "function") start_server.on("exit", code => exitCallback(code));}
         }
-        global.NewBdsExecs[returnFuntion.uuid] = returnFuntion
+        global.BdsExecs[returnFuntion.uuid] = returnFuntion
         return returnFuntion
     }
 }
