@@ -33,7 +33,6 @@ RUN case $(uname -m) in \
     unzip /tmp/libries.zip -d / && \
     rm -rfv /tmp/libries.zip && \
     mkdir -p /lib64 && \
-    ln -s /lib/x86_64-linux-gnu/ld-2.31.so /lib64/ld-linux-x86-64.so.2 && \
     rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* ;; \
 esac
 
