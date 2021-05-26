@@ -11,7 +11,7 @@ const { warn } = require("console");
 const { v4 } = require("uuid")
 
 // Set bdsexec functions
-global.bdsexecs = []
+global.BdsExecs = {};
 
 function start() {
     if (BdsDetect()){
@@ -130,19 +130,14 @@ function start() {
                     }, 1000);
                 }
             },
-            log: function (callback){
-                if (typeof callback !== "function") {warn("The log callback is not a function using console.log");callback = (data) => console.log(data);}
-                start_server.stdout.on("data", data => callback(data));
-                start_server.stderr.on("data", data => callback(data));
+            log: function (logCallback){
+                if (typeof callback !== "function") {warn("The log callback is not a function using console.log");logCallback = (data) => console.log(data);}
+                start_server.stdout.on("data", data => logCallback(data));
+                start_server.stderr.on("data", data => logCallback(data));
             },
-            exit: function (callback){
-                start_server.on("exit", code => callback(code))
-            }
+            exit: function (exitCallback){if (typeof exitCallback === "function") start_server.on("exit", code => exitCallback(code));}
         }
-        global.bdsexecs.push({
-            bds: returnFuntion,
-            ...returnFuntion
-        })
+        global.NewBdsExecs[returnFuntion.uuid] = returnFuntion
         return returnFuntion
     }
 }
