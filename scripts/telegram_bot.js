@@ -6,6 +6,9 @@ const { readFileSync } = require("fs");
 const FetchSync = require("../fetchSync");
 
 function boot_telegram_bot(){
+    function getExec() {
+        return global.BdsExecs[Object.getOwnPropertyNames(global.BdsExecs)[0]]
+    }
     // Set Telegram Bot
     const bot = new Telegraf(telegram_token)
     bot.start((ctx) => {
@@ -56,7 +59,7 @@ function boot_telegram_bot(){
     bot.command("server_stop", (ctx) => {
         if (checkUser(ctx.message.from.username)){
             if (detect()){
-                global.bdsexecs[0].bds.stop();
+                getExec().stop();
                 ctx.reply("The server is stopping, wait for a few moments")
             } else ctx.reply(`Hello ${ctx.message.from.username}, the server will remain stopped`);
         } else {
@@ -69,7 +72,7 @@ function boot_telegram_bot(){
         if (detect()){
             if (Usercommand === "") ctx.reply("Check you command");
             else {
-                if (checkUser(ctx.message.from.username)) global.bdsexecs[0].bds.command(Usercommand, text => {if (!(global.isTelegrambot)) ctx.reply(text)});
+                if (checkUser(ctx.message.from.username)) getExec().command(Usercommand, text => {if (!(global.isTelegrambot)) ctx.reply(text)});
             }
         } else ctx.reply("Start Server")
     });

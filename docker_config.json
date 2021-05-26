@@ -52,7 +52,7 @@
         },
         {
             "name": "PLAYERS",
-            "value": 2
+            "value": 8
         },
         {
             "name": "BDS_VERSION",
@@ -63,5 +63,8 @@
             "value": "bedrock"
         }
     ],
-    "options": []
+    "target": "bdscore",
+    "options": [
+        "--net=host"
+    ]
 }

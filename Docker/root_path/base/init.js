@@ -1,9 +1,10 @@
 #!/usr/bin/node --no-warnings
+const { existsSync, readFileSync } = require("fs");
+const { join } = require("path");
+const { bds_dir, bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine } = require("/opt/bdsCore/bdsgetPaths");
 const bds = require("/opt/bdsCore/index");
-// const bds = require("../../../index");
-const { bds_dir, bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine } = bds
-const { existsSync, readFileSync } = require("fs")
-const { resolve, join } = require("path")
+const readline = require("readline");
+const { execSync } = require("child_process");
 
 if (process.env.TELEGRAM_TOKEN === "null") console.warn("Telegram bot disabled, bot token not informed")
 else if (process.env.TELEGRAM_TOKEN === "undefined") console.warn("Telegram bot disabled, bot token not informed")
@@ -26,50 +27,54 @@ bds.set_config({
     // seed: NewConfig.seed
 })
 
-bds.download("latest", false, function(status){
-    if (status) {
-        // Enable APIs
-        bds.rest();
+function StartServer(){
+    // Enable APIs
+    bds.rest();
 
-        // Log function
-        function output(dados){
-            dados = dados.split("\n").filter(data => {if (data === "") return false; else return true}).join("\n");
-            console.log(dados);
-        }
-        // --------------------------------------------------------------------------------------------------------------------
+    console.log(execSync("sudo service nginx start").toString("ascii"));
 
-        // Bds Maneger Core Token API REST
-        const bds_tokens = resolve(bds_dir, "bds_tokens.json") 
-        if (existsSync(bds_tokens)) {
-            let JSON_ = JSON.parse(readFileSync(bds_tokens, "utf-8"))
-            for (let ind in JSON_){
-                console.log(`Token: ${JSON_[ind].token}`);
-            }
-        } else bds.token_register();
-
-        // Telegram bot
-        if (process.env.TELEGRAM_TOKEN === "null") console.log("Telegram bot disabled, bot token not informed")
-        else if (process.env.TELEGRAM_TOKEN === "undefined") console.log("Telegram bot disabled, bot token not informed")
-        else if (process.env.TELEGRAM_TOKEN === "") console.log("Telegram bot disabled, bot token not informed")
-        else  bds.telegram.launch()
-
-        // Detect whether the server has been installed
-        var bds_software = false
-        if (existsSync(join(bds_dir_bedrock, "bedrock_server"))) bds_software = true
-        if (existsSync(join(bds_dir_bedrock, "bedrock_server.exe"))) bds_software = true
-        if (existsSync(join(bds_dir_java, "MinecraftServerJava.jar"))) bds_software = true
-        if (existsSync(join(bds_dir_pocketmine, "MinecraftServerJava.jar"))) bds_software = true
-
-        if (bds_software){
-            const server = bds.start()
-            server.log(data => output(data));
-            server.exit("exit", function(code){
-                output(`\n\n\nExit with code ${code}`);
-                process.exit(code)
-            })
-            process.on("exit", function (){
-                server.stop()
-            })
-        } else throw Error("The server was not installed correctly")
+    // Log function
+    function ServerLog(dados){
+        dados = dados.split("\n").filter(data => {return (data !== "")}).join("\n").split("\r").filter(data => {return (data !== "")}).join("");
+        console.log(dados);
     }
+    // --------------------------------------------------------------------------------------------------------------------
+
+    // Bds Maneger Core Token API REST
+    const bds_tokens = join(bds_dir, "bds_tokens.json") 
+    if (existsSync(bds_tokens)) {
+        let JSON_ = JSON.parse(readFileSync(bds_tokens, "utf-8"))
+        for (let ind in JSON_){
+            console.log(`Token: ${JSON_[ind].token}`);
+        }
+    } else bds.token_register();
+
+    // Telegram bot
+    if (process.env.TELEGRAM_TOKEN === "null" || process.env.TELEGRAM_TOKEN === "undefined" || process.env.TELEGRAM_TOKEN === "") console.log("Telegram bot disabled, bot token not informed");
+    else {
+        function startBotTeletram(){try {bds.telegram()} catch (error) {console.error(error);startBotTeletram();}}
+        startBotTeletram()
+    }
+
+    // Detect whether the server has been installed
+    try {
+        const server = bds.start()
+        server.log(function(data){ServerLog(data)});
+        server.exit(function(code){
+            ServerLog(`\n\n\nExit with code ${code}`);
+            process.exit(code)
+        })
+        if (process.stdin.isTTY) {
+            const rl = readline.createInterface({input: process.stdin,output: process.stdout});
+            rl.on("line", (input) => {
+                if (input === "stop") {rl.close(); server.stop()} else server.command(input)
+            });
+        }
+    } catch (error) {
+        bds.download("latest", true)
+    }
+}
+bds.download("latest", false, function(status){
+    if (status) StartServer();
+    else console.warn("Could not download server")
 });

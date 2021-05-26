@@ -20,7 +20,8 @@ apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /root/.
 FROM bdsbase AS bdscore
 RUN echo "Arch System: $(uname -m)"
 
-RUN apt update && \
+RUN echo "deb http://deb.debian.org/debian unstable main" >> /etc/apt/sources.list && \
+apt update && \
 apt install -y git curl openjdk-11-jdk openjdk-11-jre wget jq sudo unzip zip screen nginx python make build-essential procps && \
 rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /etc/nginx/sites-*/default && mkdir -p /home/bds/
 
@@ -66,13 +67,18 @@ mkdir -p /home/ /opt/bdsCore/ /base/
 # Copy Files
 COPY ./Docker/root_path/ /
 COPY ./ /opt/bdsCore/
-RUN chmod -R 7777 /home/ /opt/bdsCore/ /base/ && chown thebds:thebds -R /home/ /opt/bdsCore/ /base/
+
+VOLUME [ "/home/bds/bds_core" ]
+RUN chmod -Rv 7777 /home/ /opt/bdsCore/ /base/ && chown thebds:thebds -Rv /home/ /opt/bdsCore/ /base/
 USER thebds
 RUN cd /opt/bdsCore/ && npm install --no-save
-
-RUN mkdir -p /home/bds/.config/@the-bds-maneger/core
 
 # Entrypint
 WORKDIR /home/bds/
 RUN chmod +x /base/init.js
 ENTRYPOINT ["/base/init.js"]
+
+FROM bdsbase AS bdsbins
+COPY ./ /home/core
+WORKDIR /home/core
+RUN npm run nexe
