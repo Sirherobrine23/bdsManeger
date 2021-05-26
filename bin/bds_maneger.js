@@ -19,6 +19,9 @@ start = (argv.s || argv.server_version),
 help = (argv.h || argv.help),
 kill = (argv.k || argv.kill)
 
+// Check Server Update
+if (bds.bds_config.platform_version[bds.platform] !== null) if (bds.bds_config.platform_version[bds.platform] !== bds.SERVER_URLs.latest[bds.platform]) console.log(`${bds.platform} has an update available for ${bds.bds_config.platform_version[bds.platform]} to ${bds.SERVER_URLs.latest[bds.platform]}, if you want to update, use the option "-p ${bds.platform} -d" ${bds.SERVER_URLs.latest[bds.platform]} ""`)
+
 // Bds kill
 if (kill) bds.kill();
 
@@ -105,23 +108,29 @@ if (bds_version){
 
 // Start server
 if (start) {
-    bds.api();
-    console.log("Send a \"stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
-    
-    // Start Server
-    const bds_server = bds.start();
-    bds_server.log(function (data){
-        if (data.slice(-1) === "\n") data = data.slice(0, -1);
-        console.log(data);
-    })
-    bds_server.exit(function (code){
-        console.log("leaving the server, status code: ", code)
-        process.exit(code)
-    });
+    try {
+        bds.api();
+        console.log("Send a \"stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
+        
+        // Start Server
+        const bds_server = bds.start();
+        bds_server.log(function (data){
+            if (data.slice(-1) === "\n") data = data.slice(0, -1);
+            console.log(data);
+        })
+        bds_server.exit(function (code){
+            console.log("leaving the server, status code: ", code)
+            process.exit(code)
+        });
 
-    // CLI Commands
-    const rl = readline.createInterface({input: process.stdin,output: process.stdout});
-    rl.on("line", (input) => {
-        if (input === "stop") {rl.close(); bds_server.stop()} else bds_server.command(input)
-    });
+        // CLI Commands
+        const rl = readline.createInterface({input: process.stdin,output: process.stdout});
+        rl.on("line", (input) => {
+            if (input === "stop") {rl.close(); bds_server.stop()} else bds_server.command(input)
+        });
+    } catch (error) {
+        bds.download("latest", true, function(status){
+            if (status) console.log("Sucess Install"); else console.log("erro in install");
+        })
+    }
 }
