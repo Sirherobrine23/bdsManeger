@@ -4,7 +4,7 @@ const { resolve, join } = path;
 const fs = require("fs");
 const { getDesktopFolder } = require("./GetPlatformFolder");
 const { execSync } = require("child_process");
-const { getgid, getuid } = require("process");
+const { getuid } = require("process");
 
 const desktop = getDesktopFolder()
 const home = require("os").homedir();
@@ -70,7 +70,7 @@ module.exports.bds_dir_jsprismarine = bds_dir_jsprismarine
 if (process.env.BDS_DOCKER_IMAGE === "true") {
     if (fs.existsSync(bds_dir)) {
         const FolderInfo = fs.lstatSync(bds_dir)
-        if ((FolderInfo.gid !== getgid()) && (FolderInfo.uid !== getuid())) console.log(execSync(`sudo chown -Rv thebds:thebds ${bds_dir} && chmod 7777 ${bds_dir}`).toString());
+        if ((FolderInfo.uid !== getuid())) console.log(execSync(`sudo chown -Rv thebds:thebds ${bds_dir} && chmod 7777 ${bds_dir}`).toString());
     }
 }
 
