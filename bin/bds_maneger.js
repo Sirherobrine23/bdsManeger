@@ -109,28 +109,23 @@ if (bds_version){
 // Start server
 if (start) {
     try {
-        bds.api();
         console.log("Send a \"stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
-        
         // Start Server
         const bds_server = bds.start();
-        bds_server.log(function (data){
-            if (data.slice(-1) === "\n") data = data.slice(0, -1);
-            console.log(data);
-        })
-        bds_server.exit(function (code){
-            console.log("leaving the server, status code: ", code)
-            process.exit(code)
-        });
+        bds_server.log(function (data){data = data.split("\n").filter(data => {return (data !== "")}).join("\n");console.log(data)})
+        bds_server.exit(function (code){console.log("leaving the server, status code: ", code);process.exit(code)});
 
         // CLI Commands
         const rl = readline.createInterface({input: process.stdin,output: process.stdout});
         rl.on("line", (input) => {
             if (input === "stop") {rl.close(); bds_server.stop()} else bds_server.command(input)
         });
+        bds.api();
     } catch (error) {
-        bds.download("latest", true, function(status){
+        const version = bds.bds_config.platform_version
+        bds.download(version[bds.platform], true, function(status){
             if (status) console.log("Sucess Install"); else console.log("erro in install");
+            process.exit(!status)
         })
     }
 }
