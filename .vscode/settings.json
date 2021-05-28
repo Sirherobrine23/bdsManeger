@@ -1,0 +1,11 @@
+{
+    "files.exclude": {
+        ".devcontainer/": true,
+        ".dockerignore": true,
+        ".eslint*": true,
+        ".git*": true,
+        ".npm*": true,
+        "Docker.js": true,
+        "node_modules/": true
+    }
+}
