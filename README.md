@@ -1,26 +1,28 @@
 # Bds Maneger Core
 
-Deploy a Minecarft server easily with various features made available by our REST API, along with a GUI available to control the entire server, both locally and remotely, along with powerful and versatile technology.
+Create manage a server for Minecraft Bedrock, java and derivatives with an integration in NodeJs in which we deliver a versatile REST API for integration with large projects up to independent projects.
 
-For now we are in a version qualified for general use and implementations in complete azure.
+Any contribution is welcome, but before a look at [CONTRIBUTING.md](CONTRIBUTING.md), [Bds Manager Core code of conduct](CODE_OF_CONDUCT.md)
 
 ## CI/CD tests
 
-[![CodeQL](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/workflows/CodeQL/badge.svg)](https://github.com/The-Bds-Maneger/core/actions/workflows/codeql-analysis.yml)
+[![CodeQL and OSSAR](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml/badge.svg)](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/alerts/)
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/context:javascript)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/4d19af8fe5b146608a8f4a5e2092f66d)](https://www.codacy.com/gh/The-Bds-Maneger/Bds-Maneger-Core/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=The-Bds-Maneger/Bds-Maneger-Core&amp;utm_campaign=Badge_Grade)
 [![DeepScan grade](https://deepscan.io/api/teams/13683/projects/16691/branches/363172/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=13683&pid=16691&bid=363172) 
 
-## Known issues in Windows
+## Static Package Builds
 
-* The first start-up should be done as an Administrator, as he will try to create a Syslink on the Desktop, if you do not use Node in a managed mode it crashes and does not execute the next procedures.
+Bds Maneger from version 1.10 has statistical packages being distributed in several systems and different ways
+
+For more information, access the repository: [Bds Maneger Packages Distribution] (https://github.com/The-Bds-Maneger/Package-Distribution/releases/latest).
 
 ## Start our Docker image, making everything easier.
 
 Windows:
 ```cmd
-$ docker run --rm -d --name BdsManegerCore -v &USERPROFFILE&\bds_core\:/home/bds/bds_core ^
+$ docker run --rm -d --name BdsManegerCore -v BdsCore:/home/bds/bds_core ^
     -p 19132:19132/udp -p 19133:19133/udp -p 1932:1932/tcp ^
     -e TELEGRAM_TOKEN="null" ^
     -e WORLD_NAME="World name" ^
@@ -29,14 +31,13 @@ $ docker run --rm -d --name BdsManegerCore -v &USERPROFFILE&\bds_core\:/home/bds
     -e DIFFICULTY="normal" ^
     -e PLAYERS="13" ^
     -e SERVER="bedrock" ^
-    -e BDS_REINSTALL="true" ^
     -e BDS_VERSION="latest" ^
 bdsmaneger/maneger:latest
 ```
 
 Linux/MacOS:
 ```bash
-$ docker run --rm -d --name BdsManegerCore -v ~/bds_core/:/home/bds/bds_core \
+$ docker run --rm -d --name BdsManegerCore -v BdsCore/:/home/bds/bds_core \
     -p 19132:19132/udp -p 19133:19133/udp -p 1932:1932/tcp \
     -e TELEGRAM_TOKEN="null" \
     -e WORLD_NAME="World name" \
@@ -45,7 +46,6 @@ $ docker run --rm -d --name BdsManegerCore -v ~/bds_core/:/home/bds/bds_core \
     -e DIFFICULTY="normal" \
     -e PLAYERS="13" \
     -e SERVER="bedrock" \
-    -e BDS_REINSTALL="true" \
     -e BDS_VERSION="latest" \
 bdsmaneger/maneger:latest
 ```
