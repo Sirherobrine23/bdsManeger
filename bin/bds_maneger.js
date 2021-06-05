@@ -11,7 +11,7 @@ const commandExits = require("../commandExist");
 const argv = require("minimist")(process.argv.slice(2));
 if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
 const
-server =  (argv.p || argv.platform ),
+server = (argv.p || argv.platform ),
 version = (argv.v || argv.version),
 SystemCheck = (argv.S || argv.system_info),
 bds_version = (argv.d || argv.server_download),
@@ -95,6 +95,24 @@ if (SystemCheck) {
     process.exit(0)
 }
 
+// Docker
+if (process.env.BDS_DOCKER_IMAGE === "true") {
+    bds.change_platform(process.env.SERVER)
+    bds.set_config({
+        world: process.env.WORLD_NAME,
+        description: process.env.DESCRIPTION,
+        gamemode: process.env.GAMEMODE,
+        difficulty: process.env.DIFFICULTY,
+        players: parseInt(process.env.PLAYERS),
+        commands: false,
+        account: JSON.parse(process.env.XBOX_ACCOUNT),
+        whitelist: false,
+        port: 19132,
+        portv6: 19133,
+        // seed: NewConfig.seed
+    })
+}
+
 // Download server
 if (bds_version){
     try {
@@ -107,12 +125,15 @@ if (bds_version){
 }
 
 // Start server
+function echo(data){
+    `${data}`.split("\n").filter(data => {return (data !== "")}).forEach(data =>console.log(data))
+}
 if (start) {
     try {
         console.log("Send a \"stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
         // Start Server
         const bds_server = bds.start();
-        bds_server.log(function (data){data = data.split("\n").filter(data => {return (data !== "")}).join("\n");console.log(data)})
+        bds_server.log(data => echo(data))
         bds_server.exit(function (code){console.log("leaving the server, status code: ", code);process.exit(code)});
 
         // CLI Commands

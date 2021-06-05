@@ -17,6 +17,14 @@ npm install -g eslint && \
 npm cache clean --force > /dev/null 2>&1 && \
 apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /root/.gnupg /tmp/*
 
+FROM bdsbase AS nexe
+RUN apt update && apt install -y python python3 g++ build-essential make ca-certificates wget curl dpkg-dev unzip zip jq git && npm install -g nexe
+RUN echo 'console.log(process)' | nexe --build --output /tmp/test
+COPY ./ /tmp/core
+WORKDIR /tmp/core
+RUN npm install && node bin/nexe_build.js --system && /bin/bds_maneger -S
+
+# Bds Maneger Core
 FROM bdsbase AS bdscore
 RUN echo "Arch System: $(uname -m)"
 
@@ -27,8 +35,7 @@ rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /etc/nginx/sites-*/
 
 RUN case $(uname -m) in \
     "x86_64") echo "Do not need dependency on the x86_64";;\
-    *) \
-    apt update && \
+    *) apt update && \
     apt install -y qemu-user-static && \
     wget https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/linux_libries.zip -O /tmp/libries.zip && \
     unzip /tmp/libries.zip -d / && \
@@ -37,8 +44,7 @@ RUN case $(uname -m) in \
     rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* ;; \
 esac
 
-ENV \
-TELEGRAM_TOKEN="null" \
+ENV TELEGRAM_TOKEN="null" \
 DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" \
 WORLD_NAME="Bds Maneger Docker" \
 GAMEMODE="survival" \
@@ -47,38 +53,26 @@ XBOX_ACCOUNT="false" \
 PLAYERS="13" \
 BDS_VERSION="latest" \
 SERVER="bedrock" \
-BDS_REINSTALL="true" \
 Docker_Debug_Script="false"
 
-EXPOSE 80/tcp 19132/udp 19133/udp
-ENV BDS_DOCKER_IMAGE="true" HOME="/home/bds/"
+EXPOSE 19132/udp 19133/udp
+ENV BDS_DOCKER_IMAGE="true"
 
 # Non Root User
-RUN \
-export username="thebds" && \
-export password="123aa3456s7" && \
-pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); \
-useradd -m -p "$pass" "$username"; \
-addgroup ${username} sudo; \
-usermod --shell /bin/bash --home /tmp/ ${username}; \
+RUN export username="thebds" && export password="123aa3456s7" && \
+pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; \
+addgroup ${username} sudo; addgroup ${username} root; usermod --shell /bin/bash --home /tmp/ ${username}; \
 echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && \
 mkdir -p /home/ /opt/bdsCore/ /base/
 
 # Copy Files
 COPY ./Docker/root_path/ /
-COPY ./ /opt/bdsCore/
+COPY --from=nexe /bin/bds_maneger /bin/bds_maneger
+VOLUME [ "/home/bds/" ]
 
-VOLUME [ "/home/bds/bds_core" ]
 RUN chmod -Rv 7777 /home/ /opt/bdsCore/ /base/ && chown thebds:thebds -Rv /home/ /opt/bdsCore/ /base/
 USER thebds
-RUN cd /opt/bdsCore/ && npm install --no-save
 
 # Entrypint
 WORKDIR /home/bds/
-RUN chmod +x /base/init.js
-ENTRYPOINT ["/base/init.js"]
-
-FROM bdsbase AS bdsbins
-COPY ./ /home/core
-WORKDIR /home/core
-RUN npm run nexe
+ENTRYPOINT [ "/bin/bds_maneger", "-s" ]
