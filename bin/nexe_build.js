@@ -14,9 +14,6 @@ if (options.h || options.help) {
         "Options:",
         "   -o or --fileout         Bds Manager binary output location by default will be in the folder ../",
         `   -S or --system          Install Bds Maneger globally for ${process.env.USERPROFILE || process.env.USER || "current user"}, if you have been on Linux you can install globally for all system users`,
-        `   -t or --target          Binarie target, default: ${process.platform}-${process.arch}-${process.version.replace("v", "")} example:`,
-        `       - linux-${process.arch}-${process.version.replace("v", "")}`,
-        `       - linux-arm64-${process.version.replace("v", "")}`,
     ]
     console.log(help.join("\n"))
     process.exit()
@@ -61,7 +58,6 @@ const nexeCopiler = {
     output: fileout,
     resources: files,
 }
-if (options.t || options.target) nexeCopiler.target = (options.t || options.target);
 
 // Build Binarie
 compile(nexeCopiler).then(() => {console.log("success")})
