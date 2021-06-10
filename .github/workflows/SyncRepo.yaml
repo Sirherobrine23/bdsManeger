@@ -1,0 +1,17 @@
+name: "Gitlab Sync repository"
+on: 
+  push:
+  pull_request:
+jobs:
+  Sync:
+    name: Sync gitlab repository
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Sync 
+        uses: Sirherobrine23/SyncMirror@main
+        with:
+          repo: "The-Bds-Maneger/Bds-Maneger-Core.git"
+          host: "https://the-bds-maneger.org"
+          user: ${{ secrets.SYNC_USERNAME }}
+          passworld: ${{ secrets.SYNC_PASSWORLD }}
+          force: true

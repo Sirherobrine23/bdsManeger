@@ -1,0 +1,7 @@
+terminal:
+  image: bdsmaneger/node_image:latest
+  before_script:
+    - apt update
+  script: sleep 60
+  variables:
+    NODE_MODE: "develop"
