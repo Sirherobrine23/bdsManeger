@@ -6,8 +6,8 @@ const bds = require("../index")
 const { platform_version_update, valid_platform, PHPbinsUrls } = bds
 const { bds_config, bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine } = require("../bdsgetPaths")
 const response = require("../index").SERVER_URLs
-const commandExists = require("../commandExist");
-const { cloneSync } = require("../git_simples");
+const commandExists = require("../lib/commandExist");
+const { cloneSync } = require("../lib/git_simples");
 const { execSync } = require("child_process");
 module.exports = function (version, force_install, callback) {
     if (force_install === true) {
@@ -128,15 +128,9 @@ module.exports = function (version, force_install, callback) {
         } else throw Error("Pocketmine not suported")
     } else if (bds.platform === "jsprismarine") {
         if (valid_platform.jsprismarine === true) {
-            console.log("At work")
             console.log("Cloning the repository");
-            cloneSync("https://github.com/JSPrismarine/JSPrismarine.git", bds_dir_jsprismarine, 1)
-            console.log("Copying the server");
-            for (let command of [
-                "npm install",
-                "npx -y lerna bootstrap",
-                "npm run build"
-            ]) console.log(execSync(command, {cwd: bds_dir_jsprismarine}).toString("ascii"));
+            cloneSync("https://github.com/JSPrismarine/JSPrismarine.git", bds_dir_jsprismarine, 1);
+            for (let command of ["npm install", "npx -y lerna bootstrap", "npm run build"]) console.log(execSync(command, {cwd: bds_dir_jsprismarine}).toString("ascii"));
             if (typeof callback === "function") callback(true);
             return true
         } else throw Error("jsprismarine not suported")

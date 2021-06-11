@@ -3,7 +3,7 @@ const { start, detect, telegram_token, valid_platform, arch, package_json, lates
 const { checkUser } = require("./check");
 const IsElectron = process.argv[0].includes("electron");
 const { readFileSync } = require("fs");
-const FetchSync = require("../fetchSync");
+const FetchSync = require("../lib/fetchSync");
 
 function boot_telegram_bot(){
     function getExec() {

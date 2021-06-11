@@ -1,6 +1,10 @@
-const FetchSync = require("../fetchSync");
-module.exports.external_ip = module.exports.ip = FetchSync("https://ipecho.net/plain").text()
+// External User ip
+const FetchSync = require("../lib/fetchSync");
+const externalIP = FetchSync("https://ipecho.net/plain").text()
+module.exports.external_ip = externalIP
+module.exports.ip = externalIP
 
+// Internal ip user
 const interfaces = require("os").networkInterfaces();
 const internal_ip = []
 for (let index of Object.getOwnPropertyNames(require("os").networkInterfaces())){

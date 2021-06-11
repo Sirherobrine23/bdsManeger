@@ -5,7 +5,7 @@ if (process.platform === "win32") process.title = "Bds Maneger CLI"; else proces
 const readline = require("readline");
 const bds = require("../index");
 const { bds_dir } = require("../bdsgetPaths");
-const commandExits = require("../commandExist");
+const commandExits = require("../lib/commandExist");
 
 // Bds Maneger ArgV
 const argv = require("minimist")(process.argv.slice(2));
@@ -17,10 +17,19 @@ SystemCheck = (argv.S || argv.system_info),
 bds_version = (argv.d || argv.server_download),
 start = (argv.s || argv.server_version),
 help = (argv.h || argv.help),
-kill = (argv.k || argv.kill)
-
+kill = (argv.k || argv.kill),
+docker_runner = (argv.DOCKER_IMAGE)
 // Check Server Update
-if (bds.bds_config.platform_version[bds.platform] !== null) if (bds.bds_config.platform_version[bds.platform] !== bds.SERVER_URLs.latest[bds.platform]) console.log(`${bds.platform} has an update available for ${bds.bds_config.platform_version[bds.platform]} to ${bds.SERVER_URLs.latest[bds.platform]}, if you want to update, use the option "-p ${bds.platform} -d" ${bds.SERVER_URLs.latest[bds.platform]} ""`)
+if (bds.bds_config.platform_version[bds.platform] !== null) {
+    if (bds.bds_config.platform_version[bds.platform] !== bds.SERVER_URLs.latest[bds.platform]) {
+        const message = [
+            `Hello, I have a little warning, There is a new version of ${bds.platform}, going from version ${bds.bds_config.platform_version[bds.platform]} to ${bds.SERVER_URLs.latest[bds.platform]}`,
+            "And we strongly recommend keeping the servers up to date, to maintain compatibility between game versions.",
+            `At any time you can update using the options -p ${bds.platform} -d "${bds.SERVER_URLs.latest[bds.platform]}"`
+        ]
+        console.log(message.join("\n"))
+    }
+}
 
 // Bds kill
 if (kill) bds.kill();
@@ -95,21 +104,35 @@ if (SystemCheck) {
     process.exit(0)
 }
 
-// Docker
-if (process.env.BDS_DOCKER_IMAGE === "true") {
-    bds.change_platform(process.env.SERVER)
+// Docker image
+if (docker_runner) {
+    console.log("Bds Maneger CLI, Docker image");
+    const { SERVER, WORLD_NAME, DESCRIPTION, GAMEMODE, DIFFICULTY, PLAYERS, ENABLE_COMMANDS, XBOX_ACCOUNT, TELEGRAM_TOKEN, SEED } = process.env
+    
+    // Telegram token save
+    if (
+        TELEGRAM_TOKEN === "" ||
+        TELEGRAM_TOKEN === " " ||
+        TELEGRAM_TOKEN === "null" ||
+        TELEGRAM_TOKEN === "undefined"
+    ) bds.telegram_token_save(TELEGRAM_TOKEN);
+    
+    // Change platform
+    bds.change_platform(SERVER)
+    
+    // Save New config
     bds.set_config({
-        world: process.env.WORLD_NAME,
-        description: process.env.DESCRIPTION,
-        gamemode: process.env.GAMEMODE,
-        difficulty: process.env.DIFFICULTY,
-        players: parseInt(process.env.PLAYERS),
-        commands: false,
-        account: JSON.parse(process.env.XBOX_ACCOUNT),
+        world: WORLD_NAME,
+        description: DESCRIPTION,
+        gamemode: GAMEMODE,
+        difficulty: DIFFICULTY,
+        players: parseInt(PLAYERS),
+        commands: (ENABLE_COMMANDS === "true"),
+        account: JSON.parse(XBOX_ACCOUNT),
         whitelist: false,
         port: 19132,
         portv6: 19133,
-        // seed: NewConfig.seed
+        seed: (SEED || "")
     })
 }
 
@@ -125,10 +148,11 @@ if (bds_version){
 }
 
 // Start server
-function echo(data){
-    `${data}`.split("\n").filter(data => {return (data !== "")}).forEach(data =>console.log(data))
+function echo(data = ""){
+    data = data.split("\n").filter(data => {return (data !== "")})
+    data.forEach(data => console.log(data))
 }
-if (start) {
+if (start && !(server || version || SystemCheck || bds_version || help)) {
     try {
         console.log("Send a \"stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
         // Start Server

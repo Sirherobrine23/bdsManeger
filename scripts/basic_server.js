@@ -2,12 +2,12 @@ const { exec, execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { resolve } = require("path");
-const commandExists = require("../commandExist");
+const commandExists = require("../lib/commandExist");
 const saveUser = require("./SaveUserInJson");
 const bds = require("../index");
-const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine ,log_dir } = require("../bdsgetPaths");
+const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine, log_dir } = require("../bdsgetPaths");
 const BdsDetect = require("./detect");
-const { warn } = require("console");
+const { warn } = console;
 const { v4 } = require("uuid")
 
 // Set bdsexec functions

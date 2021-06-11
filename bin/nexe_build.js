@@ -12,7 +12,7 @@ if (options.h || options.help) {
         "nexe_build [options]",
         "",
         "Options:",
-        "   -o or --fileout         Bds Manager binary output location by default will be in the folder ../",
+        "   -o or --fileout         Bds Manager binary output location by default will be in the current folder",
         `   -S or --system          Install Bds Maneger globally for ${process.env.USERPROFILE || process.env.USER || "current user"}, if you have been on Linux you can install globally for all system users`,
     ]
     console.log(help.join("\n"))

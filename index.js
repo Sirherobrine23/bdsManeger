@@ -1,17 +1,14 @@
 /* eslint-disable no-irregular-whitespace */
-const { resolve, join } = require("path");
+const { resolve } = require("path");
 const { CronJob } = require("cron");
 const path = require("path")
 const fs = require("fs");
 const { getConfigHome } = require("./GetPlatformFolder");
-const commandExistsSync = require("./commandExist");
-module.exports = require("./bdsgetPaths");
-const FetchSync = require("./fetchSync");
+const commandExistsSync = require("./lib/commandExist");
+const FetchSync = require("./lib/fetchSync");
 const { randomBytes } = require("crypto")
+module.exports = require("./bdsgetPaths");
 
-const bds_core_package = join(__dirname, "package.json")
-const bds_maneger_version = require(bds_core_package).version
-if (process.env.SHOW_BDS_VERSION !== undefined) console.log(`Running the Bds Maneger API in version ${bds_maneger_version}`)
 function date(format) {
     const today = new Date(),
         yaer = today.getFullYear(),
@@ -28,7 +25,11 @@ function date(format) {
     else if (format === "hour_minu") return `${hour}-${minute}`
     else return `${day}-${month}-${yaer}_${hour}-${minute}`
 }
+
+const bds_core_package = resolve(__dirname, "package.json")
 module.exports.package_path = bds_core_package
+const package_json = JSON.parse(fs.readFileSync(bds_core_package))
+module.exports.package_json = package_json
 
 const { bds_dir, log_dir } = require("./bdsgetPaths");
 
@@ -47,7 +48,7 @@ require_qemu = false,
 valid_platform = {
     bedrock: true,
     pocketmine: true,
-    java: true,
+    java: commandExistsSync("java"),
     jsprismarine: commandExistsSync("node")
 }
 
@@ -107,8 +108,6 @@ module.exports.system = system
 const log_date = date();
 module.exports.log_date = log_date;
 module.exports.latest_log = path.join(bds_dir, "log", "latest.log");
-
-module.exports.package_json = JSON.parse(fs.readFileSync(bds_core_package))
 module.exports.extra_json = JSON.parse(fs.readFileSync(resolve(__dirname, "extra.json")))
 
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
@@ -146,14 +145,16 @@ module.exports.GoogleDriveCredentials = GoogleDriveCredentials
 /* ---------------------------------------------------------------------------- Variables ---------------------------------------------------------------------------- */
 // Configs
 var bds_config, bds_config_file = path.join(bds_dir, "bds_config.json");
-const current_version_bds_core = bds_maneger_version
 
 // Set default platform for bds maneger
 var default_platformConfig;
-if (valid_platform["bedrock"]) default_platformConfig = "bedrock";else if (valid_platform["java"]) default_platformConfig = "java"; else if (valid_platform["pocketmine"]) default_platformConfig = "pocketmine"; else default_platformConfig = "jsprismarine"
+if (valid_platform["bedrock"]) default_platformConfig = "bedrock";
+else if (valid_platform["java"]) default_platformConfig = "java";
+else if (valid_platform["pocketmine"]) default_platformConfig = "pocketmine";
+else default_platformConfig = "jsprismarine"
 
+// User IP
 const maneger_ips = require("./scripts/external_ip")
-
 module.exports.internal_ip = maneger_ips.internal_ip
 module.exports.external_ip = maneger_ips.external_ip
 
@@ -161,22 +162,22 @@ module.exports.external_ip = maneger_ips.external_ip
 var Oldbds_config
 if (fs.existsSync(bds_config_file)) Oldbds_config = JSON.parse(fs.readFileSync(bds_config_file, "utf8"));else Oldbds_config = {platform_version: {}, telegram_admin: ["all_users"]}
 bds_config = {
-    version: current_version_bds_core,
-    bds_pages: (Oldbds_config.bds_pages || "default"),
-    bds_platform: (Oldbds_config.bds_platform || default_platformConfig),
-    LoadTelemetry: (() => {if (Oldbds_config.LoadTelemetry === undefined) return true ;else return Oldbds_config.LoadTelemetry})(),
-    TelemetryID: (Oldbds_config.TelemetryID || FetchSync(`https://telemetry.the-bds-maneger.org/getid?external_ip=${maneger_ips.external_ip}`).toString()),
-    platform_version: {
-        bedrock: (Oldbds_config.platform_version.bedrock || null),
-        java: (Oldbds_config.platform_version.java || null),
-        pocketmine: (Oldbds_config.platform_version.pocketmine || null),
-        jsprismarine: "latest"
+    "version": package_json.version,
+    "bds_pages": (Oldbds_config.bds_pages || "default"),
+    "bds_platform": (Oldbds_config.bds_platform || default_platformConfig),
+    "LoadTelemetry": (() => {if (Oldbds_config.LoadTelemetry === undefined) return true ;else return Oldbds_config.LoadTelemetry})(),
+    "TelemetryID": (Oldbds_config.TelemetryID || FetchSync(`https://telemetry.the-bds-maneger.org/getid?external_ip=${maneger_ips.external_ip}`).toString()),
+    "platform_version": {
+        "bedrock": (Oldbds_config.platform_version.bedrock || null),
+        "java": (Oldbds_config.platform_version.java || null),
+        "pocketmine": (Oldbds_config.platform_version.pocketmine || null),
+        "jsprismarine": "latest"
     },
-    bds_ban: (Oldbds_config.bds_ban || ["Steve", "Alex", "steve", "alex"]),
-    telegram_token: (Oldbds_config.telegram_token || "not User defined"),
-    Google_Drive_root_backup_id: (Oldbds_config.Google_Drive_root_backup_id || undefined),
-    BackupCron: (Oldbds_config.BackupCron||[]),
-    telegram_admin: Oldbds_config.telegram_admin
+    "bds_ban": (Oldbds_config.bds_ban || ["Steve", "Alex", "steve", "alex"]),
+    "telegram_token": (Oldbds_config.telegram_token || "not User defined"),
+    "Google_Drive_root_backup_id": (Oldbds_config.Google_Drive_root_backup_id || undefined),
+    "BackupCron": (Oldbds_config.BackupCron||[]),
+    "telegram_admin": Oldbds_config.telegram_admin
 }
 fs.writeFileSync(bds_config_file, JSON.stringify(bds_config, null, 4))
 
@@ -369,14 +370,6 @@ const { mcpe, drive_backup } = require("./scripts/GoogleDrive");
 const download = require("./scripts/download");
 const { start, stop, BdsCommand } = require("./scripts/basic_server")
 
-const Jobs = {};
-for (let index of bds_config.BackupCron) {
-    Jobs[index] = new CronJob(index, function() {
-        World_BAckup()
-    });
-}
-module.exports.CronBackups = Jobs
-
 /**
  * Register tokens to use in Bds Maneger REST and other supported applications
  * 
@@ -480,7 +473,19 @@ module.exports.mcpe_file = mcpe
  */
 module.exports.drive_backup = drive_backup
 
+
+// Core Applications
+
 /**
  * This is telegram bot
  */
 module.exports.telegram = require("./scripts/telegram_bot")
+
+// Backups
+const Jobs = {};
+for (let index of bds_config.BackupCron) {
+    Jobs[index] = new CronJob(index, function() {
+        World_BAckup()
+    });
+}
+module.exports.CronBackups = Jobs
