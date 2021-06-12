@@ -10,13 +10,10 @@ Docker_Nightly:
     - apt update && apt install -y curl
     - curl https://get.docker.com | bash -
     - docker info
-    - docker buildx install
     - docker run --privileged --rm tonistiigi/binfmt --install all
-    - |
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-        docker buildx create --name multiarch --driver docker-container --use
-        docker buildx inspect --bootstrap
-    # - docker buildx create --use
+    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - docker buildx create --name multiarch --driver docker-container --use
+    - docker buildx inspect --bootstrap
     - docker login --username="$DOCKER_USER" --password="$DOCKER_TOKEN"
   script:
-    - docker build --tag bdsmaneger/maneger:nightly --push --platform=linux/amd64,linux/arm64/v8,linux/arm/v7 .
+    - docker buildx build --tag bdsmaneger/maneger:nightly --target bdscore --platform=linux/amd64,linux/arm64/v8,linux/arm/v7 --push .
