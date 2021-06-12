@@ -15,4 +15,4 @@ Docker_Nightly:
     - docker buildx create --use
     - docker login --username="$DOCKER_USER" --password="$DOCKER_TOKEN"
   script:
-    - docker build --tag bdsmaneger/maneger:nightly --push --platform=linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/arm/v7 .
+    - docker build --tag bdsmaneger/maneger:nightly --push --platform=linux/amd64,linux/arm64,linux/armhf,linux/ppc64le,linux/s390x .
