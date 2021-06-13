@@ -10,6 +10,13 @@
             "name": "Build Docker And Run",
             "sourceMaps": false,
             "program": "${workspaceFolder}/BuildRunDocker.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Binary",
+            "sourceMaps": false,
+            "program": "${workspaceFolder}/bin/nexe_build.js"
         }
     ]
 }

@@ -6,17 +6,13 @@ Any contribution is welcome, but before a look at [CONTRIBUTING.md](CONTRIBUTING
 
 ## CI/CD tests
 
-[![CodeQL and OSSAR](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml/badge.svg)](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml)
+[![Github CodeQL and OSSAR](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml/badge.svg)](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml)
+[![Gitlab pipeline status](https://the-bds-maneger.org/The-Bds-Maneger/Bds-Maneger-Core/badges/main/pipeline.svg)](https://the-bds-maneger.org/The-Bds-Maneger/Bds-Maneger-Core/-/pipelines/latest)
+
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/alerts/)
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/context:javascript)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/4d19af8fe5b146608a8f4a5e2092f66d)](https://www.codacy.com/gh/The-Bds-Maneger/Bds-Maneger-Core/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=The-Bds-Maneger/Bds-Maneger-Core&amp;utm_campaign=Badge_Grade)
 [![DeepScan grade](https://deepscan.io/api/teams/13683/projects/16691/branches/363172/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=13683&pid=16691&bid=363172) 
-
-## Static Package Builds
-
-Bds Maneger from version 1.10 has statistical packages being distributed in several systems and different ways
-
-For more information, access the repository: [Bds Maneger Packages Distribution] (https://github.com/The-Bds-Maneger/Package-Distribution/releases/latest).
 
 ## Start our Docker image, making everything easier.
 
@@ -25,13 +21,14 @@ Windows:
 $ docker run --rm -d --name BdsManegerCore -v BdsCore:/home/bds/bds_core ^
     -p 19132:19132/udp -p 19133:19133/udp -p 1932:1932/tcp ^
     -e TELEGRAM_TOKEN="null" ^
-    -e WORLD_NAME="World name" ^
-    -e DESCRIPTION="This is not simple" ^
+    -e DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" ^
+    -e WORLD_NAME="Bds Maneger Docker" ^
     -e GAMEMODE="survival" ^
     -e DIFFICULTY="normal" ^
+    -e XBOX_ACCOUNT="false" ^
     -e PLAYERS="13" ^
     -e SERVER="bedrock" ^
-    -e BDS_VERSION="latest" ^
+    -e ENABLE_COMMANDS="false" ^
 bdsmaneger/maneger:latest
 ```
 
@@ -40,15 +37,50 @@ Linux/MacOS:
 $ docker run --rm -d --name BdsManegerCore -v BdsCore/:/home/bds/bds_core \
     -p 19132:19132/udp -p 19133:19133/udp -p 1932:1932/tcp \
     -e TELEGRAM_TOKEN="null" \
-    -e WORLD_NAME="World name" \
-    -e DESCRIPTION="This is not simple" \
+    -e DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" \
+    -e WORLD_NAME="Bds Maneger Docker" \
     -e GAMEMODE="survival" \
     -e DIFFICULTY="normal" \
+    -e XBOX_ACCOUNT="false" \
     -e PLAYERS="13" \
     -e SERVER="bedrock" \
-    -e BDS_VERSION="latest" \
+    -e ENABLE_COMMANDS="false"
 bdsmaneger/maneger:latest
 ```
+
+## Options: Static binaries - bin/bds_maneger.js - npx @the-bds-maneger/core
+
+Bds Maneger from version 1.10+ is offering user-ready binary files for Windows, Linux and MacOS systems.
+
+It is still recommended to use docker for x64 architectures (AMD64)
+
+options:
+
+- -s or --start:
+
+    - Start your server, if you haven't installed any it will fail and exit immediately.
+
+- -p or --platform:
+
+    Select a platform to start, install, etc...
+
+    - Available platforms:
+
+        * Bedrock (Oficial)
+        * Java (Oficial)
+        * PocketMine-MP
+        * JSPrismarine
+
+- -d or --server_download:
+
+    - Installation or Update of the server currently selected by the previous option
+
+        - you can also enter a server version, or use `latest` as an option
+
+- -S or --system_info:
+
+    - Server support information, system architecture etc...
+
 
 ## We also have some Implementation Models for Azure
 

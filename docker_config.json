@@ -1,7 +1,5 @@
 {
-    "name": "BdsCore",
-    "docker_image": "bdsmaneger/maneger:latestdebug",
-    "dockerfile": "Dockerfile",
+
     "ports": [
         {
             "port": 19132,

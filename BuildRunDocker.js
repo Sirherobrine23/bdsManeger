@@ -1,21 +1,31 @@
-const { join } = require("path");
-const https = require("https");
-const { writeFileSync, rmSync, appendFileSync } = require("fs");
+const fetchSync = require("./lib/fetchSync")
+const { writeFileSync } = require("fs");
 const { exit } = require("process");
-if (process.platform !== "win32") process.env.TMP = "/tmp"
-const ScriptUrl = "https://raw.githubusercontent.com/Sirherobrine23/MSQ-files/main/NodeJS Docker Build Run.js"
-const fileExec = join(__dirname, "Docker.js");
+const { join } = require("path");
+const { exec, execSync } = require("child_process");
+const JSon_release = fetchSync("https://api.github.com/repos/Sirherobrine23/MSQ-files/releases").json()
 
-https.get(ScriptUrl, (res) => {
-    writeFileSync(fileExec, "")
-    res.on("data", (d) => appendFileSync(fileExec, d))
-    res.once("end", () => {
-        require(fileExec)(function (code){
-            console.log(`Exit with code: ${code}`);
-            rmSync(fileExec);
-            exit(code);
-        })
-    });
-}).on("error", (e) => {
-    console.error(e);
-});
+writeFileSync("./Docker.js", JSON.stringify(JSon_release, null, 4))
+const DockerLatestBin = [];
+for (let _Check of JSon_release){
+    if (DockerLatestBin.length >= 1) break;
+    for (let _file of _Check.assets) {
+        if (`DockerRunBuild_${process.platform}_${process.arch}` === _file.name) {
+            DockerLatestBin.push(_Check);
+            break
+        }
+    }
+}
+if (!(DockerLatestBin.length >= 1)) exit(1);
+const bin = fetchSync(`https://github.com/Sirherobrine23/MSQ-files/releases/download/${DockerLatestBin[0].tag_name}/DockerRunBuild_${process.platform}_${process.arch}`, true);
+const binPath = join(__dirname, "Docker.exe")
+bin.save(binPath)
+if (process.platform !== "win32") execSync(`chmod 777 "${binPath}"`)
+const exe = exec(binPath)
+function Log(data = ""){
+    data = data.split("\r").join("\n").split("\n").filter(_D => {return (_D !== "")})
+    for (let _log of data) console.log(_log);
+}
+exe.stdout.on("data", d => Log(d))
+exe.stderr.on("data", d => Log(d))
+exe.on("exit", c => exit(c))

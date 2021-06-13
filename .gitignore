@@ -2,7 +2,6 @@ node_modules/
 *-Test/
 *teste/
 debug.log
-# package-lock.json
 Bds_Maneger
 .dccache
 docs/
@@ -13,3 +12,4 @@ Docker.js
 bds_maneger
 BdsManager-bin*
 Bds-Maneger-Core
+Docker.exe
