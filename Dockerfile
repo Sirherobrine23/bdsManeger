@@ -17,7 +17,9 @@ RUN apt update && apt install -y python python3 g++ build-essential make ca-cert
 RUN echo 'console.log(process)' | nexe --build --output /tmp/test
 COPY ./ /tmp/core
 WORKDIR /tmp/core
-RUN npm install && node bin/nexe_build.js --system && /bin/bds_maneger -S
+RUN npm install
+RUN node bin/nexe_build.js --system
+RUN bds_maneger -S
 
 # Bds Maneger Core
 FROM bdsbase AS bdscore
