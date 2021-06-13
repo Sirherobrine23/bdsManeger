@@ -1,2 +1,2 @@
-includes:
+include:
   - .gitlab/workflows/*.yml
