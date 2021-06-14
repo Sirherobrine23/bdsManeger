@@ -1,7 +1,7 @@
 const { join } = require("path");
 const fs = require("fs");
 const { bds_config, extra_json } = require("./index")
-const { tmp_dir } = require("./bdsgetPaths");
+const { tmp_dir } = require("./lib/bdsgetPaths");
 
 const infolog = join(tmp_dir, `${Math.random()}_bdsManegerLog.log`)
 //if (!(fs.existsSync(infolog))) fs.writeFileSync(infolog, "")

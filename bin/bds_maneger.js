@@ -2,9 +2,12 @@
 process.env.IS_BIN_BDS = true;
 process.env.IS_BDS_CLI = true
 if (process.platform === "win32") process.title = "Bds Maneger CLI"; else process.title = "Bds_Manger_CLI"
+const { execSync } = require("child_process");
+const { tmpdir } = require("os");
+const { resolve } = require("path");
 const readline = require("readline");
 const bds = require("../index");
-const { bds_dir } = require("../bdsgetPaths");
+const { bds_dir } = require("../lib/bdsgetPaths");
 const commandExits = require("../lib/commandExist");
 
 // Bds Maneger ArgV
@@ -158,7 +161,11 @@ if (start && !(server || version || SystemCheck || bds_version || help)) {
         // Start Server
         const bds_server = bds.start();
         bds_server.log(data => echo(data))
-        bds_server.exit(function (code){console.log("leaving the server, status code: ", code);process.exit(code)});
+        bds_server.exit(function (code){
+            if (code === 3221225781) return open("https://docs.the-bds-maneger.org/Bds Maneger core/WindowsFixDll");
+            console.log("leaving the server, status code: ", code);
+            process.exit(code)
+        });
 
         // CLI Commands
         const rl = readline.createInterface({input: process.stdin,output: process.stdout});

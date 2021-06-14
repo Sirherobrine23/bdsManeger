@@ -1,5 +1,5 @@
 const bds = require("../index")
-const bdsPaths = require("../bdsgetPaths")
+const bdsPaths = require("../lib/bdsgetPaths")
 const path = require("path")
 const { join } = require("path");
 const {readdirSync, existsSync} = require("fs")

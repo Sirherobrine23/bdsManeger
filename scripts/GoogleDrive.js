@@ -4,7 +4,7 @@ const {google} = require("googleapis");
 const bds =  require("../index");
 require("./GoogleDriveAuth")
 const { authorize } = require("./GoogleDriveAuth");
-const { tmp_dir } = require("../bdsgetPaths");
+const { tmp_dir } = require("../lib/bdsgetPaths");
 
 module.exports.drive_backup = (BackupCallback) => {
     const file_json = require("./backups").Drive_backup()

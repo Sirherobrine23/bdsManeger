@@ -1,7 +1,7 @@
 const fs = require("fs");
 const {join} = require("path")
 const {google} = require("googleapis");
-const { bds_dir } = require("../bdsgetPaths")
+const { bds_dir } = require("../lib/bdsgetPaths")
 const { GoogleDriveCredentials } = require("../index")
 const express = require("express");
 const app = express();

@@ -7,7 +7,7 @@ const { getConfigHome } = require("./GetPlatformFolder");
 const commandExistsSync = require("./lib/commandExist");
 const FetchSync = require("./lib/fetchSync");
 const { randomBytes } = require("crypto")
-module.exports = require("./bdsgetPaths");
+module.exports = require("./lib/bdsgetPaths");
 
 function date(format) {
     const today = new Date(),
@@ -31,7 +31,7 @@ module.exports.package_path = bds_core_package
 const package_json = JSON.parse(fs.readFileSync(bds_core_package))
 module.exports.package_json = package_json
 
-const { bds_dir, log_dir } = require("./bdsgetPaths");
+const { bds_dir, log_dir } = require("./lib/bdsgetPaths");
 
 // System Architect (x64, aarch64 and others)
 var arch;

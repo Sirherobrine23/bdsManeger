@@ -3,7 +3,7 @@ const path = require("path");
 const bds = require("../index");
 const propertiesToJSON = require("properties-to-json");
 const { join } = require("path");
-const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine } = require("../bdsgetPaths");
+const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine } = require("../lib/bdsgetPaths");
 const bedrockCPUThread = require("os").cpus().length;
 
 function bds_config(NewConfig){

@@ -9,7 +9,7 @@ const fileUpload = require("express-fileupload");
 const kerneldetect = require("../lib/DetectKernel");
 const commandExist = require("../lib/commandExist");
 const { join } = require("path");
-const bdsPaths = require("../bdsgetPaths")
+const bdsPaths = require("../lib/bdsgetPaths")
 const admzip = require("adm-zip");
 
 function api(port_api){
