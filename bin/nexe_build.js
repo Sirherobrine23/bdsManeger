@@ -12,6 +12,7 @@ if (options.h || options.help) {
         "nexe_build [options]",
         "",
         "Options:",
+	"   -v or --verbose",
         "   -o or --fileout         Bds Manager binary output location by default will be in the current folder",
         `   -S or --system          Install Bds Maneger globally for ${process.env.USERPROFILE || process.env.USER || "current user"}, if you have been on Linux you can install globally for all system users`,
     ]
@@ -58,6 +59,6 @@ const nexeCopiler = {
     output: fileout,
     resources: files,
 }
-
+if (options.v || options.verbose)  nexeCopiler.loglevel = "verbose"
 // Build Binarie
 compile(nexeCopiler).then(() => {console.log("success")})

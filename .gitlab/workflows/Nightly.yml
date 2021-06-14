@@ -18,6 +18,6 @@ Docker_Nightly:
     - docker login --username="$DOCKER_USER" --password="$DOCKER_TOKEN"
   script:
     # - docker buildx build --tag bdsmaneger/maneger:nightly --target bdscore --platform=linux/amd64,linux/arm64/v8,linux/arm/v7 .
-    - docker build . --tag bdsmaneger/maneger:nightly --target bdscore
+    - docker build . -t bdsmaneger/maneger:nightly
   after_script:
     - docker push bdsmaneger/maneger:nightly

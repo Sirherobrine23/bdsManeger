@@ -23,7 +23,7 @@ RUN nexe -i /tmp/build.js --build --output /tmp/test.bin
 COPY ./ /tmp/core
 WORKDIR /tmp/core
 RUN npm install
-RUN node bin/nexe_build.js --system
+RUN node bin/nexe_build.js --verbose --system
 RUN bds_maneger -S
 
 # Bds Maneger Core
