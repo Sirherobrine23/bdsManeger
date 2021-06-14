@@ -19,7 +19,7 @@ RUN apt update && \
 apt install -y g++ dpkg-dev && \
 npm install -g nexe
 RUN echo 'console.log(process)' > /tmp/test.js 
-RUN nexe -i /tmp/build.js --build --output /tmp/test.bin
+RUN nexe -i /tmp/build.js --loglevel verbose --build --output /tmp/test.bin
 COPY ./ /tmp/core
 WORKDIR /tmp/core
 RUN npm install
