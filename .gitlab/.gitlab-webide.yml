@@ -1,7 +1,13 @@
 terminal:
   image: bdsmaneger/node_image:latest
+  services:
+    - docker:dind
   before_script:
-    - apt update
-  script: sleep 60
+    - apt update && apt install -y curl &> /dev/null
+    - curl https://get.docker.com | bash -
   variables:
-    NODE_MODE: "develop"
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375
+    DEVELOP_WEBIDE: true
+  script: sleep 80

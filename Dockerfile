@@ -19,11 +19,11 @@ RUN apt update && \
 apt install -y g++ dpkg-dev && \
 npm install -g nexe
 RUN echo 'console.log(process)' > /tmp/test.js 
-RUN nexe -i /tmp/build.js --loglevel verbose --build --output /tmp/test.bin
+RUN echo "Build Nexe node bin"; nexe -i /tmp/build.js --loglevel verbose --build --output /tmp/test.bin &> /tmp/nexe-build.txt || (cat /tmp/nexe-build.txt;exit 1)
 COPY ./ /tmp/core
 WORKDIR /tmp/core
 RUN npm install
-RUN node bin/nexe_build.js --verbose --system
+RUN node bin/nexe_build.js --system
 RUN bds_maneger -S
 
 # Bds Maneger Core
