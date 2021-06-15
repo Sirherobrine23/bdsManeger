@@ -1,9 +1,8 @@
 const fs = require("fs");
 const path = require("path")
-const {google} = require("googleapis");
+const { google } = require("googleapis");
 const bds =  require("../index");
-require("./GoogleDriveAuth")
-const { authorize } = require("./GoogleDriveAuth");
+const { authorize } = require("./Auth/Google");
 const { tmp_dir } = require("../lib/bdsgetPaths");
 
 module.exports.drive_backup = (BackupCallback) => {

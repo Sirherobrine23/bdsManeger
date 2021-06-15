@@ -15,10 +15,7 @@ RUN wget -qO- https://raw.githubusercontent.com/Sirherobrine23/MSQ-files/main/Do
 
 # Bds Maneger Core
 FROM bdsbase AS bdscore
-RUN apt update && apt install -y openjdk-11-jdk openjdk-11-jre nginx && \
-    npm install -g nexe && \
-    rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /etc/nginx/sites-*/default && mkdir -p /home/bds/
-RUN echo 'console.log(process)' | nexe --loglevel verbose --build --output /tmp/test.bin
+RUN apt update && apt install -y openjdk-11-jdk openjdk-11-jre nginx && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /etc/nginx/sites-*/default && mkdir -p /home/bds/
 RUN case $(uname -m) in \
     "x86_64") echo "Do not need dependency on the x86_64";;\
     *) \
@@ -31,37 +28,16 @@ RUN case $(uname -m) in \
     ;;\
 esac
 
-# Nexe Bds Core Build
-COPY ./ /tmp/core
-WORKDIR /tmp/core
-RUN npm install && node bin/nexe_build.js --system
-RUN bds_maneger -S && rm -rfv /tmp/*
-
-ENV \
-TELEGRAM_TOKEN="null" \
-DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" \
-WORLD_NAME="Bds Maneger Docker" \
-GAMEMODE="survival" \
-DIFFICULTY="normal" \
-XBOX_ACCOUNT="false" \
-PLAYERS="13" \
-SERVER="bedrock" \
-ENABLE_COMMANDS="false"
-
-EXPOSE 19132/udp 19133/udp
-ENV BDS_DOCKER_IMAGE="true"
+COPY ./ /opt/bds_core/
+WORKDIR /opt/bds_core/
+RUN chmod a+x bin/*
+ENV TELEGRAM_TOKEN="null" DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" WORLD_NAME="Bds Maneger Docker" GAMEMODE="survival" DIFFICULTY="normal" XBOX_ACCOUNT="false" PLAYERS="13" SERVER="bedrock" ENABLE_COMMANDS="false" BDS_DOCKER_IMAGE="true"
 
 # Non Root User
-RUN export username="thebds" && export password="123aa3456s7" && \
-pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; \
-addgroup ${username} sudo; addgroup ${username} root; usermod --shell /bin/bash --home /tmp/ ${username}; \
-echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-mkdir -p /home/ /base/
+RUN export username="thebds" && export password="123aa3456s7" && pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; addgroup ${username} sudo; addgroup ${username} root; usermod --shell /bin/bash --home /tmp/ ${username}; echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && mkdir -p /home/ /base/
 
-# Copy Files
-COPY ./Docker/root_path/ /
+EXPOSE 19132/udp 19133/udp
 VOLUME [ "/home/bds/" ]
-
 RUN chmod -Rv 7777 /home/ /base/ && chown thebds:thebds -Rv /home/ /base/
 USER thebds
 

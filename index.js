@@ -3,7 +3,7 @@ const { resolve } = require("path");
 const { CronJob } = require("cron");
 const path = require("path")
 const fs = require("fs");
-const { getConfigHome } = require("./GetPlatformFolder");
+const { getConfigHome } = require("./lib/GetPlatformFolder");
 const commandExistsSync = require("./lib/commandExist");
 const FetchSync = require("./lib/fetchSync");
 const { randomBytes } = require("crypto")
@@ -366,7 +366,6 @@ function token_register() {
 // Requires
 const { World_BAckup } = require("./scripts/backups");
 const { config, get_config, config_example } = require("./scripts/bds_settings");
-const { mcpe, drive_backup } = require("./scripts/GoogleDrive");
 const download = require("./scripts/download");
 const { start, stop, BdsCommand } = require("./scripts/basic_server")
 
@@ -456,23 +455,6 @@ module.exports.set_config = config
  * takes the server settings in JSON format
  */
 module.exports.get_config = get_config
-
-/**
- * download the latest version of minecraft bedrock for android available, remember to use if you want ✌
- * 
- * you are taking responsibility for that
- */
-module.exports.mcpe_file = mcpe
-
-/**
- * perform a backup of the map, some resources are still under construction in the code more works
- * 
- * on the bedrock platform, all maps will be backed up into the "worlds" folder
- * 
- * on the java platform the map selected in the server configuration will be backed up, any other map will have to change in the server settings to perform the backup
- */
-module.exports.drive_backup = drive_backup
-
 
 // Core Applications
 
