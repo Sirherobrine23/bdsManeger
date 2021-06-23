@@ -5,10 +5,14 @@ const IsElectron = process.argv[0].includes("electron");
 const { readFileSync } = require("fs");
 const FetchSync = require("../lib/fetchSync");
 
+function getExec() {
+    const ArrayExecs = Object.getOwnPropertyNames(global.BdsExecs);
+    if (ArrayExecs.length === 0) {console.log("Start Server");return false} else if (ArrayExecs.length >= 2) console.log("Multi Execs detect");
+    return global.BdsExecs[ArrayExecs[0]]
+}
+
 function boot_telegram_bot(){
-    function getExec() {
-        return global.BdsExecs[Object.getOwnPropertyNames(global.BdsExecs)[0]]
-    }
+    
     // Set Telegram Bot
     const bot = new Telegraf(telegram_token)
     bot.start((ctx) => {

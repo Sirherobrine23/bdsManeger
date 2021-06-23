@@ -1,14 +1,11 @@
 const fs = require("fs");
-const path = require("path")
 const { google } = require("googleapis");
-const bds =  require("../index");
 const { authorize } = require("./Auth/Google");
-const { tmp_dir } = require("../lib/bdsgetPaths");
+const { GetCloudConfig } = require("../lib/BdsSettings");
 
-module.exports.drive_backup = (BackupCallback) => {
-    const file_json = require("./backups").Drive_backup()
-    const parent_id = bds.bds_config.Google_Drive_root_backup_id
-    
+module.exports.Uploadbackups = (BackupCallback) => {
+    const file_json = require("../scripts/backups").Cloud_backup()
+    const parent_id = GetCloudConfig("Driver").RootID
     return authorize(function (auth) {
         const drive = google.drive({version: "v3", auth});
         const UploadFile = {
@@ -21,7 +18,10 @@ module.exports.drive_backup = (BackupCallback) => {
             },
             fields: "id"
         }
-        if (!(parent_id === undefined || parent_id === null || parent_id === "")) UploadFile.resource.parents = [parent_id];
+        // Driver Root ID Backups
+        if (parent_id) UploadFile.resource.parents = [parent_id];
+        
+        // Request
         drive.files.create(UploadFile, (err, file) => {
             if (err) throw Error(err)
             else {
@@ -32,20 +32,3 @@ module.exports.drive_backup = (BackupCallback) => {
     });
     // End Upload Backup
 };
-
-module.exports.mcpe = function () {
-    return authorize(function (auth) {
-        const drive = google.drive({version: "v3", auth});
-        const SaveAPKintmp = path.join(tmp_dir, "MinecraftBedrockAndroid.apk")
-        
-        const LocalSave = fs.createWriteStream(SaveAPKintmp);
-
-        drive.files.get({fileId: "11jJjMZRtrQus3Labo_kr85EgtgSVRPLI",alt: "media"}, {responseType: "stream"}, (err, res) => {
-            res.data.on("end", () => {
-                console.log(`Done, Save in ${SaveAPKintmp}`);
-            }).on("error", err => {
-                throw new Error(err)
-            }).pipe(LocalSave)
-        });
-    });
-}

@@ -1,4 +1,5 @@
 {
+    "docs_base": "https://docs.the-bds-maneger.org/Bds Maneger core/",
     "telemetry_url": [
         "https://telemetry.the-bds-maneger.org",
         "http://localhost:1178"

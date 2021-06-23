@@ -1,34 +1,29 @@
 #!/usr/bin/node --no-warnings
-process.env.IS_BIN_BDS = true;
-process.env.IS_BDS_CLI = true
-if (process.platform === "win32") process.title = "Bds Maneger CLI"; else process.title = "Bds_Manger_CLI"
-const { execSync } = require("child_process");
-const { tmpdir } = require("os");
-const { resolve } = require("path");
+if (process.platform === "win32") process.title = "Bds Maneger CLI";else process.title = "Bds_Manger_CLI"
+const { exit } = require("process");
 const readline = require("readline");
 const bds = require("../index");
-const { bds_dir } = require("../lib/bdsgetPaths");
+const { bds_dir, GetServerversion, GetPlatform, UpdatePlatform, GetServerPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
-
+process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // Bds Maneger ArgV
 const argv = require("minimist")(process.argv.slice(2));
 if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
-const
-server = (argv.p || argv.platform ),
-version = (argv.v || argv.version),
-SystemCheck = (argv.S || argv.system_info),
-bds_version = (argv.d || argv.server_download),
-start = (argv.s || argv.server_version),
-help = (argv.h || argv.help),
-kill = (argv.k || argv.kill),
-docker_runner = (argv.DOCKER_IMAGE)
+
+// Options
+const server = (argv.p || argv.platform), version = (argv.v || argv.version), SystemCheck = (argv.S || argv.system_info), bds_version = (argv.d || argv.server_download), start = (argv.s || argv.server_version), help = (argv.h || argv.help), kill = (argv.k || argv.kill), docker_runner = (argv.DOCKER_IMAGE)
+
+// --------------------------
+const Versions = GetServerversion();
+
+
 // Check Server Update
-if (bds.bds_config.platform_version[bds.platform] !== null) {
-    if (bds.bds_config.platform_version[bds.platform] !== bds.SERVER_URLs.latest[bds.platform]) {
+if (Versions[GetPlatform()] !== null) {
+    if (Versions[GetPlatform()] !== bds.SERVER_URLs.latest[GetPlatform()]) {
         const message = [
-            `Hello, I have a little warning, There is a new version of ${bds.platform}, going from version ${bds.bds_config.platform_version[bds.platform]} to ${bds.SERVER_URLs.latest[bds.platform]}`,
+            `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${bds.bds_config.platform_version[GetPlatform()]} to ${bds.SERVER_URLs.latest[GetPlatform()]}`,
             "And we strongly recommend keeping the servers up to date, to maintain compatibility between game versions.",
-            `At any time you can update using the options -p ${bds.platform} -d "${bds.SERVER_URLs.latest[bds.platform]}"`
+            `At any time you can update using the options -p ${GetPlatform()} -d "${bds.SERVER_URLs.latest[GetPlatform()]}"`
         ]
         console.log(message.join("\n"))
     }
@@ -38,13 +33,7 @@ if (bds.bds_config.platform_version[bds.platform] !== null) {
 if (kill) bds.kill();
 
 // Set Bds Platform
-if (server) {
-    if (server === "BEDROCK"||server === "bedrock") bds.change_platform("bedrock");
-    else if (server === "POCKETMINE-MP" || server === "pocketmine" || server === "pocketmine" || server === "POCKETMINE") bds.change_platform("pocketmine");
-    else if (server === "JAVA"||server === "java") bds.change_platform("java");
-    else if (server === "JSPrismarine" || server === "JSPRISMARINE" || server === "jsprismarine") bds.platform_update("jsprismarine");
-    else console.log("Add one of the valid platforms: bedrock, pocketmine, java, jsprismarine");
-}
+if (server) UpdatePlatform(server);
 
 // Bds Maneger CLI Help
 if (help) {
@@ -88,17 +77,24 @@ if (SystemCheck) {
     if (process.platform === "linux" && bds.arch !== "x64"){checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExits("qemu-x86_64-static")}\n`}
     if (process.platform === "android" && bds.arch !== "x64"){checkothearch = `qemu-x86_64 is installed to emulate an x64 system: ${commandExits("qemu-x86_64")}\n`}
     const help = [
-        `Bds Maneger core version: ${bds.package_json.version}`,
-        `System: ${process.platform}, Arch: ${bds.arch}`,
-        `Java installed: ${commandExits("java")}`,
-        `NodeJS version: ${process.versions.node}, v8: ${process.versions.v8}`,
-        `Bds Maneger dir: ${bds_dir}`,
+        `Bds Maneger Core version: ${bds.package_json.version}`,
+        `System: ${process.platform}, architecture: ${bds.arch}`,
         checkothearch,
         "**************************************************************",
-        `* Server support for ${bds.arch} architecture:`,
+        "* Bds Maneger dirs:",
+        `*   - Config:                ${bds_dir}`,
+        "*",
+        "* Bds Servers dirs:",
+        `*   - Bedrock Server:        ${GetServerPaths("bedrock")}`,
+        `*   - Java Server:           ${GetServerPaths("java")}`,
+        `*   - Pocketmine-MP Server:  ${GetServerPaths("pocketmine")}`,
+        `*   - JSPrismarine Server:   ${GetServerPaths("jsprismarine")}`,
+        "*",
+        "**************************************************************",
+        "* Servers currently available:",
         `*   - Bedrock:          ${bds.valid_platform.bedrock}`,
         `*   - Java:             ${bds.valid_platform.java}`,
-        `*   - Pocketmine:       ${bds.valid_platform.pocketmine}`,
+        `*   - Pocketmine-MP:    ${bds.valid_platform.pocketmine}`,
         `*   - JSPrismarine:     ${bds.valid_platform.jsprismarine}`,
         "*",
         "**************************************************************"
@@ -110,15 +106,11 @@ if (SystemCheck) {
 // Docker image
 if (docker_runner) {
     console.log("Bds Maneger CLI, Docker image");
+    process.env.BDS_DOCKER_IMAGE = true
     const { SERVER, WORLD_NAME, DESCRIPTION, GAMEMODE, DIFFICULTY, PLAYERS, ENABLE_COMMANDS, XBOX_ACCOUNT, TELEGRAM_TOKEN, SEED } = process.env
     
     // Telegram token save
-    if (
-        TELEGRAM_TOKEN === "" ||
-        TELEGRAM_TOKEN === " " ||
-        TELEGRAM_TOKEN === "null" ||
-        TELEGRAM_TOKEN === "undefined"
-    ) bds.telegram_token_save(TELEGRAM_TOKEN);
+    if (TELEGRAM_TOKEN) bds.telegram_token_save(TELEGRAM_TOKEN);
     
     // Change platform
     bds.change_platform(SERVER)
@@ -135,19 +127,14 @@ if (docker_runner) {
         whitelist: false,
         port: 19132,
         portv6: 19133,
-        seed: (SEED || "")
+        seed: (parseInt(SEED) || "")
     })
 }
 
 // Download server
 if (bds_version){
-    try {
-        process.env.BDS_DOCKER_IMAGE = true
-        bds.download(bds_version, true)
-    } catch (error) {
-        console.error(error)
-        process.exit(165)
-    }
+    try {bds.download(bds_version, true)}
+    catch (error) {console.error(error);process.exit(165);}
 }
 
 // Start server
@@ -156,28 +143,15 @@ function echo(data = ""){
     data.forEach(data => console.log(data))
 }
 if (start && !(server || version || SystemCheck || bds_version || help)) {
-    try {
-        console.log("Send a \"stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
-        // Start Server
-        const bds_server = bds.start();
-        bds_server.log(data => echo(data))
-        bds_server.exit(function (code){
-            if (code === 3221225781) return open("https://docs.the-bds-maneger.org/Bds Maneger core/WindowsFixDll");
-            console.log("leaving the server, status code: ", code);
-            process.exit(code)
-        });
+    console.log("Send a \"stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
+    // Start Server
+    const bds_server = bds.start();
+    bds_server.log(echo)
+    bds_server.exit(function (code){if (code === 3221225781) return open("https://docs.the-bds-maneger.org/Bds Maneger core/WindowsFixDll");console.log("leaving the server, status code: ", code);process.exit(code)});
 
-        // CLI Commands
-        const rl = readline.createInterface({input: process.stdin,output: process.stdout});
-        rl.on("line", (input) => {
-            if (input === "stop") {rl.close(); bds_server.stop()} else bds_server.command(input)
-        });
-        bds.api();
-    } catch (error) {
-        const version = bds.bds_config.platform_version
-        bds.download(version[bds.platform], true, function(status){
-            if (status) console.log("Sucess Install"); else console.log("erro in install");
-            process.exit(!status)
-        })
-    }
-}
+    // CLI Commands
+    const rl = readline.createInterface({input: process.stdin,output: process.stdout});
+    rl.on("line", (input) => {if (input === "stop") {rl.close(); bds_server.stop()} else bds_server.command(input)});
+    rl.on("close", ()=>{console.log("CTRL + C closed readline, stopping server");bds_server.stop()})
+    bds.api();
+} else exit(0)

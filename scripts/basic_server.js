@@ -3,9 +3,9 @@ const fs = require("fs");
 const path = require("path");
 const { resolve } = require("path");
 const commandExists = require("../lib/commandExist");
-const saveUser = require("./SaveUserInJson");
+const saveUser = require("./PlayersSave");
 const bds = require("../index");
-const { bds_dir_bedrock, bds_dir_java, bds_dir_pocketmine, bds_dir_jsprismarine, log_dir } = require("../lib/bdsgetPaths");
+const { GetServerPaths, GetPaths, GetServerSettings } = require("../lib/BdsSettings");
 const BdsDetect = require("./detect");
 const { warn } = console;
 const { v4 } = require("uuid")
@@ -16,44 +16,38 @@ global.BdsExecs = {};
 function start() {
     if (BdsDetect()){
         console.warn("You already have a server running");
-        return "You already have a server running";
+        throw "You already have a server running";
     } else {
         var Command, Options = {};
         // ---------------------------------------------
         if (bds.platform === "bedrock"){
-            if (process.platform == "win32") {
-                Command = "bedrock_server.exe"
-                Options = {
-                    cwd: bds_dir_bedrock
-                }
+            Options = {
+                cwd: GetServerPaths("bedrock")
             }
+            if (process.platform == "win32") Command = "bedrock_server.exe";
             else if (process.platform == "linux"){
-                execSync("chmod 777 bedrock_server", {cwd: bds_dir_bedrock}).toString();
+                execSync("chmod 777 bedrock_server", Options)
                 Command = "./bedrock_server";
-                if (process.platform === "linux" && bds.require_qemu) {if (commandExists("qemu-x86_64-static")) Command = `qemu-x86_64-static ${Command}`}
-                Options = {
-                    env: {
-                        ...process.env,
-                        LD_LIBRARY_PATH: bds_dir_bedrock
-                    },
-                    cwd: bds_dir_bedrock
+                if (commandExists("qemu-x86_64-static") && process.arch !== "x64") Command = `qemu-x86_64-static ${Command}`;
+                Options.env = {
+                    ...process.env,
+                    LD_LIBRARY_PATH: Options.cwd
                 }
 
-            } else if (process.platform === "darwin") throw Error("We don't have MacOS support yet")
+            } else if (process.platform === "darwin") throw Error("Use a imagem Docker")
             else process.exit(210)
         } else if (bds.platform === "java") {
             const ramMax = Math.trunc(Math.abs(require("os").freemem() / 1024 / 1024));
-            var ram_max, ram_min;
             // Check low ram
-            if (ramMax <= 300) throw new Error("Low ram memorie")	;
-            if (ramMax >= 1024) {ram_max = "1G"; ram_min = "1G"}
+            if (ramMax <= 512) throw new Error("Low ram memorie");
+            const ServerRam = GetServerSettings("java").ram_mb
+
             if (commandExists("java")) {
-                Command = `java -jar -Xmx${ram_max} -Xms${ram_min} MinecraftServerJava.jar nogui`;
+                Command = `java -jar -X${ServerRam}M MinecraftServerJava.jar nogui`;
                 Options = {
-                    cwd: bds_dir_java
+                    cwd: GetServerPaths("java")
                 };
-            }
-            else {
+            } else {
                 var url = bds.package_json.docs_base;
                 if (bds.system == "windows") url += "Java-Download#windows"
                 else if (bds.system === "linux") url = "Java-Download#linux"
@@ -63,7 +57,7 @@ function start() {
                 if (typeof open === "undefined") require("open")(url); else open(url);
             }
         } else if (bds.platform === "pocketmine") {
-            const phpinCore = resolve(bds_dir_pocketmine, "bin", "php7", "bin")
+            const phpinCore = resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin")
             if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
             else if (!fs.existsSync(phpinCore)) throw Error("Reinstall Pocketmine-MP, PHP binaries folder not found");
                 Command = "php ./PocketMine-MP.phar";
@@ -71,12 +65,12 @@ function start() {
                 if (process.platform === "win32") currentEnv.PATH += `;${phpinCore}`;else currentEnv.PATH += `:${phpinCore}`;
                 Options = {
                     env: currentEnv,
-                    cwd: bds_dir_pocketmine
+                    cwd: GetServerPaths("pocketmine")
                 };
         } else if (bds.platform === "jsprismarine") {
             Command = "node --warning --circular ./packages/server/dist/Server.js";
                 Options = {
-                    cwd: bds_dir_jsprismarine
+                    cwd: GetServerPaths("jsprismarine")
                 };
         } else throw Error("Bds Config Error")
 
@@ -87,7 +81,7 @@ function start() {
             start_server.stdout.on("data", function(data){
                 if (data.includes("agree"))
                     if (data.includes("EULA")){
-                        const eula_file = path.join(bds_dir_java, "eula.txt");
+                        const eula_file = path.join(GetServerPaths("java"), "eula.txt");
                         fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").split("eula=false").join("eula=true"));
                         throw new Error("Restart application/CLI")
                     }
@@ -98,15 +92,15 @@ function start() {
         start_server.stderr.on("data", data => saveUser(data))
         // ---------------------------------------------------
         // Clear latest.log
-        fs.writeFileSync(path.join(log_dir, "latest.log"), "")
+        fs.writeFileSync(path.join(GetPaths("log"), "latest.log"), "")
         // ---------------------------------------------------
         // stdout
         start_server.stdout.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
-        start_server.stdout.pipe(fs.createWriteStream(path.join(log_dir, "latest.log"), {flags: "a"}));
+        start_server.stdout.pipe(fs.createWriteStream(path.join(GetPaths("log"), "latest.log"), {flags: "a"}));
         // ---------------------------------------------------
         // stderr
         start_server.stderr.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
-        start_server.stderr.pipe(fs.createWriteStream(path.join(log_dir, "latest.log"), {flags: "a"}));
+        start_server.stderr.pipe(fs.createWriteStream(path.join(GetPaths("log"), "latest.log"), {flags: "a"}));
         // ---------------------------------------------------
         // Global and Run
         global.bds_log_string = ""
@@ -120,7 +114,7 @@ function start() {
             uuid: v4(),
             exec: start_server,
             stop: function (){start_server.stdin.write("stop\n")},
-            command: function (command, callback){
+            command: function (command = "list", callback){
                 const oldLog = global.bds_log_string;
                 start_server.stdin.write(`${command}\n`);
                 if (typeof callback === "function") {
@@ -131,38 +125,52 @@ function start() {
                     }, 1555);
                 }
             },
-            log: function (logCallback){
+            log: function (logCallback = function(data = ""){data.split("\n").filter(d=>{return (d !== "")}).forEach(l=>console.log(l))}){
                 if (typeof logCallback !== "function") {
                     warn("The log callback is not a function using console.log");
-                    logCallback = (data) => console.log(data);
+                    logCallback = function(data = ""){data.split("\n").filter(d=>{return (d !== "")}).forEach(l=>console.log(l))}
                 }
                 start_server.stdout.on("data", data => logCallback(data));
                 start_server.stderr.on("data", data => logCallback(data));
             },
-            exit: function (exitCallback){if (
+            exit: function (exitCallback = process.exit){if (
                 typeof exitCallback === "function") start_server.on("exit", code => exitCallback(code));
             }
         }
+        start_server.on("exit", ()=>{delete global.BdsExecs[returnFuntion.uuid]})
         global.BdsExecs[returnFuntion.uuid] = returnFuntion
         return returnFuntion
     }
 }
 
-function BdsCommand(command) {
-    warn("Command is almost out of date, use the ones provided by the 'start' command instead");
-    if (typeof bds_server_string === "undefined") return false;
-    else {
-        if (command === undefined) return false;
-        else if (command === "") return false;
-        else bds_server_string.stdin.write(`${command}\n`);
+function GetSessions(){
+    const ArraySessions = Object.getOwnPropertyNames(global.BdsExecs)
+    if (ArraySessions.length === 0) throw "Start Server";
+    if (ArraySessions.length >= 2) throw "Select a session manually:" + ArraySessions.join(", ")
+    return global.BdsExecs[0]
+}
+
+function BdsCommand(command = "list", SessionID = null) {
+    if (!(command)) return false;
+    try {
+        var Session = {}
+        if (!(SessionID)) Session = GetSessions(); else Session = global.BdsExecs[SessionID]
+        Session.command(command);
         return true
+    } catch (error) {
+        return false
     }
 }
 
-function stop() {
-    if (typeof bds_server_string == "undefined") return false;
-    else bds_server_string.stdin.write("stop\n");
-    return true
+function stop(SessionID = null) {
+    try {
+        var Session = {}
+        if (!(SessionID)) Session = GetSessions(); else Session = global.BdsExecs[SessionID]
+        Session.stop()
+        return true
+    } catch (error) {
+        return false
+    }
 }
 
 module.exports = {

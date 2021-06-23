@@ -45,10 +45,7 @@ function api(port_api){
                 IS_CLI: JSON.parse(process.env.IS_BDS_CLI || false),
                 IS_DOCKER: JSON.parse(process.env.BDS_DOCKER_IMAGE || false),
                 IS_NPX: (process.env.npm_lifecycle_event === "npx"),
-                QEMU_STATIC: {
-                    "x64": commandExist("qemu-x86_64-static"),
-                    "x86": commandExist("qemu-i386-static"),
-                }
+                QEMU_STATIC: commandExist("qemu-x86_64-static")
             },
             bds_maneger_core: {
                 server_versions: bds.bds_config.platform_version,
