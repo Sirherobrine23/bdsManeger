@@ -30,17 +30,17 @@ esac
 
 COPY ./ /opt/bds_core/
 WORKDIR /opt/bds_core/
-RUN chmod a+x bin/*
+RUN chmod a+x bin/* && npm install --no-save
 ENV TELEGRAM_TOKEN="null" DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" WORLD_NAME="Bds Maneger Docker" GAMEMODE="survival" DIFFICULTY="normal" XBOX_ACCOUNT="false" PLAYERS="13" SERVER="bedrock" ENABLE_COMMANDS="false" BDS_DOCKER_IMAGE="true"
 
 # Non Root User
-RUN export username="thebds" && export password="123aa3456s7" && pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; addgroup ${username} sudo; addgroup ${username} root; usermod --shell /bin/bash --home /tmp/ ${username}; echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && mkdir -p /home/ /base/
+RUN export username="thebds" && export password="123aa3456s7" && pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; addgroup ${username} sudo; addgroup ${username} root; usermod --shell /bin/bash --home /home/bds ${username}; echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && mkdir -p /home/ /base/
 
 EXPOSE 19132/udp 19133/udp
-VOLUME [ "/home/bds/" ]
+VOLUME [ "/home/bds/bds_core" ]
 RUN chmod -Rv 7777 /home/ /base/ && chown thebds:thebds -Rv /home/ /base/
 USER thebds
 
 # Entrypint
 WORKDIR /home/bds/
-ENTRYPOINT [ "/bin/bds_maneger" ,"--DOCKER_IMAGE" ,"-s" ]
+ENTRYPOINT [ "/opt/bds_core/bin/bds_maneger" ,"--DOCKER_IMAGE" ,"-s" ]
