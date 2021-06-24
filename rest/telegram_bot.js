@@ -1,6 +1,7 @@
 const { Telegraf } = require("telegraf");
-const { start, detect, telegram_token, valid_platform, arch, package_json, latest_log, kill } = require("../index");
-const { checkUser } = require("./check");
+const { start, detect, telegram_token, arch, package_json, latest_log, kill } = require("../index");
+const { valid_platform } = require("../lib/BdsValidPlatform")
+const { checkUser } = require("../scripts/check");
 const IsElectron = process.argv[0].includes("electron");
 const { readFileSync } = require("fs");
 const FetchSync = require("../lib/fetchSync");
@@ -11,7 +12,7 @@ function getExec() {
     return global.BdsExecs[ArrayExecs[0]]
 }
 
-function boot_telegram_bot(){
+module.exports = function (){
     
     // Set Telegram Bot
     const bot = new Telegraf(telegram_token)
@@ -114,5 +115,3 @@ function boot_telegram_bot(){
     process.on("exit", function (){bot.stop()})
     return bot.launch()
 }
-module.exports = boot_telegram_bot
-module.exports.launch = boot_telegram_bot

@@ -1,13 +1,13 @@
 const fs = require("fs");
-const {join} = require("path")
-const {google} = require("googleapis");
-const { bds_dir } = require("../../lib/bdsgetPaths")
-const { GoogleDriveCredentials } = require("../../index")
+const { join } = require("path")
+const { google } = require("googleapis");
+const { bds_dir } = require("../../lib/BdsSettings")
 const express = require("express");
 const app = express();
 var cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const bodyParser = require("body-parser");
+const fetchSync = require("../../lib/fetchSync");
 const Ips = require("./external_ip")
 const DefaultLoginDrive = {
     access_type: "offline",
@@ -15,7 +15,7 @@ const DefaultLoginDrive = {
         "https://www.googleapis.com/auth/drive"
     ]
 }
-
+const GoogleDriveCredentials = fetchSync("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").json()
 // -------------------------------------------------------------
 const PathToToken = join(bds_dir, "google_user_token.json");
 

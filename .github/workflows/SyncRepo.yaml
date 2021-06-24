@@ -1,7 +1,6 @@
 name: "Gitlab Sync repository"
 on: 
   push:
-  pull_request:
 jobs:
   Sync:
     name: Sync gitlab repository

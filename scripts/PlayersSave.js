@@ -1,5 +1,6 @@
 const bds = require("../index")
-const {CheckBan} = require("./check");
+const { CheckBan } = require("./check");
+const { GetPlatform, GetPaths } = require("../lib/BdsSettings");
 const fs = require("fs");
 
 function MytypeKill(player) {
@@ -19,7 +20,7 @@ function MytypeKill(player) {
 }
 
 function Bedrock(data){
-    const file_users = fs.readFileSync(bds.players_files, "utf8");
+    const file_users = fs.readFileSync(GetPaths("player"), "utf8");
     const users = JSON.parse(file_users);
     const CurrentData = new Date();
     for (let line of data.split(/\r?\n/g)) {
@@ -69,13 +70,13 @@ function Bedrock(data){
             }
         }
     }
-    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+    fs.writeFileSync(GetPaths("player"), JSON.stringify(users, null, 2))
     if (users.bedrock[username]) return true
     else return false
 }
 
 function Pocketmine(data){
-    const UTF8Users = fs.readFileSync(bds.players_files, "utf8");
+    const UTF8Users = fs.readFileSync(GetPaths("player"), "utf8");
     const users = JSON.parse(UTF8Users);
     const CurrentData = new Date();
 
@@ -121,12 +122,12 @@ function Pocketmine(data){
             }
         }
     }
-    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+    fs.writeFileSync(GetPaths("player"), JSON.stringify(users, null, 2))
     return users
 }
 
 function java(data){
-    const UTF8Users = fs.readFileSync(bds.players_files, "utf8");
+    const UTF8Users = fs.readFileSync(GetPaths("player"), "utf8");
     const users = JSON.parse(UTF8Users);
     const CurrentData = new Date();
 
@@ -172,14 +173,14 @@ function java(data){
             }
         }
     }
-    fs.writeFileSync(bds.players_files, JSON.stringify(users, null, 2))
+    fs.writeFileSync(GetPaths("player"), JSON.stringify(users, null, 2))
     return users
 }
 
 module.exports = function (data){
-    if (bds.platform === "bedrock") return Bedrock(data);
-    else if (bds.platform === "java") return java(data);
-    else if (bds.platform === "pocketmine") return Pocketmine(data);
-    else if (bds.platform === "jsprismarine") return false
+    if (GetPlatform() === "bedrock") return Bedrock(data);
+    else if (GetPlatform() === "java") return java(data);
+    else if (GetPlatform() === "pocketmine") return Pocketmine(data);
+    else if (GetPlatform() === "jsprismarine") return false
     else throw new Error("Plafotform Error !!")
 };

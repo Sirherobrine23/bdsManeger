@@ -1,9 +1,11 @@
 #!/usr/bin/node --no-warnings
 if (process.platform === "win32") process.title = "Bds Maneger CLI";else process.title = "Bds_Manger_CLI"
-const { exit } = require("process");
+const { appendFileSync } = require("fs");
+const { join } = require("path");
 const readline = require("readline");
 const bds = require("../index");
-const { bds_dir, GetServerversion, GetPlatform, UpdatePlatform, GetServerPaths } = require("../lib/BdsSettings");
+const { valid_platform } = require("../lib/BdsValidPlatform");
+const { bds_dir, GetServerversion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // Bds Maneger ArgV
@@ -16,12 +18,14 @@ const server = (argv.p || argv.platform), version = (argv.v || argv.version), Sy
 // --------------------------
 const Versions = GetServerversion();
 
-
 // Check Server Update
-if (Versions[GetPlatform()] !== null) {
+if (Versions[GetPlatform()] === null) {
+    echo("The server was not installed or not installed correctly")
+    bds.download("latest")
+} else {
     if (Versions[GetPlatform()] !== bds.SERVER_URLs.latest[GetPlatform()]) {
         const message = [
-            `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${bds.bds_config.platform_version[GetPlatform()]} to ${bds.SERVER_URLs.latest[GetPlatform()]}`,
+            `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${GetServerversion[GetPlatform()]} to ${bds.SERVER_URLs.latest[GetPlatform()]}`,
             "And we strongly recommend keeping the servers up to date, to maintain compatibility between game versions.",
             `At any time you can update using the options -p ${GetPlatform()} -d "${bds.SERVER_URLs.latest[GetPlatform()]}"`
         ]
@@ -83,6 +87,7 @@ if (SystemCheck) {
         "**************************************************************",
         "* Bds Maneger dirs:",
         `*   - Config:                ${bds_dir}`,
+        `*   - Players File:          ${GetPaths("player")}`,
         "*",
         "* Bds Servers dirs:",
         `*   - Bedrock Server:        ${GetServerPaths("bedrock")}`,
@@ -92,10 +97,10 @@ if (SystemCheck) {
         "*",
         "**************************************************************",
         "* Servers currently available:",
-        `*   - Bedrock:          ${bds.valid_platform.bedrock}`,
-        `*   - Java:             ${bds.valid_platform.java}`,
-        `*   - Pocketmine-MP:    ${bds.valid_platform.pocketmine}`,
-        `*   - JSPrismarine:     ${bds.valid_platform.jsprismarine}`,
+        `*   - Bedrock:          ${valid_platform.bedrock}`,
+        `*   - Java:             ${valid_platform.java}`,
+        `*   - Pocketmine-MP:    ${valid_platform.pocketmine}`,
+        `*   - JSPrismarine:     ${valid_platform.jsprismarine}`,
         "*",
         "**************************************************************"
     ];
@@ -143,15 +148,20 @@ function echo(data = ""){
     data.forEach(data => console.log(data))
 }
 if (start && !(server || version || SystemCheck || bds_version || help)) {
-    console.log("Send a \"stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
-    // Start Server
-    const bds_server = bds.start();
-    bds_server.log(echo)
-    bds_server.exit(function (code){if (code === 3221225781) return open("https://docs.the-bds-maneger.org/Bds Maneger core/WindowsFixDll");console.log("leaving the server, status code: ", code);process.exit(code)});
+    try {
+        console.log("Send a \"@stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
+        // Start Server
+        const bds_server = bds.start();
+        bds_server.log(echo)
+        bds_server.exit(function (code){if (code === 3221225781) return open("https://docs.the-bds-maneger.org/Bds Maneger core/WindowsFixDll");console.log("leaving the server, status code: ", code);process.exit(code)});
 
-    // CLI Commands
-    const rl = readline.createInterface({input: process.stdin,output: process.stdout});
-    rl.on("line", (input) => {if (input === "stop") {rl.close(); bds_server.stop()} else bds_server.command(input)});
-    rl.on("close", ()=>{console.log("CTRL + C closed readline, stopping server");bds_server.stop()})
-    bds.api();
-} else exit(0)
+        // CLI Commands
+        const rl = readline.createInterface({input: process.stdin,output: process.stdout});
+        rl.on("line", (input) => {if (input === "@stop") {rl.close(); bds_server.stop()} else bds_server.command(input)});
+        rl.on("close", ()=>{console.log("CTRL + C closed readline, stopping server");bds_server.stop()})
+        bds.api();
+    } catch (error) {
+        console.log("Install Server or check latest.log");
+        appendFileSync(join(GetPaths("log"), "latest.log"), `\n\n\nError ----------------------------------------------------------------------------\n${error}`)
+    }
+}

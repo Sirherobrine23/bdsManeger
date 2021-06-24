@@ -3,12 +3,13 @@ const { warn, info } = require("console");
 const { writeFileSync, existsSync, readFileSync, readdirSync } = require("fs");
 const { join, resolve } = require("path");
 const bds = require("../index")
-const { valid_platform, PHPbinsUrls } = require("../index")
+const { valid_platform } = require("../lib/BdsValidPlatform");
 const { GetServerPaths, GetServerversion, UpdateServerVersion, GetPlatform } = require("../lib/BdsSettings");
-const response = require("../index").SERVER_URLs
 const commandExists = require("../lib/commandExist");
 const { cloneSync } = require("../lib/git_simples");
 const { execSync } = require("child_process");
+const fetchSync = require("../lib/fetchSync")
+const Extra = require("../extra.json");
 
 const 
     bds_dir_bedrock = GetServerPaths("bedrock"),
@@ -17,6 +18,7 @@ const
     bds_dir_jsprismarine = GetServerPaths("jsprismarine");
 
 module.exports = function (version, force_install, callback) {
+    const Servers = fetchSync(Extra.download.servers).json(), PHPBin = fetchSync(Extra.download.php).json()
     const ServerVersion = GetServerversion()
     const CurrentPlatform = GetPlatform()
     if (force_install === true) {
@@ -25,20 +27,20 @@ module.exports = function (version, force_install, callback) {
         ServerVersion.bedrock = "latest"
         ServerVersion.pocketmine = "latest"
     }
-    if (!(version) || version === true || version === "true") version="latest"
+    if (!(version) || version === true || version === "true" || version === "latest") version = Servers.latest[CurrentPlatform]
     var url;
 
     // Bedrock Installer Script
     if (CurrentPlatform === "bedrock") {
         if (valid_platform.bedrock === true){
-            if (version === "latest") version = response.latest.bedrock
-            url = response.bedrock[version][bds.arch][process.platform]
-            if (response.bedrock[version].data) console.log(`Server data publish: ${response.bedrock[version].data}`)
+            if (version === "latest") version = Servers.latest.bedrock
             if (ServerVersion.bedrock === version) {
                 warn("Jumping, installed version")
                 if (typeof callback === "function") callback(true);
                 return true
             } else {
+                if (Servers.bedrock[version].data) console.log(`Server data publish: ${Servers.bedrock[version].data}`)
+                url = Servers.bedrock[version][bds.arch][process.platform]
                 var server_configs, permissions, whitelist;
                 if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");
                 if (existsSync(join(bds_dir_bedrock, "permissions.json"))) permissions = readFileSync(join(bds_dir_bedrock, "permissions.json"), "utf8");
@@ -53,7 +55,6 @@ module.exports = function (version, force_install, callback) {
                     if (whitelist) writeFileSync(join(bds_dir_bedrock, "whitelist.json"), whitelist)
                     UpdateServerVersion(version, "bedrock")
                     if (typeof callback === "function") callback(true);
-                    return true
                 })
             }
         } else throw Error("Bedrock Not suported")
@@ -61,14 +62,14 @@ module.exports = function (version, force_install, callback) {
     // java Installer Script
     else if (CurrentPlatform === "java") {
         if (valid_platform.java === true){
-            if (version === "latest") version = response.latest.java
+            if (version === "latest") version = Servers.latest.java
             if (version === ServerVersion.java) {
                 warn("Jumping, installed version")
                 if (typeof callback === "function") callback(true);
                 return true
             } else {
-                url = response.java[version].url
-                console.log(`Server data publish: ${response.java[version].data}`)
+                url = Servers.java[version].url
+                console.log(`Server data publish: ${Servers.java[version].data}`)
                 fetch(url).then(res => {if (res.ok) return res.arrayBuffer(); else throw res}).then(res => Buffer.from(res)).then(response => {
                     console.log("Download Sucess")
                     writeFileSync(join(bds_dir_java, "MinecraftServerJava.jar"), response, "binary")
@@ -83,13 +84,13 @@ module.exports = function (version, force_install, callback) {
     // Pocketmine-MP Installer Script
     else  if (CurrentPlatform === "pocketmine") {
         if (valid_platform.pocketmine === true) {
-            if (version === "latest") version = response.PocketMine_latest
+            if (version === "latest") version = Servers.PocketMine_latest
             if (version === ServerVersion.pocketmine) {
                 warn("Jumping, installed version")
                 if (typeof callback === "function") callback(true);
                 return true
             } else {
-                const PocketMineJson = response.PocketMine[version]
+                const PocketMineJson = Servers.PocketMine[version]
                 console.log(`Server data publish: ${PocketMineJson.data}`);
                 fetch(PocketMineJson.url).then(res => {if (res.ok) return res.arrayBuffer(); else throw res}).then(res => Buffer.from(res)).then(response => {
                     console.log("Success when downloading php from PocketMine-MP");
@@ -104,7 +105,7 @@ module.exports = function (version, force_install, callback) {
                     if (commandExists("php")) throw new Error("Unistall php from system, or use docker image")
                     else if ((!existsSync(phpBinFolder)) || force_install) {
                         var urlPHPBin;
-                        try {urlPHPBin = PHPbinsUrls[process.platform][bds.arch];}
+                        try {urlPHPBin = PHPBin[process.platform][bds.arch];}
                         catch (error) {
                             throw new Error("")
                         }

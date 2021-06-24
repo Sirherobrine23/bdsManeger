@@ -1,6 +1,9 @@
 // External User ip
 const fetchSync = require("../lib/fetchSync");
-const externalIP = fetchSync("https://ipecho.net/plain").text()
+const externalIP = {
+    ipv4: fetchSync("https://api.ipify.org/").text(),
+    ipv6: fetchSync("https://api64.ipify.org/").text()
+}
 module.exports.external_ip = externalIP
 module.exports.ip = externalIP
 

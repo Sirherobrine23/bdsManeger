@@ -4,6 +4,10 @@
         "https://telemetry.the-bds-maneger.org",
         "http://localhost:1178"
     ],
+    "download": {
+        "php": "https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json",
+        "servers": "https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/Server.json"
+    },
     "contributors": [
         {
             "name": "Matheus Sampaio Queiroga",

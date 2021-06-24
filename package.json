@@ -3,10 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "files": [
-    "lib"
-  ],
-  "version": "1.10.1",
+  "version": "1.11.1",
   "description": "Scripts to manage minecraft server's",
   "private": false,
   "main": "index.js",

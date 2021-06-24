@@ -10,6 +10,7 @@ const kerneldetect = require("../lib/DetectKernel");
 const commandExist = require("../lib/commandExist");
 const { join } = require("path");
 const bdsPaths = require("../lib/bdsgetPaths")
+const { GetPlatform } = require("../lib/BdsSettings")
 const admzip = require("adm-zip");
 
 function api(port_api){
@@ -30,7 +31,7 @@ function api(port_api){
         var info = {
             version: bds.package_json.version,
             server: {
-                platform: bds.platform,
+                platform: GetPlatform(),
                 world_name: config.world,
                 running: bds.detect(),
                 port: config.portv4,
@@ -73,7 +74,7 @@ function api(port_api){
 
     app.get("/players", (req, res) => {
         const query = req.query;
-        const players_json = JSON.parse(fs.readFileSync(bds.players_files, "utf8"))[(query.platform || bds.platform)];
+        const players_json = JSON.parse(fs.readFileSync(bds.players_files, "utf8"))[(query.platform || GetPlatform())];
         var response = {};
         
         if (query.status) {

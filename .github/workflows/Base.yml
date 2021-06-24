@@ -1,6 +1,12 @@
 name: Base BDS Docker bases
 on:
   push:
+    branches:
+      - main
+    tags:
+      - v*
+      - V*
+
   schedule:
     - cron: 0 0 * * */1
 

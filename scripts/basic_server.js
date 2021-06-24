@@ -1,11 +1,11 @@
 const { exec, execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const { resolve } = require("path");
+const { resolve, join } = require("path");
 const commandExists = require("../lib/commandExist");
 const saveUser = require("./PlayersSave");
 const bds = require("../index");
-const { GetServerPaths, GetPaths, GetServerSettings } = require("../lib/BdsSettings");
+const { GetServerPaths, GetPaths, GetServerSettings, GetPlatform } = require("../lib/BdsSettings");
 const BdsDetect = require("./detect");
 const { warn } = console;
 const { v4 } = require("uuid")
@@ -20,7 +20,7 @@ function start() {
     } else {
         var Command, Options = {};
         // ---------------------------------------------
-        if (bds.platform === "bedrock"){
+        if (GetPlatform() === "bedrock"){
             Options = {
                 cwd: GetServerPaths("bedrock")
             }
@@ -36,7 +36,7 @@ function start() {
 
             } else if (process.platform === "darwin") throw Error("Use a imagem Docker")
             else process.exit(210)
-        } else if (bds.platform === "java") {
+        } else if (GetPlatform() === "java") {
             const ramMax = Math.trunc(Math.abs(require("os").freemem() / 1024 / 1024));
             // Check low ram
             if (ramMax <= 512) throw new Error("Low ram memorie");
@@ -56,7 +56,7 @@ function start() {
                 console.info(`Open: ${url}`)
                 if (typeof open === "undefined") require("open")(url); else open(url);
             }
-        } else if (bds.platform === "pocketmine") {
+        } else if (GetPlatform() === "pocketmine") {
             const phpinCore = resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin")
             if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
             else if (!fs.existsSync(phpinCore)) throw Error("Reinstall Pocketmine-MP, PHP binaries folder not found");
@@ -67,7 +67,7 @@ function start() {
                     env: currentEnv,
                     cwd: GetServerPaths("pocketmine")
                 };
-        } else if (bds.platform === "jsprismarine") {
+        } else if (GetPlatform() === "jsprismarine") {
             Command = "node --warning --circular ./packages/server/dist/Server.js";
                 Options = {
                     cwd: GetServerPaths("jsprismarine")
@@ -77,7 +77,7 @@ function start() {
         // Start Command
         const start_server = exec(Command, Options)
         // Post Start
-        if (bds.platform === "java") {
+        if (GetPlatform() === "java") {
             start_server.stdout.on("data", function(data){
                 if (data.includes("agree"))
                     if (data.includes("EULA")){
@@ -87,6 +87,9 @@ function start() {
                     }
             });
         }
+        
+        // Log file
+        const LogFile = join(GetPaths("log"), `${bds.date()}_${GetPlatform()}_Bds_log.log`);
         // save User in Json
         start_server.stdout.on("data", data => saveUser(data))
         start_server.stderr.on("data", data => saveUser(data))
@@ -95,11 +98,11 @@ function start() {
         fs.writeFileSync(path.join(GetPaths("log"), "latest.log"), "")
         // ---------------------------------------------------
         // stdout
-        start_server.stdout.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
+        start_server.stdout.pipe(fs.createWriteStream(LogFile, {flags: "a"}));
         start_server.stdout.pipe(fs.createWriteStream(path.join(GetPaths("log"), "latest.log"), {flags: "a"}));
         // ---------------------------------------------------
         // stderr
-        start_server.stderr.pipe(fs.createWriteStream(bds.log_file, {flags: "a"}));
+        start_server.stderr.pipe(fs.createWriteStream(LogFile, {flags: "a"}));
         start_server.stderr.pipe(fs.createWriteStream(path.join(GetPaths("log"), "latest.log"), {flags: "a"}));
         // ---------------------------------------------------
         // Global and Run
