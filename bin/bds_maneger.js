@@ -21,7 +21,7 @@ const Versions = GetServerversion();
 // Check Server Update
 if (Versions[GetPlatform()] === null) {
     echo("The server was not installed or not installed correctly")
-    bds.download("latest")
+    //bds.download("latest")
 } else {
     if (Versions[GetPlatform()] !== bds.SERVER_URLs.latest[GetPlatform()]) {
         const message = [
