@@ -1,10 +1,10 @@
-#!/usr/bin/node --no-warnings
+#!/usr/bin/env node
 if (process.platform === "win32") process.title = "Bds Maneger CLI";else process.title = "Bds_Manger_CLI"
 const { appendFileSync } = require("fs");
 const { join } = require("path");
 const readline = require("readline");
 const bds = require("../index");
-const { valid_platform } = require("../lib/BdsValidPlatform");
+const { valid_platform } = require("../lib/BdsSystemInfo");
 const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
@@ -19,10 +19,7 @@ const server = (argv.p || argv.platform), version = (argv.v || argv.version), Sy
 const Versions = GetServerVersion();
 
 // Check Server Update
-if (Versions[GetPlatform()] === null) {
-    echo("The server was not installed or not installed correctly")
-    //bds.download("latest")
-} else {
+if (Versions[GetPlatform()] !== null) {
     if (Versions[GetPlatform()] !== bds.SERVER_URLs.latest[GetPlatform()]) {
         const message = [
             `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${GetServerVersion[GetPlatform()]} to ${bds.SERVER_URLs.latest[GetPlatform()]}`,
@@ -159,8 +156,12 @@ if (start && !(server || version || SystemCheck || bds_version || help)) {
         const rl = readline.createInterface({input: process.stdin,output: process.stdout});
         rl.on("line", (input) => {if (input === "@stop") {rl.close(); bds_server.stop()} else bds_server.command(input)});
         rl.on("close", ()=>{console.log("CTRL + C closed readline, stopping server");bds_server.stop()})
+        bds_server.exit(function(c){if (c !== 0) rl.close()})
         bds.api();
     } catch (error) {
+        if (Versions[GetPlatform()] !== null) bds.download("latest", true, function(){
+
+        })
         console.log("Install Server or check latest.log");
         appendFileSync(join(GetPaths("log"), "latest.log"), `\n\n\nError ----------------------------------------------------------------------------\n${error}`)
     }
