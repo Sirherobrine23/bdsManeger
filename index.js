@@ -26,7 +26,7 @@ module.exports.package_path = bds_core_package
 const package_json = JSON.parse(fs.readFileSync(bds_core_package))
 module.exports.package_json = package_json
 
-const { bds_dir } = require("./lib/bdsgetPaths");
+const { bds_dir } = require("./lib/BdsSettings");
 
 // System Architect (x64, aarch64 and others)
 var arch;
