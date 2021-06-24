@@ -53,7 +53,7 @@ module.exports = function (version, force_install, callback) {
                     if (server_configs) writeFileSync(join(bds_dir_bedrock, "server.properties"), server_configs);
                     if (permissions) writeFileSync(join(bds_dir_bedrock, "permissions.json"), permissions)
                     if (whitelist) writeFileSync(join(bds_dir_bedrock, "whitelist.json"), whitelist)
-                    UpdateServerVersion(version, "bedrock")
+                    UpdateServerVersion(version)
                     if (typeof callback === "function") callback(true);
                 })
             }
@@ -74,7 +74,7 @@ module.exports = function (version, force_install, callback) {
                     console.log("Download Sucess")
                     writeFileSync(join(bds_dir_java, "MinecraftServerJava.jar"), response, "binary")
                     console.log("Save sucess");
-                    UpdateServerVersion(version, "java");
+                    UpdateServerVersion(version);
                     if (typeof callback === "function") callback(true);
                     return true
                 })
@@ -98,7 +98,7 @@ module.exports = function (version, force_install, callback) {
                     writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), response, "binary")
                     
                     // Update server Version
-                    UpdateServerVersion(version, "pocketmine")
+                    UpdateServerVersion(version)
 
                     // Check PHP binary
                     const phpBinFolder = join(bds_dir_pocketmine, "bin")
