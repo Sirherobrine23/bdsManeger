@@ -10,7 +10,7 @@ const kerneldetect = require("../lib/DetectKernel");
 const commandExist = require("../lib/commandExist");
 const { join } = require("path");
 const bdsPaths = require("../lib/bdsgetPaths")
-const { GetPlatform } = require("../lib/BdsSettings")
+const { GetPlatform, GetServerversion, GetServerBan, GetTelegramAdmins } = require("../lib/BdsSettings")
 const admzip = require("adm-zip");
 
 function api(port_api){
@@ -49,9 +49,9 @@ function api(port_api){
                 QEMU_STATIC: commandExist("qemu-x86_64-static")
             },
             bds_maneger_core: {
-                server_versions: bds.bds_config.platform_version,
-                server_ban: bds.bds_config.bds_ban,
-                telegram_admin: bds.bds_config.telegram_admin
+                server_versions: GetServerversion(),
+                server_ban: GetServerBan(),
+                telegram_admin: GetTelegramAdmins()
             }
         };
         return res.send(info);
@@ -77,7 +77,13 @@ function api(port_api){
         const players_json = JSON.parse(fs.readFileSync(bds.players_files, "utf8"))[(query.platform || GetPlatform())];
         var response = {};
         
-        if (query.status) {
+        if (query.player) {
+            for (let index of Object.getOwnPropertyNames(players_json)){
+                if (players_json[index].connected === status) {
+                    response[index] = players_json[index]
+                }
+            }
+        } else if (query.status) {
             const status = (() => {if (query.status === "online") return true; else return false})()
             for (let index of Object.getOwnPropertyNames(players_json)){
                 if (players_json[index].connected === status) {
