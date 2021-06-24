@@ -43,4 +43,4 @@ USER thebds
 
 # Entrypint
 WORKDIR /home/bds/
-ENTRYPOINT [ "/bin/bds_maneger" ,"--DOCKER_IMAGE" ,"-s" ]
+ENTRYPOINT [ "/opt/bds_core/bin/bds_maneger" ,"--DOCKER_IMAGE" ,"-s" ]
