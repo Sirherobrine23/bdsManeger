@@ -5,7 +5,7 @@ const { join } = require("path");
 const readline = require("readline");
 const bds = require("../index");
 const { valid_platform } = require("../lib/BdsValidPlatform");
-const { bds_dir, GetServerversion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
+const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // Bds Maneger ArgV
@@ -16,7 +16,7 @@ if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
 const server = (argv.p || argv.platform), version = (argv.v || argv.version), SystemCheck = (argv.S || argv.system_info), bds_version = (argv.d || argv.server_download), start = (argv.s || argv.server_version), help = (argv.h || argv.help), kill = (argv.k || argv.kill), docker_runner = (argv.DOCKER_IMAGE)
 
 // --------------------------
-const Versions = GetServerversion();
+const Versions = GetServerVersion();
 
 // Check Server Update
 if (Versions[GetPlatform()] === null) {
@@ -25,7 +25,7 @@ if (Versions[GetPlatform()] === null) {
 } else {
     if (Versions[GetPlatform()] !== bds.SERVER_URLs.latest[GetPlatform()]) {
         const message = [
-            `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${GetServerversion[GetPlatform()]} to ${bds.SERVER_URLs.latest[GetPlatform()]}`,
+            `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${GetServerVersion[GetPlatform()]} to ${bds.SERVER_URLs.latest[GetPlatform()]}`,
             "And we strongly recommend keeping the servers up to date, to maintain compatibility between game versions.",
             `At any time you can update using the options -p ${GetPlatform()} -d "${bds.SERVER_URLs.latest[GetPlatform()]}"`
         ]

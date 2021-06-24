@@ -12,4 +12,10 @@ Docker.js
 bds_maneger
 BdsManager-bin*
 Bds-Maneger-Core
+
+# Docker Build
 Docker.exe
+
+# Bin Ignores
+bin/*
+!bin/bds_maneger.js

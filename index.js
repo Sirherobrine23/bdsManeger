@@ -3,7 +3,6 @@ const { resolve } = require("path");
 const path = require("path")
 const fs = require("fs");
 const { randomBytes } = require("crypto")
-module.exports = require("./lib/bdsgetPaths");
 function date(format) {
     const today = new Date(),
         yaer = today.getFullYear(),
@@ -22,25 +21,16 @@ function date(format) {
 }
 
 const bds_core_package = resolve(__dirname, "package.json")
-module.exports.package_path = bds_core_package
 const package_json = JSON.parse(fs.readFileSync(bds_core_package))
+module.exports.package_path = bds_core_package
 module.exports.package_json = package_json
-
-const { bds_dir } = require("./lib/BdsSettings");
-
-// System Architect (x64, aarch64 and others)
-var arch;
-if (process.arch === "arm64") arch = "aarch64"; else arch = process.arch
-module.exports.arch = arch
-
-const { Servers, PHPBin, GoogleDriver } = require("./lib/ServerURL");
-
-// -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-const log_date = date();
-module.exports.log_date = log_date;
 module.exports.extra_json = JSON.parse(fs.readFileSync(resolve(__dirname, "extra.json")))
 
+const { bds_dir } = require("./lib/BdsSettings");
+const { arch } = require("./lib/BdsSystemInfo");
+const { Servers, PHPBin, GoogleDriver } = require("./lib/ServerURL");
 const { GetPaths, GetJsonConfig, UpdatePlatform, UpdateTelegramToken, GetTelegramToken } = require("./lib/BdsSettings")
+module.exports.arch = arch
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 
 
@@ -106,6 +96,11 @@ function token_register() {
         console.log(`Bds Maneger API REST token: "${new_token}"`);
     })
 }
+
+/**
+ * Update, Get and more to Modifications Bds Settings File
+ */
+module.exports.BdsSettigs = require("./lib/BdsSettings");
 
 // Requires
 const { World_BAckup } = require("./scripts/backups");
@@ -207,3 +202,9 @@ module.exports.get_config = get_config
  * This is telegram bot
  */
 module.exports.telegram = require("./rest/telegram_bot")
+
+
+/**
+ * Load Crontab Backup
+ */
+require("./scripts/LoadCronBackup")

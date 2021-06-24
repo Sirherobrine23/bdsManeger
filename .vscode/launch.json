@@ -1,22 +1,16 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
             "type": "node",
             "request": "launch",
-            "name": "Build Docker And Run",
-            "sourceMaps": false,
-            "program": "${workspaceFolder}/BuildRunDocker.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Binary",
-            "sourceMaps": false,
-            "program": "${workspaceFolder}/bin/nexe_build.js"
+            "name": "Build Dev Docker Image",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "Docker"
+            ],
+            "port": 9229
         }
     ]
 }

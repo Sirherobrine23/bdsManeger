@@ -6,9 +6,8 @@ const { GetServerPaths, GetPlatform } = require("../lib/BdsSettings");
 const bds_dir_bedrock = GetServerPaths("bedrock"), bds_dir_java = GetServerPaths("java"), bds_dir_pocketmine = GetServerPaths("pocketmine");
 const bedrockCPUThread = require("os").cpus().length;
 
-function bds_config(NewConfig){
-    if (NewConfig === undefined) NewConfig = {}
-    let JsonConfig = {
+function bds_config(
+    NewConfig = {
         world: "Bds Maneger",
         description: "The Bds Maneger",
         gamemode: "creative",
@@ -17,6 +16,20 @@ function bds_config(NewConfig){
         commands: true,
         account: true,
         whitelist: true,
+        port: 19132,
+        portv6: 19133,
+        seed: ""
+    }
+){
+    let JsonConfig = {
+        world: "Bds Maneger",
+        description: "The Bds Maneger",
+        gamemode: "creative",
+        difficulty: "normal",
+        players: 10,
+        commands: true,
+        account: true,
+        whitelist: false,
         port: 19132,
         portv6: 19133,
         seed: ""
@@ -158,7 +171,7 @@ function bds_config(NewConfig){
     Config.push("")
     Config.push("# By The Bds Maneger project")
     fs.writeFileSync(ConfigFile, Config.join("\n"))
-    return Config
+    return Config;
 }
 function bds_get_config(){
     var config;

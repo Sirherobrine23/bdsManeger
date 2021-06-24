@@ -4,12 +4,8 @@
 		"dockerfile": "Dockerfile",
 		"args": {}
 	},
-	"settings": { 
-		"terminal.integrated.shell.linux": "/usr/bin/zsh"
-	},
 	"extensions": [
 		"dbaeumer.vscode-eslint",
-		"formulahendry.auto-rename-tag",
 		"ms-vscode-remote.remote-containers",
 		"benshabatnoam.google-translate-ext",
 		"wix.vscode-import-cost",
@@ -27,18 +23,19 @@
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	/*
- 	"forwardPorts": [
+	
+	"forwardPorts": [
 		19132,
-		19133,
-		1932,
-		6565
+		1932
 	],
-	*/
-
+	"hostRequirements": {
+		"cpus": 2,
+		"memory": "2gb",
+		"storage": "128gb"
+	},
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "npm install --no-save",
+	// "postCreateCommand": "npm install --no-save",
 
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "node"
+	"remoteUser": "vscodedev"
 }

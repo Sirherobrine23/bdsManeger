@@ -2,13 +2,14 @@ const os = require("oci-objectstorage");
 const common = require("oci-common");
 const fs = require("fs");
 const { resolve } = require("path");
+const { CloudConfig } = require("../lib/BdsSettings")
 
 const Uploadbackups = async function (
-    bucket = "MinecraftAPKStorageBySirherobrine23",
     object = "Backup.zip",
     fileLocation = resolve(__dirname, "../Backup.zip"),
     callback = function (data){console.log(data)}
 ){
+    const bucket = CloudConfig.Oracle().Bucket
     const provider = new common.ConfigFileAuthenticationDetailsProvider();
     const client = new os.ObjectStorageClient({
         authenticationDetailsProvider: provider
@@ -30,7 +31,8 @@ const Uploadbackups = async function (
         };
         const putObjectResponse = await client.putObject(putObjectRequest);
         console.log("File upload successful");
-        return callback(putObjectResponse)
+        if (typeof callback === "function") return callback(putObjectResponse);
+        return putObjectResponse;
     } catch (error) {
         console.log("Error ", error);
     }

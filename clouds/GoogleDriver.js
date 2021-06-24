@@ -3,18 +3,17 @@ const { google } = require("googleapis");
 const { authorize } = require("./Auth/Google");
 const { GetCloudConfig } = require("../lib/BdsSettings");
 
-module.exports.Uploadbackups = (BackupCallback) => {
-    const file_json = require("../scripts/backups").Cloud_backup()
+module.exports.Uploadbackups = function (file_name = "Backup.zip", fileLocation = "Backup.zip", BackupCallback){
     const parent_id = GetCloudConfig("Driver").RootID
     return authorize(function (auth) {
         const drive = google.drive({version: "v3", auth});
         const UploadFile = {
             resource: {
-                name: file_json.file_name
+                name: file_name
             },
             media: {
                 mimeType: "application/octet-stream",
-                body: fs.createReadStream(file_json.file_path)
+                body: fs.createReadStream(fileLocation)
             },
             fields: "id"
         }

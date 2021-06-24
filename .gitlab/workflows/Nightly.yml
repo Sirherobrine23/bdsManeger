@@ -18,4 +18,4 @@ Docker_Nightly:
         docker login --username="$DOCKER_USER" --password="$DOCKER_TOKEN" &> /dev/null
   script:
     - docker pull bdsmaneger/maneger:nightly
-    - docker buildx build -t bdsmaneger/maneger:nightly --push --platform=linux/amd64,linux/arm64/v8,linux/arm/v7 .
+    - docker buildx build -t bdsmaneger/maneger:nightly --platform=linux/amd64,linux/arm64/v8,linux/arm/v7 .

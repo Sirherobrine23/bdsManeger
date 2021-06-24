@@ -1,7 +1,7 @@
-const fetchSync = require("./lib/fetchSync")
+const fetchSync = require("../lib/fetchSync")
 const { writeFileSync } = require("fs");
 const { exit } = require("process");
-const { join } = require("path");
+const { resolve } = require("path");
 const { exec, execSync } = require("child_process");
 const JSon_release = fetchSync("https://api.github.com/repos/Sirherobrine23/MSQ-files/releases").json()
 
@@ -18,7 +18,7 @@ for (let _Check of JSon_release){
 }
 if (!(DockerLatestBin.length >= 1)) exit(1);
 const bin = fetchSync(`https://github.com/Sirherobrine23/MSQ-files/releases/download/${DockerLatestBin[0].tag_name}/DockerRunBuild_${process.platform}_${process.arch}`, true);
-const binPath = join(__dirname, "Docker.exe")
+const binPath = resolve(__dirname, "../Docker.exe")
 bin.save(binPath)
 if (process.platform !== "win32") execSync(`chmod 777 "${binPath}"`)
 const exe = exec(binPath)

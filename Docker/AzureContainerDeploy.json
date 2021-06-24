@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
-    "contentVersion": "1.49.0.0",
+    "contentVersion": "1.50.0.0",
     "parameters": {
         "containerName": {
             "type": "string",
@@ -37,28 +37,10 @@
             },
             "allowedValues": ["5","10","15","20","25","30","35","40","45","50","70","100","200"]
         },
-        "ServerVersion": {
-            "type": "string",
-            "defaultValue": "latest",
-            "metadata": {
-                "description": "Specify a version of the Minecraft server, if you always want the latest version to use 'latest'"
-            }
-        },
-        "BdsReinstall": {
-            "type": "string",
-            "allowedValues": [
-                "true",
-                "false"
-            ],
-            "metadata": {
-                "description": "If you do not want to reinstall a new version, this is not recommended if you use the 'latest' option in the image settings"
-            },
-            "defaultValue": "true"
-        },
         "ServerPlatform": {
             "type": "string",
             "defaultValue": "bedrock",
-            "allowedValues": ["bedrock","java"],
+            "allowedValues": ["bedrock", "java", "pocketmine", "jsprismarine"],
             "metadata": {
                 "description": "Bedrock: Phones, Xbox, Nintendo switch, etc. Java: Desktops"
             }
@@ -137,7 +119,7 @@
                     {
                         "name": "[parameters('containerName')]",
                         "properties": {
-                            "image": "bdsmaneger/maneger:latest",
+                            "image": "bdsmaneger/core:latest",
                             "resources": {
                                 "requests": {
                                     "cpu": "[int(parameters('numberCpuCores'))]",
@@ -175,12 +157,8 @@
                                     "value": "[parameters('ServerPlatform')]"
                                 },
                                 {
-                                    "name": "BDS_REINSTALL",
-                                    "value": "[parameters('BdsReinstall')]"
-                                },
-                                {
                                     "name": "BDS_VERSION",
-                                    "value": "[parameters('ServerVersion')]"
+                                    "value": "latest"
                                 }
                             ],
                             "volumeMounts": [

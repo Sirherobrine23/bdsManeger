@@ -20,4 +20,4 @@ Docker_Stable:
         docker buildx inspect --bootstrap
         docker login --username="$DOCKER_USER" --password="$DOCKER_TOKEN" &> /dev/null
   script:
-    - docker buildx build -t bdsmaneger/maneger:latest --push --platform=linux/amd64,linux/arm64/v8,linux/arm/v7 .
+    - docker buildx build -t bdsmaneger/maneger:latest --platform=linux/amd64,linux/arm64/v8,linux/arm/v7 .

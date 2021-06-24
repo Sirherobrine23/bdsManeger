@@ -1,10 +1,13 @@
 const { Telegraf } = require("telegraf");
-const { start, detect, telegram_token, arch, package_json, latest_log, kill } = require("../index");
-const { valid_platform } = require("../lib/BdsValidPlatform")
+const { start, detect, telegram_token, arch, package_json, kill } = require("../index");
+const { valid_platform } = require("../lib/BdsSystemInfo")
 const { checkUser } = require("../scripts/check");
 const IsElectron = process.argv[0].includes("electron");
 const { readFileSync } = require("fs");
 const FetchSync = require("../lib/fetchSync");
+const { GetPaths } = require("../lib/BdsSettings");
+const { resolve } = require("path");
+const latest_log = resolve(GetPaths("log"), "latest.log")
 
 function getExec() {
     const ArrayExecs = Object.getOwnPropertyNames(global.BdsExecs);
@@ -83,9 +86,9 @@ module.exports = function (){
     });
     bot.command("mcpe", (ctx) => {
         const Androidapks = FetchSync("https://raw.githubusercontent.com/Sirherobrine23/Minecraft_APK_Index/main/Android.json").json();
-        Androidapks.Oficial_latest
+        const _Ofi = Androidapks.latest["oficial"]
         const markdown = [
-            `Minecraft Bedrock android: [${Androidapks.Oficial_latest}](${Androidapks.Oficial[Androidapks.Oficial_latest].url})`,
+            `Minecraft Bedrock android: [${_Ofi}](${Androidapks.Oficial[_Ofi].url})`,
             "",
             "iPhone users are not privileged, by [Sirherobrine23](https://sirherobrine23.org)"
         ]

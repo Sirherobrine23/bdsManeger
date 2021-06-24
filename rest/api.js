@@ -6,12 +6,14 @@ const rateLimit = require("express-rate-limit");
 const token_verify = require("./token_api_check")
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
-const kerneldetect = require("../lib/DetectKernel");
+const { GetKernel } = require("../lib/BdsSystemInfo");
 const commandExist = require("../lib/commandExist");
-const { join } = require("path");
+const { join, resolve } = require("path");
 const bdsPaths = require("../lib/bdsgetPaths")
-const { GetPlatform, GetServerversion, GetServerBan, GetTelegramAdmins } = require("../lib/BdsSettings")
+const { GetPlatform, GetServerVersion, GetServerBan, GetTelegramAdmins, GetPaths } = require("../lib/BdsSettings")
 const admzip = require("adm-zip");
+const pretty = require("express-prettify");
+const latest_log = resolve(GetPaths("log"), "latest.log")
 
 function api(port_api){
     const app = express();
@@ -26,6 +28,10 @@ function api(port_api){
         windowMs: 15 * 60 * 1000, // 15 minutes
         max: 100 // limit each IP to 100 requests per windowMs
     }));
+    app.use(pretty({
+        always: true,
+        spaces: 2
+    }))
     app.get("/info", (req, res) => {
         const config = bds.get_config();
         var info = {
@@ -42,14 +48,14 @@ function api(port_api){
             sys: {
                 arch: bds.arch,
                 system: process.platform,
-                Kernel: kerneldetect(),
+                Kernel: GetKernel(),
                 IS_CLI: JSON.parse(process.env.IS_BDS_CLI || false),
                 IS_DOCKER: JSON.parse(process.env.BDS_DOCKER_IMAGE || false),
                 IS_NPX: (process.env.npm_lifecycle_event === "npx"),
                 QEMU_STATIC: commandExist("qemu-x86_64-static")
             },
             bds_maneger_core: {
-                server_versions: GetServerversion(),
+                server_versions: GetServerVersion(),
                 server_ban: GetServerBan(),
                 telegram_admin: GetTelegramAdmins()
             }
@@ -78,10 +84,12 @@ function api(port_api){
         var response = {};
         
         if (query.player) {
-            for (let index of Object.getOwnPropertyNames(players_json)){
-                if (players_json[index].connected === status) {
-                    response[index] = players_json[index]
-                }
+            if (players_json[query.player]) response = players_json[query.player];
+            else response = {
+                date: null,
+                connected: null,
+                xboxID: null,
+                update: [{date: null, connected: null}]
             }
         } else if (query.status) {
             const status = (() => {if (query.status === "online") return true; else return false})()
@@ -223,9 +231,9 @@ function log(port_log){
         var log_file="";
         var sucess="";
         if (typeof bds_log_string === "undefined"){
-            if (fs.existsSync(bds.latest_log)){
-                text = `${fs.readFileSync(bds.latest_log)}`
-                log_file = bds.latest_log
+            if (fs.existsSync(latest_log)){
+                text = `${fs.readFileSync(latest_log)}`
+                log_file = latest_log
                 sucess = true
             } else {
                 text = "The server is stopped"

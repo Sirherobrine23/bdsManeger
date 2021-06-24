@@ -3,8 +3,8 @@ const { warn, info } = require("console");
 const { writeFileSync, existsSync, readFileSync, readdirSync } = require("fs");
 const { join, resolve } = require("path");
 const bds = require("../index")
-const { valid_platform } = require("../lib/BdsValidPlatform");
-const { GetServerPaths, GetServerversion, UpdateServerVersion, GetPlatform } = require("../lib/BdsSettings");
+const { valid_platform } = require("../lib/BdsSystemInfo");
+const { GetServerPaths, GetServerVersion, UpdateServerVersion, GetPlatform } = require("../lib/BdsSettings");
 const commandExists = require("../lib/commandExist");
 const { cloneSync } = require("../lib/git_simples");
 const { execSync } = require("child_process");
@@ -19,7 +19,7 @@ const
 
 module.exports = function (version, force_install, callback) {
     const Servers = fetchSync(Extra.download.servers).json(), PHPBin = fetchSync(Extra.download.php).json()
-    const ServerVersion = GetServerversion()
+    const ServerVersion = GetServerVersion()
     const CurrentPlatform = GetPlatform()
     if (force_install === true) {
         info("Bds Maneger core force install")

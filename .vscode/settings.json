@@ -1,7 +1,0 @@
-{
-    "files.exclude": {
-        ".devcontainer/": true,
-        ".eslint*": true,
-        "node_modules/": true
-    }
-}

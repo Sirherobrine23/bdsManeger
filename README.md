@@ -4,6 +4,10 @@ Create manage a server for Minecraft Bedrock, java and derivatives with an integ
 
 Any contribution is welcome, but before a look at [CONTRIBUTING.md](CONTRIBUTING.md), [Bds Manager Core code of conduct](CODE_OF_CONDUCT.md)
 
+## More important information for users before 1.10.0+
+
+In Version 1.11.0 there was a big change in the way to get the new settings and that left a good part of the program broken, so for those who are going to upgrade to the latest versions of Bds maneger Core will have to change the settings manually.
+
 ## CI/CD tests
 
 [![Github CodeQL and OSSAR](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml/badge.svg)](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml)
@@ -29,7 +33,7 @@ $ docker run --rm -d --name BdsManegerCore -v BdsCore:/home/bds/bds_core ^
     -e PLAYERS="13" ^
     -e SERVER="bedrock" ^
     -e ENABLE_COMMANDS="false" ^
-bdsmaneger/maneger:latest
+bdsmaneger/core:latest
 ```
 
 Linux/MacOS:
@@ -45,42 +49,8 @@ $ docker run --rm -d --name BdsManegerCore -v BdsCore/:/home/bds/bds_core \
     -e PLAYERS="13" \
     -e SERVER="bedrock" \
     -e ENABLE_COMMANDS="false"
-bdsmaneger/maneger:latest
+bdsmaneger/core:latest
 ```
-
-## Options: Static binaries - bin/bds_maneger.js - npx @the-bds-maneger/core
-
-Bds Maneger from version 1.10+ is offering user-ready binary files for Windows, Linux and MacOS systems.
-
-It is still recommended to use docker for x64 architectures (AMD64)
-
-options:
-
-- -s or --start:
-
-    - Start your server, if you haven't installed any it will fail and exit immediately.
-
-- -p or --platform:
-
-    Select a platform to start, install, etc...
-
-    - Available platforms:
-
-        * Bedrock (Oficial)
-        * Java (Oficial)
-        * PocketMine-MP
-        * JSPrismarine
-
-- -d or --server_download:
-
-    - Installation or Update of the server currently selected by the previous option
-
-        - you can also enter a server version, or use `latest` as an option
-
-- -S or --system_info:
-
-    - Server support information, system architecture etc...
-
 
 ## We also have some Implementation Models for Azure
 

@@ -14,7 +14,8 @@
     "eslint": "eslint --debug .",
     "eslint:debug": "eslint --debug .",
     "eslint:fix": "eslint --fix .",
-    "nexe": "node bin/nexe_build.js"
+    "nexe": "node .Build/nexe_build.js",
+    "Docker": "node .Build/DockerImage.js"
   },
   "bin": {
     "bds_maneger": "./bin/bds_maneger.js"
@@ -54,6 +55,7 @@
     "cron": "^1.8.2",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
+    "express-prettify": "^0.1.1",
     "express-rate-limit": "^5.2.3",
     "googleapis": "^78.0.0",
     "js-yaml": "^4.1.0",
