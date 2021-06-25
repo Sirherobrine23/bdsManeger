@@ -25,10 +25,10 @@ RUN chmod a+x bin/* && npm install --no-save
 ENV TELEGRAM_TOKEN="null" DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" WORLD_NAME="Bds Maneger Docker" GAMEMODE="survival" DIFFICULTY="normal" XBOX_ACCOUNT="false" PLAYERS="13" SERVER="bedrock" ENABLE_COMMANDS="false" BDS_DOCKER_IMAGE="true"
 
 # Non Root User
-RUN export username="thebds" && export password="123aa3456s7" && pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; addgroup ${username} sudo; addgroup ${username} root; usermod --shell /bin/bash --home /home/bds ${username}; echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && mkdir -p /home/ /base/
-
+RUN export username="thebds" && export password="123aa3456s7" && pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; addgroup ${username} sudo; addgroup ${username} root; usermod --shell /bin/bash --home /home/bds ${username}; echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+mkdir -vp /home/bds/bds_core; chmod -Rv 7777 /home && chown thebds:thebds -Rv /home
 EXPOSE 19132/udp 19133/udp 1932/tcp
-RUN chmod -Rv 7777 /home && chown thebds:thebds -Rv /home
+
 USER thebds
 VOLUME [ "/home/bds/bds_core" ]
 
