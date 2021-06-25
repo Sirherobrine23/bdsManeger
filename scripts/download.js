@@ -1,5 +1,4 @@
 var AdmZip = require("adm-zip");
-const { warn, info } = require("console");
 const { writeFileSync, existsSync, readFileSync, readdirSync } = require("fs");
 const { join, resolve } = require("path");
 const bds = require("../index")
@@ -22,7 +21,6 @@ module.exports = function (version, force_install, callback) {
     const ServerVersion = GetServerVersion()
     const CurrentPlatform = GetPlatform()
     if (force_install === true) {
-        info("Bds Maneger core force install")
         ServerVersion.java = "latest";
         ServerVersion.bedrock = "latest"
         ServerVersion.pocketmine = "latest"
@@ -30,12 +28,13 @@ module.exports = function (version, force_install, callback) {
     if (!(version) || version === true || version === "true" || version === "latest") version = Servers.latest[CurrentPlatform]
     var url;
 
+    console.log(`Installing version ${version}`);
     // Bedrock Installer Script
     if (CurrentPlatform === "bedrock") {
         if (valid_platform.bedrock === true){
             if (version === "latest") version = Servers.latest.bedrock
             if (ServerVersion.bedrock === version) {
-                warn("Jumping, installed version")
+                console.warn("Jumping, installed version")
                 if (typeof callback === "function") callback(true);
                 return true
             } else {
@@ -64,7 +63,7 @@ module.exports = function (version, force_install, callback) {
         if (valid_platform.java === true){
             if (version === "latest") version = Servers.latest.java
             if (version === ServerVersion.java) {
-                warn("Jumping, installed version")
+                console.warn("Jumping, installed version")
                 if (typeof callback === "function") callback(true);
                 return true
             } else {
@@ -86,7 +85,7 @@ module.exports = function (version, force_install, callback) {
         if (valid_platform.pocketmine === true) {
             if (version === "latest") version = Servers.PocketMine_latest
             if (version === ServerVersion.pocketmine) {
-                warn("Jumping, installed version")
+                console.warn("Jumping, installed version")
                 if (typeof callback === "function") callback(true);
                 return true
             } else {

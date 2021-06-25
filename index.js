@@ -28,30 +28,11 @@ module.exports.extra_json = JSON.parse(fs.readFileSync(resolve(__dirname, "extra
 
 const { bds_dir } = require("./lib/BdsSettings");
 const { arch } = require("./lib/BdsSystemInfo");
-const { Servers, PHPBin, GoogleDriver } = require("./lib/ServerURL");
+
 const { GetPaths, GetJsonConfig, UpdatePlatform, UpdateTelegramToken, GetTelegramToken } = require("./lib/BdsSettings")
 module.exports.arch = arch
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 
-
-/* Minecraft Servers URLs and depedencies */
-// urls
-module.exports.SERVER_URLs = Servers
-module.exports.ServerJson = Servers
-
-// Get server version
-module.exports.bedrock_all_versions = Object.getOwnPropertyNames(Servers.bedrock);
-module.exports.java_all_versions = Object.getOwnPropertyNames(Servers.java);
-
-// PHP Bins
-module.exports.PHPbinsUrls = PHPBin
-
-// PHP bins System availble in Json File
-const PHPurlNames = Object.getOwnPropertyNames(PHPBin)
-module.exports.PHPurlNames = PHPurlNames
-
-// Google Drive Credentials
-module.exports.GoogleDriveCredentials = GoogleDriver
 
 const maneger_ips = require("./scripts/external_ip")
 module.exports.internal_ip = maneger_ips.internal_ip
@@ -143,6 +124,9 @@ module.exports.stop = stop
  * backup your map locally
  */
 module.exports.backup = World_BAckup
+
+const { Kill, Detect } = require("./scripts/CheckKill")
+
 /**
  * identify if there are any servers running in the background
  * 
@@ -150,8 +134,13 @@ module.exports.backup = World_BAckup
  * // true: if the server is running
  * // false: if not already
  */
-module.exports.detect = require("./scripts/detect")
-module.exports.bds_detect = require("./scripts/detect")
+module.exports.detect = Detect
+module.exports.bds_detect = Detect
+
+/**
+ * this function will be used to kill the server in the background
+ */
+module.exports.kill = Kill
 
 /**
  * download some version of the java and Bedrock servers in the highest possible form
@@ -166,11 +155,6 @@ module.exports.bds_detect = require("./scripts/detect")
  * any platform: bds.download("latest") // It will download the latest version available for download
  */
 module.exports.download = download
-
-/**
- * this function will be used to kill the server in the background
- */
-module.exports.kill = require("./scripts/kill_server")
 module.exports.config_example = config_example
 
 /**
@@ -207,4 +191,4 @@ module.exports.telegram = require("./rest/telegram_bot")
 /**
  * Load Crontab Backup
  */
-require("./scripts/LoadCronBackup")
+module.exports.Cron_Loaded = require("./scripts/LoadCronBackup")

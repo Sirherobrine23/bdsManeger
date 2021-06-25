@@ -6,7 +6,7 @@ const commandExists = require("../lib/commandExist");
 const saveUser = require("./PlayersSave");
 const bds = require("../index");
 const { GetServerPaths, GetPaths, GetServerSettings, GetPlatform } = require("../lib/BdsSettings");
-const BdsDetect = require("./detect");
+const BdsDetect = require("./CheckKill").Detect;
 const { warn } = console;
 const { v4 } = require("uuid")
 

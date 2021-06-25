@@ -35,15 +35,6 @@ function bds_config(
         seed: ""
     };
 
-    var tickDistance;
-    if (bedrockCPUThread >= 12) tickDistance = 12;
-    else if (bedrockCPUThread >= 10) tickDistance = 10;
-    else if (bedrockCPUThread >= 8) tickDistance = 8;
-    else if (bedrockCPUThread >= 6) tickDistance = 6;
-    else if (bedrockCPUThread >= 4) tickDistance = 4;
-    else if (bedrockCPUThread >= 2) tickDistance = 2;
-    else tickDistance = 1;
-    
     if (NewConfig.world) JsonConfig.world = NewConfig.world
     if (NewConfig.description) JsonConfig.description = NewConfig.description
     if (NewConfig.gamemode) JsonConfig.gamemode = NewConfig.gamemode
@@ -55,8 +46,18 @@ function bds_config(
     if (NewConfig.port) JsonConfig.port = NewConfig.port
     if (NewConfig.portv6) JsonConfig.portv6 = NewConfig.portv6
     if (NewConfig.seed) JsonConfig.seed = NewConfig.seed
+
     var Config, ConfigFile;
     if (GetPlatform() === "bedrock") {
+        var tickDistance;
+        if (bedrockCPUThread >= 12) tickDistance = 12;
+        else if (bedrockCPUThread >= 10) tickDistance = 10;
+        else if (bedrockCPUThread >= 8) tickDistance = 8;
+        else if (bedrockCPUThread >= 6) tickDistance = 6;
+        else if (bedrockCPUThread >= 4) tickDistance = 4;
+        else if (bedrockCPUThread >= 2) tickDistance = 2;
+        else tickDistance = 1;
+
         ConfigFile = join(bds_dir_bedrock, "server.properties");
         Config = [
             `level-name=${JsonConfig.world}`,

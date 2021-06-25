@@ -7,6 +7,7 @@ const bds = require("../index");
 const { valid_platform } = require("../lib/BdsSystemInfo");
 const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
+const download = require("../scripts/download");
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // Bds Maneger ArgV
 const argv = require("minimist")(process.argv.slice(2));
@@ -17,18 +18,6 @@ const server = (argv.p || argv.platform), version = (argv.v || argv.version), Sy
 
 // --------------------------
 const Versions = GetServerVersion();
-
-// Check Server Update
-if (Versions[GetPlatform()] !== null) {
-    if (Versions[GetPlatform()] !== bds.SERVER_URLs.latest[GetPlatform()]) {
-        const message = [
-            `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${GetServerVersion[GetPlatform()]} to ${bds.SERVER_URLs.latest[GetPlatform()]}`,
-            "And we strongly recommend keeping the servers up to date, to maintain compatibility between game versions.",
-            `At any time you can update using the options -p ${GetPlatform()} -d "${bds.SERVER_URLs.latest[GetPlatform()]}"`
-        ]
-        console.log(message.join("\n"))
-    }
-}
 
 // Bds kill
 if (kill) bds.kill();
@@ -46,6 +35,7 @@ if (help) {
         "  -k  --kill             Detect and kill bds servers",
         "  -p  --platform         Select server platform",
         "  -d  --server_download  server version to install, default \"latest\"",
+        "       --interactive       Install the server interactively",
         "  -S  --system_info      System info and test",
         "  -h  --help             Print this list and exit.",
         "  -v  --version          Print the version and exit."
@@ -135,7 +125,24 @@ if (docker_runner) {
 
 // Download server
 if (bds_version){
-    try {bds.download(bds_version, true)}
+    try {
+        if (argv.interactive) {
+            console.log(`Geting versions to ${GetPlatform()}`);
+            const LoadVersion = require("../lib/ServerURL").Servers[GetPlatform()]
+            const Version = Object.getOwnPropertyNames(LoadVersion)
+            // List Version
+            for (let version in Version) console.log(`${version}: ${GetPlatform()} version ${Version[version]}`); // deepscan-disable-line FORIN_ARRAY
+            const DownloadOptions = readline.createInterface({input: process.stdin,output: process.stdout});
+            console.log("\nSelect Option");
+            DownloadOptions.on("line", (input) => {
+                download(Version[parseInt(input)], true, function(){
+                    console.log("Installation was successful, so start the server with the -s option");
+                    process.exit(0)
+                })
+            });
+        }
+        else bds.download(bds_version, true)
+    }
     catch (error) {console.error(error);process.exit(165);}
 }
 
@@ -145,6 +152,21 @@ function echo(data = ""){
     data.forEach(data => console.log(data))
 }
 if (start && !(server || version || SystemCheck || bds_version || help)) {
+    const { Servers } = require("../lib/ServerURL");
+    // Check Server Update
+    if (Versions[GetPlatform()] !== null) {
+        if (Versions[GetPlatform()] !== Servers.latest[GetPlatform()]) {
+            const message = [
+                `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${GetServerVersion[GetPlatform()]} to ${Servers.latest[GetPlatform()]}`,
+                "And we strongly recommend keeping the servers up to date, to maintain compatibility between game versions.",
+                `At any time you can update using the options -p ${GetPlatform()} -d "${Servers.latest[GetPlatform()]}"`
+            ]
+            console.log(message.join("\n"))
+        }
+    } else if (Versions[GetPlatform()] === null) {
+        console.log("Install Server");
+        process.exit(1)
+    }
     try {
         console.log("Send a \"@stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
         // Start Server
