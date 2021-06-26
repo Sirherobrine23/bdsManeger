@@ -47,5 +47,5 @@ jobs:
         with:
           push: true
           target: bdscore
-          tags: bdsmaneger/core:nightly
+          tags: bdsmaneger/core:latest
           platforms: linux/amd64,linux/arm64,linux/arm/v7
