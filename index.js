@@ -2,7 +2,8 @@
 const { resolve } = require("path");
 const path = require("path")
 const fs = require("fs");
-const { randomBytes } = require("crypto")
+const { randomBytes } = require("crypto");
+const uuid = require("uuid").v4;
 function date(format) {
     const today = new Date(),
         yaer = today.getFullYear(),
@@ -68,7 +69,7 @@ module.exports.telegram_token = GetTelegramToken();
 function token_register() {
     const bds_token_path = path.join(bds_dir, "bds_tokens.json");
     if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]");
-    randomBytes((Math.trunc(15 * (10 * Math.random()))), function(err, buffer) {
+    randomBytes(uuid(), function(err, buffer) {
         if (err) return console.warn(err);
         const new_token = buffer.toString("hex");
         var tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));

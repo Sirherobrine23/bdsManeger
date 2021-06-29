@@ -12,7 +12,13 @@ function getProcess(){
             // Get argument: wmic process where "ProcessID=4152" get commandline
             const pidNumber = (_line.length - 5)
             MountProcess.push({
-                command: execSync(`wmic process where "ProcessID=${_line[pidNumber]}" get commandline`).toString("utf8").split("\r").join("\n").split("\n").filter(d=>{return !(d.trim() === "" || d.trim() === "CommandLine")}).join(" ").trim().split("\"").join("").trim(),
+                command: (function(){
+                    try {
+                        return execSync(`wmic process where "ProcessID=${_line[pidNumber]}" get commandline`).toString("utf8").split("\r").join("\n").split("\n").filter(d=>{return !(d.trim() === "" || d.trim() === "CommandLine")}).join(" ").trim().split("\"").join("").trim()
+                    } catch (err) {
+                        return null
+                    }
+                })(),
                 pid: parseInt(_line[pidNumber]),
                 cpu: _line[(_line.length - 3)],
                 mem: (_line[(_line.length - 2)].split(".").join("")),
