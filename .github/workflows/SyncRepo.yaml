@@ -1,6 +1,17 @@
 name: "Gitlab Sync repository"
 on: 
   push:
+   tags:
+    - v*
+    - V*
+    - rc*
+   branches:
+    - main
+  pull_request:
+   branches-ignore:
+    - dependabot/**/*
+    - dependabot**
+
 jobs:
   Sync:
     name: Sync gitlab repository
