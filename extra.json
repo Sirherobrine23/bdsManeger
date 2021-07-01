@@ -1,5 +1,10 @@
 {
-    "docs_base": "https://docs.the-bds-maneger.org/Bds Maneger core/",
+    "docs_base": "https://docs.the-bds-maneger.org/docs/Bds Maneger core",
+    "docs": {
+        "url": "https://docs.the-bds-maneger.org",
+        "main": "Bds Maneger core",
+        "rest_api": "docs/Bds Maneger core/REST API/"
+    },
     "telemetry_url": [
         "https://telemetry.the-bds-maneger.org",
         "http://localhost:1178"

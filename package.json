@@ -46,6 +46,11 @@
     "node": ">=14",
     "npm": ">=7"
   },
+  "husky": {
+    "hooks": {
+        "post-merge": "npm update && npm install"
+    }
+  },
   "dependencies": {
     "@azure/storage-blob": "^12.6.0",
     "adm-zip": "^0.5.1",
@@ -74,6 +79,7 @@
   },
   "devDependencies": {
     "eslint": "^7.19.0",
+    "husky": "^6.0.0",
     "nexe": "*"
   }
 }

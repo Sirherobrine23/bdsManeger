@@ -1,21 +1,21 @@
+const { readFileSync, existsSync } = require("fs");
+const { resolve } = require("path");
 const express = require("express");
 const bds = require("../index");
-const fs = require("fs");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
-const token_verify = require("./token_api_check")
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const { GetKernel } = require("../lib/BdsSystemInfo");
 const commandExist = require("../lib/commandExist");
-const { join, resolve } = require("path");
-const bdsPaths = require("../lib/bdsgetPaths")
-const { GetPlatform, GetServerVersion, GetServerBan, GetTelegramAdmins, GetPaths } = require("../lib/BdsSettings")
+const { GetPlatform, GetServerVersion, GetPaths, UpdatePlatform, bds_dir } = require("../lib/BdsSettings")
 const admzip = require("adm-zip");
 const pretty = require("express-prettify");
 const latest_log = resolve(GetPaths("log"), "latest.log")
+const docs = require("../extra.json").docs;
+const { CheckPlayer, token_verify } = require("../scripts/check");
 
-function api(port_api){
+function api(port_api = 1932){
     const app = express();
     // Enable if you"re behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
     // see https://expressjs.com/en/guide/behind-proxies.html
@@ -24,18 +24,138 @@ function api(port_api){
     app.use(cors());
     app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
     app.use(bodyParser.urlencoded({ extended: true }));
-    app.use(rateLimit({
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 100 // limit each IP to 100 requests per windowMs
-    }));
-    app.use(pretty({
-        always: true,
-        spaces: 2
-    }))
-    app.get("/info", (req, res) => {
+    app.use(rateLimit({windowMs: 15 * 60 * 1000, /* 15 minutes */ max: 100 /* limit each IP to 100 requests per windowMs*/ }));
+    app.use(pretty({always: true, spaces: 2}));
+    app.use(fileUpload({limits: { fileSize: 512 * 1024 }}));
+    app.use(require("request-ip").mw());
+
+    // Main
+    app.get("/", (req, res) => {
+        return res.send(`<html>
+            <body>
+                <h1>Hello From Bds Maneger Core</h1>
+                <a>If this page has loaded it means that the API is working as planned, More information access the API documentation at: <a href="${docs.url}/${docs.main}">Bds Maneger Core</a>. </a>
+                <p><span>Bds Maneger core Version: ${bds.package_json.version}</span></p>
+                <p><h3>GET</h3></p>
+                <p><a href="./info">Basic Info server and System</a></p>
+                <p><a href="./players">Players who logged on to the server</a></p>
+                <p><h3>POST</h3></p>
+                <p><a href="./service">basic Services: Stop, start and restart</a></p>
+            </body>
+            <p>by <a href="https://github.com/Sirherobrine23">Sirherobrine23</a></p>
+        </html>`);
+    });
+
+    app.post("/bds_command", (req, res) => {
+        const body = req.body;
+        var comand = body.command
+        const status = {
+            code: 401,
+            status: false
+        }
+        if (token_verify(body.token)) {
+            bds.command(comand)
+            status.code = 201
+            status.status = true
+        }
+        res.status(status.code).send(status)
+    });
+
+    // Players info and maneger
+    app.get("/players", (req, res) => {
+        const { player, status, platform} = req.query;
+        const players_json = JSON.parse(readFileSync(bds.players_files, "utf8"))[(platform || GetPlatform())];
+        var response = {};
+        
+        if (player) {
+            if (players_json[player]) response = players_json[player];
+            else response = {
+                date: null,
+                connected: null,
+                xboxID: null,
+                update: [{date: null, connected: null}]
+            }
+            return res.json(response);
+        }
+        if (status) {
+            const status = (() => {if (status === "online" || status === "true") return true; else return false})()
+            for (let index of Object.getOwnPropertyNames(players_json)) if (players_json[index].connected === status) response[index] = players_json[index]
+            return res.json(response);
+        }
+        response = players_json
+        return res.json(response);
+    });
+
+    app.get("/players/actions/:TYPE/:TOKEN/:PLAYER*", (req, res) => {
+        const { TYPE, TOKEN, PLAYER } = req.params;
+        const { text } = req.query;
+        // Pre Check
+        if (!(token_verify(TOKEN) || CheckPlayer(PLAYER))) return res.status(401).send("Check your parameters");
+
+        // Post Check
+        if (TYPE === "ban") res.json({ok: bds.command(`ban ${PLAYER}`)});
+        else if (TYPE === "kick") res.json({ok: bds.command(`kick ${PLAYER} ${text}`)});
+        else if (TYPE === "op") res.json({ok: bds.command(`op ${PLAYER}`)});
+        else if (TYPE === "deop") res.json({ok: bds.command(`deop ${PLAYER}`)});
+        else res.sendStatus(422)
+    });
+
+    // Actions Redirect
+    app.all("/players/actions/*", ({ res }) => res.redirect(`${docs.url}/${docs.rest_api}#players-actions`))
+    app.all("/players/actions", ({ res }) => res.redirect(`${docs.url}/${docs.rest_api}#players-actions`))
+    
+    // Backup
+    app.get("/backup", (req, res) => {
+        const { token } = req.query;
+        // Check Token
+        if (!(token_verify(token))) return res.status(401).send("Check your token");
+
+        // Return File
+        const backup = bds.backup()
+        return res.sendFile(backup.file_path)
+    });
+
+    // Server Sevices
+    app.all("/service", ({res}) => res.redirect(`${docs.url}/${docs.rest_api}#disable-basic-services`));
+
+    // bds maneger
+    app.post("/bds/download", (req, res) => {
+        const { token, version, platform } = req.body
+        if (!(token_verify(token))) return res.status(401).send("Check your token");
+
+        // Server Download
+        if (platform) UpdatePlatform(platform);
+        try {
+            bds.download(version, true, function(){
+                return res.json({
+                    version: version,
+                    platform: GetPlatform()
+                })
+            })
+        } catch (error) {
+            res.status(501).send(error)
+        }
+    });
+
+    app.post("/bds/upload", (req, res) => {
+        const { token } = req.headers;
+        if (!(token_verify(token))) return res.status(401).send("Check your token");
+        if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.");
+
+        // Extract
+        for (let index of Object.getOwnPropertyNames(req.files)){
+            const fileWorld = req.files[index];
+            const unzip = new admzip(Buffer.from(fileWorld.data));
+            unzip.extractAllTo(bds_dir)
+        }
+        return res.send("Ok")
+    });
+
+    // System and Server info
+    app.get("/info", ({ res }) => res.redirect("bds/info"))
+    app.get("/bds/info", ({ res }) => {
         const config = bds.get_config();
         var info = {
-            version: bds.package_json.version,
             server: {
                 platform: GetPlatform(),
                 world_name: config.world,
@@ -55,224 +175,37 @@ function api(port_api){
                 QEMU_STATIC: commandExist("qemu-x86_64-static")
             },
             bds_maneger_core: {
+                version: bds.package_json.version,
                 server_versions: GetServerVersion(),
-                server_ban: GetServerBan(),
-                telegram_admin: GetTelegramAdmins()
             }
         };
         return res.send(info);
     });
 
-    app.post("/bds_command", (req, res) => {
-        const body = req.body;
-        var comand = body.command
-        const status = {
-            code: 401,
-            status: false
-        }
-        if (token_verify(body.token)) {
-            bds.command(comand)
-            status.code = 201
-            status.status = true
-        }
-        res.status(status.code).send(status)
+    app.get("/log", (req, res) => {
+        if (!(existsSync(latest_log))) return res.sendStatus(400);
+
+        let RequestConfig = {format: req.query.format, text: readFileSync(latest_log, "utf8").toString().split("\n").filter(d=>{if (d) return true;return false}).join("\n")}
+        if (RequestConfig.format === "html") {
+            var text = ""
+            for (let log of RequestConfig.text.split("\n")) text += `<div class="BdsCoreLog"><p>${log}</p></div>`;
+            res.send(text);
+        } else res.json(RequestConfig.text.split("\n"));
     });
 
-    app.get("/players", (req, res) => {
-        const query = req.query;
-        const players_json = JSON.parse(fs.readFileSync(bds.players_files, "utf8"))[(query.platform || GetPlatform())];
-        var response = {};
-        
-        if (query.player) {
-            if (players_json[query.player]) response = players_json[query.player];
-            else response = {
-                date: null,
-                connected: null,
-                xboxID: null,
-                update: [{date: null, connected: null}]
-            }
-        } else if (query.status) {
-            const status = (() => {if (query.status === "online") return true; else return false})()
-            for (let index of Object.getOwnPropertyNames(players_json)){
-                if (players_json[index].connected === status) {
-                    response[index] = players_json[index]
-                }
-            }
-        } else response = players_json
-        res.json(response);
-    });
-    
-    app.get("/download_backup", (req, res) => {
-        const query = req.query
-        if (token_verify(query.token)){
-            const backup = bds.backup()
-            res.sendFile(backup.file_path)
-        } else res.json({
-            "token": (query.token||null),
-            "status": 404
-        })
-    });
-    app.get("/", (req, res) => {
-        return res.send(`<html>
-            <body>
-                <h1>Hello From Bds Maneger Core</h1>
-                <a>If this page has loaded it means that the API is working as planned, More information access the API documentation at: <a href="https://github.com/The-Bds-Maneger/core/wiki">Bds Maneger Core</a>. </a>
-                <p><span>Bds Maneger core Version: ${bds.package_json.version}</span></p>
-                <p><h3>GET</h3></p>
-                <p><a href="./info">Basic Info server and System</a></p>
-                <p><a href="./players">Players who logged on to the server</a></p>
-                <p><h3>POST</h3></p>
-                <p><a href="./service">basic Services: Stop, start and restart</a></p>
-            </body>
-            <p>by <a href="https://github.com/Sirherobrine23">Sirherobrine23</a></p>
-        </html>`);
-    });
-    app.all("/service", (req, res) => {
-        const body = (() => {if (req.body && (Object.getOwnPropertyNames(req.body).length >= 1)) return req.body;else return req.query})()
-        const argV0 = process.argv0.split(/\\\\/).join("/").split(/\//)[process.argv0.split(/\\\\/).join("/").split(/\//).length -1];
-        const JsonReturn = {
-            text: `Not authorized: ${body.token}`,
-            httpStatus: 401
-        }
-        if (token_verify(body.token)){
-            if (body.command === "start"){
-                if (argV0 === "node") {
-                    if (JSON.parse(process.env.IS_BDS_CLI || false) || (process.env.npm_lifecycle_event === "npx")) {
-                        const start = bds.start()
-                        start.stdout.on("data", data => console.log(data))
-                        start.stderr.on("data", data => console.log(data))
-                        JsonReturn.httpStatus = 200
-                        JsonReturn.text = "Started"
-                    } else {
-                        JsonReturn.httpStatus = 400
-                        JsonReturn.text = "We can't start"
-                    }
-                } else {
-                    JsonReturn.httpStatus = 400
-                    JsonReturn.text = "It is not a node process"
-                }
-            } else if (body.command === "stop"){
-                bds.stop()
-                JsonReturn.httpStatus = 200
-                JsonReturn.text = "Started"
-            } else {
-                JsonReturn.httpStatus = 406
-                JsonReturn.text = "Command does not exist"
-            }
-        }
-        res.status(JsonReturn.httpStatus).send(`Text: ${encodeURI(JsonReturn.text)}`)
-    });
-    app.all("/bds_download", (req, res) => {
-        const body = req.body
-        const status = {
-            "status": null,
-            "message": null
-        }
-        if (token_verify(body.token)){
-            status.message = bds.download(body.version)
-            status.status = 200
-        } else {
-            status.message = "Unauthorized Token"
-            status.status = 401
-        }
-        res.send(status)
-    });
-
-    app.use(fileUpload({limits: { fileSize: 512 * 1024 }}));
-    app.post("/upload_world", (req, res) => {
-        if (token_verify(req.headers.token)){
-            if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.");
-            for (let index of Object.getOwnPropertyNames(req.files)){
-                const fileWorld = req.files[index];
-                const BufferWorld = Buffer.from(req.files[index].data);
-                const unzip = new admzip(BufferWorld);
-                for (let index of unzip.getEntries()){
-                    if (index.name === "config.json") {
-                        const loadConfig = JSON.parse(index.getData().toString())
-                        console.log(`To: ${loadConfig.to}`);
-                        unzip.extractAllTo(join(bdsPaths.tmp_dir, fileWorld.name))
-                        for (let world of loadConfig.worlds) {
-                            fs.renameSync(join(bdsPaths.tmp_dir, fileWorld.name, world), join(bdsPaths.bds_dir, loadConfig.to))
-                        }
-                    }
-                }
-            }
-            res.send("Ok")
-        } else res.status(400).send("Token is not valid!");
-    });
-    app.get("*", (req, res) => {
-        return res.status(404).json(["Not Found"]);
+    app.all("*", (req, res)=>{
+        res.status(400)
+        res.send(`<html><div class="">This request does not exist, <a href="${docs.url}/${docs.rest_api}">more information</a></div></html>`)
     });
     const port = (port_api||1932)
-    app.listen(port, function (){
-        console.log(`bds maneger api http port: ${port}`);
-    });
-    return true
-}
-
-function log(port_log){
-    const app = express();
-    app.use(cors());
-    const limiter = rateLimit({
-        windowMs: 500,
-        message: {
-            "status": false,
-            "log": "we had an overflow of log requests, please wait."
-        },
-        statusCode: 200,
-        max: 5000 // limit each IP to 5000 requests per windowMs
-    });
-    app.use(limiter);
-    const requestIp = require("request-ip");
-    app.use(requestIp.mw())
-    app.get("/", (req, res) => {
-        let format = req.query.format
-        var text="";
-        var log_file="";
-        var sucess="";
-        if (typeof bds_log_string === "undefined"){
-            if (fs.existsSync(latest_log)){
-                text = `${fs.readFileSync(latest_log)}`
-                log_file = latest_log
-                sucess = true
-            } else {
-                text = "The server is stopped"
-                sucess = false
-            }
-        } else {
-            text = bds_log_string
-            log_file = "string"
-            sucess = true
-        }
-        if (format === "json") res.json(text.split("\n"));
-        else if (format === "html") res.send(text.split("\n").join("<br>"));
-        else if (format === "plain") res.send(text);
-        else res.json({
-            "sucess": sucess,
-            "log": text,
-            "log_file": log_file,
-            "ip": `${req.clientIp}`,
-            "requeset_date": bds.date()
-        });
-        
-    });
-    const port = (port_log||6565)
-    app.listen(port, function(){
-        console.log(`bds maneger log http, port: ${port}`)
-    });
+    app.listen(port, function (){console.log(`Bds Maneger Core REST API, http port: ${port}`);});
     return true
 }
 
 // module exports
-module.exports = function (json_config){
-    var port_rest, port_log
-    if (json_config === undefined) json_config = {};
-    if (json_config.log_port === undefined) port_log = 6565; else port_log = json_config.log_port;
-    if (json_config.rest_port === undefined) port_rest = 1932; else port_rest = json_config.rest_port;
-    return {
-        rest: api(port_rest),
-        log:  log(port_log)
-    }
+module.exports = function (json_config = {api_port: 1932}){
+    var port_rest;
+    if (json_config.api_port === undefined) port_rest = 1932; else port_rest = json_config.rest_port;
+    return api(port_rest)
 }
 module.exports.api = api
-module.exports.log = log

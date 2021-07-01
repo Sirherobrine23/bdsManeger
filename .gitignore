@@ -19,3 +19,6 @@ Docker.exe
 # Bin Ignores
 bin/*
 !bin/bds_maneger.js
+
+# **
+.husky
