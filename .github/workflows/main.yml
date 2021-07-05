@@ -8,8 +8,6 @@ on:
       - '.github/*/**'
       - 'package-lock.json'
       - '.devcontainer/**'
-      - 'CHANGELOG.md'
-      - 'Docker/*/**'
 
 jobs:
   npm:

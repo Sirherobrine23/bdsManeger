@@ -63,7 +63,7 @@ function api(port_api = 1932){
 
     // Players info and maneger
     app.get("/players", (req, res) => {
-        const { player, status, platform} = req.query;
+        var { player, status, platform} = req.query;
         const players_json = JSON.parse(readFileSync(bds.players_files, "utf8"))[(platform || GetPlatform())];
         var response = {};
         
@@ -76,9 +76,8 @@ function api(port_api = 1932){
                 update: [{date: null, connected: null}]
             }
             return res.json(response);
-        }
-        if (status) {
-            const status = (() => {if (status === "online" || status === "true") return true; else return false})()
+        } else if (status) {
+            status = (() => {if (status === "online" || status === "true") return true; else return false})()
             for (let index of Object.getOwnPropertyNames(players_json)) if (players_json[index].connected === status) response[index] = players_json[index]
             return res.json(response);
         }
