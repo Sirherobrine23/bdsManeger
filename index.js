@@ -34,7 +34,6 @@ const { GetPaths, GetJsonConfig, UpdatePlatform, UpdateTelegramToken, GetTelegra
 module.exports.arch = arch
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 
-
 const maneger_ips = require("./scripts/external_ip")
 module.exports.internal_ip = maneger_ips.internal_ip
 module.exports.external_ip = maneger_ips.external_ip
@@ -180,6 +179,12 @@ module.exports.set_config = config
  * takes the server settings in JSON format
  */
 module.exports.get_config = get_config
+
+
+/**
+ * Get temp domain to Server and API (The Domain is even temporary).
+ */
+module.exports.tmphost = require("./lib/tempHost").tmphost
 
 // Core Applications
 
