@@ -132,7 +132,7 @@ function api(port_api = 1932){
                 })
             })
         } catch (error) {
-            res.status(501).send(error)
+            res.status(501).send("Unable to download server for current platform, more details will be in terminal log!")
         }
     });
 
