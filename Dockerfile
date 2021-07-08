@@ -12,7 +12,10 @@ apt autoremove -y && \
 apt clean -y && \
 rm -rf /var/lib/apt/lists/* /root/.gnupg /tmp/library-scripts /tmp/* && \
 case $(uname -m) in "x86_64") echo "Do not need dependency on the x86_64";; *) apt update; apt install -y qemu-user-static ;wget -q https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/linux_libries.zip -O /tmp/libries.zip ;unzip /tmp/libries.zip -d / ;rm -rfv /tmp/libries.zip ;mkdir -p /lib64 ;rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* ;;esac && \
-wget -qO- https://raw.githubusercontent.com/Sirherobrine23/MSQ-files/main/DockerBuild/Build/bin/NodeInstall.sh | bash -
+wget -qO- https://raw.githubusercontent.com/Sirherobrine23/MSQ-files/main/DockerBuild/Build/bin/NodeInstall.sh | bash -; \
+export username="thebds" && export password="123aa3456s7" && \
+pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; addgroup ${username} sudo; addgroup ${username} root; \
+usermod --shell /bin/bash --home /home/bds ${username}; echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # bdsmaneger/core
 # Bds Maneger Core
@@ -21,17 +24,14 @@ RUN apt update && apt install -y nginx && rm -rf /var/cache/apt/archives/* /var/
 
 COPY ./ /opt/bds_core/
 WORKDIR /opt/bds_core/
-RUN chmod a+x bin/* && npm install --no-save
-ENV TELEGRAM_TOKEN="null" DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" WORLD_NAME="Bds Maneger Docker" GAMEMODE="survival" DIFFICULTY="normal" XBOX_ACCOUNT="false" PLAYERS="13" SERVER="bedrock" ENABLE_COMMANDS="false" BDS_DOCKER_IMAGE="true"
+RUN chmod -v 7777 /opt/bds_core && chown thebds:thebds -v /opt/bds_core; chmod a+x bin/* && npm install --force && chmod -Rv 7777 /home && chown thebds:thebds -Rv /home && chmod a+x bin/*; mkdir -vp /home/bds/bds_core
 
 # Non Root User
-RUN export username="thebds" && export password="123aa3456s7" && pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; addgroup ${username} sudo; addgroup ${username} root; usermod --shell /bin/bash --home /home/bds ${username}; echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-mkdir -vp /home/bds/bds_core; chmod -Rv 7777 /home && chown thebds:thebds -Rv /home
-EXPOSE 19132/udp 19133/udp 1932/tcp
-
 USER thebds
 VOLUME [ "/home/bds/bds_core" ]
 
+ENV TELEGRAM_TOKEN="null" DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" WORLD_NAME="Bds Maneger Docker" GAMEMODE="survival" DIFFICULTY="normal" XBOX_ACCOUNT="false" PLAYERS="13" SERVER="bedrock" ENABLE_COMMANDS="false" BDS_DOCKER_IMAGE="true"
+EXPOSE 19132/udp 19133/udp 1932/tcp
 # Entrypint
-WORKDIR /home/bds/
-ENTRYPOINT [ "/opt/bds_core/bin/bds_maneger.js" ,"--DOCKER_IMAGE" ,"-s" ]
+WORKDIR /opt/bds_core/
+ENTRYPOINT [ "node", "./bin/bds_maneger.js" ,"--DOCKER_IMAGE" ,"-s" ]

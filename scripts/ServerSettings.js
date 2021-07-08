@@ -176,7 +176,16 @@ function bds_config(
 }
 function bds_get_config(){
     var config;
-    const JsonConfig = {};
+    const JsonConfig = {
+        world: null,
+        description: null,
+        gamemode: null,
+        difficulty: null,
+        players: null,
+        whitelist: null,
+        portv4: null,
+        portv6: null,
+    };
     
     if (GetPlatform() === "bedrock") {
         config = propertiesToJSON(fs.readFileSync(path.join(bds_dir_bedrock, "server.properties"), "utf8"));
@@ -234,8 +243,9 @@ function bds_get_config(){
         JsonConfig.seed = config["level-seed"];
         JsonConfig.commands = false;
         // JsonConfig.worldtype = config["level-type"];
-    }
-    return JsonConfig
+    } else if (GetPlatform() === "jsprismarine") throw "Platform not fully supported";
+    else throw new Error("Platform no exists, check config file")
+    return JsonConfig;
 }
 function config_example(){
 return {

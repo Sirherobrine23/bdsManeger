@@ -5,7 +5,7 @@ const bds = require("../index")
 const { valid_platform } = require("../lib/BdsSystemInfo");
 const { GetServerPaths, GetServerVersion, UpdateServerVersion, GetPlatform } = require("../lib/BdsSettings");
 const commandExists = require("../lib/commandExist");
-const { cloneSync } = require("../lib/git_simples");
+const { GitClone } = require("../lib/git_simples");
 const { execSync } = require("child_process");
 const fetchSync = require("../lib/fetchSync")
 const Extra = require("../extra.json");
@@ -83,13 +83,13 @@ module.exports = function (version, force_install, callback) {
     // Pocketmine-MP Installer Script
     else  if (CurrentPlatform === "pocketmine") {
         if (valid_platform.pocketmine === true) {
-            if (version === "latest") version = Servers.PocketMine_latest
+            if (version === "latest") version = Servers.latest.pocketmine
             if (version === ServerVersion.pocketmine) {
                 console.warn("Jumping, installed version")
                 if (typeof callback === "function") callback(true);
                 return true
             } else {
-                const PocketMineJson = Servers.PocketMine[version]
+                const PocketMineJson = Servers.pocketmine[version]
                 console.log(`Server data publish: ${PocketMineJson.data}`);
                 fetch(PocketMineJson.url).then(res => {if (res.ok) return res.arrayBuffer(); else throw res}).then(res => Buffer.from(res)).then(response => {
                     console.log("Success when downloading php from PocketMine-MP");
@@ -141,13 +141,24 @@ module.exports = function (version, force_install, callback) {
                 })
             }
         } else throw Error("Pocketmine not suported")
-    } else if (CurrentPlatform === "jsprismarine") {
+    }
+
+    // JSPrismarine
+    else if (CurrentPlatform === "jsprismarine") {
         if (valid_platform.jsprismarine === true) {
-            console.log("Cloning the repository");
-            cloneSync("https://github.com/JSPrismarine/JSPrismarine.git", bds_dir_jsprismarine, 1);
+            console.log("Downloading the JSPrismarine repository.");
+            const commit_sha = GitClone("https://github.com/The-Bds-Maneger/JSPrismarine.git", bds_dir_jsprismarine, 1);
             for (let command of ["npm install", "npx -y lerna bootstrap", "npm run build"]) console.log(execSync(command, {cwd: bds_dir_jsprismarine}).toString("ascii"));
+            console.log(commit_sha);
+            UpdateServerVersion(commit_sha, "jsprismarine")
             if (typeof callback === "function") callback(true);
             return true
         } else throw Error("jsprismarine not suported")
-    } else throw Error("Bds maneger Config file error")
+    }
+    // dragonfly
+    else if (CurrentPlatform === "dragonfly") {
+        throw "Bds maneger Config file error";
+    }
+    // Unidentified platform
+    else throw Error("Bds maneger Config file error")
 }

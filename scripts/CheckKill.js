@@ -4,6 +4,7 @@ function getProcess(){
     const MountProcess = [];
     var getList = ""
     if (process.platform === "win32") {
+        console.info("Getting the process list in Windows is too slow");
         getList = execSync("tasklist").toString("utf8").split("\r").join("\n").split("\n").filter(d => {return !(d === "" || d.includes("====="))})
         delete getList[0];
         getList = getList.filter(d=>{return (d !== undefined)})

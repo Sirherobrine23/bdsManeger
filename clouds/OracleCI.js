@@ -1,5 +1,5 @@
-const os = require("oci-objectstorage");
-const common = require("oci-common");
+const oci_storage = require("oci-objectstorage");
+const oci_common = require("oci-common");
 const fs = require("fs");
 const { resolve } = require("path");
 const { CloudConfig } = require("../lib/BdsSettings")
@@ -9,9 +9,9 @@ const Uploadbackups = async function (
     fileLocation = resolve(__dirname, "../Backup.zip"),
     callback = function (data){console.log(data)}
 ){
-    const bucket = CloudConfig.Oracle().Bucket
-    const provider = new common.ConfigFileAuthenticationDetailsProvider();
-    const client = new os.ObjectStorageClient({
+    const bucket = CloudConfig.Oracle().Bucket;
+    const provider = new oci_common.ConfigFileAuthenticationDetailsProvider();
+    const client = new oci_storage.ObjectStorageClient({
         authenticationDetailsProvider: provider
     });
 
@@ -20,7 +20,7 @@ const Uploadbackups = async function (
         const response = await client.getNamespace(request);
         const namespace = response.value;
         const stats = fs.statSync(fileLocation);
-        const nodeFsBlob = new os.NodeFSBlob(fileLocation, stats.size);
+        const nodeFsBlob = new oci_storage.NodeFSBlob(fileLocation, stats.size);
         const objectData = await nodeFsBlob.getData();
         const putObjectRequest = {
             namespaceName: namespace,

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+console.log(process.cwd(), module);
 if (process.platform === "win32") process.title = "Bds Maneger CLI";else process.title = "Bds_Manger_CLI"
 const { appendFileSync } = require("fs");
 const { join } = require("path");
@@ -24,6 +25,43 @@ if (kill) bds.kill();
 
 // Set Bds Platform
 if (server) UpdatePlatform(server);
+
+function StartServer(){
+    const { Servers } = require("../lib/ServerURL");
+    // Check Server Update
+    if (Versions[GetPlatform()] !== null) {
+        if (Versions[GetPlatform()] !== Servers.latest[GetPlatform()]) {
+            const message = [
+                `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${GetServerVersion[GetPlatform()]} to ${Servers.latest[GetPlatform()]}`,
+                "And we strongly recommend keeping the servers up to date, to maintain compatibility between game versions.",
+                `At any time you can update using the options -p ${GetPlatform()} -d "${Servers.latest[GetPlatform()]}"`
+            ]
+            console.log(message.join("\n"))
+        }
+    } else if (Versions[GetPlatform()] === null) {
+        console.log("Install Server");
+        process.exit(1)
+    }
+    try {
+        console.log("Send a \"@stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
+        // Start Server
+        const bds_server = bds.start();
+        bds_server.log(echo)
+        bds_server.exit(function (code){if (code === 3221225781) return open("https://docs.the-bds-maneger.org/Bds Maneger core/WindowsFixDll");console.log("leaving the server, status code: ", code);process.exit(code)});
+
+        // CLI Commands
+        const rl = readline.createInterface({input: process.stdin,output: process.stdout});
+        rl.on("line", (input) => {if (input === "@stop") {rl.close(); bds_server.stop()} else bds_server.command(input)});
+        rl.on("close", ()=>{console.log("CTRL + C closed readline, stopping server");bds_server.stop()})
+        bds_server.exit(function(c){if (c !== 0) rl.close()})
+        bds.api();
+    } catch (error) {
+        if (Versions[GetPlatform()] !== null) bds.download("latest", true)
+        console.log("Install Server or check latest.log");
+        appendFileSync(join(GetPaths("log"), "latest.log"), `\n\n\nError ----------------------------------------------------------------------------\n${error}`);
+        process.exit(2)
+    }
+}
 
 // Bds Maneger CLI Help
 if (help) {
@@ -137,11 +175,14 @@ if (bds_version){
             DownloadOptions.on("line", (input) => {
                 download(Version[parseInt(input)], true, function(){
                     console.log("Installation was successful, so start the server with the -s option");
-                    process.exit(0)
+                    if (start) StartServer();
+                    else process.exit(0)
                 })
             });
         }
-        else bds.download(bds_version, true)
+        else bds.download(bds_version, true, function(){
+            if (start) StartServer();
+        })
     }
     catch (error) {console.error(error);process.exit(165);}
 }
@@ -151,40 +192,4 @@ function echo(data = ""){
     data = data.split("\n").filter(data => {return (data !== "")})
     data.forEach(data => console.log(data))
 }
-if (start && !(server || version || SystemCheck || bds_version || help)) {
-    const { Servers } = require("../lib/ServerURL");
-    // Check Server Update
-    if (Versions[GetPlatform()] !== null) {
-        if (Versions[GetPlatform()] !== Servers.latest[GetPlatform()]) {
-            const message = [
-                `Hello, I have a little warning, There is a new version of ${GetPlatform()}, going from version ${GetServerVersion[GetPlatform()]} to ${Servers.latest[GetPlatform()]}`,
-                "And we strongly recommend keeping the servers up to date, to maintain compatibility between game versions.",
-                `At any time you can update using the options -p ${GetPlatform()} -d "${Servers.latest[GetPlatform()]}"`
-            ]
-            console.log(message.join("\n"))
-        }
-    } else if (Versions[GetPlatform()] === null) {
-        console.log("Install Server");
-        process.exit(1)
-    }
-    try {
-        console.log("Send a \"@stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
-        // Start Server
-        const bds_server = bds.start();
-        bds_server.log(echo)
-        bds_server.exit(function (code){if (code === 3221225781) return open("https://docs.the-bds-maneger.org/Bds Maneger core/WindowsFixDll");console.log("leaving the server, status code: ", code);process.exit(code)});
-
-        // CLI Commands
-        const rl = readline.createInterface({input: process.stdin,output: process.stdout});
-        rl.on("line", (input) => {if (input === "@stop") {rl.close(); bds_server.stop()} else bds_server.command(input)});
-        rl.on("close", ()=>{console.log("CTRL + C closed readline, stopping server");bds_server.stop()})
-        bds_server.exit(function(c){if (c !== 0) rl.close()})
-        bds.api();
-    } catch (error) {
-        if (Versions[GetPlatform()] !== null) bds.download("latest", true, function(){
-
-        })
-        console.log("Install Server or check latest.log");
-        appendFileSync(join(GetPaths("log"), "latest.log"), `\n\n\nError ----------------------------------------------------------------------------\n${error}`)
-    }
-}
+if (start && !(server || version || SystemCheck || bds_version || help)) StartServer();

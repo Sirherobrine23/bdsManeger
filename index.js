@@ -2,8 +2,7 @@
 const { resolve } = require("path");
 const path = require("path")
 const fs = require("fs");
-const { randomBytes } = require("crypto");
-const uuid = require("uuid").v4;
+const { randomUUID } = require("crypto");
 function date(format) {
     const today = new Date(),
         yaer = today.getFullYear(),
@@ -68,14 +67,21 @@ module.exports.telegram_token = GetTelegramToken();
 function token_register() {
     const bds_token_path = path.join(bds_dir, "bds_tokens.json");
     if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]");
-    randomBytes(uuid(), function(err, buffer) {
-        if (err) return console.warn(err);
-        const new_token = buffer.toString("hex");
-        var tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
-        tokens.push({token: new_token});
-        fs.writeFileSync(bds_token_path, JSON.stringify(tokens, null, 4), "utf8");
-        console.log(`Bds Maneger API REST token: "${new_token}"`);
-    })
+    const tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
+    
+    // Get UUID
+    const getBdsUUId = randomUUID().split("-");
+    const bdsuid = "bds_" + (getBdsUUId[0]+getBdsUUId[2].slice(0, 15));
+    
+    // Save BdsUUID
+    tokens.push({
+        token: bdsuid,
+        date: new Date(),
+        scopers: ["admin"]
+    });
+    fs.writeFileSync(bds_token_path, JSON.stringify(tokens, null, 4), "utf8");
+    console.log(`Bds Maneger API REST token: "${bdsuid}"`);
+    return bdsuid;
 }
 
 /**

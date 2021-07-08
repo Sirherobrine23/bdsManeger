@@ -7,12 +7,16 @@ const saveUser = require("./PlayersSave");
 const bds = require("../index");
 const { GetServerPaths, GetPaths, GetServerSettings, GetPlatform } = require("../lib/BdsSettings");
 const BdsDetect = require("./CheckKill").Detect;
+const { randomUUID } = require("crypto");
 const { warn } = console;
-const { v4 } = require("uuid")
 
 // Set bdsexec functions
 global.BdsExecs = {};
 
+function saveLog(data = "", LogFile = ""){
+    fs.appendFileSync(path.join(GetPaths("log"), "latest.log"), data)
+    fs.appendFileSync(LogFile, data)
+}
 function start() {
     if (BdsDetect()){
         console.warn("You already have a server running");
@@ -57,18 +61,10 @@ function start() {
                 if (typeof open === "undefined") require("open")(url); else open(url);
             }
         } else if (GetPlatform() === "pocketmine") {
-            const phpinCore = resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin")
-            if (commandExists("php")) throw Error("php command installed in system, please remove php from your system as it may conflict with pocketmine");
-            else if (!fs.existsSync(phpinCore)) throw Error("Reinstall Pocketmine-MP, PHP binaries folder not found");
-                Command = "php ./PocketMine-MP.phar";
-                const currentEnv = process.env
-                if (process.platform === "win32") currentEnv.PATH += `;${phpinCore}`;else currentEnv.PATH += `:${phpinCore}`;
-                Options = {
-                    env: currentEnv,
-                    cwd: GetServerPaths("pocketmine")
-                };
+            Command = `${join(resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php")} ./PocketMine-MP.phar`
+            Options = {cwd: GetServerPaths("pocketmine")};
         } else if (GetPlatform() === "jsprismarine") {
-            Command = "node --warning --circular ./packages/server/dist/Server.js";
+            Command = "node ./packages/server/dist/Server.js";
                 Options = {
                     cwd: GetServerPaths("jsprismarine")
                 };
@@ -96,14 +92,11 @@ function start() {
         // ---------------------------------------------------
         // Clear latest.log
         fs.writeFileSync(path.join(GetPaths("log"), "latest.log"), "")
+        
         // ---------------------------------------------------
         // stdout
-        start_server.stdout.pipe(fs.createWriteStream(LogFile, {flags: "a"}));
-        start_server.stdout.pipe(fs.createWriteStream(path.join(GetPaths("log"), "latest.log"), {flags: "a"}));
-        // ---------------------------------------------------
-        // stderr
-        start_server.stderr.pipe(fs.createWriteStream(LogFile, {flags: "a"}));
-        start_server.stderr.pipe(fs.createWriteStream(path.join(GetPaths("log"), "latest.log"), {flags: "a"}));
+        start_server.stdout.on("data", a=>saveLog(a, LogFile));
+        start_server.stderr.on("data", a=>saveLog(a, LogFile));
         // ---------------------------------------------------
         // Global and Run
         global.bds_log_string = ""
@@ -114,7 +107,7 @@ function start() {
 
         // Functions return
         const returnFuntion = {
-            uuid: v4(),
+            uuid: randomUUID(),
             exec: start_server,
             stop: function (){start_server.stdin.write("stop\n")},
             command: function (command = "list", callback){

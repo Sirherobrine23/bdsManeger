@@ -44,10 +44,6 @@ ports:
     external: 19132
     protocoll: udp
 
-  - port: 19133
-    external: 19133
-    protocoll: udp
-
   - port: 80
     external: 8880
     protocoll: tcp

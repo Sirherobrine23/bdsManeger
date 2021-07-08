@@ -5,7 +5,7 @@ const fs = require("fs");
 
 function MytypeKill(player) {
     console.warn(`Player ${player} tried to connect to the server`)
-    let removeUser = `tp "${player}" ~ ~9999999999999999999999999 ~`
+    let removeUser = `tp "${player}" ~ 128 ~`
     console.log(removeUser);
     var RemoveUser = setInterval(() => {
         bds.command(removeUser);
