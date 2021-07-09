@@ -6,7 +6,7 @@
         "rest_api": "docs/Bds Maneger core/REST API/"
     },
     "temp_host": {
-        "url": "hosts.bdsmaneger.com/"
+        "url": "http://hosts.bdsmaneger.com:3020"
     },
     "download": {
         "php": "https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/php_bin.json",
