@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-console.log(process.cwd(), module);
 if (process.platform === "win32") process.title = "Bds Maneger CLI";else process.title = "Bds_Manger_CLI"
 const { appendFileSync } = require("fs");
 const { join } = require("path");

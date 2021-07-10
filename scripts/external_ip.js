@@ -1,5 +1,5 @@
 // External User ip
-const fetchSync = require("../lib/fetchSync");
+const fetchSync = require("@the-bds-maneger/fetchsync");
 const externalIP = {
     ipv4: fetchSync("https://api.ipify.org/").text(),
     ipv6: fetchSync("https://api64.ipify.org/").text()

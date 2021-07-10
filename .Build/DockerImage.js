@@ -1,4 +1,4 @@
-const fetchSync = require("../lib/fetchSync")
+const fetchSync = require("@the-bds-maneger/fetchsync")
 const { writeFileSync } = require("fs");
 const { exit } = require("process");
 const { resolve } = require("path");

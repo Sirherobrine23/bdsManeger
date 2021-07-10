@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.12.rc4",
+  "version": "1.12.5",
   "description": "Scripts to manage minecraft server's",
   "private": false,
   "main": "index.js",
@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "@azure/storage-blob": "^12.6.0",
+    "@the-bds-maneger/fetchsync": "github:The-Bds-Maneger/fetchSync",
     "adm-zip": "^0.5.1",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
