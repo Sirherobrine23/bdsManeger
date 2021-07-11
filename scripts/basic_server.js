@@ -1,4 +1,4 @@
-const { exec, execSync } = require("child_process");
+const { exec, execFile } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { resolve, join } = require("path");
@@ -22,56 +22,62 @@ function start() {
         console.warn("You already have a server running");
         throw "You already have a server running";
     } else {
-        var Command, Options = {};
-        // ---------------------------------------------
+        var start_server;
+
+        // Minecraft Bedrock Oficial
         if (GetPlatform() === "bedrock"){
-            Options = {
-                cwd: GetServerPaths("bedrock")
-            }
-            if (process.platform == "win32") Command = "bedrock_server.exe";
+            if (process.platform === "darwin") throw Error("Use a imagem Docker");
+            else if (process.platform == "win32") start_server = exec("bedrock_server.exe", {
+                cwd: GetServerPaths("bedrock"),
+            });
             else if (process.platform == "linux"){
-                execSync("chmod 777 bedrock_server", Options)
-                Command = "./bedrock_server";
-                if (commandExists("qemu-x86_64-static") && process.arch !== "x64") Command = `qemu-x86_64-static ${Command}`;
-                Options.env = {
-                    ...process.env,
-                    LD_LIBRARY_PATH: Options.cwd
-                }
+                // Set Executable file
+                execFile("chmod 777 bedrock_server", {cwd: GetServerPaths("bedrock")});
+                var BedrockCommand = "./bedrock_server";
 
-            } else if (process.platform === "darwin") throw Error("Use a imagem Docker")
-            else process.exit(210)
-        } else if (GetPlatform() === "java") {
-            const ramMax = Math.trunc(Math.abs(require("os").freemem() / 1024 / 1024));
-            // Check low ram
-            if (ramMax <= 512) throw new Error("Low ram memorie");
-            const ServerRam = GetServerSettings("java").ram_mb
+                // Emulation of the x86_64 architecture
+                if (commandExists("qemu-x86_64-static") && process.arch !== "x64") BedrockCommand = "qemu-x86_64-static "+BedrockCommand;
 
+                // Start Bedrock Server 
+                start_server = exec(BedrockCommand, {cwd: GetServerPaths("bedrock"), env: {...process.env, LD_LIBRARY_PATH: GetServerPaths("bedrock")}})
+            } else throw new Error("your system does not support Minecraft Bedrock (yet)")
+        }
+
+        // Minecraft Java Oficial
+        else if (GetPlatform() === "java") {
+            const JavaConfig = GetServerSettings("java")
+
+            // Checking if java is installed on the device
             if (commandExists("java")) {
-                Command = `java -jar -X${ServerRam}M MinecraftServerJava.jar nogui`;
-                Options = {
-                    cwd: GetServerPaths("java")
-                };
+                start_server = execFile("java", [
+                    "-jar",
+                    `-Xms${JavaConfig.ram_mb}M`,
+                    `-Xmx${JavaConfig.ram_mb}M`,
+                    "MinecraftServerJava.jar",
+                    "nogui"
+                ], {cwd: GetServerPaths("java")})
             } else {
-                var url = bds.package_json.docs_base;
-                if (bds.system == "windows") url += "Java-Download#windows"
-                else if (bds.system === "linux") url = "Java-Download#linux"
-                else if (process.platform === "darwin") url = "Java-Download#macos"
-                else url = "Java-Download"
-                console.info(`Open: ${url}`)
-                if (typeof open === "undefined") require("open")(url); else open(url);
+                var url = bds.package_json.docs_base; if (bds.system == "windows") url += "Java-Download#windows"; else if (bds.system === "linux") url = "Java-Download#linux"; else if (process.platform === "darwin") url = "Java-Download#macos"; else url = "Java-Download";
+                require("open")(url);
+                throw new Error(`Open: ${url}`)
             }
         } else if (GetPlatform() === "pocketmine") {
-            Command = `${join(resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php")} ./PocketMine-MP.phar`
-            Options = {cwd: GetServerPaths("pocketmine")};
+            // Start PocketMine-MP
+            const php_bin_path = join(resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
+            start_server = execFile(php_bin_path, [
+                "./PocketMine-MP.phar"
+            ], {
+                cwd: GetServerPaths("pocketmine")
+            })
         } else if (GetPlatform() === "jsprismarine") {
-            Command = "node ./packages/server/dist/Server.js";
-                Options = {
-                    cwd: GetServerPaths("jsprismarine")
-                };
+            // Start JSPrismarine
+            start_server = execFile("node", [
+                "./packages/server/dist/Server.js"
+            ], {
+                cwd: GetServerPaths("jsprismarine")
+            });
         } else throw Error("Bds Config Error")
 
-        // Start Command
-        const start_server = exec(Command, Options)
         // Post Start
         if (GetPlatform() === "java") {
             start_server.stdout.on("data", function(data){

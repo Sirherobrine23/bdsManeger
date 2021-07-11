@@ -58,13 +58,8 @@ function Backup() {
 
     // The Bds Maneger Core Backup
     for (let index of [
-        "bds_config.json",
-        "bds_maneger-config.json",
-        "bds_tokens.json",
-        "bds_users.json",
         "BdsConfig.yaml",
-        "bds_usersV2.json",
-        "bds_usersV3.json",
+        "bds_tokens.json"
     ]) if (existsSync(join(bds_dir, index))) zip.addLocalFile(join(bds_dir, index));
 
     zip.addZipComment("Settings and World Backups, by The Bds Maneger Project©");

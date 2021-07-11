@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 if (process.platform === "win32") process.title = "Bds Maneger CLI";else process.title = "Bds_Manger_CLI"
-const { appendFileSync } = require("fs");
-const { join } = require("path");
 const readline = require("readline");
 const bds = require("../index");
 const { valid_platform } = require("../lib/BdsSystemInfo");
@@ -54,10 +52,8 @@ function StartServer(){
         rl.on("close", ()=>{console.log("CTRL + C closed readline, stopping server");bds_server.stop()})
         bds_server.exit(function(c){if (c !== 0) rl.close()})
         bds.api();
-    } catch (error) {
-        if (Versions[GetPlatform()] !== null) bds.download("latest", true)
-        console.log("Install Server or check latest.log");
-        appendFileSync(join(GetPaths("log"), "latest.log"), `\n\n\nError ----------------------------------------------------------------------------\n${error}`);
+    } catch (err) {
+        console.log(`Bds Maneger Start Server Error: \n******\n${err}`);
         process.exit(2)
     }
 }
