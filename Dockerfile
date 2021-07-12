@@ -11,7 +11,7 @@ apt -y install curl wget git zsh sudo unzip zip jq python python3 ca-certificate
 apt autoremove -y && \
 apt clean -y && \
 rm -rf /var/lib/apt/lists/* /root/.gnupg /tmp/library-scripts /tmp/* && \
-case $(uname -m) in "x86_64") echo "Do not need dependency on the x86_64";; *) apt update; apt install -y qemu-user-static ;wget -q https://raw.githubusercontent.com/The-Bds-Maneger/Raw_files/main/linux_libries.zip -O /tmp/libries.zip ;unzip /tmp/libries.zip -d / ;rm -rfv /tmp/libries.zip ;mkdir -p /lib64 ;rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* ;;esac && \
+case $(uname -m) in "x86_64") echo "Do not need dependency on the x86_64";; *) apt update; apt install -y qemu-user-static ;wget -q https://raw.githubusercontent.com/The-Bds-Maneger/external_files/main/linux_libries.zip -O /tmp/libries.zip ;unzip /tmp/libries.zip -d / ;rm -rfv /tmp/libries.zip ;mkdir -p /lib64 ;rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* ;;esac && \
 wget -qO- https://raw.githubusercontent.com/Sirherobrine23/MSQ-files/main/DockerBuild/Build/bin/NodeInstall.sh | bash -; \
 export username="thebds" && export password="123aa3456s7" && \
 pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); useradd -m -p "$pass" "$username"; addgroup ${username} sudo; addgroup ${username} root; \

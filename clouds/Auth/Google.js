@@ -15,7 +15,7 @@ const DefaultLoginDrive = {
         "https://www.googleapis.com/auth/drive"
     ]
 }
-const GoogleDriveCredentials = fetchSync("https://raw.githubusercontent.com/Bds-Maneger/Raw_files/main/credentials.json").json()
+const GoogleDriveCredentials = fetchSync("https://raw.githubusercontent.com/Bds-Maneger/external_files/main/credentials.json").json()
 // -------------------------------------------------------------
 const PathToToken = join(bds_dir, "google_user_token.json");
 
