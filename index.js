@@ -195,12 +195,6 @@ module.exports.tmphost = require("./lib/tempHost")
 // Core Applications
 
 /**
- * This is telegram bot
- */
-module.exports.telegram = require("./rest/telegram_bot")
-
-
-/**
  * Load Crontab Backup
  */
 module.exports.Cron_Loaded = require("./scripts/LoadCronBackup")

@@ -8,15 +8,14 @@ const Cloud = {
 }
 
 const CurrentBackups = GetCronBackup();
-const Scheduled_Cron = []
-for (let Crron of CurrentBackups) {
-    Scheduled_Cron.push(new CronJob(Crron.cron, function(){
-        console.log("Starting Server and World Backup");
-        const CurrentBackup = Backup();
-        if (Crron.Azure) Cloud.Azure(CurrentBackup.file_name, CurrentBackup.file_path)
-        if (Crron.Driver) Cloud.Driver(CurrentBackup.file_name, CurrentBackup.file_path)
-        if (Crron.Oracle) Cloud.Oracle(CurrentBackup.file_name, CurrentBackup.file_path)
-    }))
-}
-
-module.exports = Scheduled_Cron
+module.exports = CurrentBackups.map(Crron => {
+    return {
+        CronFunction: new CronJob(Crron.cron, function(){
+            console.log("Starting Server and World Backup");
+            const CurrentBackup = Backup();
+            if (Crron.Azure) Cloud.Azure(CurrentBackup.file_name, CurrentBackup.file_path); else console.info("Azure Backup Disabled");
+            if (Crron.Driver) Cloud.Driver(CurrentBackup.file_name, CurrentBackup.file_path); else console.info("Google Driver Backup Disabled");
+            if (Crron.Oracle) Cloud.Oracle(CurrentBackup.file_name, CurrentBackup.file_path); else console.info("Oracle Bucket Backup Disabled");
+        })
+    }
+})

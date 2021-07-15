@@ -19,6 +19,7 @@ Docker.exe
 # Bin Ignores
 bin/*
 !bin/bds_maneger.js
+!bin/telegram_bot.js
 
 # **
 .husky
