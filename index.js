@@ -190,7 +190,7 @@ module.exports.get_config = get_config
 /**
  * Get temp domain to Server and API (The Domain is even temporary).
  */
-module.exports.tmphost = require("./lib/tempHost").tmphost
+module.exports.tmphost = require("./lib/tempHost")
 
 // Core Applications
 
