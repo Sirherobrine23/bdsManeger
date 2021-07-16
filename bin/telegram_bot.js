@@ -1,117 +1,138 @@
 const { Telegraf } = require("telegraf");
-const { start, detect, telegram_token, arch, package_json, kill } = require("../index");
-const { valid_platform } = require("../lib/BdsSystemInfo")
-const { checkUser } = require("../scripts/check");
-const IsElectron = process.argv[0].includes("electron");
-const { readFileSync } = require("fs");
-const FetchSync = require("@the-bds-maneger/fetchsync");
-const { GetPaths } = require("../lib/BdsSettings");
-const { resolve } = require("path");
-const latest_log = resolve(GetPaths("log"), "latest.log")
+const fs = require("fs");
+const path = require("path");
+const bds = require("../index");
+const { GetPlatform, GetPaths } = require("../lib/BdsSettings");
+const { GetKernel, arch, system } = require("../lib/BdsSystemInfo");
+const { Detect } = require("../scripts/CheckKill");
+const TelegramOptions = require("minimist")(process.argv.slice(2));
 
-function getExec() {
-    const ArrayExecs = Object.getOwnPropertyNames(global.BdsExecs);
-    if (ArrayExecs.length === 0) {console.log("Start Server");return false} else if (ArrayExecs.length >= 2) console.log("Multi Execs detect");
-    return global.BdsExecs[ArrayExecs[0]]
+if (TelegramOptions.h || TelegramOptions.help) {
+    const Help = [];
+    console.log(Help.join("\n"));
+    process.exit(0)
 }
 
+const HelpAndStart = [
+    "Hello, welcome to Bds Maneger Telegram Bot",
+    "",
+    "We are changing some things but everything is working!!",
+    "Options:",
+    "   /start or /help: This message!",
+    "   /basic",
+    "       start, stop",
+    "   ",
+]
+
 // Set Telegram Bot
-const bot = new Telegraf(telegram_token)
-bot.start((ctx) => {
-    const replymessage =[
-        `Hello ${ctx.message.from.username}`,
-        "We have some things still being done in the programming of the new bot more works 👍:",
-        "Commands:",
-        "-   /server_start, start your server and have all the logs in your chat ⚙️",
-        "-   /server_stop, stop your server in the simplest way 🏃⏱️⏱️",
-        "-   /server_kill, kill all bds maneger severs",
-        "-   /log",
-        "-   /command",
-        "-   /list, deprecated",
-        "-   /mcpe, get latest minecraft bedrock version for Android, iPhone not privileged",
-        "The messages are re-transmitted to the minecraft chat if it is already connected: ✔",
-        "Message Control: ❌",
-    ]
-    ctx.reply(replymessage.join("\n"))
+const bot = new Telegraf(bds.telegram_token);
+
+// Start and Help Command
+bot.start((ctx)=>ctx.reply(HelpAndStart.join("\n")));
+bot.help((ctx)=>ctx.reply(HelpAndStart.join("\n")));
+
+const ChatIDs = {}
+function SaveID(id = "a"){return ChatIDs[id] = true}
+function RemoveID(id = "a"){return delete ChatIDs[id]}
+function GetID(){return ChatIDs}
+
+// Basic server
+bot.command("basic", ctx => {
+    const text = ctx.message.text.replace("/basic", "").trim();
+    if (/start/.test(text)) {
+        if (Detect()) ctx.reply("Stop Server");
+        else {
+            try {
+                const Server = bds.start();
+                Server.log(function (data){
+                    Object.getOwnPropertyNames(GetID()).forEach(Id => {
+                        console.log(Id);
+                        if (ChatIDs[Id]) bot.telegram.sendMessage(Id, data)
+                    })
+                })
+                return ctx.reply("Server Started")
+            } catch (err) {
+                console.log(err)
+                ctx.reply("We couldn't start the server")
+                ctx.reply(err.toString());
+            }
+        }
+    } else if (/stop/.test(text)) {
+        if (Detect()) {
+            try {
+                bds.stop()
+                ctx.reply("Stopping your server")
+            } catch (err) {
+                ctx.reply("We had an error for your server");
+                ctx.reply(err.toString());
+            }
+        } else ctx.reply("Your server is stopped")
+    } else return ctx.reply("Invalid option, they are just: start, stop")
+});
+
+// Select Platform
+bot.command("platform", ctx => {
+    const text = ctx.message.text.replace("/platform", "").trim();
+    try {
+        bds.BdsSettigs.UpdatePlatform(text);
+        return ctx.reply(`Platform update to ${text}`)
+    } catch (err) {
+        ctx.reply("We were unable to change the platform")
+        return ctx.reply(err.toString())
+    }
 })
-bot.help((ctx) => ctx.reply("Its alive"));
-bot.command("server_start", (ctx) => {
-    if (checkUser(ctx.message.from.username)){
-        if (detect()) ctx.reply(`${ctx.message.from.username} already started`);
-        else if (IsElectron) ctx.reply(`${ctx.message.from.username} is electron`);
-        else {
-            global.isTelegrambot = true
-            const server = start();
-            server.log(data => ctx.reply(data));
-            server.exit(code => ctx.reply(`The Bds Maneger wit uuid ${server.uuid} exit with code ${code}`));
-        }
-    } else {
-        console.log(`It was not started for ${ctx.message.from.username} as it is not an administrator`);
-        ctx.deleteMessage()
-        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
-    }
-});
-bot.command("server_kill", (ctx) => {
-    if (checkUser(ctx.message.from.username)){
-        if (!(detect())){
-            if (kill()) ctx.reply("Killed servers");else ctx.reply("No killed servers")
-        } else ctx.reply(`${ctx.message.from.username} no detect bds servers`);
-    } else {
-        console.log(`It was not started for ${ctx.message.from.username} as it is not an administrator`);
-        ctx.deleteMessage()
-        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
-    }
-});
-bot.command("server_stop", (ctx) => {
-    if (checkUser(ctx.message.from.username)){
-        if (detect()){
-            getExec().stop();
-            ctx.reply("The server is stopping, wait for a few moments")
-        } else ctx.reply(`Hello ${ctx.message.from.username}, the server will remain stopped`);
-    } else {
-        console.log(`It was not stoped for ${ctx.message.from.username} as it is not an administrator`);
-        ctx.reply(`Please contact the Server Administrator, You are not on the list, I count to add your username (${ctx.message.from.username}) on the whitelist`)
-    }
-});
-bot.command("command", (ctx) => {
-    const Usercommand = ctx.message.text.replace("/command", "").trim().split(/\s+/).join(" ")
-    if (detect()){
-        if (Usercommand === "") ctx.reply("Check you command");
-        else {
-            if (checkUser(ctx.message.from.username)) getExec().command(Usercommand, text => {if (!(global.isTelegrambot)) ctx.reply(text)});
-        }
-    } else ctx.reply("Start Server")
-});
-bot.command("mcpe", (ctx) => {
-    const Androidapks = FetchSync("https://raw.githubusercontent.com/Sirherobrine23/Minecraft_APK_Index/main/Android.json").json();
-    const _Ofi = Androidapks.latest["oficial"]
-    const markdown = [
-        `Minecraft Bedrock android: [${_Ofi}](${Androidapks.Oficial[_Ofi].url})`,
+
+// Send Info
+bot.command("info", ctx => {
+    const config = bds.get_config();
+    const InfoRes = [
+        `Bds Maneger core version: ${bds.package_json.version}`,
         "",
-        "iPhone users are not privileged, by [Sirherobrine23](https://sirherobrine23.org)"
+        "* System Info:",
+        `   Kernel:       ${GetKernel()}`,
+        `   Arch:         ${arch}`,
+        `   System:       ${system}`,
+        "",
+        "* Server:",
+        `   platform:     ${GetPlatform()}`,
+        `   world_name:   ${config.world}`,
+        `   running:      ${bds.detect()}`,
+        `   port:         ${config.portv4}`,
+        `   port6:        ${config.portv6}`,
+        `   max_players:  ${config.players}`,
+        `   whitelist:    ${config.whitelist}`,
     ]
-    ctx.replyWithMarkdown(markdown.join("\n"))
+    return ctx.reply(InfoRes.join("\n"))
 });
-bot.command("info", (ctx) =>{
-    const info = [
-        `Bds Maneger core version: **${package_json.version}**`,
-        `System: *${process.platform}*, Arch: *${arch}*`,
-        "---------------------- Supported platforms ----------------------",
-        `Server support for *${arch}* architecture:`,
-        "",
-        ` - Bedrock: *${valid_platform.bedrock}*`,
-        ` - Java: *${valid_platform.java}*`,
-        ` - Pocketmine: *${valid_platform.pocketmine}*`,
-        ` - JSPrismarine: *${valid_platform.jsprismarine}*`,
-    ];
-    ctx.replyWithMarkdown(info.join("\n"));
+
+// Log
+bot.command("log", ctx => {
+    try {
+        // 4096
+        const Log = fs.readFileSync(path.resolve(GetPaths("log"), "latest.log"), "utf8")
+        if (Log.length >= 4096) ctx.reply(Log.substr(-4096));
+        else ctx.reply(Log)
+    } catch (err) {
+        ctx.reply(err.toString())
+    }
 });
-bot.command("log", (ctx) => {
-    if (checkUser(ctx.message.from.username)) {
-        const logFile = readFileSync(latest_log, "utf8").toString();
-        if (logFile.length > 4096) ctx.reply(logFile.substr(-4095));
-        else ctx.reply(logFile);
-    } else ctx.reply(`${ctx.message.from.first_name} ${ctx.message.from.last_name} (@${ctx.message.from.username}), you are not an admin to view the log`);
-});
-process.on("exit", function (){bot.stop()})
+
+// Live Log User
+bot.command("live_log", ctx => {
+    const option = ctx.message.text.replace("/platform", "").trim();
+    if (/enable/.test(option)) {
+        SaveID(ctx.from.id)
+        console.log(GetID())
+    } else if (/disable/.test(option)) {
+        RemoveID(ctx.from.id)
+        console.log(GetID())
+    } else ctx.reply("Invalid option")
+    ctx.reply(ctx.chat.id)
+})
+
+// catch
+bot.catch(console.log);
+
+// End And Lauch
+process.on("exit", bot.stop)
 bot.launch()

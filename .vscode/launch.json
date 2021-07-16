@@ -11,6 +11,17 @@
                 "Docker"
             ],
             "port": 9229
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Telegram BOT",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev:telegram"
+            ],
+            "port": 9229
         }
     ]
 }

@@ -15,7 +15,8 @@
     "eslint:debug": "eslint --debug .",
     "eslint:fix": "eslint --fix .",
     "nexe": "node .Build/nexe_build.js",
-    "Docker": "node .Build/DockerImage.js"
+    "Docker": "node .Build/DockerImage.js",
+    "dev:telegram": "node bin/telegram_bot.js -e js"
   },
   "bin": {
     "bds_maneger": "./bin/bds_maneger.js"
@@ -72,14 +73,13 @@
     "oci-sdk": "^1.20.2",
     "open": "^8.0.0",
     "properties-to-json": "^0.2.1",
-    "qr-image": "^3.2.0",
-    "qrcode": "^1.4.4",
     "request-ip": "^2.1.3",
     "telegraf": "^4.0.0"
   },
   "devDependencies": {
     "eslint": "^7.19.0",
     "husky": "^7.0.0",
-    "nexe": "*"
+    "nexe": "*",
+    "nodemon": "^2.0.12"
   }
 }

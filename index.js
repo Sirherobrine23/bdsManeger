@@ -21,10 +21,9 @@ function date(format) {
 }
 
 const bds_core_package = resolve(__dirname, "package.json")
-const package_json = JSON.parse(fs.readFileSync(bds_core_package))
 module.exports.package_path = bds_core_package
-module.exports.package_json = package_json
-module.exports.extra_json = require(resolve(__dirname, "extra.json"))
+module.exports.package_json = require("./package.json");
+module.exports.extra_json = require("./extra.json");
 
 const { bds_dir } = require("./lib/BdsSettings");
 const { arch } = require("./lib/BdsSystemInfo");
