@@ -43,7 +43,9 @@ module.exports = function (version, force_install, callback) {
                 if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");
                 if (existsSync(join(bds_dir_bedrock, "permissions.json"))) permissions = readFileSync(join(bds_dir_bedrock, "permissions.json"), "utf8");
                 if (existsSync(join(bds_dir_bedrock, "whitelist.json"))) whitelist = readFileSync(join(bds_dir_bedrock, "whitelist.json"), "utf8");
-                fetchSync(url, {}, true).Buffer;
+                fetchSync(url, {
+                    Binary: true
+                }).Buffer;
                 console.log("Download Sucess")
                 const zip = new AdmZip(response)
                 zip.extractAllTo(bds_dir_bedrock, true)
@@ -68,7 +70,9 @@ module.exports = function (version, force_install, callback) {
             } else {
                 url = Servers.java[version].url
                 console.log(`Server data publish: ${Servers.java[version].data}`)
-                response = fetchSync(url, {}, true).Buffer
+                response = fetchSync(url, {
+                    Binary: true
+                }).Buffer
                 console.log("Download Sucess")
                 writeFileSync(join(bds_dir_java, "MinecraftServerJava.jar"), response, "binary")
                 console.log("Save sucess");
@@ -89,7 +93,9 @@ module.exports = function (version, force_install, callback) {
             } else {
                 const PocketMineJson = Servers.pocketmine[version]
                 console.log(`Server data publish: ${PocketMineJson.data}`);
-                response = fetchSync(PocketMineJson.url, {}, true).Buffer;
+                response = fetchSync(PocketMineJson.url, {
+                    Binary: true
+                }).Buffer;
                 console.log("Success when downloading php from PocketMine-MP");
                 // Write php file
                 writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), response, "binary")
@@ -98,7 +104,9 @@ module.exports = function (version, force_install, callback) {
                 var urlPHPBin; /* Check System php */try {urlPHPBin = PHPBin[process.platform][bds.arch]} catch (error) {throw new Error("unsupported system")}
                 console.log("Downloading PHP Binaries");
                 // Fetch Files
-                const php = fetchSync(urlPHPBin, {}, true);
+                const php = fetchSync(urlPHPBin, {
+                    Binary: true
+                });
                 const zipExtractBin = new AdmZip(php);
                 // Extract bin
                 zipExtractBin.extractAllTo(bds_dir_pocketmine, true)
