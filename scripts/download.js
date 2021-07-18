@@ -6,8 +6,7 @@ const { valid_platform } = require("../lib/BdsSystemInfo");
 const { GetServerPaths, GetServerVersion, UpdateServerVersion, GetPlatform } = require("../lib/BdsSettings");
 const { GitClone } = require("../lib/git_simples");
 const { execSync } = require("child_process");
-const fetchSync = require("@the-bds-maneger/fetchsync")
-const Extra = require("../extra.json");
+const Extra = require("../BdsManegerInfo.json");
 
 const 
     bds_dir_bedrock = GetServerPaths("bedrock"),
@@ -15,8 +14,8 @@ const
     bds_dir_pocketmine = GetServerPaths("pocketmine"),
     bds_dir_jsprismarine = GetServerPaths("jsprismarine");
 
-module.exports = function (version, force_install, callback) {
-    const Servers = fetchSync(Extra.download.servers).json(), PHPBin = fetchSync(Extra.download.php).json()
+module.exports = async function (version, force_install, callback) {
+    const Servers = (await (await fetch(Extra.download.servers)).json()), PHPBin = (await (await fetch(Extra.download.php)).json());
     const ServerVersion = GetServerVersion()
     const CurrentPlatform = GetPlatform()
     if (force_install === true) {
@@ -25,7 +24,7 @@ module.exports = function (version, force_install, callback) {
         ServerVersion.pocketmine = "latest"
     }
     if (!(version) || version === true || version === "true" || version === "latest") version = Servers.latest[CurrentPlatform]
-    var url, response;
+    var url;
 
     console.log(`Installing version ${version}`);
     // Bedrock Installer Script
@@ -43,9 +42,11 @@ module.exports = function (version, force_install, callback) {
                 if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");
                 if (existsSync(join(bds_dir_bedrock, "permissions.json"))) permissions = readFileSync(join(bds_dir_bedrock, "permissions.json"), "utf8");
                 if (existsSync(join(bds_dir_bedrock, "whitelist.json"))) whitelist = readFileSync(join(bds_dir_bedrock, "whitelist.json"), "utf8");
-                fetchSync(url, {}, true).Buffer;
+                
+                // Download and Add to Adm_Zip
+                const zip = new AdmZip(Buffer.from((await (await fetch(url)).arrayBuffer())))
                 console.log("Download Sucess")
-                const zip = new AdmZip(response)
+
                 zip.extractAllTo(bds_dir_bedrock, true)
                 console.log("Extract Sucess")
                 if (server_configs) writeFileSync(join(bds_dir_bedrock, "server.properties"), server_configs);
@@ -68,10 +69,9 @@ module.exports = function (version, force_install, callback) {
             } else {
                 url = Servers.java[version].url
                 console.log(`Server data publish: ${Servers.java[version].data}`)
-                response = fetchSync(url, {}, true).Buffer
-                console.log("Download Sucess")
-                writeFileSync(join(bds_dir_java, "MinecraftServerJava.jar"), response, "binary")
-                console.log("Save sucess");
+                
+                writeFileSync(join(bds_dir_java, "MinecraftServerJava.jar"), Buffer.from((await (await fetch(url)).arrayBuffer())), "binary")
+                console.log("Success when downloading and saving Minecraft Server java");
                 UpdateServerVersion(version);
                 if (typeof callback === "function") callback(true);
                 return true
@@ -89,20 +89,19 @@ module.exports = function (version, force_install, callback) {
             } else {
                 const PocketMineJson = Servers.pocketmine[version]
                 console.log(`Server data publish: ${PocketMineJson.data}`);
-                response = fetchSync(PocketMineJson.url, {}, true).Buffer;
-                console.log("Success when downloading php from PocketMine-MP");
-                // Write php file
-                writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), response, "binary")
-
+                
+                writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), Buffer.from((await (await fetch(PocketMineJson.url)).arrayBuffer())), "binary")
+                console.log("Success downloading and saving PocketMine-MP php");
+                
                 // Check PHP binary
                 var urlPHPBin; /* Check System php */try {urlPHPBin = PHPBin[process.platform][bds.arch]} catch (error) {throw new Error("unsupported system")}
                 console.log("Downloading PHP Binaries");
-                // Fetch Files
-                const php = fetchSync(urlPHPBin, {}, true);
-                const zipExtractBin = new AdmZip(php);
-                // Extract bin
+                // Get PHP bin File and extract
+                const zipExtractBin = new AdmZip(Buffer.from((await (await fetch(urlPHPBin)).arrayBuffer())));
+
                 zipExtractBin.extractAllTo(bds_dir_pocketmine, true)
                 console.log("Successfully extracting the binaries")
+
                 // Check Configs and others
                 const phpFolder = resolve(bds_dir_pocketmine, "bin")
                 const phpConfigInit = readFileSync(join(phpFolder, "php7", "bin", "php.ini"), "utf-8").split(/\n/g).filter(a=>a.trim());

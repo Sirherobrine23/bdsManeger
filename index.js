@@ -23,7 +23,7 @@ function date(format) {
 const bds_core_package = resolve(__dirname, "package.json")
 module.exports.package_path = bds_core_package
 module.exports.package_json = require("./package.json");
-module.exports.extra_json = require("./extra.json");
+module.exports.extra_json = require("./BdsManegerInfo.json");
 
 const { bds_dir } = require("./lib/BdsSettings");
 const { arch } = require("./lib/BdsSystemInfo");
