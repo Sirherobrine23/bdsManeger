@@ -12,7 +12,7 @@ const { GetPlatform, GetServerVersion, GetPaths, UpdatePlatform, bds_dir } = req
 const admzip = require("adm-zip");
 const pretty = require("express-prettify");
 const latest_log = resolve(GetPaths("log"), "latest.log")
-const docs = require("../extra.json").docs;
+const docs = require("../BdsManegerInfo.json").docs;
 const { CheckPlayer, token_verify } = require("../scripts/check");
 
 function api(port_api = 1932){
