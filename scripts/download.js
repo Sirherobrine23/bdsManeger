@@ -127,7 +127,7 @@ module.exports = async function (version, force_install, callback) {
     else if (CurrentPlatform === "jsprismarine") {
         if (valid_platform.jsprismarine === true) {
             console.log("Downloading the JSPrismarine repository.");
-            const commit_sha = GitClone("https://github.com/The-Bds-Maneger/JSPrismarine.git", bds_dir_jsprismarine, 1);
+            const commit_sha = GitClone("https://github.com/JSPrismarine/JSPrismarine.git", bds_dir_jsprismarine, 1);
             for (let command of ["npm install", "npx -y lerna bootstrap", "npm run build"]) console.log(execSync(command, {cwd: bds_dir_jsprismarine}).toString("ascii"));
             console.log(commit_sha);
             UpdateServerVersion(commit_sha, "jsprismarine")
