@@ -9,8 +9,8 @@
         "url": "http://hosts.bdsmaneger.com:3020"
     },
     "download": {
-        "php": "https://raw.githubusercontent.com/The-Bds-Maneger/external_files/main/php_bin.json",
-        "servers": "https://raw.githubusercontent.com/Bds-Maneger/external_files/main/Server.json"
+        "php": "https://raw.githubusercontent.com/The-Bds-Maneger/Php_Static_Binary/main/binarys.json",
+        "servers": "https://raw.githubusercontent.com/The-Bds-Maneger/external_files/main/Server.json"
     },
     "contributors": [
         {
