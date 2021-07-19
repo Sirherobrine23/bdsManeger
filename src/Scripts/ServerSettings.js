@@ -2,7 +2,7 @@ var fs = require("fs");
 const path = require("path");
 const propertiesToJSON = require("properties-to-json");
 const { join } = require("path");
-const { GetServerPaths, GetPlatform } = require("../lib/BdsSettings");
+const { GetServerPaths, GetPlatform } = require("../../lib/BdsSettings");
 const bds_dir_bedrock = GetServerPaths("bedrock"), bds_dir_java = GetServerPaths("java"), bds_dir_pocketmine = GetServerPaths("pocketmine");
 const bedrockCPUThread = require("os").cpus().length;
 

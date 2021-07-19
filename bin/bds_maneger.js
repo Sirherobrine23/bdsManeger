@@ -5,14 +5,22 @@ const bds = require("../index");
 const { valid_platform } = require("../lib/BdsSystemInfo");
 const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
-const download = require("../scripts/download");
+const download = require("../src/Scripts/download");
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // Bds Maneger ArgV
 const argv = require("minimist")(process.argv.slice(2));
 if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
 
 // Options
-const server = (argv.p || argv.platform), version = (argv.v || argv.version), SystemCheck = (argv.S || argv.system_info), bds_version = (argv.d || argv.server_download), start = (argv.s || argv.server_version), help = (argv.h || argv.help), kill = (argv.k || argv.kill), docker_runner = (argv.DOCKER_IMAGE)
+const
+    server = (argv.p || argv.platform),
+    version = (argv.v || argv.version),
+    SystemCheck = (argv.S || argv.system_info),
+    bds_version = (argv.d || argv.server_download),
+    start = (argv.s || argv.server_version),
+    help = (argv.h || argv.help),
+    kill = (argv.k || argv.kill),
+    docker_runner = (argv.DOCKER_IMAGE);
 
 // --------------------------
 const Versions = GetServerVersion();
@@ -24,7 +32,7 @@ if (kill) bds.kill();
 if (server) UpdatePlatform(server);
 
 function StartServer(){
-    const { Servers } = require("../lib/ServerURL");
+    const { Servers } = require("../../lib/ServerURL");
     // Check Server Update
     if (Versions[GetPlatform()] !== null) {
         if (Versions[GetPlatform()] !== Servers.latest[GetPlatform()]) {
@@ -161,7 +169,7 @@ if (bds_version){
     try {
         if (argv.interactive) {
             console.log(`Geting versions to ${GetPlatform()}`);
-            const LoadVersion = require("../lib/ServerURL").Servers[GetPlatform()]
+            const LoadVersion = require("../../lib/ServerURL").Servers[GetPlatform()]
             const Version = Object.getOwnPropertyNames(LoadVersion)
             // List Version
             for (let version in Version) console.log(`${version}: ${GetPlatform()} version ${Version[version]}`); // deepscan-disable-line FORIN_ARRAY

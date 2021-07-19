@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node bin/bds_maneger.js -s",
     "stop": "node -p 'console.log(require(\"./\").kill());'",
-    "test": "exit 0",
+    "test": "node .Build/test/ci.js",
+    "ci": "node .Build/test/ci.js",
     "eslint": "eslint --debug .",
     "eslint:debug": "eslint --debug .",
     "eslint:fix": "eslint --fix .",
