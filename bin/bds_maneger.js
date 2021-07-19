@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 if (process.platform === "win32") process.title = "Bds Maneger CLI";else process.title = "Bds_Manger_CLI"
 const readline = require("readline");
-const bds = require("../index");
-const { valid_platform } = require("../lib/BdsSystemInfo");
-const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
-const commandExits = require("../lib/commandExist");
-const download = require("../scripts/download");
+const bds = require("../../index");
+const { valid_platform } = require("../../lib/BdsSystemInfo");
+const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../../lib/BdsSettings");
+const commandExits = require("../../lib/commandExist");
+const download = require("../src/Scripts/download");
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // Bds Maneger ArgV
 const argv = require("minimist")(process.argv.slice(2));
@@ -24,7 +24,7 @@ if (kill) bds.kill();
 if (server) UpdatePlatform(server);
 
 function StartServer(){
-    const { Servers } = require("../lib/ServerURL");
+    const { Servers } = require("../../lib/ServerURL");
     // Check Server Update
     if (Versions[GetPlatform()] !== null) {
         if (Versions[GetPlatform()] !== Servers.latest[GetPlatform()]) {
@@ -161,7 +161,7 @@ if (bds_version){
     try {
         if (argv.interactive) {
             console.log(`Geting versions to ${GetPlatform()}`);
-            const LoadVersion = require("../lib/ServerURL").Servers[GetPlatform()]
+            const LoadVersion = require("../../lib/ServerURL").Servers[GetPlatform()]
             const Version = Object.getOwnPropertyNames(LoadVersion)
             // List Version
             for (let version in Version) console.log(`${version}: ${GetPlatform()} version ${Version[version]}`); // deepscan-disable-line FORIN_ARRAY

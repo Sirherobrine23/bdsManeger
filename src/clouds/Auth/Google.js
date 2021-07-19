@@ -1,14 +1,14 @@
 const fs = require("fs");
 const { join } = require("path")
 const { google } = require("googleapis");
-const { bds_dir } = require("../../lib/BdsSettings")
+const { bds_dir } = require("../../../lib/BdsSettings")
 const express = require("express");
 const app = express();
 var cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const bodyParser = require("body-parser");
 const fetchSync = require("@the-bds-maneger/fetchsync");
-const Ips = require("../../scripts/external_ip")
+const Ips = require("../../Scripts/external_ip");
 const DefaultLoginDrive = {
     access_type: "offline",
     scope: [

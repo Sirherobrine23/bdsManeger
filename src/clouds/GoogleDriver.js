@@ -1,7 +1,7 @@
 const fs = require("fs");
 const { google } = require("googleapis");
 const { authorize } = require("./Auth/Google");
-const { GetCloudConfig } = require("../lib/BdsSettings");
+const { GetCloudConfig } = require("../../lib/BdsSettings");
 
 module.exports.Uploadbackups = function (file_name = "Backup.zip", fileLocation = "Backup.zip", BackupCallback){
     const parent_id = GetCloudConfig("Driver").RootID

@@ -32,14 +32,14 @@ const { GetPaths, GetJsonConfig, UpdatePlatform, UpdateTelegramToken, GetTelegra
 module.exports.arch = arch
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 
-const maneger_ips = require("./scripts/external_ip")
+const maneger_ips = require("./src/Scripts/external_ip")
 module.exports.internal_ip = maneger_ips.internal_ip
 module.exports.external_ip = maneger_ips.external_ip
 module.exports.save_google_id = require("./lib/BdsSettings").CloudConfig.Driver
 module.exports.getBdsConfig = GetJsonConfig
 module.exports.change_platform = module.exports.platform_update = UpdatePlatform
 module.exports.telegram_token_save = UpdateTelegramToken
-module.exports.api = require("./rest/api");
+module.exports.api = require("./src/rest/api");
 
 // ------------
 const user_file_connected = GetPaths("player");
@@ -89,10 +89,10 @@ function token_register() {
 module.exports.BdsSettigs = require("./lib/BdsSettings");
 
 // Requires
-const { World_BAckup } = require("./scripts/backups");
-const { config, get_config, config_example } = require("./scripts/ServerSettings");
-const download = require("./scripts/download");
-const { start, stop, BdsCommand } = require("./scripts/basic_server")
+const { World_BAckup } = require("./src/Scripts/backups");
+const { config, get_config, config_example } = require("./src/Scripts/ServerSettings");
+const download = require("./src/Scripts/download");
+const { start, stop, BdsCommand } = require("./src/Scripts/basic_server")
 
 /**
  * Register tokens to use in Bds Maneger REST and other supported applications
@@ -130,7 +130,7 @@ module.exports.stop = stop
  */
 module.exports.backup = World_BAckup
 
-const { Kill, Detect } = require("./scripts/CheckKill")
+const { Kill, Detect } = require("./src/Scripts/CheckKill")
 
 /**
  * identify if there are any servers running in the background
@@ -196,4 +196,4 @@ module.exports.tmphost = require("./lib/tempHost")
 /**
  * Load Crontab Backup
  */
-module.exports.Cron_Loaded = require("./scripts/LoadCronBackup")
+module.exports.Cron_Loaded = require("./src/Scripts/LoadCronBackup")
