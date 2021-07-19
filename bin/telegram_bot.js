@@ -1,9 +1,9 @@
 const { Telegraf } = require("telegraf");
 const fs = require("fs");
 const path = require("path");
-const bds = require("../../index");
-const { GetPlatform, GetPaths } = require("../../lib/BdsSettings");
-const { GetKernel, arch, system } = require("../../lib/BdsSystemInfo");
+const bds = require("../index");
+const { GetPlatform, GetPaths } = require("../lib/BdsSettings");
+const { GetKernel, arch, system } = require("../lib/BdsSystemInfo");
 const { Detect } = require("../src/Scripts/CheckKill");
 const TelegramOptions = require("minimist")(process.argv.slice(2));
 

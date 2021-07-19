@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 if (process.platform === "win32") process.title = "Bds Maneger CLI";else process.title = "Bds_Manger_CLI"
 const readline = require("readline");
-const bds = require("../../index");
-const { valid_platform } = require("../../lib/BdsSystemInfo");
-const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../../lib/BdsSettings");
-const commandExits = require("../../lib/commandExist");
+const bds = require("../index");
+const { valid_platform } = require("../lib/BdsSystemInfo");
+const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
+const commandExits = require("../lib/commandExist");
 const download = require("../src/Scripts/download");
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // Bds Maneger ArgV
@@ -12,7 +12,15 @@ const argv = require("minimist")(process.argv.slice(2));
 if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
 
 // Options
-const server = (argv.p || argv.platform), version = (argv.v || argv.version), SystemCheck = (argv.S || argv.system_info), bds_version = (argv.d || argv.server_download), start = (argv.s || argv.server_version), help = (argv.h || argv.help), kill = (argv.k || argv.kill), docker_runner = (argv.DOCKER_IMAGE)
+const
+    server = (argv.p || argv.platform),
+    version = (argv.v || argv.version),
+    SystemCheck = (argv.S || argv.system_info),
+    bds_version = (argv.d || argv.server_download),
+    start = (argv.s || argv.server_version),
+    help = (argv.h || argv.help),
+    kill = (argv.k || argv.kill),
+    docker_runner = (argv.DOCKER_IMAGE);
 
 // --------------------------
 const Versions = GetServerVersion();
