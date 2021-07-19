@@ -32,7 +32,7 @@ if (kill) bds.kill();
 if (server) UpdatePlatform(server);
 
 function StartServer(){
-    const { Servers } = require("../../lib/ServerURL");
+    const { Servers } = require("../lib/ServerURL");
     // Check Server Update
     if (Versions[GetPlatform()] !== null) {
         if (Versions[GetPlatform()] !== Servers.latest[GetPlatform()]) {
@@ -169,7 +169,7 @@ if (bds_version){
     try {
         if (argv.interactive) {
             console.log(`Geting versions to ${GetPlatform()}`);
-            const LoadVersion = require("../../lib/ServerURL").Servers[GetPlatform()]
+            const LoadVersion = require("../lib/ServerURL").Servers[GetPlatform()]
             const Version = Object.getOwnPropertyNames(LoadVersion)
             // List Version
             for (let version in Version) console.log(`${version}: ${GetPlatform()} version ${Version[version]}`); // deepscan-disable-line FORIN_ARRAY
