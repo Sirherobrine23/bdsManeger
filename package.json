@@ -71,7 +71,7 @@
     "node-cron": "^3.0.0",
     "node-fetch": "^2.6.1",
     "node-localstorage": "^2.1.6",
-    "oci-sdk": "^1.20.2",
+    "oci-sdk": "^2.0.0",
     "open": "^8.0.0",
     "properties-to-json": "^0.2.1",
     "request-ip": "^2.1.3",
