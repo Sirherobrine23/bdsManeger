@@ -2,7 +2,7 @@ FROM ubuntu:latest
 ENV DEBIAN_FRONTEND="noninteractive"
 
 # Install dependencies and other tools
-RUN apt update && apt install -y zsh git curl wget sudo openjdk-16* python pyrhon3
+RUN apt update && apt install -y zsh git curl wget sudo openjdk-16* python python3
 RUN curl https://deb.nodesource.com/setup_current.x | bash - && apt install -y nodejs
 RUN useradd -M -s /usr/bin/zsh -p $(perl -e 'print crypt($ARGV[0], "password")' vscode) vscode; echo "vscode    ALL=(ALL:ALL) NOPASSWD:   ALL" > /etc/sudoers.d/vscode
 
