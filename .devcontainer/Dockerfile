@@ -1,9 +1,15 @@
-FROM bdsmaneger/node_image:latest
-RUN export username="vscodedev" && \
-    export password="1a113Luca" && \
-    pass=$(perl -e 'print crypt($ARGV[0], "password")' $password); \
-    useradd -m -p "$pass" "$username"; \
-    addgroup ${username} sudo; addgroup ${username} root; \
-    usermod --shell /bin/bash --home /home/bds ${username}; \
-    echo "${username}   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-    mkdir -p /home/ /base/
+FROM ubuntu:latest
+ENV DEBIAN_FRONTEND="noninteractive"
+
+# Install dependencies and other tools
+RUN apt update && apt install -y zsh git curl wget sudo openjdk-16* python pyrhon3
+RUN curl https://deb.nodesource.com/setup_current.x | bash - && apt install -y nodejs
+RUN useradd -M -s /usr/bin/zsh -p $(perl -e 'print crypt($ARGV[0], "password")' vscode) vscode; echo "vscode    ALL=(ALL:ALL) NOPASSWD:   ALL" > /etc/sudoers.d/vscode
+
+# User: vscode
+USER vscode
+WORKDIR /home/vscode
+RUN yes | sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+RUN git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+RUN git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+COPY .zshrc ./
