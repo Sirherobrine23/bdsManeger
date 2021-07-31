@@ -1,4 +1,4 @@
-const { exec, execFile } = require("child_process");
+const child_process = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { resolve, join } = require("path");
@@ -15,35 +15,71 @@ const BdsInfo = require("../BdsManegerInfo.json");
 // Set bdsexec functions
 global.BdsExecs = {};
 
-function saveLog(data = "", LogFile = ""){
-    fs.appendFileSync(path.join(GetPaths("log"), "latest.log"), data)
-    fs.appendFileSync(LogFile, data)
+const UpdateUserJSON = function (Object = Object){}
+
+const Player_Actions = function (data = "aaaaaa\n\n\naa", action = "connect", callback = Function){
+    const Current_platorm = GetPlatform();
+    if (Current_platorm === "bedrock") {
+        // "[INFO] Player connected: Sirherobrine, xuid: 2535413418839840",
+        // "[INFO] Player disconnected: Sirherobrine, xuid: 2535413418839840",
+        let newdata = data.split(/\n|\r/gi).map(line => {
+            if (line.includes("connected:")) {
+                let SplitLine = line.replace(/\[INFO\]\s+Player/, "").trim().split(/\s+/gi);
+                
+                // player
+                let Player = line.trim().replace(/disconnected\:|connected\:/, "").trim().split(/,\s+xuid\:/).filter(a=>a).map(a=>a.trim()).filter(a=>a);
+
+                // Object Map
+                const ObjectReturn = {
+                    Player: Player[0],
+                    Action: `${(()=>{if (SplitLine[0].trim() === "connected:") return "connect"; else if (SplitLine[0].trim() === "disconnected") return "disconect";})()}`,
+                    xuid: Player[1] || null,
+                    Date: new Date(),
+                }
+
+                // Return
+                return ObjectReturn;
+            } else return false;
+        }).filter(a=>a);
+    }
 }
 
 function start() {
-    if (BdsDetect()){
-        let ErrorReturn = "You already have a server running";
-        console.warn(ErrorReturn);
-        throw new Error(ErrorReturn);
+    if (BdsDetect()){let ErrorReturn = "You already have a server running"; console.warn(ErrorReturn); throw new Error(ErrorReturn);}
+
+    const SetupCommands = {
+        command: String,
+        args: [],
+        cwd: String,
+        env: process.env,
     }
-    var ServerExec;
 
     // Minecraft Bedrock Oficial
     if (GetPlatform() === "bedrock"){
+        // Check Darwin Platform
         if (process.platform === "darwin") throw new Error("Use a imagem Docker");
-        else if (process.platform == "win32") ServerExec = execFile("bedrock_server.exe", {
-            cwd: GetServerPaths("bedrock"),
-        });
-        else if (process.platform == "linux"){
+
+        // Windows Platform
+        else if (process.platform === "win32") {
+            SetupCommands.command = "bedrock_server.exe";
+            SetupCommands.cwd = GetServerPaths("bedrock")
+        }
+
+        // Linux Platform
+        else if (process.platform === "linux"){
             // Set Executable file
-            execFile("chmod 777 bedrock_server", {cwd: GetServerPaths("bedrock")});
-            var BedrockCommand = "./bedrock_server";
+            try {child_process.execSync("chmod 777 bedrock_server", {cwd: GetServerPaths("bedrock")});} catch (error) {console.log(error);}
 
-            // Emulation of the x86_64 architecture
-            if (commandExists("qemu-x86_64-static") && process.arch !== "x64") BedrockCommand = "qemu-x86_64-static "+BedrockCommand;
-
-            // Start Bedrock Server 
-            ServerExec = exec(BedrockCommand, {cwd: GetServerPaths("bedrock"), env: {...process.env, LD_LIBRARY_PATH: GetServerPaths("bedrock")}})
+            // Set Env and Cwd
+            SetupCommands.cwd = GetServerPaths("bedrock");
+            SetupCommands.env.LD_LIBRARY_PATH = GetServerPaths("bedrock");
+            
+            // In case the cpu is different from x64, the command will use qemu static to run the server
+            if (process.arch !== "x64") {
+                if (!(commandExists("qemu-x86_64-static"))) throw new Error("Install qemu static")
+                SetupCommands.command = "qemu-x86_64-static"
+                SetupCommands.args.push("./bedrock_server");
+            } else SetupCommands.command = "./bedrock_server";
         } else throw new Error("your system does not support Minecraft Bedrock (yet)")
     }
 
@@ -53,86 +89,85 @@ function start() {
 
         // Checking if java is installed on the device
         if (commandExists("java")) {
-            ServerExec = execFile("java", [
-                "-jar",
-                `-Xms${JavaConfig.ram_mb}M`,
-                `-Xmx${JavaConfig.ram_mb}M`,
-                "MinecraftServerJava.jar",
-                "nogui"
-            ], {cwd: GetServerPaths("java")})
-        } else {
-            var url = bds.package_json.docs_base; if (bds.system == "windows") url += "Java-Download#windows"; else if (bds.system === "linux") url = "Java-Download#linux"; else if (process.platform === "darwin") url = "Java-Download#macos"; else url = "Java-Download";
-            require("open")(url);
-            throw new Error(`Open: ${url}`)
-        }
-    } else if (GetPlatform() === "pocketmine") {
+            SetupCommands.cwd = GetServerPaths("java");
+            SetupCommands.command = "java";
+            SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "MinecraftServerJava.jar", "nogui");
+        } else {require("open")(bds.package_json.docs_base + "Java-Download#windows"); throw new Error(`Open: ${bds.package_json.docs_base + "Java-Download#windows"}`)}
+    }
+    
+    // Minecraft Bedrock (Pocketmine-MP)
+    else if (GetPlatform() === "pocketmine") {
         // Start PocketMine-MP
-        const php_bin_path = join(resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
-        ServerExec = execFile(php_bin_path, [
-            "./PocketMine-MP.phar"
-        ], {
-            cwd: GetServerPaths("pocketmine")
-        })
-    } else if (GetPlatform() === "jsprismarine") {
+        SetupCommands.command = join(resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
+        SetupCommands.args.push("./PocketMine-MP.phar");
+        SetupCommands.cwd = GetServerPaths("pocketmine");
+    }
+    
+    // Minecraft Bedrock (JSPrismarine)
+    else if (GetPlatform() === "jsprismarine") {
         // Start JSPrismarine
-        ServerExec = execFile("node", [
-            "./packages/server/dist/Server.js"
-        ], {
-            cwd: GetServerPaths("jsprismarine")
-        });
+        SetupCommands.command = "node";
+        SetupCommands.args.push("./packages/server/dist/Server.js");
+        SetupCommands.cwd = GetServerPaths("jsprismarine");
     } else throw Error("Bds Config Error")
-
+    
+    // Setup commands
+    const ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
+        cwd: SetupCommands.cwd,
+        env: SetupCommands.env
+    });
+    
     // Post Start
     if (GetPlatform() === "java") {
         ServerExec.stdout.on("data", function(data){
-            if (data.includes("agree"))
-                if (data.includes("EULA")){
-                    const eula_file = path.join(GetServerPaths("java"), "eula.txt");
-                    fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").split("eula=false").join("eula=true"));
-                    throw new Error("Restart application/CLI")
-                }
+            if (data.includes("agree") && data.includes("EULA"))
+            const eula_file = path.join(GetServerPaths("java"), "eula.txt");
+            fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").split("eula=false").join("eula=true"));
+            throw new Error("Restart application/CLI")
         });
     }
     
     // Log file
-    const LogFile = join(GetPaths("log"), `${bds.date()}_${GetPlatform()}_Bds_log.log`);
-    // save User in Json
-    ServerExec.stdout.on("data", data => saveUser(data))
-    ServerExec.stderr.on("data", data => saveUser(data))
-    // ---------------------------------------------------
-    // Clear latest.log
-    fs.writeFileSync(path.join(GetPaths("log"), "latest.log"), "")
     
-    // ---------------------------------------------------
-    // stdout
-    ServerExec.stdout.on("data", a=>saveLog(a, LogFile));
-    ServerExec.stderr.on("data", a=>saveLog(a, LogFile));
-    // ---------------------------------------------------
+    const LogFile = join(GetPaths("log"), `${bds.date()}_${GetPlatform()}_Bds_log.log`);
+    const LatestLog_Path = path.join(GetPaths("log"), "latest.log");
+    const LogSaveFunction = data => {
+        fs.appendFileSync(LogFile, data);
+        fs.appendFileSync(LatestLog_Path, data);
+        return data;
+    }
+    fs.writeFileSync(LatestLog_Path, "");
+    
+    // save User in Json
+    ServerExec.stdout.on("data", data => saveUser(data)); ServerExec.stderr.on("data", data => saveUser(data));
+    
+    // Log File
+    ServerExec.stdout.on("data", LogSaveFunction); ServerExec.stderr.on("data", LogSaveFunction);
+
     // Global and Run
     global.bds_log_string = ""
-    ServerExec.stdout.on("data", function(data){
-        if (global.bds_log_string === undefined || global.bds_log_string === "") global.bds_log_string = data; else global.bds_log_string += data
-    });
-    global.bds_server_string = ServerExec;
+    ServerExec.stdout.on("data", data => {if (global.bds_log_string) global.bds_log_string = data; else global.bds_log_string += data});
 
-    // Functions return
     const returnFuntion = {
         uuid: randomUUID(),
-        exec: ServerExec,
         stop: function (){
             ServerExec.stdin.write(BdsInfo.Servers[GetPlatform()].stop);
             return BdsInfo.Servers[GetPlatform()].stop;
         },
-        command: function (command = "list", callback){
-            const oldLog = global.bds_log_string;
-            ServerExec.stdin.write(`${command}\n`);
-            if (typeof callback === "function") {
-                setTimeout(() => {
-                    // Run commands from command run in server;
-                    const log = global.bds_log_string.replace(oldLog, "").split(/\r/).filter(data => {if (data === "") return false; else return true;}).join("\n") 
-                    if (log.length >= 1) callback(log); else callback("no log")
-                }, 1555);
-            }
+        command: async function (command = "list", callback = data => console.log(data)){
+            return new Promise((resolve, reject) => {
+                ServerExec.stdin.write(`${command}\n`);
+                if (typeof callback === "function") {
+                    const TempLog = []
+                    const ControlTempHost = data => {TempLog.push(data); return data;}
+                    ServerExec.stdout.on(data, data => ControlTempHost(data));
+                    ServerExec.stderr.on(data, data => ControlTempHost(data));
+                    setTimeout(() => {
+                        callback(TempLog.join("\n"));
+                        resolve(TempLog.join("\n"));
+                    }, 2500);
+                }
+            });
         },
         log: function (logCallback = function(data = ""){data.split("\n").filter(d=>{return (d !== "")}).forEach(l=>console.log(l))}){
             if (typeof logCallback !== "function") {
@@ -144,7 +179,8 @@ function start() {
         },
         exit: function (exitCallback = process.exit){if (
             typeof exitCallback === "function") ServerExec.on("exit", code => exitCallback(code));
-        }
+        },
+        on: function(action = String, callback = Function) {}
     }
     ServerExec.on("exit", ()=>{delete global.BdsExecs[returnFuntion.uuid]});
     global.BdsExecs[returnFuntion.uuid] = returnFuntion;
