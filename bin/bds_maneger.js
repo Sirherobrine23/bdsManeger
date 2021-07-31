@@ -32,7 +32,7 @@ if (kill) bds.kill();
 if (server) UpdatePlatform(server);
 
 function StartServer(){
-    const { Servers } = require("../../lib/ServerURL");
+    const { Servers } = require("../lib/ServerURL");
     // Check Server Update
     if (Versions[GetPlatform()] !== null) {
         if (Versions[GetPlatform()] !== Servers.latest[GetPlatform()]) {

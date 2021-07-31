@@ -27,10 +27,12 @@ module.exports.package_json = require("./package.json");
 module.exports.extra_json = require("./BdsManegerInfo.json");
 
 const { bds_dir } = require("./lib/BdsSettings");
-const { arch } = require("./lib/BdsSystemInfo");
 
-const { GetPaths, GetJsonConfig, UpdatePlatform, UpdateTelegramToken, GetTelegramToken } = require("./lib/BdsSettings")
+// Inport and Export Arch
+const { arch } = require("./lib/BdsSystemInfo");
 module.exports.arch = arch
+
+const { GetJsonConfig, UpdatePlatform, UpdateTelegramToken, GetTelegramToken } = require("./lib/BdsSettings");
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 
 const maneger_ips = require("./src/external_ip")
@@ -42,26 +44,7 @@ module.exports.change_platform = module.exports.platform_update = UpdatePlatform
 module.exports.telegram_token_save = UpdateTelegramToken
 module.exports.api = require("./src/rest/api");
 
-// ------------
-const user_file_connected = GetPaths("player");
-module.exports.players_files = user_file_connected
-if (!(fs.existsSync(user_file_connected))) {
-    let config = {};
-    config["bedrock"] = {};
-    config["java"] = {};
-    config["pocketmine"] = {};
-    config["jsprismarine"] = {};
-    let NewJson = JSON.stringify(config, null, 4);
-    fs.writeFileSync(user_file_connected, NewJson);
-}
-
-const file_user_check = fs.readFileSync(user_file_connected, "utf8");
-try {
-    JSON.parse(file_user_check)
-} catch (error) {
-    fs.renameSync(user_file_connected,  `${user_file_connected}_old_${Math.random()}_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}.json`)
-}
-
+// Telegram
 module.exports.telegram_token = GetTelegramToken();
 
 function token_register() {

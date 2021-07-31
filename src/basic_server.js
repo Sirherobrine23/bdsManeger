@@ -7,7 +7,6 @@ const { randomUUID } = require("crypto");
 // Bds Maneger Inports
 const commandExists = require("../lib/commandExist");
 const BdsDetect = require("./CheckKill").Detect;
-const saveUser = require("./PlayersSave");
 const bds = require("../index");
 const { GetServerPaths, GetPaths, GetServerSettings, GetPlatform } = require("../lib/BdsSettings");
 const BdsInfo = require("../BdsManegerInfo.json");
@@ -15,19 +14,36 @@ const BdsInfo = require("../BdsManegerInfo.json");
 // Set bdsexec functions
 global.BdsExecs = {};
 
-const UpdateUserJSON = function (Object = Object){}
-
-const Player_Actions = function (data = "aaaaaa\n\n\naa", action = "connect", callback = Function){
+const UpdateUserJSON = function (New_Object = new Array()){
+    const Player_Json_path = GetPaths("player");
     const Current_platorm = GetPlatform();
+    let Players_Json = {
+        bedrock: [],
+        java: [],
+        pocketmine: [],
+        jsprismarine: [],
+    }
+    if (fs.existsSync(Player_Json_path)) Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"));
+    
+    // Array
+    Players_Json[Current_platorm] = Players_Json[Current_platorm].concat(New_Object)
+
+    fs.writeFileSync(Player_Json_path, JSON.stringify(Players_Json, null, 2));
+    return Players_Json
+}
+
+const Player_Json = function (data = "aaaaaa\n\n\naa"){
+    const Current_platorm = GetPlatform();
+    // Bedrock
     if (Current_platorm === "bedrock") {
         // "[INFO] Player connected: Sirherobrine, xuid: 2535413418839840",
         // "[INFO] Player disconnected: Sirherobrine, xuid: 2535413418839840",
-        let newdata = data.split(/\n|\r/gi).map(line => {
+        let BedrockMap = data.split(/\n|\r/gi).map(line => {
             if (line.includes("connected:")) {
                 let SplitLine = line.replace(/\[INFO\]\s+Player/, "").trim().split(/\s+/gi);
                 
                 // player
-                let Player = line.trim().replace(/disconnected\:|connected\:/, "").trim().split(/,\s+xuid\:/).filter(a=>a).map(a=>a.trim()).filter(a=>a);
+                let Player = line.trim().replace(/disconnected:|connected:/, "").trim().split(/,\s+xuid:/).filter(a=>a).map(a=>a.trim()).filter(a=>a);
 
                 // Object Map
                 const ObjectReturn = {
@@ -41,6 +57,30 @@ const Player_Actions = function (data = "aaaaaa\n\n\naa", action = "connect", ca
                 return ObjectReturn;
             } else return false;
         }).filter(a=>a);
+        UpdateUserJSON(BedrockMap);
+    }
+
+    // Java
+    else if (Current_platorm === "java") {
+        let JavaMap = data.split(/\n|\r/gi).map(line => {
+            if (line.trim().includes("joined the game") || line.includes("left the game")) {
+                line = line.replace(/^\[.+\] \[.+\/.+\]: /, "").trim();
+                let Actions = null;
+                if (/joined/.test(line)) Actions = "connect";
+                else if (/left/.test(line)) Actions = "disconect";
+                
+                // Player Object
+                const JavaObject = {
+                    Player: line.replace(/joined the game|left the game/gi, "").trim(),
+                    Action: Actions,
+                    Date: new Date(),
+                }
+
+                // Return JSON
+                return JavaObject
+            } else return false;
+        }).filter(a=>a);
+        UpdateUserJSON(JavaMap);
     }
 }
 
@@ -119,11 +159,12 @@ function start() {
     
     // Post Start
     if (GetPlatform() === "java") {
-        ServerExec.stdout.on("data", function(data){
-            const eula_file = path.join(GetServerPaths("java"), "eula.txt");
-            if (data.includes("agree") && data.includes("EULA")) fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").split("eula=false").join("eula=true"));
+        const eula_file = path.join(GetServerPaths("java"), "eula.txt");
+        console.log(fs.readFileSync(eula_file, "utf8"));
+        if (fs.readFileSync(eula_file, "utf8").includes("eula=false")) {
+            fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").replaceAll("eula=false", "eula=true"));
             throw new Error("Restart application/CLI")
-        });
+        }
     }
     
     // Log file
@@ -137,11 +178,13 @@ function start() {
     }
     fs.writeFileSync(LatestLog_Path, "");
     
-    // save User in Json
-    ServerExec.stdout.on("data", data => saveUser(data)); ServerExec.stderr.on("data", data => saveUser(data));
+    // Player JSON File
+    ServerExec.stdout.on("data", Player_Json);
+    ServerExec.stderr.on("data", Player_Json);
     
     // Log File
-    ServerExec.stdout.on("data", LogSaveFunction); ServerExec.stderr.on("data", LogSaveFunction);
+    ServerExec.stdout.on("data", LogSaveFunction);
+    ServerExec.stderr.on("data", LogSaveFunction);
 
     // Global and Run
     global.bds_log_string = ""
@@ -154,13 +197,13 @@ function start() {
             return BdsInfo.Servers[GetPlatform()].stop;
         },
         command: async function (command = "list", callback = data => console.log(data)){
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 ServerExec.stdin.write(`${command}\n`);
                 if (typeof callback === "function") {
                     const TempLog = []
                     const ControlTempHost = data => {TempLog.push(data); return data;}
-                    ServerExec.stdout.on(data, data => ControlTempHost(data));
-                    ServerExec.stderr.on(data, data => ControlTempHost(data));
+                    ServerExec.stdout.on("data", data => ControlTempHost(data));
+                    ServerExec.stderr.on("data", data => ControlTempHost(data));
                     setTimeout(() => {
                         callback(TempLog.join("\n"));
                         resolve(TempLog.join("\n"));
