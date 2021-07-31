@@ -120,9 +120,8 @@ function start() {
     // Post Start
     if (GetPlatform() === "java") {
         ServerExec.stdout.on("data", function(data){
-            if (data.includes("agree") && data.includes("EULA"))
             const eula_file = path.join(GetServerPaths("java"), "eula.txt");
-            fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").split("eula=false").join("eula=true"));
+            if (data.includes("agree") && data.includes("EULA")) fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").split("eula=false").join("eula=true"));
             throw new Error("Restart application/CLI")
         });
     }
