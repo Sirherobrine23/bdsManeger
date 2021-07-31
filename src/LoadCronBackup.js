@@ -1,10 +1,10 @@
 const { CronJob } = require("cron");
-const { GetCronBackup } = require("../../lib/BdsSettings");
+const { GetCronBackup } = require("../lib/BdsSettings");
 const { Backup } = require("./backups")
 const Cloud = {
-    Azure: require("../clouds/Azure").Uploadbackups,
-    Driver: require("../clouds/GoogleDriver").Uploadbackups,
-    Oracle: require("../clouds/OracleCI").Uploadbackups,
+    Azure: require("./clouds/Azure").Uploadbackups,
+    Driver: require("./clouds/GoogleDriver").Uploadbackups,
+    Oracle: require("./clouds/OracleCI").Uploadbackups,
 }
 
 const CurrentBackups = GetCronBackup();

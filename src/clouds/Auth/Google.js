@@ -8,7 +8,7 @@ var cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const bodyParser = require("body-parser");
 const fetchSync = require("@the-bds-maneger/fetchsync");
-const Ips = require("../../Scripts/external_ip");
+const Ips = require("../../external_ip");
 const DefaultLoginDrive = {
     access_type: "offline",
     scope: [

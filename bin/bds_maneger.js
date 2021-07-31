@@ -5,7 +5,7 @@ const bds = require("../index");
 const { valid_platform } = require("../lib/BdsSystemInfo");
 const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
-const download = require("../src/Scripts/download");
+const download = require("../src/download");
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // Bds Maneger ArgV
 const argv = require("minimist")(process.argv.slice(2));

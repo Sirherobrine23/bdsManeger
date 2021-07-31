@@ -1,1 +1,4 @@
-*.sh text eol=lf
+*.sh text=LF eol=LF
+.devcontainer/* eol=LF text=LF
+*.js text=LF eol=LF
+* text=CRLF eol=CRLF

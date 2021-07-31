@@ -2,7 +2,7 @@ const express = require("express");
 const app = express.Router();
 const { GetPlatform } = require("../../../lib/BdsSettings")
 const bds = require("../../../index");
-const { token_verify, CheckPlayer } = require("../../Scripts/check");
+const { token_verify, CheckPlayer } = require("../../check");
 const { readFileSync } = require("fs");
 const docs = require("../../../BdsManegerInfo.json").docs;
 

@@ -1,6 +1,6 @@
-const bds = require("../../index")
+const bds = require("../index")
 const { CheckBan } = require("./check");
-const { GetPlatform, GetPaths } = require("../../lib/BdsSettings");
+const { GetPlatform, GetPaths } = require("../lib/BdsSettings");
 const fs = require("fs");
 
 function MytypeKill(player) {
