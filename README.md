@@ -8,14 +8,11 @@ Any contribution is welcome, but before a look at [CONTRIBUTING.md](CONTRIBUTING
 
 In Version 1.11.0 there was a big change in the way to get the new settings and that left a good part of the program broken, so for those who are going to upgrade to the latest versions of Bds maneger Core will have to change the settings manually.
 
-## CI/CD tests
+## Badges
 
 [![Github CodeQL and OSSAR](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml/badge.svg)](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml)
-[![Gitlab pipeline status](https://the-bds-maneger.org/The-Bds-Maneger/Bds-Maneger-Core/badges/main/pipeline.svg)](https://the-bds-maneger.org/The-Bds-Maneger/Bds-Maneger-Core/-/pipelines/latest)
-
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/alerts/)
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/context:javascript)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/4d19af8fe5b146608a8f4a5e2092f66d)](https://www.codacy.com/gh/The-Bds-Maneger/Bds-Maneger-Core/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=The-Bds-Maneger/Bds-Maneger-Core&amp;utm_campaign=Badge_Grade)
 [![DeepScan grade](https://deepscan.io/api/teams/13683/projects/16691/branches/363172/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=13683&pid=16691&bid=363172) 
 
 ## Start our Docker image, making everything easier.
