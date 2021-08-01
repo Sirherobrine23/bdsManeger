@@ -76,7 +76,7 @@ module.exports.BdsSettigs = require("./lib/BdsSettings");
 const { World_BAckup } = require("./src/backups");
 const { config, get_config, config_example } = require("./src/ServerSettings");
 const download = require("./src/download");
-const { start, stop, BdsCommand } = require("./src/basic_server")
+const { start, stop, BdsCommand, CronBackups } = require("./src/basic_server")
 
 /**
  * Register tokens to use in Bds Maneger REST and other supported applications
@@ -180,4 +180,4 @@ module.exports.tmphost = require("./lib/tempHost")
 /**
  * Load Crontab Backup
  */
-module.exports.Cron_Loaded = require("./src/LoadCronBackup")
+module.exports.Cron_Loaded = CronBackups;
