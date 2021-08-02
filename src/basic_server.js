@@ -206,8 +206,8 @@ function Player_Json(data = "aaaaaa\n\n\naa", callback = () => {}){
         }).filter(a=>a);
         callback(BedrockMap);
     }
-    // Java
-    else if (Current_platorm === "java") {
+    // Java and Pocketmine-MP
+    else if (Current_platorm === "java" || Current_platorm === "pocketmine") {
         const JavaMap = data.split(/\n|\r/gi).map(line => {
             if (line.trim().includes("joined the game") || line.includes("left the game")) {
                 line = line.replace(/^\[.+\] \[.+\/.+\]:/, "").trim();
@@ -228,6 +228,8 @@ function Player_Json(data = "aaaaaa\n\n\naa", callback = () => {}){
         }).filter(a=>a);
         callback(JavaMap);
     }
+    // JSPrismarine
+    // else if (Current_platorm === "jsprismarine") console.log("It's still not working");
 }
 
 const UpdateUserJSON = function (New_Object = new Array()){
