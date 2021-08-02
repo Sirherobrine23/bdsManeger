@@ -3,6 +3,7 @@ const { resolve } = require("path");
 const path = require("path")
 const fs = require("fs");
 const { randomUUID } = require("crypto");
+
 function date(format) {
     const today = new Date(),
         yaer = today.getFullYear(),
@@ -26,13 +27,15 @@ module.exports.package_json = require("./package.json");
 module.exports.extra_json = require("./BdsManegerInfo.json");
 
 const { bds_dir } = require("./lib/BdsSettings");
-const { arch } = require("./lib/BdsSystemInfo");
 
-const { GetPaths, GetJsonConfig, UpdatePlatform, UpdateTelegramToken, GetTelegramToken } = require("./lib/BdsSettings")
+// Inport and Export Arch
+const { arch } = require("./lib/BdsSystemInfo");
 module.exports.arch = arch
+
+const { GetJsonConfig, UpdatePlatform, UpdateTelegramToken, GetTelegramToken } = require("./lib/BdsSettings");
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 
-const maneger_ips = require("./src/Scripts/external_ip")
+const maneger_ips = require("./src/external_ip")
 module.exports.internal_ip = maneger_ips.internal_ip
 module.exports.external_ip = maneger_ips.external_ip
 module.exports.save_google_id = require("./lib/BdsSettings").CloudConfig.Driver
@@ -41,26 +44,7 @@ module.exports.change_platform = module.exports.platform_update = UpdatePlatform
 module.exports.telegram_token_save = UpdateTelegramToken
 module.exports.api = require("./src/rest/api");
 
-// ------------
-const user_file_connected = GetPaths("player");
-module.exports.players_files = user_file_connected
-if (!(fs.existsSync(user_file_connected))) {
-    let config = {};
-    config["bedrock"] = {};
-    config["java"] = {};
-    config["pocketmine"] = {};
-    config["jsprismarine"] = {};
-    let NewJson = JSON.stringify(config, null, 4);
-    fs.writeFileSync(user_file_connected, NewJson);
-}
-
-const file_user_check = fs.readFileSync(user_file_connected, "utf8");
-try {
-    JSON.parse(file_user_check)
-} catch (error) {
-    fs.renameSync(user_file_connected,  `${user_file_connected}_old_${Math.random()}_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}.json`)
-}
-
+// Telegram
 module.exports.telegram_token = GetTelegramToken();
 
 function token_register() {
@@ -89,10 +73,10 @@ function token_register() {
 module.exports.BdsSettigs = require("./lib/BdsSettings");
 
 // Requires
-const { World_BAckup } = require("./src/Scripts/backups");
-const { config, get_config, config_example } = require("./src/Scripts/ServerSettings");
-const download = require("./src/Scripts/download");
-const { start, stop, BdsCommand } = require("./src/Scripts/basic_server")
+const { World_BAckup } = require("./src/backups");
+const { config, get_config, config_example } = require("./src/ServerSettings");
+const download = require("./src/download");
+const { start, stop, BdsCommand, CronBackups } = require("./src/basic_server")
 
 /**
  * Register tokens to use in Bds Maneger REST and other supported applications
@@ -130,14 +114,14 @@ module.exports.stop = stop
  */
 module.exports.backup = World_BAckup
 
-const { Kill, Detect } = require("./src/Scripts/CheckKill")
+const { Kill, Detect } = require("./src/CheckKill")
 
 /**
  * identify if there are any servers running in the background
  * 
  * @example bds.detect()
- * // true: if the server is running
- * // false: if not already
+ * true: if the server is running
+ * false: if not already
  */
 module.exports.detect = Detect
 module.exports.bds_detect = Detect
@@ -165,7 +149,7 @@ module.exports.config_example = config_example
 /**
  * use this command to modify server settings
  * 
- * @example bds.set_config({
+ * @example set_config({
         name: "Bedrock our Java",
         description: "BDS Maneger",
         gamemode: "survival",
@@ -177,7 +161,7 @@ module.exports.config_example = config_example
         players: 100,
         port: 19132,
         port6: 19133
-    })
+    });
  */
 module.exports.set_config = config
 /**
@@ -196,4 +180,4 @@ module.exports.tmphost = require("./lib/tempHost")
 /**
  * Load Crontab Backup
  */
-module.exports.Cron_Loaded = require("./src/Scripts/LoadCronBackup")
+module.exports.Cron_Loaded = CronBackups;

@@ -19,7 +19,13 @@
 		"smcpeak.default-keys-windows",
 		"vscode-icons-team.vscode-icons",
 		"me-dutour-mathieu.vscode-github-actions",
-		"cschleiden.vscode-github-actions"
+		"cschleiden.vscode-github-actions",
+		"github.copilot",
+		"eamodio.gitlens",
+		"github.vscode-pull-request-github",
+		"oderwat.indent-rainbow",
+		"visualstudioexptteam.vscodeintellicode",
+		"redhat.vscode-yaml"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

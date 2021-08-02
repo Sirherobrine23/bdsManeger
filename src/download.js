@@ -1,12 +1,12 @@
 var AdmZip = require("adm-zip");
 const { writeFileSync, existsSync, readFileSync, readdirSync } = require("fs");
 const { join, resolve } = require("path");
-const bds = require("../../index")
-const { valid_platform } = require("../../lib/BdsSystemInfo");
-const { GetServerPaths, GetServerVersion, UpdateServerVersion, GetPlatform } = require("../../lib/BdsSettings");
-const { GitClone } = require("../../lib/git_simples");
+const bds = require("../index")
+const { valid_platform } = require("../lib/BdsSystemInfo");
+const { GetServerPaths, GetServerVersion, UpdateServerVersion, GetPlatform } = require("../lib/BdsSettings");
+const { GitClone } = require("../lib/git_simples");
 const { execSync } = require("child_process");
-const Extra = require("../../BdsManegerInfo.json");
+const Extra = require("../BdsManegerInfo.json");
 
 const 
     bds_dir_bedrock = GetServerPaths("bedrock"),
