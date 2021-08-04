@@ -31,11 +31,6 @@ const bot = new Telegraf(bds.telegram_token);
 bot.start((ctx)=>ctx.reply(HelpAndStart.join("\n")));
 bot.help((ctx)=>ctx.reply(HelpAndStart.join("\n")));
 
-const ChatIDs = {}
-function SaveID(id = "a"){return ChatIDs[id] = true}
-function RemoveID(id = "a"){return delete ChatIDs[id]}
-function GetID(){return ChatIDs}
-
 // Basic server
 bot.command("basic", ctx => {
     const text = ctx.message.text.replace("/basic", "").trim();
@@ -78,7 +73,7 @@ bot.command("platform", ctx => {
         ctx.reply("We were unable to change the platform")
         return ctx.reply(err.toString())
     }
-})
+});
 
 // Send Info
 bot.command("info", ctx => {
@@ -100,7 +95,7 @@ bot.command("info", ctx => {
         `   max_players:  ${config.players}`,
         `   whitelist:    ${config.whitelist}`,
     ]
-    return ctx.reply(InfoRes.join("\n"))
+    return ctx.reply(InfoRes.join("\n"));
 });
 
 // Log
@@ -118,30 +113,28 @@ bot.command("log", ctx => {
 // Live Log User
 global.LiveLog = [];
 bot.command("live_log", ctx => {
-    const option = ctx.message.text.replace("/platform", "").trim();
+    const option = ctx.message.text.replace("/live_log", "").trim();
     if (/enable/.test(option)) {
         global.LiveLog.push(ctx);
-	ctx.reply("Sucess");
+        return ctx.reply("Sucess");
     } else if (/disable/.test(option)) {
         // ctx.from.id
-	for (let ctx_Logs in global.LiveLog) {
-	  if (global.LiveLog[ctx_Logs].from.id === ctx.from.id) {
-		delete global.LiveLog[ctx_Logs];
-	  	global.LiveLog = global.LiveLog.filter(a=>a);
-	  	ctx.reply("Ok");
-	  }
-	}
-    } else ctx.reply("Invalid option")
-    ctx.reply(ctx.chat.id)
-})
+        for (let ctx_Logs in global.LiveLog) {
+            if (global.LiveLog[ctx_Logs].from.id === ctx.from.id) {
+                delete global.LiveLog[ctx_Logs];
+                global.LiveLog = global.LiveLog.filter(a=>a);
+                return ctx.reply("Ok");
+            }
+        }
+        return ctx.reply("You are not in the list");
+    } else return ctx.reply("Invalid option");
+});
 
 // text
-bot.on("message", ctx => {
-  global.ServerExec.command(ctx.message.text);
-});
+bot.on("message", ctx => global.ServerExec.command(`say ${ctx.message.text}`));
 
 // catch
 bot.catch(console.log);
 
 // End And Lauch
-bot.launch()
+bot.launch();
