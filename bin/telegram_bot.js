@@ -45,11 +45,9 @@ bot.command("basic", ctx => {
             try {
                 const Server = bds.start();
                 Server.log(function (data){
-                    Object.getOwnPropertyNames(GetID()).forEach(Id => {
-                        console.log(Id);
-                        if (ChatIDs[Id]) bot.telegram.sendMessage(Id, data)
-                    })
-                })
+			for (let stx of global.LiveLog) stx.reply(data);
+		});
+		global.ServerExec = Server;
                 return ctx.reply("Server Started")
             } catch (err) {
                 console.log(err)
@@ -137,9 +135,13 @@ bot.command("live_log", ctx => {
     ctx.reply(ctx.chat.id)
 })
 
+// text
+bot.on("message", ctx => {
+  global.ServerExec.command(ctx.message.text);
+});
+
 // catch
 bot.catch(console.log);
 
 // End And Lauch
-process.on("exit", bot.stop)
 bot.launch()

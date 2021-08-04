@@ -2,7 +2,7 @@
 const { resolve } = require("path");
 const path = require("path")
 const fs = require("fs");
-const { randomUUID } = require("crypto");
+const randomUUID = require("uuid").v4;
 
 function date(format) {
     const today = new Date(),
