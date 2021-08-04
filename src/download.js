@@ -1,6 +1,6 @@
 var AdmZip = require("adm-zip");
-const { writeFileSync, existsSync, readFileSync, readdirSync } = require("fs");
-const { join, resolve } = require("path");
+const { writeFileSync, existsSync, readFileSync, readdirSync, rmSync } = require("fs");
+const { join, resolve, basename } = require("path");
 const bds = require("../index")
 const { valid_platform } = require("../lib/BdsSystemInfo");
 const { GetServerPaths, GetServerVersion, UpdateServerVersion, GetPlatform } = require("../lib/BdsSettings");
@@ -8,14 +8,54 @@ const { GitClone } = require("../lib/git_simples");
 const { execSync } = require("child_process");
 const Extra = require("../BdsManegerInfo.json");
 
-const 
-    bds_dir_bedrock = GetServerPaths("bedrock"),
-    bds_dir_java = GetServerPaths("java"),
-    bds_dir_pocketmine = GetServerPaths("pocketmine"),
-    bds_dir_jsprismarine = GetServerPaths("jsprismarine");
+async function php_download() {
+    const bds_dir_pocketmine = GetServerPaths("pocketmine"),
+        PHPBin = (await (await fetch(Extra.download.php)).json());
+    const phpFolder = resolve(bds_dir_pocketmine, "bin");
+    const phpExtensiosnsDir = resolve(bds_dir_pocketmine, "bin/php7/lib/php/extensions");
+    
+    // Check Php Binary
+    let urlPHPBin = PHPBin[process.platform]
+    if (!(urlPHPBin)) throw new Error("unsupported system")
+    urlPHPBin = urlPHPBin[bds.arch]
+    
+
+    // Remove Old php Binary if it exists
+    if (existsSync(phpFolder)) {
+        console.log("Removing old PHP files.");
+        rmSync(phpFolder, { recursive: true });
+    }    
+    console.log(`Downloading ${urlPHPBin}`);
+    const ZipBuffer = Buffer.from((await (await fetch(urlPHPBin)).arrayBuffer()));
+    console.log(`${basename(urlPHPBin)} downloaded`);
+    
+    console.log(`Extracting ${basename(urlPHPBin)}`);
+    const zipExtractBin = new AdmZip(ZipBuffer);
+    zipExtractBin.extractAllTo(bds_dir_pocketmine, false)
+    console.log("Successfully extracting the binaries")
+
+    let phpConfigInit = readFileSync(join(phpFolder, "php7", "bin", "php.ini"), "utf-8");
+    if (!(existsSync(phpExtensiosnsDir))) return true;
+
+    const phpExtensiosns = readdirSync(phpExtensiosnsDir).map(FileFolder => {
+        if (!(FileFolder.includes("debug-zts"))) return false;
+        return resolve(phpExtensiosnsDir, FileFolder);
+    }).filter(a=>a);
+
+    if (phpConfigInit.includes("extension_dir")) console.log("Skipping php.ini configuration");
+    else {
+        phpConfigInit = (`extension_dir="${phpExtensiosns.join()}"\n${phpConfigInit}`);
+        writeFileSync(join(phpFolder, "php7", "bin", "php.ini"), phpConfigInit);
+    }
+    return true;
+}
 
 module.exports = async function (version, force_install, callback) {
-    const Servers = (await (await fetch(Extra.download.servers)).json()), PHPBin = (await (await fetch(Extra.download.php)).json());
+    const bds_dir_bedrock = GetServerPaths("bedrock"),
+        bds_dir_java = GetServerPaths("java"),
+        bds_dir_pocketmine = GetServerPaths("pocketmine"),
+        bds_dir_jsprismarine = GetServerPaths("jsprismarine");
+    const Servers = (await (await fetch(Extra.download.servers)).json());
     const ServerVersion = GetServerVersion()
     const CurrentPlatform = GetPlatform()
     if (force_install === true) {
@@ -92,28 +132,9 @@ module.exports = async function (version, force_install, callback) {
                 
                 writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), Buffer.from((await (await fetch(PocketMineJson.url)).arrayBuffer())), "binary")
                 console.log("Success downloading and saving PocketMine-MP php");
-                
-                // Check PHP binary
-                var urlPHPBin; /* Check System php */try {urlPHPBin = PHPBin[process.platform][bds.arch]} catch (error) {throw new Error("unsupported system")}
-                console.log("Downloading PHP Binaries");
-                // Get PHP bin File and extract
-                const zipExtractBin = new AdmZip(Buffer.from((await (await fetch(urlPHPBin)).arrayBuffer())));
 
-                zipExtractBin.extractAllTo(bds_dir_pocketmine, true)
-                console.log("Successfully extracting the binaries")
+                await php_download();
 
-                // Check Configs and others
-                const phpFolder = resolve(bds_dir_pocketmine, "bin")
-                const phpConfigInit = readFileSync(join(phpFolder, "php7", "bin", "php.ini"), "utf-8").split(/\n/g).filter(a=>a.trim());
-                // Post check extension_dir
-                const phpExtensiosnsDir = resolve(bds_dir_pocketmine, "bin/php7/lib/php/extensions");const phpExtensiosns = readdirSync(phpExtensiosnsDir);var exetensionZen;for (let index of phpExtensiosns) if (index.includes("debug-zts")) exetensionZen = index
-                // Check Php bin folder and bins
-                var check_extension_dir = false;for (let index of phpConfigInit) if (index.includes("extension_dir")) check_extension_dir = true;
-                if (check_extension_dir) console.log("Skipping php.ini configuration");
-                else {
-                    phpConfigInit.push(`extension_dir="${resolve(phpExtensiosnsDir, exetensionZen)}"`);
-                    writeFileSync(join(phpFolder, "php7", "bin", "php.ini"), phpConfigInit.join("\n"));
-                }
                 // Update server Version
                 UpdateServerVersion(version)
                 // Callback
