@@ -127,9 +127,12 @@ bot.command("live_log", ctx => {
     } else if (/disable/.test(option)) {
         // ctx.from.id
 	for (let ctx_Logs in global.LiveLog) {
-	  if (global.LiveLog[ctx_Logs].from.id === ctx.from.id) delete global.LiveLog[ctx_Logs];
-	global.LiveLog = global.LiveLog.filter(a=>a);
-	ctx.reply("Ok");
+	  if (global.LiveLog[ctx_Logs].from.id === ctx.from.id) {
+		delete global.LiveLog[ctx_Logs];
+	  	global.LiveLog = global.LiveLog.filter(a=>a);
+	  	ctx.reply("Ok");
+	  }
+	}
     } else ctx.reply("Invalid option")
     ctx.reply(ctx.chat.id)
 })
