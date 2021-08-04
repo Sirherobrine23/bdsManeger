@@ -118,14 +118,18 @@ bot.command("log", ctx => {
 });
 
 // Live Log User
+global.LiveLog = [];
 bot.command("live_log", ctx => {
     const option = ctx.message.text.replace("/platform", "").trim();
     if (/enable/.test(option)) {
-        SaveID(ctx.from.id)
-        console.log(GetID())
+        global.LiveLog.push(ctx);
+	ctx.reply("Sucess");
     } else if (/disable/.test(option)) {
-        RemoveID(ctx.from.id)
-        console.log(GetID())
+        // ctx.from.id
+	for (let ctx_Logs in global.LiveLog) {
+	  if (global.LiveLog[ctx_Logs].from.id === ctx.from.id) delete global.LiveLog[ctx_Logs];
+	global.LiveLog = global.LiveLog.filter(a=>a);
+	ctx.reply("Ok");
     } else ctx.reply("Invalid option")
     ctx.reply(ctx.chat.id)
 })
