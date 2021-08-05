@@ -1,18 +1,10 @@
-const { Telegraf } = require("telegraf");
-const fs = require("fs");
-const path = require("path");
+const { Telegraf, Markup } = require("telegraf");
 const bds = require("../index");
-const { GetPlatform, GetPaths } = require("../lib/BdsSettings");
+const { GetPlatform } = require("../lib/BdsSettings");
 const { GetKernel, arch, system } = require("../lib/BdsSystemInfo");
 const { Detect } = require("../src/CheckKill");
-const TelegramOptions = require("minimist")(process.argv.slice(2));
 
-if (TelegramOptions.h || TelegramOptions.help) {
-    const Help = [];
-    console.log(Help.join("\n"));
-    process.exit(0)
-}
-
+// Bot Start And Help messages
 const HelpAndStart = [
     "Hello, welcome to Bds Maneger Telegram Bot",
     "",
@@ -21,6 +13,8 @@ const HelpAndStart = [
     "   /start or /help: This message!",
     "   /basic",
     "       start, stop",
+    "   /live_log",
+    "       enabler,disabler",
     "   ",
 ]
 
@@ -75,6 +69,16 @@ bot.command("platform", ctx => {
     }
 });
 
+bot.command("platform_beta", async ctx => {
+    const Keyboard = Markup.keyboard([
+        "/platform bedrock",
+        "/platform java",
+        "/platform pocketmine",
+        "/platform jsprismarine"
+    ]).oneTime().resize();
+    ctx.reply("Select Platform", Keyboard)
+});
+
 // Send Info
 bot.command("info", ctx => {
     const config = bds.get_config();
@@ -82,32 +86,20 @@ bot.command("info", ctx => {
         `Bds Maneger core version: ${bds.package_json.version}`,
         "",
         "* System Info:",
-        `   Kernel:       ${GetKernel()}`,
-        `   Arch:         ${arch}`,
-        `   System:       ${system}`,
+        `   Kernel ------ ${GetKernel()}`,
+        `   Arch -------- ${arch}`,
+        `   System -----  ${system}`,
         "",
         "* Server:",
-        `   platform:     ${GetPlatform()}`,
-        `   world_name:   ${config.world}`,
-        `   running:      ${bds.detect()}`,
-        `   port:         ${config.portv4}`,
-        `   port6:        ${config.portv6}`,
-        `   max_players:  ${config.players}`,
-        `   whitelist:    ${config.whitelist}`,
+        `   platform ---- ${GetPlatform()}`,
+        `   world_name -- ${config.world}`,
+        `   running ----- ${bds.detect()}`,
+        `   port_V4 ----- ${config.portv4}`,
+        `   port_V6 ----- ${config.portv6}`,
+        `   max_players - ${config.players}`,
+        `   whitelist --- ${config.whitelist}`,
     ]
     return ctx.reply(InfoRes.join("\n"));
-});
-
-// Log
-bot.command("log", ctx => {
-    try {
-        // 4096
-        const Log = fs.readFileSync(path.resolve(GetPaths("log"), "latest.log"), "utf8")
-        if (Log.length >= 4096) ctx.reply(Log.substr(-4096));
-        else ctx.reply(Log)
-    } catch (err) {
-        ctx.reply(err.toString())
-    }
 });
 
 // Live Log User
