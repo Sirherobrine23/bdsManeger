@@ -244,7 +244,7 @@ function bds_get_config(){
         JsonConfig.commands = false;
         // JsonConfig.worldtype = config["level-type"];
     } else if (GetPlatform() === "jsprismarine") throw "Platform not fully supported";
-    else throw new Error("Platform no exists, check config file")
+    else throw new Error("Platform no exists, check config file");
     return JsonConfig;
 }
 function config_example(){
