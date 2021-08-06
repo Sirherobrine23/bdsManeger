@@ -1,10 +1,9 @@
 const { execSync } = require("child_process");
 
 function getProcess(){
-    const MountProcess = [];
-    var getList = ""
+    let MountProcess = [];
     if (process.platform === "win32") {
-        getList = execSync("wmic path win32_process get Processid,Commandline,WorkingSetSize").toString().split(/\n/gi).filter(a => a.trim()).map(Line => {
+        MountProcess = execSync("wmic path win32_process get Processid,Commandline,WorkingSetSize").toString().split(/\n/gi).filter(a => a.trim()).map(Line => {
             try {
                 Line = Line.split(/\r/gi).filter(a => a).join("").trim();
                 const line_split = Line.split(/\s+/gi);
@@ -26,19 +25,23 @@ function getProcess(){
                 console.log(err);
                 return false
             }
-        }).filter(a => a).forEach(a => MountProcess.push(a));
+        }).filter(a => a);
     } else {
-        getList = execSync("ps -aux").toString("utf8").split("\n").filter(d=>{return !(/USER\s+/.test(d) || d === "")})
-        for (let _line of getList) {
-            _line = _line.split(/\s+/)
-            MountProcess.push({
-                command: (function(){var command = _line[10];const argvLenght = (_line.length - 11);for (let index = 0; index < argvLenght; index++) {command += ` ${_line[11 + index]}`;} return command})(),
+        MountProcess = execSync("ps -aux").toString("utf8").split("\n").filter(d=>{return !(/USER\s+/.test(d) || d === "")}).map(_line => _line.split(/\s+/)).map(_line =>{
+            return {
+                command: (function(){
+                    var command = _line[10];
+                    const argvLenght = (_line.length - 11);
+                    for (let index = 0; index < argvLenght; index++) {
+                        command += ` ${_line[11 + index]}`;
+                    }
+                    return command;
+                })(),
                 pid: parseInt(_line[1]),
                 mem: _line[3],
-            })
-        }
+            }
+        })
     }
-
     return MountProcess;
 }
 
