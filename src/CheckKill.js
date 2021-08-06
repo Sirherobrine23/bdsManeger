@@ -4,27 +4,29 @@ function getProcess(){
     const MountProcess = [];
     var getList = ""
     if (process.platform === "win32") {
-        console.info("Getting the process list in Windows is too slow");
-        getList = execSync("tasklist").toString("utf8").split("\r").join("\n").split("\n").filter(d => {return !(d === "" || d.includes("====="))})
-        delete getList[0];
-        getList = getList.filter(d=>{return (d !== undefined)})
-        for (let _line of getList) {
-            _line = _line.split(/\s+/)
-            // Get argument: wmic process where "ProcessID=4152" get commandline
-            const pidNumber = (_line.length - 5)
-            MountProcess.push({
-                command: (function(){
-                    try {
-                        return execSync(`wmic process where "ProcessID=${_line[pidNumber]}" get commandline`).toString("utf8").split("\r").join("\n").split("\n").filter(d=>{return !(d.trim() === "" || d.trim() === "CommandLine")}).join(" ").trim().split("\"").join("").trim()
-                    } catch (err) {
-                        return null
-                    }
-                })(),
-                pid: parseInt(_line[pidNumber]),
-                cpu: _line[(_line.length - 3)],
-                mem: (_line[(_line.length - 2)].split(".").join("")),
-            })
-        }
+        getList = execSync("wmic path win32_process get Processid,Commandline,WorkingSetSize").toString().split(/\n/gi).filter(a => a.trim()).map(Line => {
+            try {
+                Line = Line.split(/\r/gi).filter(a => a).join("").trim();
+                const line_split = Line.split(/\s+/gi);
+                
+                // Ignore empty lines
+                if (line_split.length <= 2) return false
+        
+                let pid = line_split[Math.abs(line_split.length - 2)].toString();
+                let mem = line_split[Math.abs(line_split.length - 1)].toString();
+                let command = Line.slice(0, - Math.abs(pid.length)).trim().slice(0, - Math.abs(mem.length)).trim();
+                pid = parseInt(pid);
+                mem = parseInt(mem);
+                if (command && pid && mem) return {
+                    command,
+                    pid,
+                    mem,
+                }; else return false
+            } catch (err) {
+                console.log(err);
+                return false
+            }
+        }).filter(a => a).forEach(a => MountProcess.push(a));
     } else {
         getList = execSync("ps -aux").toString("utf8").split("\n").filter(d=>{return !(/USER\s+/.test(d) || d === "")})
         for (let _line of getList) {
@@ -32,7 +34,6 @@ function getProcess(){
             MountProcess.push({
                 command: (function(){var command = _line[10];const argvLenght = (_line.length - 11);for (let index = 0; index < argvLenght; index++) {command += ` ${_line[11 + index]}`;} return command})(),
                 pid: parseInt(_line[1]),
-                cpu: _line[2],
                 mem: _line[3],
             })
         }

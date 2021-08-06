@@ -167,6 +167,34 @@ function start() {
             });
             ServerExec.stdout.on("data", data);
             ServerExec.stderr.on("data", data);
+        },
+        op: function (player = "Steve") {
+            let command = BdsInfo.Servers[GetPlatform()].op.replace("{{Player}}", player);
+            ServerExec.stdin.write(command+"\n");
+            return command;
+        },
+        deop: function (player = "Steve") {
+            let command = BdsInfo.Servers[GetPlatform()].deop.replace("{{Player}}", player);
+            ServerExec.stdin.write(command+"\n");
+            return command;
+        },
+        ban: function (player = "Steve") {
+            let command = BdsInfo.Servers[GetPlatform()].ban.replace("{{Player}}", player);
+            ServerExec.stdin.write(command+"\n");
+            return command;
+        },
+        kick: function (player = "Steve", text = "you got kicked") {
+            let command = BdsInfo.Servers[GetPlatform()].kick.replace("{{Player}}", player).replace("{{Text}}", text);
+            ServerExec.stdin.write(command+"\n");
+            return command;
+        },
+        tp: function (player = "Steve", cord = {x: 0, y: 128, z: 0}) {
+            let command = BdsInfo.Servers[GetPlatform()].tp.replace("{{Player}}", player);
+            if (cord.x) command = command.replace("{{X}}", cord.x); else command = command.replace("{{X}}", 0);
+            if (cord.y) command = command.replace("{{Y}}", cord.y); else command = command.replace("{{Y}}", 128);
+            if (cord.y) command = command.replace("{{Z}}", cord.y); else command = command.replace("{{Z}}", 0);
+            ServerExec.stdin.write(command+"\n");
+            return command;
         }
     }
     ServerExec.on("exit", ()=>{delete global.BdsExecs[returnFuntion.uuid]});
