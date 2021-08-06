@@ -75,7 +75,7 @@ async function authorize() {
                 app.use(require("body-parser").urlencoded({ extended: true }));
                 app.use(require("express-rate-limit")({windowMs: 1 * 60 * 1000, max: 100}));
                 app.use(require("cors")());
-                const port = RandomPort()
+                const port = RandomPort();
                 ip_andress.internal_ip.forEach(ips => {
                     let { ipv4, ipv6 } = ips.Interna_IP;
                     console.log(`Open: http://${ipv4}:${port}/request`);

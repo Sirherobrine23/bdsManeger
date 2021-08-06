@@ -31,7 +31,7 @@ async function Uploadbackups(object = "Backup.zip", fileLocation = resolve(__dir
             resolve(putObjectResponse);
         } catch (error) {
             console.log("Error ", error);
-            reject(error)
+            reject(error);
         }
     });
 }
