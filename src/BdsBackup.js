@@ -44,7 +44,7 @@ function Backup() {
     for (let index of Object.getOwnPropertyNames(GetPaths("all")).filter(path => !/servers|backups/.test(path)).map(name => GetPaths(name))) {
         if (existsSync(index)) {
             const _S = statSync(resolve(index));
-            if (_S.isFile() || _S.isSymbolicLink()) zip.addLocalFile(index); else zip.addLocalFolder(index)
+            if (_S.isFile() || _S.isSymbolicLink()) zip.addLocalFile(index, "/BdsManegerCore"); else zip.addLocalFolder(index, join("/BdsManegerCore", index.replace(bds_dir, "")));
         }
     }
 

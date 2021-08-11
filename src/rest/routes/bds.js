@@ -5,7 +5,7 @@ const commandExist = require("../../../lib/commandExist");
 const { GetPlatform, GetServerVersion, UpdatePlatform, bds_dir } = require("../../../lib/BdsSettings");
 const admzip = require("adm-zip");
 const bds = require("../../../index");
-const { token_verify } = require("../../check");
+const { token_verify } = require("../../UsersAndtokenChecks");
 
 // Backup
 app.get("/backup", (req, res) => {

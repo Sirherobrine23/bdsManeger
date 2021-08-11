@@ -1,5 +1,5 @@
 const bds = require("../index")
-const { CheckBan } = require("./check");
+const { CheckBan } = require("./UsersAndtokenChecks");
 const { GetPlatform, GetPaths } = require("../lib/BdsSettings");
 const fs = require("fs");
 

@@ -4,22 +4,17 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Start Telegram bot dev",
+            "program": "${workspaceFolder}/bin/telegram_bot.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Build Dev Docker Image",
             "runtimeExecutable": "npm",
             "runtimeArgs": [
                 "run",
                 "Docker"
-            ],
-            "port": 9229
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Telegram BOT",
-            "runtimeExecutable": "npm",
-            "runtimeArgs": [
-                "run",
-                "dev:telegram"
             ],
             "port": 9229
         }
