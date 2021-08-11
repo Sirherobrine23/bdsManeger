@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-if (process.platform === "win32") process.title = "Bds Maneger CLI"; else process.title = "Bds_Manger_CLI";
+const readline = require("readline");
+
+if (process.platform === "win32") process.title = "Bds Maneger CLI"; else process.title = "Bds-Manger-CLI";
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 
-// Inports
-const readline = require("readline");
 const bds = require("../index");
 const { valid_platform } = require("../lib/BdsSystemInfo");
 const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
-const download = require("../src/download");
+const download = require("../src/BdsServersDownload");
 
 // Bds Maneger ArgV
 const argv = require("minimist")(process.argv.slice(2));

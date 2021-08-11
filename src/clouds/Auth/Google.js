@@ -4,7 +4,7 @@ const { randomUUID } = require("crypto");
 const express = require("express");
 const { google } = require("googleapis");
 
-const ip_andress = require("../../external_ip");
+const ip_andress = require("../../BdsNetwork");
 const { bds_dir } = require("../../../lib/BdsSettings");
 
 const PathToToken = join(bds_dir, "google_user_token.json");

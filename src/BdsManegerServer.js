@@ -5,7 +5,7 @@ const { resolve, join } = require("path");
 const randomUUID = require("uuid").v4;
 const { CronJob } = require("cron");
 const { GetCronBackup } = require("../lib/BdsSettings");
-const { Backup } = require("./backups");
+const { Backup } = require("./BdsBackup");
 
 // Bds Maneger Inports
 const commandExists = require("../lib/commandExist");

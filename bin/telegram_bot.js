@@ -1,10 +1,11 @@
 const fs = require("fs");
 const { Telegraf, Markup } = require("telegraf");
 const bds = require("../index");
-const { GetPlatform, GetPaths } = require("../lib/BdsSettings");
+const { GetPlatform, GetPaths, GetTelegramToken } = require("../lib/BdsSettings");
 const { GetKernel, arch, system } = require("../lib/BdsSystemInfo");
 const { Detect } = require("../src/CheckKill");
 const { Servers } = require("../lib/ServerURL");
+const { CheckTelegramUser } = require("../src/UsersAndtokenChecks")
 
 // Bot Start And Help messages
 const HelpAndStart = [
@@ -24,7 +25,7 @@ const HelpAndStart = [
 ]
 
 // Set Telegram Bot
-const bot = new Telegraf(bds.telegram_token);
+const bot = new Telegraf(GetTelegramToken());
 
 // Start and Help Command
 bot.start((ctx)=>ctx.reply(HelpAndStart.join("\n")));
@@ -32,6 +33,9 @@ bot.help((ctx)=>ctx.reply(HelpAndStart.join("\n")));
 
 // User
 bot.command("player", ctx => {
+    // Check admin Username
+    if (!(CheckTelegramUser(ctx.from.username))) return ctx.reply("you are not an administrator");
+    
     const Server = global.ServerExec;
     const CtxOption = ctx.message.text.replace("/player", "").trim();
     const CtxContext = CtxOption.replace(/^kick|^deop|^ban|^op/, "").trim();
@@ -106,6 +110,9 @@ bot.command("player", ctx => {
 
 // Basic server
 bot.command("basic", async ctx => {
+    // Check admin Username
+    if (!(CheckTelegramUser(ctx.from.username))) return ctx.reply("you are not an administrator");
+
     const text = ctx.message.text.replace("/basic", "").trim();
     if (text) {
         // Start Server
@@ -161,6 +168,9 @@ bot.command("basic", async ctx => {
 
 // Select Platform
 bot.command("platform", async ctx => {
+    // Check admin Username
+    if (!(CheckTelegramUser(ctx.from.username))) return ctx.reply("you are not an administrator");
+
     const text = ctx.message.text.replace("/platform", "").trim();
     if (text) {
         try {
@@ -184,6 +194,9 @@ bot.command("platform", async ctx => {
 
 // Download Server
 bot.command("download", async ctx => {
+    // Check admin Username
+    if (!(CheckTelegramUser(ctx.from.username))) return ctx.reply("you are not an administrator");
+
     const version = ctx.message.text.replace(/\/download|[a-zA-Z]/gi, "").trim();
     if (version) {
         await bds.download(version, true);
@@ -201,6 +214,9 @@ bot.command("download", async ctx => {
 
 // Command
 bot.command("command", async ctx => {
+    // Check admin Username
+    if (!(CheckTelegramUser(ctx.from.username))) return ctx.reply("you are not an administrator");
+
     const text = ctx.message.text.replace("/command", "").trim();
     if (!(Detect())) return ctx.reply("Your server is stopped");
     if (text) {
@@ -238,6 +254,9 @@ bot.command("info", ctx => {
 // Live Log User
 global.LiveLog = [];
 bot.command("live_log", async ctx => {
+    // Check admin Username
+    if (!(CheckTelegramUser(ctx.from.username))) return ctx.reply("you are not an administrator");
+
     const option = ctx.message.text.replace("/live_log", "").trim();
     if (option) {
         if (/enable/.test(option)) {
