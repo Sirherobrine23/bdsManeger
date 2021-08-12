@@ -54,8 +54,12 @@ function StartServer(){
         console.log("Send a \"@stop\" command to stop the server and exit\nUse CTRL + C to force exit\n");
         // Start Server
         const bds_server = bds.start();
-        bds_server.log(echo)
-        bds_server.exit(function (code){if (code === 3221225781) return open("https://docs.the-bds-maneger.org/Bds Maneger core/WindowsFixDll");console.log("leaving the server, status code: ", code);process.exit(code)});
+        bds_server.log(data => process.stdout.write(data));
+        bds_server.exit(function (code){
+            if (code === 3221225781 && process.platform === "win32") return open("https://docs.the-bds-maneger.org/Bds Maneger core/WindowsFixDll");
+            console.log("leaving the server, status code:", code);
+            process.exit(code)
+        });
 
         // CLI Commands
         const rl = readline.createInterface({input: process.stdin,output: process.stdout});
@@ -207,8 +211,4 @@ if (bds_version){
 }
 
 // Start server
-function echo(data = ""){
-    data = data.split("\n").filter(data => {return (data !== "")})
-    data.forEach(data => console.log(data))
-}
 if (start && !(server || version || SystemCheck || bds_version || help)) StartServer();

@@ -7,23 +7,6 @@ const { bds_dir } = require("./lib/BdsSettings");
 
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 
-function date(format) {
-    const today = new Date(),
-        yaer = today.getFullYear(),
-        day = String(today.getDate()).padStart(2, "0"),
-        month = String(today.getMonth() + 1).padStart(2, "0"),
-        hour = today.getHours(),
-        minute = today.getMinutes();
-    // ---------------------------------------------------------
-    if (format === "year") return yaer
-    else if (format === "day") return day
-    else if (format === "month") return month
-    else if (format === "hour") return hour
-    else if (format === "minute") return minute
-    else if (format === "hour_minu") return `${hour}-${minute}`
-    else return `${day}-${month}-${yaer}_${hour}-${minute}`
-}
-
 const bds_core_package = resolve(__dirname, "package.json")
 module.exports.package_path = bds_core_package
 module.exports.package_json = require("./package.json");
@@ -103,11 +86,6 @@ const { World_BAckup } = require("./src/BdsBackup");
 const { config, get_config } = require("./src/ServerSettings");
 const download = require("./src/BdsServersDownload");
 const { start, stop, BdsCommand, CronBackups } = require("./src/BdsManegerServer")
-
-/**
- * Take the current date
- */
-module.exports.BdsDate = module.exports.date = date
 
 /**
  * sending commands more simply to the server

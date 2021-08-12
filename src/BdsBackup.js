@@ -1,4 +1,3 @@
-const bds = require("../index")
 const { join, resolve } = require("path");
 const { readdirSync, existsSync, readFileSync, statSync } = require("fs")
 const AdmZip = require("adm-zip");
@@ -14,7 +13,8 @@ function Backup() {
         pocketmine: GetServerPaths("pocketmine"),
         jsprismarine: GetServerPaths("jsprismarine")
     }
-    const name = `Bds_Maneger-Backups_${bds.date()}.zip`
+    const CurrentDate = new Date();
+    const name = `Bds_Maneger_Core_Backups_${CurrentDate.getDate()}-${CurrentDate.getMonth()}-${CurrentDate.getFullYear()}.zip`
     const PathBackup = join(GetPaths("backups"), name);
 
     // Bedrock
