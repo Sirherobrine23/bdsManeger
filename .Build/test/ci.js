@@ -1,8 +1,7 @@
 (async ()=>{
     try {
         const bds = require("../../index");
-        await bds.download("latest", true)
-        console.log("Date:", await bds.BdsDate());
+        await bds.download("latest", true);
         console.log("Api:", await bds.api());
         console.log("Backup:", await bds.backup());
         console.log("Detect Server:", await bds.detect());
