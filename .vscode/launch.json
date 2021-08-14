@@ -4,13 +4,8 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Build Dev Docker Image",
-            "runtimeExecutable": "npm",
-            "runtimeArgs": [
-                "run",
-                "Docker"
-            ],
-            "port": 9229
+            "name": "Docker Build and Run",
+            "program": "${workspaceFolder}/.Build/DockerImage.js"
         },
         {
             "type": "node",

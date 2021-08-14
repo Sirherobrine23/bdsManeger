@@ -78,6 +78,7 @@
     "telegraf": "^4.0.0"
   },
   "devDependencies": {
+    "docker-run_build": "github:Sirherobrine23/Docker-Run_Build#main",
     "eslint": "^7.19.0",
     "husky": "^7.0.0",
     "nexe": "*",
