@@ -2,10 +2,10 @@ const express = require("express");
 const app = express.Router();
 const { GetKernel } = require("../../../lib/BdsSystemInfo");
 const commandExist = require("../../../lib/commandExist");
-const { GetPlatform, GetServerVersion, UpdatePlatform, bds_dir } = require("../../../lib/BdsSettings")
+const { GetPlatform, GetServerVersion, UpdatePlatform, bds_dir } = require("../../../lib/BdsSettings");
 const admzip = require("adm-zip");
 const bds = require("../../../index");
-const { token_verify } = require("../../Scripts/check");
+const { token_verify } = require("../../UsersAndtokenChecks");
 
 // Backup
 app.get("/backup", (req, res) => {

@@ -62,7 +62,7 @@ function api(port_api = 1932, callback = function (port){console.log("Bds Manege
 }
 module.exports = function (apiConfig = {api_port: 1932}, callback = function (port){console.log("Bds Maneger Core REST API, http port", port)}){
     var port_rest = 1932;
-    if (typeof apiConfig == "object" && apiConfig.api_port !== undefined) port_rest = apiConfig.api_port;
+    if (typeof apiConfig === "object" && apiConfig.api_port !== undefined) port_rest = apiConfig.api_port;
     else if (typeof apiConfig === "number") port_rest = apiConfig;
     return api(port_rest, callback);
 }

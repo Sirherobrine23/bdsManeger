@@ -2,7 +2,11 @@
 const { resolve } = require("path");
 const path = require("path")
 const fs = require("fs");
-const { randomUUID } = require("crypto");
+const randomUUID = require("uuid").v4;
+const { bds_dir } = require("./lib/BdsSettings");
+
+if (typeof fetch === "undefined") global.fetch = require("node-fetch");
+
 function date(format) {
     const today = new Date(),
         yaer = today.getFullYear(),
@@ -25,43 +29,42 @@ module.exports.package_path = bds_core_package
 module.exports.package_json = require("./package.json");
 module.exports.extra_json = require("./BdsManegerInfo.json");
 
-const { bds_dir } = require("./lib/BdsSettings");
+// Inport and Export Arch
 const { arch } = require("./lib/BdsSystemInfo");
-
-const { GetPaths, GetJsonConfig, UpdatePlatform, UpdateTelegramToken, GetTelegramToken } = require("./lib/BdsSettings")
 module.exports.arch = arch
-if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 
-const maneger_ips = require("./src/Scripts/external_ip")
+const { GetJsonConfig, UpdatePlatform, UpdateTelegramToken } = require("./lib/BdsSettings");
+
+// Bds Maneger Core Network
+const maneger_ips = require("./src/BdsNetwork")
 module.exports.internal_ip = maneger_ips.internal_ip
 module.exports.external_ip = maneger_ips.external_ip
-module.exports.save_google_id = require("./lib/BdsSettings").CloudConfig.Driver
-module.exports.getBdsConfig = GetJsonConfig
-module.exports.change_platform = module.exports.platform_update = UpdatePlatform
+module.exports.tmphost = {
+    host: maneger_ips.host,
+    Response: maneger_ips.HostResponse
+}
+
+// Get Old Method Config
+module.exports.getBdsConfig = GetJsonConfig;
+
+/**
+ * Update Current Platform
+ */
+module.exports.change_platform = module.exports.platform_update = UpdatePlatform;
+
+/**
+ * Save Telegram token in Settings File
+ */
 module.exports.telegram_token_save = UpdateTelegramToken
+
+/**
+ * The Bds Maneger Core Internal API REST
+ * 
+ * @param {number} port - The port number, default is 1932
+ * 
+ * @param {function} callback - The callback function after start API
+ */
 module.exports.api = require("./src/rest/api");
-
-// ------------
-const user_file_connected = GetPaths("player");
-module.exports.players_files = user_file_connected
-if (!(fs.existsSync(user_file_connected))) {
-    let config = {};
-    config["bedrock"] = {};
-    config["java"] = {};
-    config["pocketmine"] = {};
-    config["jsprismarine"] = {};
-    let NewJson = JSON.stringify(config, null, 4);
-    fs.writeFileSync(user_file_connected, NewJson);
-}
-
-const file_user_check = fs.readFileSync(user_file_connected, "utf8");
-try {
-    JSON.parse(file_user_check)
-} catch (error) {
-    fs.renameSync(user_file_connected,  `${user_file_connected}_old_${Math.random()}_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}.json`)
-}
-
-module.exports.telegram_token = GetTelegramToken();
 
 function token_register() {
     const bds_token_path = path.join(bds_dir, "bds_tokens.json");
@@ -84,22 +87,22 @@ function token_register() {
 }
 
 /**
- * Update, Get and more to Modifications Bds Settings File
- */
-module.exports.BdsSettigs = require("./lib/BdsSettings");
-
-// Requires
-const { World_BAckup } = require("./src/Scripts/backups");
-const { config, get_config, config_example } = require("./src/Scripts/ServerSettings");
-const download = require("./src/Scripts/download");
-const { start, stop, BdsCommand } = require("./src/Scripts/basic_server")
-
-/**
  * Register tokens to use in Bds Maneger REST and other supported applications
  * 
  * @example token_register()
  */
 module.exports.token_register = token_register
+
+/**
+ * Update, Get and more to Modifications Bds Settings File
+ */
+module.exports.BdsSettigs = require("./lib/BdsSettings");
+
+// Requires
+const { World_BAckup } = require("./src/BdsBackup");
+const { config, get_config } = require("./src/ServerSettings");
+const download = require("./src/BdsServersDownload");
+const { start, stop, BdsCommand, CronBackups } = require("./src/BdsManegerServer")
 
 /**
  * Take the current date
@@ -114,6 +117,7 @@ module.exports.BdsDate = module.exports.date = date
 module.exports.command = BdsCommand
 // New management method
 
+// Start Server
 /**
  * to start the server here in the sera script with child_process, then you will have to use the return function for your log custumization or anything else
  * 
@@ -121,23 +125,27 @@ module.exports.command = BdsCommand
  * server.log(function (log){console.log(log)})
  */
 module.exports.start = start
+
+// Stop Server
 /**
  * use this command for the server, that's all
  */
 module.exports.stop = stop
+
+// Create Backup of Bds Maneger Core and Servers along with your maps and settings
 /**
  * backup your map locally
  */
 module.exports.backup = World_BAckup
 
-const { Kill, Detect } = require("./src/Scripts/CheckKill")
+const { Kill, Detect } = require("./src/CheckKill")
 
 /**
  * identify if there are any servers running in the background
  * 
  * @example bds.detect()
- * // true: if the server is running
- * // false: if not already
+ * true: if the server is running
+ * false: if not already
  */
 module.exports.detect = Detect
 module.exports.bds_detect = Detect
@@ -153,19 +161,18 @@ module.exports.kill = Kill
  * use download( version, boolean ) // the boolean is for if you want to force the installation of the server
  * 
  * @example
- * bedrock: bds.download("1.16.201.02")
+ * bedrock: download("1.16.201.02")
  * 
- * java: bds.download("1.16.5")
+ * java: download("1.16.5")
  * 
- * any platform: bds.download("latest") // It will download the latest version available for download
+ * any platform: download("latest") // It will download the latest version available for download
  */
 module.exports.download = download
-module.exports.config_example = config_example
 
 /**
  * use this command to modify server settings
  * 
- * @example bds.set_config({
+ * @example set_config({
         name: "Bedrock our Java",
         description: "BDS Maneger",
         gamemode: "survival",
@@ -177,23 +184,16 @@ module.exports.config_example = config_example
         players: 100,
         port: 19132,
         port6: 19133
-    })
+    });
  */
 module.exports.set_config = config
+
 /**
  * takes the server settings in JSON format
  */
 module.exports.get_config = get_config
 
-
-/**
- * Get temp domain to Server and API (The Domain is even temporary).
- */
-module.exports.tmphost = require("./lib/tempHost")
-
-// Core Applications
-
 /**
  * Load Crontab Backup
  */
-module.exports.Cron_Loaded = require("./src/Scripts/LoadCronBackup")
+module.exports.Cron_Loaded = CronBackups;

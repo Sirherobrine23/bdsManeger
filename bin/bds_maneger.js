@@ -1,12 +1,15 @@
 #!/usr/bin/env node
-if (process.platform === "win32") process.title = "Bds Maneger CLI";else process.title = "Bds_Manger_CLI"
 const readline = require("readline");
+
+if (process.platform === "win32") process.title = "Bds Maneger CLI"; else process.title = "Bds-Manger-CLI";
+process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
+
 const bds = require("../index");
 const { valid_platform } = require("../lib/BdsSystemInfo");
 const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
-const download = require("../src/Scripts/download");
-process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
+const download = require("../src/BdsServersDownload");
+
 // Bds Maneger ArgV
 const argv = require("minimist")(process.argv.slice(2));
 if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
@@ -32,7 +35,7 @@ if (kill) bds.kill();
 if (server) UpdatePlatform(server);
 
 function StartServer(){
-    const { Servers } = require("../../lib/ServerURL");
+    const { Servers } = require("../lib/ServerURL");
     // Check Server Update
     if (Versions[GetPlatform()] !== null) {
         if (Versions[GetPlatform()] !== Servers.latest[GetPlatform()]) {
@@ -56,9 +59,22 @@ function StartServer(){
 
         // CLI Commands
         const rl = readline.createInterface({input: process.stdin,output: process.stdout});
-        rl.on("line", (input) => {if (input === "@stop") {rl.close(); bds_server.stop()} else bds_server.command(input)});
-        rl.on("close", ()=>{console.log("CTRL + C closed readline, stopping server");bds_server.stop()})
-        bds_server.exit(function(c){if (c !== 0) rl.close()})
+        rl.on("line", (input) => {
+            // Stop
+            if (input.trim() === "@stop") {
+                rl.close();
+                bds_server.stop()
+            }
+            // Server input
+            else bds_server.command(input);
+        });
+        rl.on("close", ()=>{
+            console.log("CTRL + C closed readline, stopping server");
+            bds_server.stop();
+        })
+        bds_server.exit(function(c){
+            if (c !== 0) rl.close();
+        })
         bds.api();
     } catch (err) {
         console.log(`Bds Maneger Start Server Error: \n******\n${err}`);

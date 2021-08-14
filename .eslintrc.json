@@ -3,8 +3,7 @@
         "browser": true,
         "commonjs": true,
         "es2021": true,
-        "node": true,
-        "shelljs": true
+        "node": true
     },
     "globals": {
         "bds_log_string": "writable",
@@ -24,6 +23,7 @@
             "error",
             "double"
         ],
-        "eqeqeq": 0
+        "eqeqeq": 0,
+        "no-async-promise-executor": "off"
     }
 }

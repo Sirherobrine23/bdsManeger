@@ -2,7 +2,7 @@ var fs = require("fs");
 const path = require("path");
 const propertiesToJSON = require("properties-to-json");
 const { join } = require("path");
-const { GetServerPaths, GetPlatform } = require("../../lib/BdsSettings");
+const { GetServerPaths, GetPlatform } = require("../lib/BdsSettings");
 const bds_dir_bedrock = GetServerPaths("bedrock"), bds_dir_java = GetServerPaths("java"), bds_dir_pocketmine = GetServerPaths("pocketmine");
 const bedrockCPUThread = require("os").cpus().length;
 
@@ -244,7 +244,7 @@ function bds_get_config(){
         JsonConfig.commands = false;
         // JsonConfig.worldtype = config["level-type"];
     } else if (GetPlatform() === "jsprismarine") throw "Platform not fully supported";
-    else throw new Error("Platform no exists, check config file")
+    else throw new Error("Platform no exists, check config file");
     return JsonConfig;
 }
 function config_example(){
