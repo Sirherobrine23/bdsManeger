@@ -12,14 +12,25 @@ RUN bash /tmp/Configure.sh
 # Setup bdsmaneger/core
 FROM bdsbase AS bdscore
 
+RUN mkdir -vp /home/thebds/bds_core && chmod -Rv 7777 /home; chown thebds:thebds -Rv /home
+
+
+# Create Volume to Storage Server And Config
+VOLUME [ "/home/thebds/bds_core" ]
+
 # Copy Bds Maneger Core
-COPY ./ /opt/bds_core/
-WORKDIR /opt/bds_core/
-RUN chmod -v 7777 /opt/bds_core && chown thebds:thebds -v /opt/bds_core; chmod a+x bin/* && npm install --force && chmod -Rv 7777 /home && chown thebds:thebds -Rv /home && chmod a+x bin/*; mkdir -vp /home/bds/bds_core
+WORKDIR /home/backend_core_scripts/
+
+# Install Core dependencies
+COPY --chown=thebds:thebds package*.json ./
+RUN npm install
+
+# Copy BdsManger Core
+COPY --chown=thebds:thebds ./ ./
+RUN chmod a+x -v bin/*
 
 # Set Non Root User
 USER thebds
-VOLUME [ "/home/thebds/bds_core" ]
 
 # Set default ENVs to Bds Core
 ENV PLAYERS="5" \
@@ -29,7 +40,8 @@ ENV PLAYERS="5" \
     DIFFICULTY="normal" \
     ENABLE_COMMANDS="false" \
     ACCOUNT="false" \
-    SERVER="bedrock"
+    SERVER="bedrock" \
+    UPDATE_SERVER="true"
 
 # Bds Maneger Core required ports
 EXPOSE 19132/udp 19133/udp 1932/tcp

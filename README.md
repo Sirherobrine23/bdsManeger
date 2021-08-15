@@ -25,6 +25,7 @@ Windows:
 
 ```cmd
 $ docker run --rm -d --name BdsManegerCore -v BdsCore:/home/bds/bds_core ^
+    --restart=always ^
     -p 19132:19132/udp -p 19133:19133/udp -p 1932:1932/tcp ^
     -e TELEGRAM_TOKEN="null" ^
     -e DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" ^
@@ -42,6 +43,7 @@ Linux/MacOS:
 
 ```bash
 $ docker run --rm -d --name BdsManegerCore -v BdsCore/:/home/bds/bds_core \
+    --restart=always \
     -p 19132:19132/udp -p 19133:19133/udp -p 1932:1932/tcp \
     -e TELEGRAM_TOKEN="null" \
     -e DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" \

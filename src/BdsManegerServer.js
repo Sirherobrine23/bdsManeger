@@ -1,18 +1,16 @@
 const child_process = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const { resolve, join } = require("path");
 const randomUUID = require("uuid").v4;
 const { CronJob } = require("cron");
-const { GetCronBackup } = require("../lib/BdsSettings");
-const { Backup } = require("./BdsBackup");
 
 // Bds Maneger Inports
 const commandExists = require("../lib/commandExist");
 const BdsDetect = require("./CheckKill").Detect;
 const bds = require("../index");
-const { GetServerPaths, GetPaths, GetServerSettings, GetPlatform } = require("../lib/BdsSettings");
+const { GetServerPaths, GetPaths, GetServerSettings, GetPlatform, GetCronBackup } = require("../lib/BdsSettings");
 const BdsInfo = require("../BdsManegerInfo.json");
+const { Backup } = require("./BdsBackup");
 
 // Set bdsexec functions
 global.BdsExecs = {};
@@ -71,7 +69,7 @@ function start() {
     // Minecraft Bedrock (Pocketmine-MP)
     else if (GetPlatform() === "pocketmine") {
         // Start PocketMine-MP
-        SetupCommands.command = join(resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
+        SetupCommands.command = path.join(path.resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
         SetupCommands.args.push("./PocketMine-MP.phar");
         SetupCommands.cwd = GetServerPaths("pocketmine");
     }
@@ -102,7 +100,7 @@ function start() {
     
     // Log file
     
-    const LogFile = join(GetPaths("log"), `${bds.date()}_${GetPlatform()}_Bds_log.log`);
+    const LogFile = path.join(GetPaths("log"), `${bds.date()}_${GetPlatform()}_Bds_log.log`);
     const LatestLog_Path = path.join(GetPaths("log"), "latest.log");
     const LogSaveFunction = data => {
         fs.appendFileSync(LogFile, data);
@@ -122,6 +120,8 @@ function start() {
     // Global and Run
     global.bds_log_string = ""
     ServerExec.stdout.on("data", data => {if (global.bds_log_string) global.bds_log_string = data; else global.bds_log_string += data});
+
+    const say = (text = "") => ServerExec.stdin.write(BdsInfo.Servers.bedrock.say.replace("{{Text}}", text));
 
     const returnFuntion = {
         uuid: randomUUID(),
@@ -161,8 +161,8 @@ function start() {
             // Functions
             const data = data => Player_Json(data, function (array_status){
                 for (let _player of array_status) {
-                    if (action === "all") callback(_player);
-                    else if (_player.Action === action) callback(_player)
+                    if (_player.Action === action) callback(_player);
+                    if (action === "all") callback(_player); 
                 }
             });
             ServerExec.stdout.on("data", data);
@@ -195,7 +195,8 @@ function start() {
             if (cord.y) command = command.replace("{{Z}}", cord.y); else command = command.replace("{{Z}}", 0);
             ServerExec.stdin.write(command+"\n");
             return command;
-        }
+        },
+        say,
     }
     ServerExec.on("exit", ()=>{delete global.BdsExecs[returnFuntion.uuid]});
     global.BdsExecs[returnFuntion.uuid] = returnFuntion;
@@ -260,7 +261,7 @@ function Player_Json(data = "aaaaaa\n\n\naa", callback = () => {}){
     // else if (Current_platorm === "jsprismarine") console.log("It's still not working");
 }
 
-const UpdateUserJSON = function (New_Object = new Array()){
+const UpdateUserJSON = function (New_Object = []){
     const Player_Json_path = GetPaths("player");
     const Current_platorm = GetPlatform();
     let Players_Json = {
