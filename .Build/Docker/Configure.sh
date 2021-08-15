@@ -39,7 +39,7 @@ if ! [ "$(uname -m)" == "x86_64" ];then
 fi
 
 # Install openjdk
-case `apt search openjdk` in
+case "$(apt search openjdk)" in
     *openjdk-17* ) apt install -y openjdk-17*;;
     *openjdk-11* ) apt install -y openjdk-11*;;
     * ) echo "No openjdk version found, skipping";;
