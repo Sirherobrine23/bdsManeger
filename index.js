@@ -173,17 +173,17 @@ module.exports.download = download
  * use this command to modify server settings
  * 
  * @example set_config({
-        name: "Bedrock our Java",
-        description: "BDS Maneger",
-        gamemode: "survival",
+        world: "Bds Maneger",
+        description: "The Bds Maneger",
+        gamemode: "creative",
         difficulty: "normal",
-        player_permission: "member",
-        xbox: true,
-        white_list: false,
-        cheats: false,
-        players: 100,
+        players: 10,
+        commands: true,
+        account: true,
+        whitelist: true,
         port: 19132,
-        port6: 19133
+        portv6: 19133,
+        seed: ""
     });
  */
 module.exports.set_config = config

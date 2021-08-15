@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.13.4",
+  "version": "1.13.5",
   "description": "Scripts to manage minecraft server's",
   "private": false,
   "main": "index.js",
@@ -75,7 +75,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "docker-run_build": "github:Sirherobrine23/Docker-Run_Build",
+    "docker-run_build": "github:Sirherobrine23/Docker-Run_Build#main",
     "eslint": "^7.19.0",
     "husky": "^7.0.0",
     "nexe": "*",

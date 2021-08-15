@@ -1,18 +1,17 @@
 #!/usr/bin/env node
 const readline = require("readline");
-
 if (process.platform === "win32") process.title = "Bds Maneger CLI"; else process.title = "Bds-Manger-CLI";
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
+
+// Bds Maneger ArgV
+const argv = require("minimist")(process.argv.slice(2));
+if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
 
 const bds = require("../index");
 const { valid_platform } = require("../lib/BdsSystemInfo");
 const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
 const download = require("../src/BdsServersDownload");
-
-// Bds Maneger ArgV
-const argv = require("minimist")(process.argv.slice(2));
-if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
 
 // Options
 const
@@ -22,8 +21,7 @@ const
     bds_version = (argv.d || argv.server_download),
     start = (argv.s || argv.server_version),
     help = (argv.h || argv.help),
-    kill = (argv.k || argv.kill),
-    docker_runner = (argv.DOCKER_IMAGE);
+    kill = (argv.k || argv.kill);
 
 // --------------------------
 const Versions = GetServerVersion();
@@ -152,34 +150,6 @@ if (SystemCheck) {
     process.exit(0)
 }
 
-// Docker image
-if (docker_runner) {
-    console.log("Bds Maneger CLI, Docker image");
-    process.env.BDS_DOCKER_IMAGE = true
-    const { SERVER, WORLD_NAME, DESCRIPTION, GAMEMODE, DIFFICULTY, PLAYERS, ENABLE_COMMANDS, XBOX_ACCOUNT, TELEGRAM_TOKEN, SEED } = process.env
-    
-    // Telegram token save
-    if (TELEGRAM_TOKEN) bds.telegram_token_save(TELEGRAM_TOKEN);
-    
-    // Change platform
-    bds.change_platform(SERVER)
-    
-    // Save New config
-    bds.set_config({
-        world: WORLD_NAME,
-        description: DESCRIPTION,
-        gamemode: GAMEMODE,
-        difficulty: DIFFICULTY,
-        players: parseInt(PLAYERS),
-        commands: (ENABLE_COMMANDS === "true"),
-        account: JSON.parse(XBOX_ACCOUNT),
-        whitelist: false,
-        port: 19132,
-        portv6: 19133,
-        seed: (parseInt(SEED) || "")
-    })
-}
-
 // Download server
 if (bds_version){
     try {
@@ -189,6 +159,7 @@ if (bds_version){
             const Version = Object.getOwnPropertyNames(LoadVersion)
             // List Version
             for (let version in Version) console.log(`${version}: ${GetPlatform()} version ${Version[version]}`); // deepscan-disable-line FORIN_ARRAY
+            // deepcode ignore MissingClose: <please specify a reason of ignoring this>
             const DownloadOptions = readline.createInterface({input: process.stdin,output: process.stdout});
             console.log("\nSelect Option");
             DownloadOptions.on("line", (input) => {

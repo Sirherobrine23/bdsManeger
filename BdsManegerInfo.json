@@ -19,7 +19,8 @@
             "deop": "op \"{{Player}}\"",
             "ban": "tp \"{{Player}}\" ~ ~99999 ~",
             "kick": "kick \"{{Player}}\" \"{{Text}}\"",
-            "tp": "tp \"{{Player}}\" {{X}} {{Y}} {{X}}"
+            "tp": "tp \"{{Player}}\" {{X}} {{Y}} {{X}}",
+            "say": "say {{Text}}"
         },
         "java": {
             "stop": "stop",
@@ -27,7 +28,8 @@
             "deop": "op {{Player}}",
             "ban": "ban {{Player}}",
             "kick": "kick {{Player}} {{Text}}",
-            "tp": "tp {{Player}} {{X}} {{Y}} {{X}}"
+            "tp": "tp {{Player}} {{X}} {{Y}} {{X}}",
+            "say": "say {{Text}}"
         },
         "pocketmine": {
             "stop": "stop",
@@ -35,7 +37,8 @@
             "deop": "op {{Player}}",
             "ban": "ban {{Player}}",
             "kick": "kick {{Player}}",
-            "tp": "tp \"{{Player}}\" {{X}} {{Y}} {{X}}"
+            "tp": "tp \"{{Player}}\" {{X}} {{Y}} {{X}}",
+            "say": "say {{Text}}"
         }
     },
     "contributors": [
