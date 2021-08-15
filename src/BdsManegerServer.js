@@ -99,7 +99,7 @@ function start() {
     }
     
     // Log file
-    const LogFile = join(GetPaths("log"), `${GetPlatform()}_${new Date().toString()}_Bds_log.log`);
+    const LogFile = path.join(GetPaths("log"), `${GetPlatform()}_${new Date().toString()}_Bds_log.log`);
     const LatestLog_Path = path.join(GetPaths("log"), "latest.log");
     const LogSaveFunction = data => {
         fs.appendFileSync(LogFile, data);
