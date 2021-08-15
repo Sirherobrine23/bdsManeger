@@ -1,14 +1,13 @@
 name: BdsCore
 file: Dockerfile
-tag: bdsmaneger/maneger:latestdebug
+tag: bdsmaneger/core:dev
 target: bdscore
-buildx: true
+buildx:
+  enable: false
+  platform: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
 
 # Docker Run envs
 env:
-  - name: TELEGRAM_TOKEN
-    value: null
-  
   - name: DESCRIPTION
     value: Docker Test
   
@@ -25,7 +24,7 @@ env:
     value: false
   
   - name: PLAYERS
-    value: 8
+    value: 5
   
   - name: BDS_VERSION
     value: latest
@@ -34,24 +33,19 @@ env:
     value: bedrock
 
 # Docker Run Mount
-mount:
-  - path: /home/bds/bds_core/
-    from: ${HOME}/bds_core/
+mount: []
 
 # Docker Run Ports
 ports:
-  - port: 19132
-    external: 19132
+  - in: 19132
+    out: 19132
     protocoll: udp
-
-  - port: 80
-    external: 8880
+  - in: 1932
+    out: 1932
     protocoll: tcp
 
 # More options
 options:
   build: []
-    # - "--platforms=linux/amd64"
-  run:
-    - "--net=host"
+  run: []
   runArgv: []
