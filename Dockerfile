@@ -12,25 +12,19 @@ RUN bash /tmp/Configure.sh
 # Setup bdsmaneger/core
 FROM bdsbase AS bdscore
 
-RUN mkdir -vp /home/thebds/bds_core && chmod -Rv 7777 /home; chown thebds:thebds -Rv /home
-
-
 # Create Volume to Storage Server And Config
-VOLUME [ "/home/thebds/bds_core" ]
+VOLUME [ "/root/bds_core" ]
 
 # Copy Bds Maneger Core
-WORKDIR /home/backend_core_scripts/
+WORKDIR /opt/backend_core_scripts/
 
 # Install Core dependencies
-COPY --chown=thebds:thebds package*.json ./
+COPY package*.json ./
 RUN npm install
 
 # Copy BdsManger Core
-COPY --chown=thebds:thebds ./ ./
+COPY ./ ./
 RUN chmod a+x -v bin/*
-
-# Set Non Root User
-USER thebds
 
 # Set default ENVs to Bds Core
 ENV PLAYERS="5" \
