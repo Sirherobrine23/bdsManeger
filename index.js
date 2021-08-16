@@ -49,10 +49,11 @@ module.exports.telegram_token_save = UpdateTelegramToken
  */
 module.exports.api = require("./src/rest/api");
 
-function token_register() {
+function token_register(Admin_Scoper = ["web_admin", "admin"]) {
+    Admin_Scoper = Array.from(Admin_Scoper).filter(scoper => /admin/.test(scoper));
     const bds_token_path = path.join(bds_dir, "bds_tokens.json");
-    if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]");
-    const tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
+    let tokens = []
+    if (fs.existsSync(bds_token_path)) tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
     
     // Get UUID
     const getBdsUUId = randomUUID().split("-");
@@ -62,7 +63,7 @@ function token_register() {
     tokens.push({
         token: bdsuid,
         date: new Date(),
-        scopers: ["admin"]
+        scopers: Admin_Scoper
     });
     fs.writeFileSync(bds_token_path, JSON.stringify(tokens, null, 4), "utf8");
     console.log(`Bds Maneger API REST token: "${bdsuid}"`);
@@ -75,6 +76,13 @@ function token_register() {
  * @example token_register()
  */
 module.exports.token_register = token_register
+
+/**
+ * Register tokens to use in Bds Maneger REST and other supported applications
+ * 
+ * @example token_register()
+ */
+module.exports.bds_maneger_token_register = token_register
 
 /**
  * Update, Get and more to Modifications Bds Settings File
@@ -143,7 +151,7 @@ module.exports.kill = Kill
  * 
  * java: download("1.16.5")
  * 
- * any platform: download("latest") // It will download the latest version available for download
+ * any platform: download("latest") || download(true) // It will download the latest version available for download
  */
 module.exports.download = download
 

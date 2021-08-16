@@ -35,9 +35,6 @@ function Backup() {
         for (let index of ["pocketmine.yml", "server.properties", "white-list.txt", "ops.txt", "banned-players.txt", "banned-ips.txt"]) if (existsSync(join(Paths.pocketmine, index))) zip.addLocalFile(join(Paths.pocketmine, index), "pocketmine");
     } else console.info("Skipping the pocketmine as it was not installed");
 
-
-    // JSPrismarine
-
     // The Bds Maneger Core Backup
     for (let index of ["BdsConfig.yaml", "bds_tokens.json"]) if (existsSync(join(bds_dir, index))) zip.addLocalFile(join(bds_dir, index));
     

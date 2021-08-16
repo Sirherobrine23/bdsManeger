@@ -1,5 +1,5 @@
 terminal:
-  image: bdsmaneger/node_image:latest
+  image: bdsmaneger/core:latest
   services:
     - docker:dind
   before_script:

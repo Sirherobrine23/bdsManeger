@@ -56,7 +56,6 @@ function Detect(){
         if (/MinecraftServerJava.jar/.test(check.command)) return true;
         if (/bedrock_server/.test(check.command)) return true;
         if (/PocketMine-MP.phar/.test(check.command)) return true;
-        if (/packages\/server\/dist\/Server.js/.test(check.command)) return true;
     }
     return false
 }
@@ -76,10 +75,6 @@ function Kill(){
         if (/PocketMine-MP.phar/.test(check.command)) {
             console.log("Killing Pocketmine-MP");
             killWithPid(check.pid);
-        }
-        if (/packages\/server\/dist\/Server.js/.test(check.command)) {
-            console.log("Killing JSPrismarine");
-            killWithPid(check.pid)
         }
     }
     return true

@@ -18,7 +18,7 @@ const
     server = (argv.p || argv.platform),
     version = (argv.v || argv.version),
     SystemCheck = (argv.S || argv.system_info),
-    bds_version = (argv.d || argv.server_download),
+    bds_version = (argv.d || argv.download),
     start = (argv.s || argv.server_version),
     help = (argv.h || argv.help),
     kill = (argv.k || argv.kill);
@@ -93,7 +93,7 @@ if (help) {
         "  -s  --start            Start Server",
         "  -k  --kill             Detect and kill bds servers",
         "  -p  --platform         Select server platform",
-        "  -d  --server_download  server version to install, default \"latest\"",
+        "  -d  --download         server version to install, default \"latest\"",
         "       --interactive       Install the server interactively",
         "  -S  --system_info      System info and test",
         "  -h  --help             Print this list and exit.",
@@ -158,21 +158,30 @@ if (SystemCheck) {
 if (bds_version){
     try {
         if (argv.interactive) {
-            console.log(`Geting versions to ${GetPlatform()}`);
-            const LoadVersion = require("../../lib/ServerURL").Servers[GetPlatform()]
+            const LoadVersion = require("../lib/ServerURL").Servers[GetPlatform()]
             const Version = Object.getOwnPropertyNames(LoadVersion)
-            // List Version
-            for (let version in Version) console.log(`${version}: ${GetPlatform()} version ${Version[version]}`); // deepscan-disable-line FORIN_ARRAY
-            // deepcode ignore MissingClose: <please specify a reason of ignoring this>
-            const DownloadOptions = readline.createInterface({input: process.stdin,output: process.stdout});
-            console.log("\nSelect Option");
-            DownloadOptions.on("line", (input) => {
-                download(Version[parseInt(input)], true, function(){
-                    console.log("Installation was successful, so start the server with the -s option");
-                    if (start) StartServer();
-                    else process.exit(0)
-                })
-            });
+            
+            const StartQuestion = (Readline) => {
+                Readline.question("Select a version to download: ", input => {
+                    if (Version[parseInt(input) - 1]) {
+                        Readline.close();
+                        download(Version[parseInt(input) - 1], true, function(){
+                            if (start) return StartServer();
+                            console.log("Installation was successful, so start the server with the -s option");
+                            process.exit(0);
+                        })
+                    } else {
+                        console.log("Invalid Option");
+                        StartQuestion(Readline);
+                    }
+                });
+            }
+
+            console.log(`Selected platform: ${GetPlatform()}, Total available versions: ${Version.length}`);
+            console.log("Option     Version");
+
+            for (let option in Version) console.log(`${parseInt(option) + 1} -------- ${Version[option]}`);
+            StartQuestion(readline.createInterface({input: process.stdin,output: process.stdout}));
         }
         else bds.download(bds_version, true, function(){
             if (start) StartServer();

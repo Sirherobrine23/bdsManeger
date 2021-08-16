@@ -3,11 +3,9 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'README.md'
-      - '.github/*/**'
-      - 'package-lock.json'
-      - '.devcontainer/**'
+
+env:
+  DOCKER_ARCH: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:
   npm:
@@ -20,16 +18,18 @@ jobs:
         with:
           node-version: 16.x
           registry-url: https://registry.npmjs.org/
+
       - name: Edit Version
-        run: |
-          id_run1=$(echo ${{ github.run_id }} |cut -b 1-2)
-          id_run2=$(echo ${{ github.run_id }} |cut -b 3-6)
-          id_run3=$(echo ${{ github.run_id }} |cut -b 7-)
-          old="$(cat package.json |grep "version"|head -1)"
-          new_version="$id_run1.$id_run2.$id_run3"
-          sed "s|$old|\"version\": \"$new_version\",|g" package.json > package2.json
-          cat package2.json > package.json
-          rm -rfv package2.json
+        uses: actions/github-script@v4
+        id: set-result
+        with:
+          script: |
+            const fs = require('fs');
+            const Package_JSon = JSON.parse(fs.readFileSync(process.cwd()+'/package.json', 'utf8'));
+            const run_ID = "${{ github.run_id }}";
+            Package_JSon.version = `${run_ID.slice(0, 2)}.${run_ID.slice(3, 6)}.${run_ID.slice(7, 11)}`;
+            fs.writeFileSync(process.cwd()+'/package.json', JSON.stringify(Package_Json, null, 2));
+          result-encoding: string
 
       - name: Install Packages
         run: npm install
@@ -37,9 +37,10 @@ jobs:
       - name: NPM Publish
         run: npm publish --tag dev
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+          NODE_AUTH_TOKEN: "${{ secrets.NPM_ORG_TOKEN }}"
 
-  docker:
+  docker_core:
+    needs: [npm]
     runs-on: ubuntu-latest
     steps:
       - name: Set up QEMU
@@ -63,5 +64,35 @@ jobs:
         with:
           push: true
           target: bdscore
-          tags: bdsmaneger/core:nightly
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          tags: bdsmaneger/core:main
+          platforms: ${{ env.DOCKER_ARCH }}
+
+  docker_base:
+    needs: [npm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKER_ORG_USER }}
+          password: ${{ secrets.DOCKER_ORG_PASS }}
+
+      - name: checkout
+        uses: actions/checkout@master
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          target: bdsbase
+          tags: |
+            bdsmaneger/base:main
+            bdsmaneger/node_image:main
+          platforms: ${{ env.DOCKER_ARCH }}

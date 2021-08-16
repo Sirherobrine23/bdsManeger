@@ -1,17 +1,16 @@
-Docker/
-.docker*
-.github/
-.devconatiner/
-.vscode/
-node_modules/
-*-Test/
-*teste/
-debug.log
-Bds_Maneger
-.dccache
-run.log
-build.log
-Docker.js.log
-Docker.js
-bds_maneger
-BdsManager-bin*
+# Log
+*.log
+
+# test files
+*.test
+*test*.js*
+test/
+Test/
+
+# Git
+git*
+.git*
+
+# Docker
+.dockerignore
+Docker*

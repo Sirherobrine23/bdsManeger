@@ -1,25 +1,22 @@
+# Log
+*.log
+
+# test files
+*.test
+*test*.js*
+test/
+Test/
+
+# Node
 node_modules/
-*-Test/
-*teste/
-debug.log
 Bds_Maneger
 .dccache
 docs/
-run.log
-build.log
-Docker.js.log
-Docker.js
+
+# Bds Maneger Core Binaries
 bds_maneger
 BdsManager-bin*
 Bds-Maneger-Core
-
-# Docker Build
-Docker.exe
-
-# Bin Ignores
-bin/*
-!bin/bds_maneger.js
-!bin/telegram_bot.js
 
 # **
 .husky

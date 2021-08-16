@@ -50,15 +50,14 @@ if (options.system || options.S) {
 }
 
 // nexe options
-var files = readdirSync(resolve(__dirname, "..")).filter(retu => {if (/[Dd]ocker*.js/gi.test(retu) || retu.includes("docker_config.json", ".log")) return false; else if (retu.includes(".js")) return true; else if (retu === "rest" || retu === "scripts") return true; else return false;});
-const nexeCopiler = {
-    name: "Bds Maneger Core",
-    build: true,
-    // loglevel: "verbose",
-    input: resolve(__dirname, "bds_maneger.js"),
-    output: fileout,
-    resources: files,
-}
+const nexeCopiler = {}
 if (options.v || options.verbose)  nexeCopiler.loglevel = "verbose"
 // Build Binarie
-compile(nexeCopiler).then(() => {console.log("success")})
+compile({
+    name: "Bds Maneger Core",
+    build: true,
+    input: resolve(__dirname, "bds_maneger.js"),
+    output: fileout,
+    resources: readdirSync(resolve(__dirname, "..")).filter(retu => !/[Dd]ocker*.js|docker_config.json|*\.log/gi.test(retu)),
+    ...nexeCopiler
+}).then(() => process.exit(0)).catch(() => process.exit(1));

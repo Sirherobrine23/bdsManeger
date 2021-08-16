@@ -74,13 +74,8 @@ function start() {
         SetupCommands.cwd = GetServerPaths("pocketmine");
     }
     
-    // Minecraft Bedrock (JSPrismarine)
-    else if (GetPlatform() === "jsprismarine") {
-        // Start JSPrismarine
-        SetupCommands.command = "node";
-        SetupCommands.args.push("./packages/server/dist/Server.js");
-        SetupCommands.cwd = GetServerPaths("jsprismarine");
-    } else throw Error("Bds Config Error")
+    // Show Error platform
+    else throw Error("Bds Config Error")
     
     // Setup commands
     const ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
@@ -149,10 +144,7 @@ function start() {
         
         // Functions
         const data = data => Player_Json(data, function (array_status){
-            for (let _player of array_status) {
-                if (action === "all") callback(_player);
-                else if (_player.Action === action) callback(_player)
-            }
+            array_status.filter(On => {if ("all" === action || On.Action === action) return true; else return false;}).forEach(_player => callback(_player))
         });
         ServerExec.stdout.on("data", data);
         ServerExec.stderr.on("data", data);
