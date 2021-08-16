@@ -5,6 +5,7 @@ const bds = require("../../../index");
 const { token_verify, CheckPlayer } = require("../../UsersAndtokenChecks");
 const { readFileSync } = require("fs");
 const docs = require("../../../BdsManegerInfo.json").docs;
+const { GetSessions } = require("../../BdsManegerServer");
 
 // Players info and maneger
 app.get("/", (req, res) => {
@@ -35,13 +36,17 @@ app.get("/actions/:TYPE/:TOKEN/:PLAYER*", (req, res) => {
     const { text } = req.query;
     // Pre Check
     if (!(token_verify(TOKEN) || CheckPlayer(PLAYER))) return res.status(401).send("Check your parameters");
-
+    const bds = GetSessions()
     // Post Check
-    if (TYPE === "ban") res.json({ok: bds.command(`ban ${PLAYER}`)});
-    else if (TYPE === "kick") res.json({ok: bds.command(`kick ${PLAYER} ${text}`)});
-    else if (TYPE === "op") res.json({ok: bds.command(`op ${PLAYER}`)});
-    else if (TYPE === "deop") res.json({ok: bds.command(`deop ${PLAYER}`)});
-    else res.sendStatus(422)
+    if (TYPE === "ban") res.json({
+        ok: bds.ban(PLAYER)
+    }); else if (TYPE === "kick") res.json({
+        ok: bds.kick(PLAYER, text)
+    }); else if (TYPE === "op") res.json({
+        ok: bds.op(PLAYER)
+    }); else if (TYPE === "deop") res.json({
+        ok: bds.deop(PLAYER)
+    }); else res.sendStatus(422);
 });
 
 // Actions Redirect

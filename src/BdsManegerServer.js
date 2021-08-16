@@ -74,13 +74,8 @@ function start() {
         SetupCommands.cwd = GetServerPaths("pocketmine");
     }
     
-    // Minecraft Bedrock (JSPrismarine)
-    else if (GetPlatform() === "jsprismarine") {
-        // Start JSPrismarine
-        SetupCommands.command = "node";
-        SetupCommands.args.push("./packages/server/dist/Server.js");
-        SetupCommands.cwd = GetServerPaths("jsprismarine");
-    } else throw Error("Bds Config Error")
+    // Show Error platform
+    else throw Error("Bds Config Error")
     
     // Setup commands
     const ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
@@ -99,8 +94,7 @@ function start() {
     }
     
     // Log file
-    
-    const LogFile = path.join(GetPaths("log"), `${bds.date()}_${GetPlatform()}_Bds_log.log`);
+    const LogFile = path.join(GetPaths("log"), `${GetPlatform()}_${new Date().toString()}_Bds_log.log`);
     const LatestLog_Path = path.join(GetPaths("log"), "latest.log");
     const LogSaveFunction = data => {
         fs.appendFileSync(LogFile, data);
@@ -121,84 +115,78 @@ function start() {
     global.bds_log_string = ""
     ServerExec.stdout.on("data", data => {if (global.bds_log_string) global.bds_log_string = data; else global.bds_log_string += data});
 
+    // sets bds core commands
+    const command = async function (command = "list", callback = function (){}) {
+        return new Promise((resolve) => {
+            ServerExec.stdin.write(`${command}\n`);
+            if (typeof callback === "function") {
+                const TempLog = []
+                const ControlTempHost = data => {TempLog.push(data); return data;}
+                ServerExec.stdout.on("data", data => ControlTempHost(data));
+                ServerExec.stderr.on("data", data => ControlTempHost(data));
+                setTimeout(() => {
+                    callback(TempLog.join("\n"));
+                    resolve(TempLog.join("\n"));
+                }, 2500);
+            }
+        });
+    };
+    const log = function (logCallback = data => process.stdout.write(data)){
+        if (typeof logCallback !== "function") throw new Error("Log Callback is not a function");
+        ServerExec.stdout.on("data", data => logCallback(data));
+        ServerExec.stderr.on("data", data => logCallback(data));
+    };
+    const exit = function (exitCallback = process.exit){if (
+        typeof exitCallback === "function") ServerExec.on("exit", code => exitCallback(code));
+    };
+    const on = function(action = String, callback = Function) {
+        if (!(action === "all" || action === "connect" || action === "disconnect")) throw new Error("Use some valid action: all, connect, disconnect");
+        
+        // Functions
+        const data = data => Player_Json(data, function (array_status){
+            array_status.filter(On => {if ("all" === action || On.Action === action) return true; else return false;}).forEach(_player => callback(_player))
+        });
+        ServerExec.stdout.on("data", data);
+        ServerExec.stderr.on("data", data);
+    };
+    const stop = function (){
+        ServerExec.stdin.write(BdsInfo.Servers[GetPlatform()].stop+"\n");
+        return BdsInfo.Servers[GetPlatform()].stop;
+    };
+    const op = function (player = "Steve") {
+        let command = BdsInfo.Servers[GetPlatform()].op.replace("{{Player}}", player);
+        ServerExec.stdin.write(command+"\n");
+        return command;
+    };
+    const deop = function (player = "Steve") {
+        let command = BdsInfo.Servers[GetPlatform()].deop.replace("{{Player}}", player);
+        ServerExec.stdin.write(command+"\n");
+        return command;
+    };
+    const ban = function (player = "Steve") {
+        let command = BdsInfo.Servers[GetPlatform()].ban.replace("{{Player}}", player);
+        ServerExec.stdin.write(command+"\n");
+        return command;
+    };
+    const kick = function (player = "Steve", text = "you got kicked") {
+        let command = BdsInfo.Servers[GetPlatform()].kick.replace("{{Player}}", player).replace("{{Text}}", text);
+        ServerExec.stdin.write(command+"\n");
+        return command;
+    };
+    const tp = function (player = "Steve", cord = {x: 0, y: 128, z: 0}) {
+        let command = BdsInfo.Servers[GetPlatform()].tp.replace("{{Player}}", player);
+        if (cord.x) command = command.replace("{{X}}", cord.x); else command = command.replace("{{X}}", 0);
+        if (cord.y) command = command.replace("{{Y}}", cord.y); else command = command.replace("{{Y}}", 128);
+        if (cord.y) command = command.replace("{{Z}}", cord.y); else command = command.replace("{{Z}}", 0);
+        ServerExec.stdin.write(command+"\n");
+        return command;
+    };
     const say = (text = "") => ServerExec.stdin.write(BdsInfo.Servers.bedrock.say.replace("{{Text}}", text));
-
     const returnFuntion = {
         uuid: randomUUID(),
-        stop: function (){
-            ServerExec.stdin.write(BdsInfo.Servers[GetPlatform()].stop+"\n");
-            return BdsInfo.Servers[GetPlatform()].stop;
-        },
-        command: async function (command = "list", callback = data => console.log(data)){
-            return new Promise((resolve) => {
-                ServerExec.stdin.write(`${command}\n`);
-                if (typeof callback === "function") {
-                    const TempLog = []
-                    const ControlTempHost = data => {TempLog.push(data); return data;}
-                    ServerExec.stdout.on("data", data => ControlTempHost(data));
-                    ServerExec.stderr.on("data", data => ControlTempHost(data));
-                    setTimeout(() => {
-                        callback(TempLog.join("\n"));
-                        resolve(TempLog.join("\n"));
-                    }, 2500);
-                }
-            });
-        },
-        log: function (logCallback = function(data = ""){data.split("\n").filter(d=>{return (d !== "")}).forEach(l=>console.log(l))}){
-            if (typeof logCallback !== "function") {
-                console.warn("The log callback is not a function using console.log");
-                logCallback = function(data = ""){data.split("\n").filter(d=>{return (d !== "")}).forEach(l=>console.log(l))}
-            }
-            ServerExec.stdout.on("data", data => logCallback(data));
-            ServerExec.stderr.on("data", data => logCallback(data));
-        },
-        exit: function (exitCallback = process.exit){if (
-            typeof exitCallback === "function") ServerExec.on("exit", code => exitCallback(code));
-        },
-        on: function(action = String(), callback = Function) {
-            if (!(action === "all" || action === "connect" || action === "disconnect")) throw new Error("Use some valid action: all, connect, disconnect");
-
-            // Functions
-            const data = data => Player_Json(data, function (array_status){
-                for (let _player of array_status) {
-                    if (_player.Action === action) callback(_player);
-                    if (action === "all") callback(_player); 
-                }
-            });
-            ServerExec.stdout.on("data", data);
-            ServerExec.stderr.on("data", data);
-        },
-        op: function (player = "Steve") {
-            let command = BdsInfo.Servers[GetPlatform()].op.replace("{{Player}}", player);
-            ServerExec.stdin.write(command+"\n");
-            return command;
-        },
-        deop: function (player = "Steve") {
-            let command = BdsInfo.Servers[GetPlatform()].deop.replace("{{Player}}", player);
-            ServerExec.stdin.write(command+"\n");
-            return command;
-        },
-        ban: function (player = "Steve") {
-            let command = BdsInfo.Servers[GetPlatform()].ban.replace("{{Player}}", player);
-            ServerExec.stdin.write(command+"\n");
-            return command;
-        },
-        kick: function (player = "Steve", text = "you got kicked") {
-            let command = BdsInfo.Servers[GetPlatform()].kick.replace("{{Player}}", player).replace("{{Text}}", text);
-            ServerExec.stdin.write(command+"\n");
-            return command;
-        },
-        tp: function (player = "Steve", cord = {x: 0, y: 128, z: 0}) {
-            let command = BdsInfo.Servers[GetPlatform()].tp.replace("{{Player}}", player);
-            if (cord.x) command = command.replace("{{X}}", cord.x); else command = command.replace("{{X}}", 0);
-            if (cord.y) command = command.replace("{{Y}}", cord.y); else command = command.replace("{{Y}}", 128);
-            if (cord.y) command = command.replace("{{Z}}", cord.y); else command = command.replace("{{Z}}", 0);
-            ServerExec.stdin.write(command+"\n");
-            return command;
-        },
-        say,
+        command, log, exit, on, stop, op, deop, ban, kick, tp, say
     }
-    ServerExec.on("exit", ()=>{delete global.BdsExecs[returnFuntion.uuid]});
+    ServerExec.on("exit", () => delete global.BdsExecs[returnFuntion.uuid]);
     global.BdsExecs[returnFuntion.uuid] = returnFuntion;
     return returnFuntion;
 }
@@ -348,6 +336,7 @@ module.exports = {
     start,
     BdsCommand,
     stop,
+    GetSessions,
     CronBackups: CurrentBackups,
     Player_Search,
 }

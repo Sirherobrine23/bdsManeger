@@ -5,9 +5,13 @@ on:
       - v**
       - V**
 
+env:
+  DOCKER_ARCH: linux/amd64,linux/arm64,linux/arm/v7
+
 jobs:
   npm:
     runs-on: ubuntu-latest
+    if: ${{ github.actor }} == ${{ github.repository_owner }}
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@v2.4.0
@@ -21,9 +25,10 @@ jobs:
       - name: Publish
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+          NODE_AUTH_TOKEN: "${{ secrets.NPM_ORG_TOKEN }}"
 
-  docker:
+  docker_core:
+    needs: [npm]
     runs-on: ubuntu-latest
     steps:
       - name: Set up QEMU
@@ -48,4 +53,36 @@ jobs:
           push: true
           target: bdscore
           tags: bdsmaneger/core:latest
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: ${{ env.DOCKER_ARCH }}
+
+  docker_base:
+    needs: [npm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKER_ORG_USER }}
+          password: ${{ secrets.DOCKER_ORG_PASS }}
+
+      - name: checkout
+        uses: actions/checkout@master
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          target: bdsbase
+          tags: |
+            bdsmaneger/base:latest
+            bdsmaneger/base:${{ github.run_id }}
+            bdsmaneger/node_image:latest
+            bdsmaneger/node_image:${{ github.run_id }}
+          platforms: ${{ env.DOCKER_ARCH }}

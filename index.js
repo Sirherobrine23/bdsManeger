@@ -7,23 +7,6 @@ const { bds_dir } = require("./lib/BdsSettings");
 
 if (typeof fetch === "undefined") global.fetch = require("node-fetch");
 
-function date(format) {
-    const today = new Date(),
-        yaer = today.getFullYear(),
-        day = String(today.getDate()).padStart(2, "0"),
-        month = String(today.getMonth() + 1).padStart(2, "0"),
-        hour = today.getHours(),
-        minute = today.getMinutes();
-    // ---------------------------------------------------------
-    if (format === "year") return yaer
-    else if (format === "day") return day
-    else if (format === "month") return month
-    else if (format === "hour") return hour
-    else if (format === "minute") return minute
-    else if (format === "hour_minu") return `${hour}-${minute}`
-    else return `${day}-${month}-${yaer}_${hour}-${minute}`
-}
-
 const bds_core_package = resolve(__dirname, "package.json")
 module.exports.package_path = bds_core_package
 module.exports.package_json = require("./package.json");
@@ -66,10 +49,11 @@ module.exports.telegram_token_save = UpdateTelegramToken
  */
 module.exports.api = require("./src/rest/api");
 
-function token_register() {
+function token_register(Admin_Scoper = ["web_admin", "admin"]) {
+    Admin_Scoper = Array.from(Admin_Scoper).filter(scoper => /admin/.test(scoper));
     const bds_token_path = path.join(bds_dir, "bds_tokens.json");
-    if (!(fs.existsSync(bds_token_path))) fs.writeFileSync(bds_token_path, "[]");
-    const tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
+    let tokens = []
+    if (fs.existsSync(bds_token_path)) tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
     
     // Get UUID
     const getBdsUUId = randomUUID().split("-");
@@ -79,7 +63,7 @@ function token_register() {
     tokens.push({
         token: bdsuid,
         date: new Date(),
-        scopers: ["admin"]
+        scopers: Admin_Scoper
     });
     fs.writeFileSync(bds_token_path, JSON.stringify(tokens, null, 4), "utf8");
     console.log(`Bds Maneger API REST token: "${bdsuid}"`);
@@ -94,6 +78,13 @@ function token_register() {
 module.exports.token_register = token_register
 
 /**
+ * Register tokens to use in Bds Maneger REST and other supported applications
+ * 
+ * @example token_register()
+ */
+module.exports.bds_maneger_token_register = token_register
+
+/**
  * Update, Get and more to Modifications Bds Settings File
  */
 module.exports.BdsSettigs = require("./lib/BdsSettings");
@@ -103,11 +94,6 @@ const { World_BAckup } = require("./src/BdsBackup");
 const { config, get_config } = require("./src/ServerSettings");
 const download = require("./src/BdsServersDownload");
 const { start, stop, BdsCommand, CronBackups } = require("./src/BdsManegerServer")
-
-/**
- * Take the current date
- */
-module.exports.BdsDate = module.exports.date = date
 
 /**
  * sending commands more simply to the server
@@ -165,7 +151,7 @@ module.exports.kill = Kill
  * 
  * java: download("1.16.5")
  * 
- * any platform: download("latest") // It will download the latest version available for download
+ * any platform: download("latest") || download(true) // It will download the latest version available for download
  */
 module.exports.download = download
 

@@ -73,7 +73,6 @@ app.get("/info", ({ res }) => {
     const config = bds.get_config();
     var info = {
         server: {
-            platform: GetPlatform(),
             world_name: config.world,
             running: bds.detect(),
             port: config.portv4,
@@ -85,12 +84,13 @@ app.get("/info", ({ res }) => {
             arch: bds.arch,
             system: process.platform,
             Kernel: GetKernel(),
+            QEMU_STATIC: commandExist("qemu-x86_64-static") || commandExist("qemu-x86_64"),
             IS_CLI: JSON.parse(process.env.IS_BDS_CLI || false),
             IS_DOCKER: JSON.parse(process.env.BDS_DOCKER_IMAGE || false),
             IS_NPX: (process.env.npm_lifecycle_event === "npx"),
-            QEMU_STATIC: commandExist("qemu-x86_64-static")
         },
         bds_maneger_core: {
+            platform: GetPlatform(),
             version: bds.package_json.version,
             server_versions: GetServerVersion(),
         }

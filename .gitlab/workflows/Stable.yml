@@ -1,8 +1,5 @@
-Docker_Stable:
+Docker:
   image: ubuntu:latest
-  only:
-      - v*
-      - V*
   variables:
     DOCKER_TLS_CERTDIR: ""
     DOCKER_DRIVER: overlay2
@@ -18,6 +15,5 @@ Docker_Stable:
         docker run --privileged --rm multiarch/qemu-user-static --reset -p yes
         docker buildx create --name multiarch --driver docker-container --use
         docker buildx inspect --bootstrap
-        docker login --username="$DOCKER_USER" --password="$DOCKER_TOKEN" &> /dev/null
   script:
-    - docker buildx build -t bdsmaneger/maneger:latest --platform=linux/amd64,linux/arm64/v8,linux/arm/v7 .
+    - docker buildx build -t bdsmaneger/maneger:latest --platform=linux/amd64,linux/arm64,linux/arm/v7 .
