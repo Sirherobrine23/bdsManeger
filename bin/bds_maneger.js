@@ -8,10 +8,11 @@ const argv = require("minimist")(process.argv.slice(2));
 if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
 
 const bds = require("../index");
-const { valid_platform } = require("../lib/BdsSystemInfo");
+const SystemInfo = require("../lib/BdsSystemInfo");
 const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
 const commandExits = require("../lib/commandExist");
 const download = require("../src/BdsServersDownload");
+const BdsConfigAndInfo = require("../BdsManegerInfo.json");
 
 // Options
 const
@@ -32,8 +33,8 @@ if (kill) bds.kill();
 // Set Bds Platform
 if (server) UpdatePlatform(server);
 
-function StartServer(){
-    const { Servers } = require("../lib/ServerURL");
+async function StartServer(){
+    const Servers = (await (await fetch(BdsConfigAndInfo.Fetchs.servers)).json());
     // Check Server Update
     if (Versions[GetPlatform()] !== null) {
         if (Versions[GetPlatform()] !== Servers.latest[GetPlatform()]) {
@@ -143,10 +144,10 @@ if (SystemCheck) {
         "*",
         "**************************************************************",
         "* Servers currently available:",
-        `*   - Bedrock:          ${valid_platform.bedrock}`,
-        `*   - Java:             ${valid_platform.java}`,
-        `*   - Pocketmine-MP:    ${valid_platform.pocketmine}`,
-        `*   - JSPrismarine:     ${valid_platform.jsprismarine}`,
+        `*   - Bedrock:          ${SystemInfo.valid_platform.bedrock}`,
+        `*   - Java:             ${SystemInfo.valid_platform.java}`,
+        `*   - Pocketmine-MP:    ${SystemInfo.valid_platform.pocketmine}`,
+        `*   - JSPrismarine:     ${SystemInfo.valid_platform.jsprismarine}`,
         "*",
         "**************************************************************"
     ];
@@ -156,38 +157,39 @@ if (SystemCheck) {
 
 // Download server
 if (bds_version){
-    try {
-        if (argv.interactive) {
-            const LoadVersion = require("../lib/ServerURL").Servers[GetPlatform()]
-            const Version = Object.getOwnPropertyNames(LoadVersion)
-            
-            const StartQuestion = (Readline) => {
-                Readline.question("Select a version to download: ", input => {
-                    if (Version[parseInt(input) - 1]) {
-                        Readline.close();
-                        download(Version[parseInt(input) - 1], true, function(){
-                            if (start) return StartServer();
-                            console.log("Installation was successful, so start the server with the -s option");
-                            process.exit(0);
-                        })
-                    } else {
-                        console.log("Invalid Option");
-                        StartQuestion(Readline);
-                    }
-                });
+    (async () => {
+        try {
+            if (argv.interactive) {
+                const LoadVersion = (await (await fetch(BdsConfigAndInfo.Fetchs.servers)).json())[GetPlatform()]
+                const Version = Object.getOwnPropertyNames(LoadVersion)
+                
+                const StartQuestion = (Readline) => {
+                    Readline.question("Select a version to download: ", input => {
+                        if (Version[parseInt(input) - 1]) {
+                            Readline.close();
+                            download(Version[parseInt(input) - 1], true, function(){
+                                if (start) return StartServer();
+                                console.log("Installation was successful, so start the server with the -s option");
+                                process.exit(0);
+                            })
+                        } else {
+                            console.log("Invalid Option");
+                            StartQuestion(Readline);
+                        }
+                    });
+                }
+    
+                console.log(`Selected platform: ${GetPlatform()}, Total available versions: ${Version.length}`);
+                console.log("Option     Version");
+    
+                for (let option in Version) console.log(`${parseInt(option) + 1} -------- ${Version[option]}`);
+                StartQuestion(readline.createInterface({input: process.stdin,output: process.stdout}));
             }
-
-            console.log(`Selected platform: ${GetPlatform()}, Total available versions: ${Version.length}`);
-            console.log("Option     Version");
-
-            for (let option in Version) console.log(`${parseInt(option) + 1} -------- ${Version[option]}`);
-            StartQuestion(readline.createInterface({input: process.stdin,output: process.stdout}));
-        }
-        else bds.download(bds_version, true, function(){
-            if (start) StartServer();
-        })
-    }
-    catch (error) {console.error(error);process.exit(165);}
+            else bds.download(bds_version, true, function(){
+                if (start) StartServer();
+            })
+        } catch (error) {console.error(error);process.exit(165);}
+    })();
 }
 
 // Start server

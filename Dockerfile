@@ -15,17 +15,6 @@ FROM bdsbase AS bdscore
 # Create Volume to Storage Server And Config
 VOLUME [ "/root/bds_core" ]
 
-# Copy Bds Maneger Core
-WORKDIR /opt/backend_core_scripts/
-
-# Install Core dependencies
-COPY package*.json ./
-RUN npm install
-
-# Copy BdsManger Core
-COPY ./ ./
-RUN chmod a+x -v bin/*
-
 # Set default ENVs to Bds Core
 ENV PLAYERS="5" \
     WORLD_NAME="The Ultimate Server" \
@@ -39,6 +28,17 @@ ENV PLAYERS="5" \
 
 # Bds Maneger Core required ports
 EXPOSE 19132/udp 19133/udp 1932/tcp
+
+# Copy Bds Maneger Core
+WORKDIR /opt/backend_core_scripts/
+
+# Install Core dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy BdsManger Core
+COPY ./ ./
+RUN chmod a+x -v bin/*
 
 # Set Entrypint
 ENTRYPOINT [ "node", "./bin/Docker.js" ]

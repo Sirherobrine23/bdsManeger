@@ -4,7 +4,7 @@ tag: bdsmaneger/core:dev
 target: bdscore
 buildx:
   enable: false
-  platform: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
+  platform: linux/amd64,linux/arm/v7,linux/arm64
 
 # Docker Run envs
 env:
@@ -47,5 +47,6 @@ ports:
 # More options
 options:
   build: []
-  run: []
+  run:
+    - "-v $(pwd)/Test:/root/bds_core"
   runArgv: []

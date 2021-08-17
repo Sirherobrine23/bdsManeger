@@ -8,9 +8,38 @@
     "temp_host": {
         "url": "http://hosts.bdsmaneger.com:3020"
     },
-    "download": {
+    "Fetchs": {
         "php": "https://raw.githubusercontent.com/The-Bds-Maneger/Php_Static_Binary/main/binarys.json",
         "servers": "https://raw.githubusercontent.com/The-Bds-Maneger/external_files/main/Server.json"
+    },
+    "IgnoreLog": {
+        "bedrock": [
+            {
+                "value": "Running AutoCompaction",
+                "regex": true
+            }
+        ],
+        "java": [],
+        "pocketmine": [],
+        "spigot": []
+    },
+    "StartedServer": {
+        "bedrock": {
+            "value": "Server started",
+            "regex": true
+        },
+        "java": {
+            "value": null,
+            "regex": false
+        },
+        "pocketmine": {
+            "value": null,
+            "regex": false
+        },
+        "spigot": {
+            "value": null,
+            "regex": false
+        }
     },
     "Servers": {
         "bedrock": {

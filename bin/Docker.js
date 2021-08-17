@@ -1,11 +1,23 @@
 #!/usr/bin/env node
+process.env.BDS_DOCKER_IMAGE = true;
+const path = require("path");
+const fs = require("fs");
+
 const BdsCore = require("../index");
-const { GetPlatform } = require("../lib/BdsSettings");
-const { Servers } = require("../lib/ServerURL");
+const { GetPlatform, bds_dir } = require("../lib/BdsSettings");
 const { CronJob } = require("cron");
 const BdsInfo = require("../BdsManegerInfo.json");
 
-process.env.BDS_DOCKER_IMAGE = true;
+// Get Current Tokens and Show in the console
+function ShowToken() {
+    const TokenFilePath = path.join(bds_dir, "bds_tokens.json");
+    let Tokens = 1
+    if (fs.existsSync(TokenFilePath)) {
+        [...JSON.parse(fs.readFileSync(TokenFilePath, "utf8"))].slice(0, 5).forEach(token => {console.log(Tokens+":", "Bds API Token:", token.token); Tokens++});
+    } else {
+        console.log("No Tokens Found");
+    }
+}
 
 function StartServer(){
     console.log("The entire log can be accessed via the api and/or the docker log");
@@ -13,32 +25,35 @@ function StartServer(){
     ServerStarted.log(a => process.stdout.write(a));
     ServerStarted.exit(process.exit);
     BdsCore.api();
-    new CronJob("0 */1 * * *", async () => {
-        try {
-            const CurrentLocalVersion = BdsCore.getBdsConfig().server.versions[GetPlatform()],
-                CurrentRemoteVersion = Object.getOwnPropertyNames((await (await fetch(BdsInfo.download.servers)).json())[GetPlatform()])[0];
-            if (CurrentLocalVersion !== CurrentRemoteVersion) {
-                let currenttime = `Hello we are starting the server upgrade from version ${CurrentLocalVersion} to version ${CurrentRemoteVersion}, you have 20 seconds to exit the server`
-                console.log("Update Server:", currenttime);
-                ServerStarted.say(currenttime);
-                let countdown = 20;
-                while (countdown > 1) {
-                    currenttime = `${countdown} seconds remaining to stop Server!`;
+    ShowToken();
+    if (process.env.UPDATE_SERVER === "true") {
+        new CronJob("0 */1 * * *", async () => {
+            try {
+                const CurrentLocalVersion = BdsCore.getBdsConfig().server.versions[GetPlatform()],
+                    CurrentRemoteVersion = Object.getOwnPropertyNames((await (await fetch(BdsInfo.Fetchs.servers)).json())[GetPlatform()])[0];
+                if (CurrentLocalVersion !== CurrentRemoteVersion) {
+                    let currenttime = `Hello we are starting the server upgrade from version ${CurrentLocalVersion} to version ${CurrentRemoteVersion}, you have 20 seconds to exit the server`
+                    console.log("Update Server:", currenttime);
+                    ServerStarted.say(currenttime);
+                    let countdown = 20;
+                    while (countdown > 1) {
+                        currenttime = `${countdown} seconds remaining to stop Server!`;
+                        console.log(currenttime);
+                        ServerStarted.say(currenttime);
+                        countdown--;
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                    currenttime = "Stopping the server"
                     console.log(currenttime);
                     ServerStarted.say(currenttime);
-                    countdown--;
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, 600));
+                    ServerStarted.stop();
                 }
-                currenttime = "Stopping the server"
-                console.log(currenttime);
-                ServerStarted.say(currenttime);
-                await new Promise(resolve => setTimeout(resolve, 600));
-                ServerStarted.stop();
+            } catch (err) {
+                console.log(err);
             }
-        } catch (err) {
-            console.log(err);
-        }
-    });
+        });
+    }
 }
 
 // Check Installed Server
@@ -53,22 +68,24 @@ if (Object.getOwnPropertyNames(AllVersions).filter(platform => AllVersions[platf
             StartServer();
         });
     } else {
-        // Check for Update
-        if (AllVersions[GetPlatform()] === Object.getOwnPropertyNames(Servers[GetPlatform()])[0]) {
-            console.log("The entire log can be accessed via the api and/or the docker log");
-            const ServerStarted = BdsCore.start();
-            ServerStarted.log(a => process.stdout.write(a));
-            ServerStarted.exit(process.exit);
-            BdsCore.api();
-        } else {
-            BdsCore.download(true, true, (err) => {
-                if (err) {
-                    console.log(err);
-                    process.exit(1);
-                }
-                StartServer();
-            });
-        }
+        (async () => {
+            // Check for Update
+            if (AllVersions[GetPlatform()] === Object.getOwnPropertyNames((await (await fetch(BdsInfo.Fetchs.servers)).json())[GetPlatform()])[0]) {
+                console.log("The entire log can be accessed via the api and/or the docker log");
+                const ServerStarted = BdsCore.start();
+                ServerStarted.log(a => process.stdout.write(a));
+                ServerStarted.exit(process.exit);
+                BdsCore.api();
+            } else {
+                BdsCore.download(true, true, (err) => {
+                    if (err) {
+                        console.log(err);
+                        process.exit(1);
+                    }
+                    StartServer();
+                });
+            }
+        })();
     }
 } else {
     console.log("Server is not installed, starting server implementation");
@@ -94,6 +111,7 @@ if (Object.getOwnPropertyNames(AllVersions).filter(platform => AllVersions[platf
             port: 19132,
             portv6: 19133,
         }
+        BdsCore.bds_maneger_token_register(["admin"]);
         BdsCore.set_config(ServerConfig);
         StartServer();
     });
