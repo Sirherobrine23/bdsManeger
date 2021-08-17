@@ -11,7 +11,7 @@ function Backup() {
         bedrock: GetServerPaths("bedrock"),
         java: GetServerPaths("java"),
         pocketmine: GetServerPaths("pocketmine"),
-        jsprismarine: GetServerPaths("jsprismarine")
+        spigot: GetServerPaths("spigot"),
     }
     const CurrentDate = new Date();
     const name = `Bds_Maneger_Core_Backups_${CurrentDate.getDate()}-${CurrentDate.getMonth()}-${CurrentDate.getFullYear()}.zip`

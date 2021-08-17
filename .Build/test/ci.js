@@ -2,12 +2,12 @@
     try {
         const bds = require("../../index");
         await bds.download("latest", true);
-        console.log("Api:", await bds.api());
-        console.log("Backup:", await bds.backup());
-        console.log("Detect Server:", await bds.detect());
-        console.log("Kill Server:", await bds.kill());
-        console.log("Get Config:", await bds.get_config());
-        console.log("Start:", await bds.start());
+        console.log("Api:", bds.api());
+        console.log("Backup:", bds.backup());
+        console.log("Detect Server:", bds.detect());
+        console.log("Kill Server:", bds.kill());
+        console.log("Get Config:", bds.get_config());
+        console.log("Start:", bds.start());
         setTimeout(() => {
             console.log("Kill Server:", bds.kill());
         }, 1 * 30 * 1000);
