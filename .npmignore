@@ -1,6 +1,14 @@
 # Log
 *.log
 
+# Develop files
+.devcontainer/
+.vscode/
+.Build/
+
+# Linters
+.eslint*
+
 # test files
 *.test
 *test*.js*
@@ -12,5 +20,8 @@ git*
 .git*
 
 # Docker
-.dockerignore
+.docker*
 Docker*
+
+# Npm
+the-bds-maneger-core*.tgz

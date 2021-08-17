@@ -1,11 +1,12 @@
+#!/usr/bin/env node
 const fs = require("fs");
 const { Telegraf, Markup } = require("telegraf");
 const bds = require("../index");
 const { GetPlatform, GetPaths, GetTelegramToken } = require("../lib/BdsSettings");
 const { GetKernel, arch, system } = require("../lib/BdsSystemInfo");
 const { Detect } = require("../src/CheckKill");
-const { Servers } = require("../lib/ServerURL");
-const { CheckTelegramUser } = require("../src/UsersAndtokenChecks")
+const { CheckTelegramUser } = require("../src/UsersAndtokenChecks");
+const BdsInfo = require("../BdsManegerInfo.json");
 
 // Bot Start And Help messages
 const HelpAndStart = [
@@ -203,7 +204,7 @@ bot.command("download", async ctx => {
         ctx.reply(`Sucess install ${GetPlatform()} with version ${version}`);
     } else {
         await ctx.deleteMessage();
-        const KeyboardVersion = Markup.keyboard(Object.getOwnPropertyNames(Servers[GetPlatform()]).map(version => {
+        const KeyboardVersion = Markup.keyboard(Object.getOwnPropertyNames((await (await fetch(BdsInfo.Fetchs.servers)).json())[GetPlatform()]).map(version => {
             return {
                 text: `/download ${version}`
             }

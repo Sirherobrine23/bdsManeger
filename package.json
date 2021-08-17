@@ -19,8 +19,8 @@
     "Docker": "node .Build/DockerImage.js"
   },
   "bin": {
-    "bds_maneger": "./bin/bds_maneger.js",
-    "bds_telegram": "./bin/telegram_bot.js"
+    "bds_maneger": "bin/bds_maneger.js",
+    "bds_telegram": "bin/telegram_bot.js"
   },
   "repository": {
     "type": "git",

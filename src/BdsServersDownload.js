@@ -18,14 +18,9 @@ module.exports = async function (version, force_install, callback) {
             bds_dir_dragonfly = GetServerPaths("dragonfly");
 
             // JSON Configs and others
-            const Servers = (await (await fetch(Extra.download.servers)).json());
+            const Servers = (await (await fetch(Extra.Fetchs.servers)).json());
             const ServerVersion = GetServerVersion();
             const CurrentPlatform = GetPlatform();
-            if (force_install === true) { 
-                ServerVersion.java = "latest";
-                ServerVersion.bedrock = "latest"
-                ServerVersion.pocketmine = "latest"
-            }
             if (!(version) || version === true || version === "true" || version === "latest") version = Servers.latest[CurrentPlatform]
             var url;
 
@@ -152,7 +147,7 @@ module.exports = async function (version, force_install, callback) {
 
 async function php_download() {
     const bds_dir_pocketmine = GetServerPaths("pocketmine");
-    const PHPBin = (await (await fetch(Extra.download.php)).json());
+    const PHPBin = (await (await fetch(Extra.Fetchs.php)).json());
     const phpFolder = resolve(bds_dir_pocketmine, "bin");
     const phpExtensiosnsDir = resolve(bds_dir_pocketmine, "bin/php7/lib/php/extensions");
     

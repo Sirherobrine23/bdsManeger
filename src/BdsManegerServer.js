@@ -22,7 +22,9 @@ function start() {
         command: String,
         args: [],
         cwd: String,
-        env: process.env,
+        env: {
+            ...process.env
+        },
     }
 
     // Minecraft Bedrock Oficial
@@ -85,11 +87,17 @@ function start() {
     
     // Post Start
     if (GetPlatform() === "java") {
-        const eula_file = path.join(GetServerPaths("java"), "eula.txt");
-        console.log(fs.readFileSync(eula_file, "utf8"));
-        if (fs.readFileSync(eula_file, "utf8").includes("eula=false")) {
-            fs.writeFileSync(eula_file, fs.readFileSync(eula_file, "utf8").replaceAll("eula=false", "eula=true"));
-            throw new Error("Restart application/CLI")
+        const eula_file_path = path.join(GetServerPaths("java"), "eula.txt");
+        if (fs.existsSync(eula_file_path)) {
+            const eula_file = fs.readFileSync(eula_file_path, "utf8");
+            console.log(eula_file);
+            if (eula_file.includes("eula=false")) {
+                fs.writeFileSync(eula_file_path, eula_file.replace(/eula=false/gi, "eula=true"));
+                throw new Error("Restart application/CLI")
+            }
+        } else {
+            console.log("EULA file not found");
+            throw new Error("EULA file not found")
         }
     }
     
