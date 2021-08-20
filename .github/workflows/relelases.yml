@@ -1,4 +1,4 @@
-name: Npm Packages Stable and Docker Image
+name: Publish Releases
 on:
   release:
     types:
@@ -44,8 +44,9 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v1 
         with:
-          username: ${{ secrets.DOCKER_ORG_USER }}
-          password: ${{ secrets.DOCKER_ORG_PASS }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: checkout
         uses: actions/checkout@master
@@ -56,7 +57,7 @@ jobs:
         with:
           push: true
           target: bdscore
-          tags: bdsmaneger/core:latest
+          tags: ghcr.io/the-bds-maneger/core:latest
           platforms: ${{ env.DOCKER_ARCH }}
 
   docker_base:
@@ -72,8 +73,9 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v1 
         with:
-          username: ${{ secrets.DOCKER_ORG_USER }}
-          password: ${{ secrets.DOCKER_ORG_PASS }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: checkout
         uses: actions/checkout@master
@@ -84,9 +86,5 @@ jobs:
         with:
           push: true
           target: bdsbase
-          tags: |
-            bdsmaneger/base:latest
-            bdsmaneger/base:${{ github.run_id }}
-            bdsmaneger/node_image:latest
-            bdsmaneger/node_image:${{ github.run_id }}
+          tags: ghcr.io/the-bds-maneger/base:latest
           platforms: ${{ env.DOCKER_ARCH }}
