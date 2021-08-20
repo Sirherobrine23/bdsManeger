@@ -1,9 +1,8 @@
 name: Npm Packages Stable and Docker Image
 on:
-  push: 
-    tags:
-      - v**
-      - V**
+  release:
+    types:
+      - created
 
 env:
   DOCKER_ARCH: linux/amd64,linux/arm64,linux/arm/v7
@@ -11,7 +10,7 @@ env:
 jobs:
   npm:
     runs-on: ubuntu-latest
-    if: ${{ github.actor }} == ${{ github.repository_owner }}
+    if: ${{ github.actor }} == ${{ github.repository_owner }} && (contains('tag', ${{ github.ref }}) && contains('v', ${{ github.ref }}) || contains('V', ${{ github.ref }}))
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-node@v2.4.0
@@ -25,7 +24,12 @@ jobs:
       - name: Publish
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: "${{ secrets.NPM_ORG_TOKEN }}"
+          NODE_AUTH_TOKEN: '${{ secrets.NPM_ORG_TOKEN }}'
+
+      - name: Remove Dev Versions
+        run: npm run remove_dev_versions
+        env:
+          NODE_AUTH_TOKEN: '${{ secrets.NPM_ORG_TOKEN }}'
 
   docker_core:
     needs: [npm]
