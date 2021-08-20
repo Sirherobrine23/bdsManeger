@@ -1,6 +1,6 @@
 name: BdsCore
 file: Dockerfile
-tag: bdsmaneger/core:dev
+tag: bdsmanegercore:dev
 target: bdscore
 buildx:
   enable: false

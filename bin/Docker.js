@@ -54,14 +54,6 @@ function StartServer(){
             }
         });
     }
-    // Debug Arch
-    if (process.env.DebugArch === "true") {
-        console.log("Debug Arch:", process.arch);
-        setTimeout(() => {
-            console.log("Stop Server end debug");
-            process.exit(0);
-        }, 1000);
-    }
 }
 
 // Check Installed Server

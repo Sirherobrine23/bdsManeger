@@ -62,7 +62,7 @@ docker run --rm -d --name BdsManegerCore -v BdsCore:/home/bds/bds_core ^
     -e PLAYERS="13" ^
     -e SERVER="bedrock" ^
     -e ENABLE_COMMANDS="false" ^
-bdsmaneger/core:latest
+ghcr.io/the-bds-maneger/core:latest
 ```
 
 ### Linux/MacOS
@@ -78,7 +78,7 @@ docker run --rm -d --name BdsManegerCore -v BdsCore/:/home/bds/bds_core \
     -e PLAYERS="13" \
     -e SERVER="bedrock" \
     -e ENABLE_COMMANDS="false" \
-bdsmaneger/core:latest
+ghcr.io/the-bds-maneger/core:latest
 ```
 
 ## Azure Container and Azure VM

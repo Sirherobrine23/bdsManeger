@@ -1,4 +1,4 @@
-FROM bdsmaneger/node_image:latest
+FROM ghcr.io/the-bds-maneger/base:main
 USER root
 RUN useradd -M -s /usr/bin/zsh -p $(perl -e 'print crypt($ARGV[0], "password")' vscode) vscode; echo "vscode    ALL=(ALL:ALL) NOPASSWD:   ALL" > /etc/sudoers.d/vscode
 
