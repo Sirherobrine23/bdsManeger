@@ -16,7 +16,8 @@
     "eslint": "eslint --debug .",
     "eslint:fix": "eslint --debug --fix .",
     "nexe": "node .Build/nexe_build.js",
-    "Docker": "node .Build/DockerImage.js"
+    "Docker": "node .Build/DockerImage.js",
+    "remove_dev_versions": "node .Build/RemoveVersions.js"
   },
   "bin": {
     "bds_maneger": "bin/bds_maneger.js",
@@ -56,6 +57,7 @@
     "@the-bds-maneger/fetchsync": "github:The-Bds-Maneger/fetchSync",
     "adm-zip": "^0.5.1",
     "body-parser": "^1.19.0",
+    "cli-color": "^2.0.0",
     "cors": "^2.8.5",
     "cron": "^1.8.2",
     "express": "^4.17.1",
