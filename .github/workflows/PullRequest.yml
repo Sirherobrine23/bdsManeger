@@ -1,7 +1,25 @@
-name: Test - The Bds Maneger Core
-on: [pull_request]
+name: Docker And Node Test
+on:
+  pull_request:
+    branches:
+      - main
 
 jobs:
+  CodeQL:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: "javascript"
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v1
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
+
   Test:
     runs-on: ubuntu-latest
     strategy:
@@ -26,8 +44,16 @@ jobs:
     - name: Run test
       run: npm run ci
 
-  Test_Docker:
+  Docker-Multiarch:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - arm64
+          - arm/v7
+
+    name: "Build And Test Docker Image, Arch: ${{ matrix.arch }}"
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -39,8 +65,12 @@ jobs:
         uses: actions/checkout@master
 
       - name: Build Docker Image
+        id: DockerArch
         uses: docker/build-push-action@v2
         with:
           target: bdscore
           tags: coretest:latest
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/${{ matrix.arch }}
+
+      - name: "Run Docker Image, digiest: ${{ outputs.DockerArch.digest }}"
+        run: docker run --rm -it -e DebugArch="true" coretest:latest@{{ outputs.DockerArch.digest }}
