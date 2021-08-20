@@ -72,5 +72,5 @@ jobs:
           tags: coretest:latest
           platforms: linux/${{ matrix.arch }}
 
-      - name: "Run Docker Image, digiest: ${{ outputs.DockerArch.digest }}"
-        run: docker run --rm -it -e DebugArch="true" coretest:latest@{{ outputs.DockerArch.digest }}
+      - name: "Run Docker Image, digiest: ${{ steps.DockerArch.outputs.digest }}"
+        run: docker run --rm -it -e DebugArch="true" coretest:latest@${{ steps.DockerArch.outputs.digest }}
