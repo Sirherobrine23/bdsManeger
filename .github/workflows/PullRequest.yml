@@ -80,4 +80,8 @@ jobs:
           platforms: linux/${{ matrix.arch }}
 
       - name: "Run Docker Image, digiest: ${{ steps.DockerArch.outputs.digest }}"
+        if: matrix.arch == "amd64"
+        run: docker run --rm -i -e DebugArch="true" coretest:latest
+      - name: "Run Docker Image, digiest: ${{ steps.DockerArch.outputs.digest }}"
+        if: matrix.arch != "amd64"
         run: docker run --rm -i -e DebugArch="true" coretest:latest@${{ steps.DockerArch.outputs.digest }}
