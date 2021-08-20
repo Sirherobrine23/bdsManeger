@@ -13,7 +13,7 @@ env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: the-bds-maneger/bds-maneger-core
 
 
 jobs:
@@ -44,4 +44,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ Github.actor }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
