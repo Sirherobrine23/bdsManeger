@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express.Router();
-const { GetPlatform } = require("../../../lib/BdsSettings")
+const { GetPlatform, GetPaths } = require("../../../lib/BdsSettings")
 const bds = require("../../../index");
 const { token_verify, CheckPlayer } = require("../../UsersAndtokenChecks");
 const { readFileSync } = require("fs");
@@ -10,7 +10,7 @@ const { GetSessions } = require("../../BdsManegerServer");
 // Players info and maneger
 app.get("/", (req, res) => {
     var { player, status, platform} = req.query;
-    const players_json = JSON.parse(readFileSync(bds.players_files, "utf8"))[(platform || GetPlatform())];
+    const players_json = JSON.parse(readFileSync(GetPaths("player"), "utf8"))[(platform || GetPlatform())];
     var response = {};
     
     if (player) {
