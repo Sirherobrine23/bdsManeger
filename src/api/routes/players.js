@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express.Router();
 const { GetPlatform, GetPaths } = require("../../../lib/BdsSettings")
-const bds = require("../../../index");
 const { token_verify, CheckPlayer } = require("../../UsersAndtokenChecks");
 const { readFileSync } = require("fs");
 const docs = require("../../../BdsManegerInfo.json").docs;
