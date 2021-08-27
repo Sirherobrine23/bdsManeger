@@ -10,10 +10,8 @@
         console.log("Start:", bds.start());
         setTimeout(() => {
             console.log("Kill Server:", bds.kill());
+            setTimeout(() => process.exit(0), 1000);
         }, 1 * 30 * 1000);
-        setTimeout(() => {
-            process.exit(0);
-        }, 1 * 60 * 1000);
     } catch (err) {
         console.log("Detect Error:", err);
         process.exit(1)
