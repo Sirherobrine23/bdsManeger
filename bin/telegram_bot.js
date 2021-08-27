@@ -23,7 +23,7 @@ const HelpAndStart = [
     "   /download",
     "       Version",
     "   ",
-]
+];
 
 // Set Telegram Bot
 const bot = new Telegraf(GetTelegramToken());

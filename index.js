@@ -47,12 +47,12 @@ module.exports.telegram_token_save = UpdateTelegramToken
  * 
  * @param {function} callback - The callback function after start API
  */
-module.exports.api = require("./src/rest/api");
+module.exports.api = require("./src/api/api");
 
 function token_register(Admin_Scoper = ["web_admin", "admin"]) {
     Admin_Scoper = Array.from(Admin_Scoper).filter(scoper => /admin/.test(scoper));
     const bds_token_path = path.join(bds_dir, "bds_tokens.json");
-    let tokens = []
+    let tokens = [];
     if (fs.existsSync(bds_token_path)) tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
     
     // Get UUID

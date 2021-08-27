@@ -46,11 +46,13 @@ case "$(apt search openjdk)" in
 esac
 
 # Setup non root user
-useradd -m -p "$(perl -e 'print crypt($ARGV[0], "password")' "LucaA1113ba21")" "thebds"
-addgroup thebds sudo
-addgroup thebds root
-usermod --shell /usr/bin/zsh thebds;
-echo "thebds   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+setup_user() {
+    useradd -m -p "$(perl -e 'print crypt($ARGV[0], "password")' "LucaA1113ba21")" "thebds"
+    addgroup thebds sudo
+    addgroup thebds root
+    usermod --shell /usr/bin/zsh thebds;
+    echo "thebds   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+}
 
 # Remove Unnecessary Packages
 apt autoremove -y

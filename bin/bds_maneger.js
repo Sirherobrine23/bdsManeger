@@ -89,120 +89,123 @@ async function StartServer(){
         process.exit(2)
     }
 }
-
-// Bds Maneger CLI Help
-if (help) {
-    let help = [
-        "usage: bds_maneger [options]",
-        "",
-        "options:",
-        "  -s  --start            Start Server",
-        "  -k  --kill             Detect and kill bds servers",
-        "  -p  --platform         Select server platform",
-        "  -d  --download         server version to install, default \"latest\"",
-        "       --interactive       Install the server interactively",
-        "  -S  --system_info      System info and test",
-        "  -h  --help             Print this list and exit.",
-        "  -v  --version          Print the version and exit."
-    ]
-    console.log(cli_color.yellow(help.join("\n")));
-    process.exit();
-}
-
-// Get Bds Core Version
-if (version) {
-    const Info = [
-        `Bds Maneger Core version: ${bds.package_json.version}`,
-        "",
-        "****************** Bds Maneger Core contributors ******************",
-        "",
-    ]
-    for (let contri of bds.extra_json.contributors) {
-        Info.push(`********* ${contri.name} *********`)
-        if (contri.email) Info.push(`* ${contri.email}`)
-        if (contri.url) Info.push(`* ${contri.url}`)
-        Info.push("*")
-        Info.push("*********")
+(async () => {
+    // Bds Maneger CLI Help
+    if (help) {
+        let help = [
+            "usage: bds_maneger [options]",
+            "",
+            "options:",
+            "  -s  --start            Start Server",
+            "  -k  --kill             Detect and kill bds servers",
+            "  -p  --platform         Select server platform",
+            "  -d  --download         server version to install, default \"latest\"",
+            "       --interactive       Install the server interactively",
+            "  -S  --system_info      System info and test",
+            "  -h  --help             Print this list and exit.",
+            "  -v  --version          Print the version and exit."
+        ]
+        console.log(cli_color.yellow(help.join("\n")));
+        process.exit();
     }
-    console.log(Info.join("\n"));
-    process.exit();
-}
 
-if (SystemCheck) {
-    var checkothearch = "";
-    if (process.platform === "linux" && bds.arch !== "x64"){checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExits("qemu-x86_64-static")}\n`}
-    if (process.platform === "android" && bds.arch !== "x64"){checkothearch = `qemu-x86_64 is installed to emulate an x64 system: ${commandExits("qemu-x86_64")}\n`}
-    const help = [
-        `Bds Maneger Core And Bds Maneger CLI version: ${cli_color.magentaBright(bds.package_json.version)}`,
-        `System: ${cli_color.yellow(process.platform)}, architecture: ${cli_color.blue(bds.arch)}`,
-        checkothearch,
-        "**************************************************************",
-        "* Bds Maneger dirs:",
-        `*   - Config:                ${cli_color.yellowBright(bds_dir)}`,
-        `*   - Players File:          ${cli_color.yellowBright(GetPaths("player"))}`,
-        "*",
-        "* Bds Servers dirs:",
-        `*   - Bedrock Server:        ${cli_color.yellowBright(GetServerPaths("bedrock"))}`,
-        `*   - Pocketmine-MP Server:  ${cli_color.yellowBright(GetServerPaths("pocketmine"))}`,
-        `*   - Dragonfly:             ${cli_color.yellowBright(GetServerPaths("dragonfly"))}`,
-        `*   - Java Server:           ${cli_color.yellowBright(GetServerPaths("java"))}`,
-        `*   - Spigot Server:         ${cli_color.yellowBright(GetServerPaths("spigot"))}`,
-        "*",
-        "**************************************************************",
-        "* Servers currently available:",
-        `*   - Bedrock:          ${SystemInfo.valid_platform.bedrock}`,
-        `*   - Pocketmine-MP:    ${SystemInfo.valid_platform.pocketmine}`,
-        `*   - Dragonfly:        ${SystemInfo.valid_platform.dragonfly}`,
-        `*   - Java:             ${SystemInfo.valid_platform.java}`,
-        `*   - Spigot:           ${SystemInfo.valid_platform.java}`,
-        "*",
-        "**************************************************************"
-    ];
-    console.log(
-        cli_color.whiteBright(help.join("\n")
-            .replace(/true/gi, cli_color.greenBright("true"))
-            .replace(/false/gi, cli_color.redBright("false"))
-            .replace(/undefined/gi, cli_color.red("undefined"))
-        ));
-    process.exit(0)
-}
+    // Get Bds Core Version
+    if (version) {
+        const Info = [
+            `Bds Maneger Core version: ${bds.package_json.version}`,
+            "",
+            "****************** Bds Maneger Core contributors ******************",
+            "",
+        ]
+        for (let contri of bds.extra_json.contributors) {
+            Info.push(`********* ${contri.name} *********`)
+            if (contri.email) Info.push(`* ${contri.email}`)
+            if (contri.url) Info.push(`* ${contri.url}`)
+            Info.push("*")
+            Info.push("*********")
+        }
+        console.log(Info.join("\n"));
+        process.exit();
+    }
 
-// Download server
-if (bds_version){
-    (async () => {
-        try {
-            if (argv.interactive) {
-                const LoadVersion = (await (await fetch(BdsConfigAndInfo.Fetchs.servers)).json())[GetPlatform()]
-                const Version = Object.getOwnPropertyNames(LoadVersion)
-                
-                const StartQuestion = (Readline) => {
-                    Readline.question("Select a version to download: ", input => {
-                        if (Version[parseInt(input) - 1]) {
-                            Readline.close();
-                            download(Version[parseInt(input) - 1], true, function(){
-                                if (start) return StartServer();
-                                console.log("Installation was successful, so start the server with the -s option");
-                                process.exit(0);
-                            })
-                        } else {
-                            console.log("Invalid Option");
-                            StartQuestion(Readline);
-                        }
-                    });
+    if (SystemCheck) {
+        const { valid_platform } = await SystemInfo();
+        var checkothearch = "";
+        if (process.platform === "linux" && bds.arch !== "x64"){checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExits("qemu-x86_64-static")}\n`}
+        if (process.platform === "android" && bds.arch !== "x64"){checkothearch = `qemu-x86_64 is installed to emulate an x64 system: ${commandExits("qemu-x86_64")}\n`}
+        const help = [
+            `Bds Maneger Core And Bds Maneger CLI version: ${cli_color.magentaBright(bds.package_json.version)}`,
+            `System: ${cli_color.yellow(process.platform)}, architecture: ${cli_color.blue(bds.arch)}`,
+            checkothearch,
+            "**************************************************************",
+            "* Bds Maneger dirs:",
+            `*   - Config:                ${cli_color.yellowBright(bds_dir)}`,
+            `*   - Players File:          ${cli_color.yellowBright(GetPaths("player"))}`,
+            "*",
+            "* Bds Servers dirs:",
+            `*   - Bedrock Server:        ${cli_color.yellowBright(GetServerPaths("bedrock"))}`,
+            `*   - Pocketmine-MP Server:  ${cli_color.yellowBright(GetServerPaths("pocketmine"))}`,
+            `*   - Dragonfly:             ${cli_color.yellowBright(GetServerPaths("dragonfly"))}`,
+            `*   - Java Server:           ${cli_color.yellowBright(GetServerPaths("java"))}`,
+            `*   - Spigot Server:         ${cli_color.yellowBright(GetServerPaths("spigot"))}`,
+            "*",
+            "**************************************************************",
+            "* Servers currently available:",
+            `*   - Bedrock:          ${valid_platform.bedrock}`,
+            `*   - Pocketmine-MP:    ${valid_platform.pocketmine}`,
+            `*   - Dragonfly:        ${valid_platform.dragonfly}`,
+            `*   - Java:             ${valid_platform.java}`,
+            `*   - Spigot:           ${valid_platform.java}`,
+            "*",
+            "**************************************************************"
+        ];
+        console.log(
+            cli_color.whiteBright(help.join("\n")
+                .replace(/true/gi, cli_color.greenBright("true"))
+                .replace(/false/gi, cli_color.redBright("false"))
+                .replace(/undefined/gi, cli_color.red("undefined"))
+            ));
+        process.exit(0)
+    }
+
+    // Download server
+    if (bds_version){
+        (async () => {
+            try {
+                if (argv.interactive) {
+                    const LoadVersion = (await (await fetch(BdsConfigAndInfo.Fetchs.servers)).json())[GetPlatform()]
+                    const Version = Object.getOwnPropertyNames(LoadVersion)
+                    
+                    const StartQuestion = (Readline) => {
+                        Readline.question("Select a version to download: ", input => {
+                            if (Version[parseInt(input) - 1]) {
+                                Readline.close();
+                                download(Version[parseInt(input) - 1], true, function(){
+                                    if (start) return StartServer();
+                                    console.log("Installation was successful, so start the server with the -s option");
+                                    process.exit(0);
+                                })
+                            } else {
+                                console.log("Invalid Option");
+                                StartQuestion(Readline);
+                            }
+                        });
+                    }
+        
+                    console.log(`Selected platform: ${GetPlatform()}, Total available versions: ${Version.length}`);
+                    console.log(`${cli_color.red("Option")}     ${cli_color.green("Version")}`);
+        
+                    for (let option in Version) console.log(`${cli_color.red(parseInt(option) + 1)}:   ${cli_color.green(Version[option])}`);
+                    StartQuestion(readline.createInterface({input: process.stdin,output: process.stdout}));
                 }
-    
-                console.log(`Selected platform: ${GetPlatform()}, Total available versions: ${Version.length}`);
-                console.log(`${cli_color.red("Option")}     ${cli_color.green("Version")}`);
-    
-                for (let option in Version) console.log(`${cli_color.red(parseInt(option) + 1)}:   ${cli_color.green(Version[option])}`);
-                StartQuestion(readline.createInterface({input: process.stdin,output: process.stdout}));
-            }
-            else bds.download(bds_version, true, function(){
-                if (start) StartServer();
-            })
-        } catch (error) {console.error(error);process.exit(165);}
-    })();
-}
+                else bds.download(bds_version, true, function(){
+                    if (start) StartServer();
+                })
+            } catch (error) {console.error(error);process.exit(165);}
+        })();
+    }
 
-// Start server
-if (start && !(server || version || SystemCheck || bds_version || help)) StartServer();
+    // Start server
+    if (start && !(server || version || SystemCheck || bds_version || help)) StartServer();
+
+})()
