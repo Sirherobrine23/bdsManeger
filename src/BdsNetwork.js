@@ -1,12 +1,19 @@
 // External User ip
-const fetchSync = require("@the-bds-maneger/fetchsync");
+const Request = require("../lib/Requests");
 const os = require("os");
 const { GetTempHost } = require("../lib/BdsSettings");
 
-const externalIP = {
-    ipv4: fetchSync("https://api.ipify.org/").text().replace("\n", ""),
-    ipv6: fetchSync("https://api64.ipify.org/").text().replace("\n", "")
-}
+Request.TEXT("https://api.ipify.org").then(external_ipv4 => {
+    Request.TEXT("https://api64.ipify.org/").then(external_ipv6 => {
+        const externalIP = {
+            ipv4: external_ipv4.replace("\n", ""),
+            ipv6: external_ipv6.replace("\n", "")
+        }
+
+        module.exports.externalIP = externalIP;
+        module.exports.ip = externalIP;
+    });
+});
 
 // Internal ip user
 const interfaces = os.networkInterfaces();
@@ -48,7 +55,7 @@ var host = null,
 
 if (GetTempHost()){
     // Get HOST
-    HostResponse = fetchSync("https://bds-core-back-end.vercel.app/Gethost", {
+    Request.JSON("https://bds-core-back-end.vercel.app/Gethost", {
         method: "POST",
         mode: "cors",
         body: JSON.stringify({
@@ -58,30 +65,28 @@ if (GetTempHost()){
         headers: {
             "Content-Type": "application/json"
         }
-    }).json();
-    global.BdsTempHost = HostResponse.user.host.host
-    host = HostResponse.user.host.host
-
-    console.log(`Bds Maneger Core Temp Host ID: ${HostResponse.user.ID}`)
-
-    // Delete Host
-    process.on("exit", function () {
-        const deleted_host = fetchSync("https://bds-core-back-end.vercel.app/DeleteHost", {
-            method: "post",
-            body: JSON.stringify({
-                "ID": HostResponse.user.ID
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        }).json()
-        if (deleted_host.error) console.log(deleted_host.error)
-    })
+    }).then(HostResponse => {
+        global.BdsTempHost = HostResponse.user.host.host
+        host = HostResponse.user.host.host
+        console.log(`Bds Maneger Core Temp Host ID: ${HostResponse.user.ID}`)
+        // Delete Host
+        process.on("exit", function () {
+            Request.JSON("https://bds-core-back-end.vercel.app/DeleteHost", {
+                method: "post",
+                body: JSON.stringify({
+                    "ID": HostResponse.user.ID
+                }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(deleted_host => {
+                if (deleted_host.error) console.log(deleted_host.error)
+            });
+        });
+    });
 } else module.exports.host = null
 
 module.exports = {
-    externalIP,
-    ip: externalIP,
     internal_ip,
     Interfaces,
     HostResponse,

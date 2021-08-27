@@ -1,4 +1,5 @@
-const { join, resolve } = require("path");
+const path = require("path");
+const { join, resolve } = path;
 const fs = require("fs");
 const AdmZip = require("adm-zip");
 const { GetServerPaths, GetPaths, bds_dir } = require("../lib/BdsSettings");
