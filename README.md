@@ -21,7 +21,6 @@ We have a separate repository for all Bds Maneger Project documentation, [link h
 
 ## Badges
 
-[![Github CodeQL and OSSAR](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml/badge.svg)](https://github.com/The-Bds-Maneger/Bds-Maneger-Core/actions/workflows/codeql%20and%20ossar%20analysis.yml)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/alerts/)
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/context:javascript)
 [![DeepScan grade](https://deepscan.io/api/teams/13683/projects/16691/branches/363172/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=13683&pid=16691&bid=363172)
@@ -48,6 +47,31 @@ The commands available after installation:
 `npm i -g @the-bds-maneger/core@latest`
 
 ## Launch Bds Maneger Core with a docker image
+
+### Docker Compose
+
+[Docker Compose Install guide](https://docs.docker.com/compose/install/)
+
+```yaml
+version: "2.1"
+services:
+  BdsCore:
+    image: ghcr.io/the-bds-maneger/core:latest
+    container_name: BdsCore
+    restart: always
+    network_mode: host
+    environment:
+      DESCRIPTION: running Minecraft Bedrock Server on the docker by Bds Manager
+      WORLD_NAME: Bds Maneger Docker
+      GAMEMODE: survival
+      DIFFICULTY: normal
+      ACCOUNT: "false"
+      PLAYERS: 13
+      SERVER: bedrock
+      ENABLE_COMMANDS: "false"
+    volumes:
+      - ./BdsCore:/home/bds/bds_core
+```
 
 ### Windows
 
