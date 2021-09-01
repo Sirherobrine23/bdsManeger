@@ -37,9 +37,10 @@ module.exports = function (version = true, force_install = false, callback = (er
                                 promise_resolve(true);
                             } else {
                                 // Get Server Version
-                                if (Servers.bedrock[version].data) console.log(`Server data publish: ${Servers.bedrock[version].data}`)
-                                const BedrockUrlDownload = Servers.bedrock[version][bds.arch][process.platform]
-                                
+                                const BedrockUrlDownload = (Servers.bedrock[version][bds.arch] || Servers.bedrock[version]["x64"])[process.platform];
+                                if (!(BedrockUrlDownload)) return promise_reject(new Error("Error in find url version"));
+                                if (Servers.bedrock[version].data) console.log(`Server data publish: ${Servers.bedrock[version].data}`);
+
                                 // Copy Config files
                                 var server_configs, permissions, whitelist;
                                 if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");
@@ -47,9 +48,9 @@ module.exports = function (version = true, force_install = false, callback = (er
                                 if (existsSync(join(bds_dir_bedrock, "whitelist.json"))) whitelist = readFileSync(join(bds_dir_bedrock, "whitelist.json"), "utf8");
                                 
                                 // Download and Add to Adm_Zip
-                                Request.BUFFER(BedrockUrlDownload).then(Buffer => {
+                                Request.BUFFER(BedrockUrlDownload).then(ResBuffer => {
                                     // Extract Zip
-                                    const zip = new AdmZip(Buffer);
+                                    const zip = new AdmZip(ResBuffer);
                                     console.log("Download Sucess")
                                     zip.extractAllTo(bds_dir_bedrock, true)
                                     console.log("Extract Sucess")
@@ -67,7 +68,11 @@ module.exports = function (version = true, force_install = false, callback = (er
                                     if (typeof callback === "function") callback(undefined);
                                 }).catch(error => {promise_reject(error); if (typeof callback === "function") callback(error);});
                             }
-                        } else throw Error("Bedrock Not suported")
+                        } else {
+                            const BedrcokError = Error("Bedrock Not suported");
+                            promise_reject(BedrcokError);
+                            if (typeof callback === "function") callback(BedrcokError);
+                        }
                     }
 
                     // Java
@@ -81,9 +86,9 @@ module.exports = function (version = true, force_install = false, callback = (er
                             } else {
                                 const JavaDownloadUrl = Servers.java[version].url
                                 console.log(`Server data publish: ${Servers.java[version].data}`)
-                                Request.BUFFER(JavaDownloadUrl).then(Buffer => {
+                                Request.BUFFER(JavaDownloadUrl).then(ResBuffer => {
                                     // Save Jar file
-                                    writeFileSync(join(bds_dir_java, "MinecraftServerJava.jar"), Buffer, "binary")
+                                    writeFileSync(join(bds_dir_java, "MinecraftServerJava.jar"), ResBuffer, "binary")
                                     console.log("Success when downloading and saving Minecraft Server java");
                                     
                                     // Update Server Version
@@ -92,9 +97,16 @@ module.exports = function (version = true, force_install = false, callback = (er
                                     // Resolve
                                     promise_resolve();
                                     if (typeof callback === "function") callback(undefined);
-                                }).catch(error => {promise_reject(error); if (typeof callback === "function") callback(error);});
+                                }).catch(error => {
+                                    promise_reject(error);
+                                    if (typeof callback === "function") callback(error);
+                                });
                             }
-                        } else throw Error("Java is not supported or required software is not installed")
+                        } else {
+                            const JavaError = Error("Java is not supported or required software is not installed");
+                            promise_reject(JavaError);
+                            if (typeof callback === "function") callback(JavaError);
+                        }
                     }
 
                     // Pocketmine-MP
@@ -109,8 +121,8 @@ module.exports = function (version = true, force_install = false, callback = (er
                                 const PocketMineJson = Servers.pocketmine[version]
                                 console.log(`Server data publish: ${PocketMineJson.data}`);
                                 
-                                Request.BUFFER(PocketMineJson.url).then(Buffer => {
-                                    writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), Buffer, "binary")
+                                Request.BUFFER(PocketMineJson.url).then(ResBuffer => {
+                                    writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), ResBuffer, "binary")
                                     console.log("Success downloading and saving PocketMine-MP php");
                                     php_download().then(() => {
                                         // Update server Version
@@ -118,10 +130,20 @@ module.exports = function (version = true, force_install = false, callback = (er
                                         // Callback
                                         promise_resolve(true);
                                         if (typeof callback === "function") callback(undefined, true);
-                                    }).catch(error => {promise_reject(error); if (typeof callback === "function") callback(error);});
-                                }).catch(error => {promise_reject(error); if (typeof callback === "function") callback(error);});
+                                    }).catch(error => {
+                                        promise_reject(error);
+                                        if (typeof callback === "function") callback(error);
+                                    });
+                                }).catch(error => {
+                                    promise_reject(error);
+                                    if (typeof callback === "function") callback(error);
+                                });
                             }
-                        } else throw Error("Pocketmine not suported")
+                        } else {
+                            const PocketMineError = Error("Pocketmine not suported");
+                            promise_reject(PocketMineError);
+                            if (typeof callback === "function") callback(PocketMineError);
+                        }
                     }
 
                     // Spigot
@@ -135,15 +157,19 @@ module.exports = function (version = true, force_install = false, callback = (er
                             } else {
                                 const SpigotArray = Servers.spigot[version];
                                 if (SpigotArray.data) console.log(`Server data publish: ${SpigotArray.data}`);
-                                Request.BUFFER(SpigotArray.url).then(Buffer => {
-                                    writeFileSync(join(bds_dir_spigot, "spigot.jar"), Buffer, "binary");
+                                Request.BUFFER(SpigotArray.url).then(ResBuffer => {
+                                    writeFileSync(join(bds_dir_spigot, "spigot.jar"), ResBuffer, "binary");
                                     console.log("Success when downloading and saving Spigot");
                                     UpdateServerVersion(version);
                                     promise_resolve();
                                     if (typeof callback === "function") callback(undefined);
                                 });
                             }
-                        } else throw Error("Java is not supported or required software is not installed")
+                        } else {
+                            const JavaError = Error("Java is not supported or required software is not installed");
+                            promise_reject(JavaError);
+                            if (typeof callback === "function") callback(JavaError);
+                        }
                     }
 
                     // dragonfly
@@ -155,17 +181,30 @@ module.exports = function (version = true, force_install = false, callback = (er
                             });
                             promise_resolve(true);
                             if (typeof callback === "function") callback(undefined);
-                        } else throw Error("Dragonfly not suported")
+                        } else {
+                            const DragonFlyError = Error("Dragonfly not suported");
+                            promise_reject(DragonFlyError);
+                            if (typeof callback === "function") callback(DragonFlyError);
+                        }
                     }
 
                     // Unidentified platform
-                    else throw Error("Bds maneger Config file error")
+                    else {
+                        promise_reject(Error("Bds maneger Config file error"));
+                        if (typeof callback === "function") callback(err);
+                    }
                 } catch (err) {
                     promise_reject(err);
                     if (typeof callback === "function") callback(err);
                 }
-            }).catch(err => {promise_reject(err); if (typeof callback === "function") callback(err);});
-        }).catch(err => {promise_reject(err); if (typeof callback === "function") callback(err);});
+            }).catch(err => {
+                promise_reject(err);
+                if (typeof callback === "function") callback(err);
+            });
+        }).catch(err => {
+            promise_reject(err);
+            if (typeof callback === "function") callback(err);
+        });
     });
 }
 
@@ -178,7 +217,8 @@ async function php_download() {
     // Check Php Binary
     let urlPHPBin = PHPBin[process.platform]
     if (!(urlPHPBin)) throw new Error("unsupported system")
-    urlPHPBin = urlPHPBin[bds.arch]
+    urlPHPBin = urlPHPBin[bds.arch];
+    if (!(urlPHPBin)) throw new Error("unsupported arch")
 
     // Remove Old php Binary if it exists
     if (existsSync(phpFolder)) {
