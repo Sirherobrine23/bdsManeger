@@ -63,7 +63,7 @@
     "express-fileupload": "^1.2.1",
     "express-prettify": "^0.1.1",
     "express-rate-limit": "^5.2.3",
-    "googleapis": "^84.0.0",
+    "googleapis": "^85.0.0",
     "js-yaml": "^4.1.0",
     "minimist": "^1.2.5",
     "node-cron": "^3.0.0",
