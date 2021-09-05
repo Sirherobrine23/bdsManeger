@@ -55,6 +55,7 @@
   "dependencies": {
     "@azure/storage-blob": "^12.6.0",
     "adm-zip": "^0.5.1",
+    "axios": "^0.21.3",
     "body-parser": "^1.19.0",
     "cli-color": "^2.0.0",
     "cors": "^2.8.5",
@@ -67,7 +68,6 @@
     "js-yaml": "^4.1.0",
     "minimist": "^1.2.5",
     "node-cron": "^3.0.0",
-    "node-fetch": "2.6.1",
     "oci-sdk": "^2.0.0",
     "open": "^8.0.0",
     "properties-to-json": "^0.2.1",
