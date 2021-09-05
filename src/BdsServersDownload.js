@@ -46,7 +46,7 @@ module.exports = function (version = true, force_install = false, callback = (er
                                 if (existsSync(join(bds_dir_bedrock, "server.properties"))) server_configs = readFileSync(join(bds_dir_bedrock, "server.properties"), "utf8");
                                 if (existsSync(join(bds_dir_bedrock, "permissions.json"))) permissions = readFileSync(join(bds_dir_bedrock, "permissions.json"), "utf8");
                                 if (existsSync(join(bds_dir_bedrock, "whitelist.json"))) whitelist = readFileSync(join(bds_dir_bedrock, "whitelist.json"), "utf8");
-                                
+
                                 // Download and Add to Adm_Zip
                                 Request.BUFFER(BedrockUrlDownload).then(ResBuffer => {
                                     // Extract Zip
@@ -54,12 +54,12 @@ module.exports = function (version = true, force_install = false, callback = (er
                                     console.log("Download Sucess")
                                     zip.extractAllTo(bds_dir_bedrock, true)
                                     console.log("Extract Sucess")
-                                    
+
                                     // Reeplace Server Configs
                                     if (server_configs) writeFileSync(join(bds_dir_bedrock, "server.properties"), server_configs);
                                     if (permissions) writeFileSync(join(bds_dir_bedrock, "permissions.json"), permissions);
                                     if (whitelist) writeFileSync(join(bds_dir_bedrock, "whitelist.json"), whitelist);
-                                    
+
                                     // Update Server Version
                                     UpdateServerVersion(version);
 
@@ -90,10 +90,10 @@ module.exports = function (version = true, force_install = false, callback = (er
                                     // Save Jar file
                                     writeFileSync(join(bds_dir_java, "MinecraftServerJava.jar"), ResBuffer, "binary")
                                     console.log("Success when downloading and saving Minecraft Server java");
-                                    
+
                                     // Update Server Version
                                     UpdateServerVersion(version);
-                                    
+
                                     // Resolve
                                     promise_resolve();
                                     if (typeof callback === "function") callback(undefined);
@@ -120,7 +120,7 @@ module.exports = function (version = true, force_install = false, callback = (er
                             } else {
                                 const PocketMineJson = Servers.pocketmine[version]
                                 console.log(`Server data publish: ${PocketMineJson.data}`);
-                                
+
                                 Request.BUFFER(PocketMineJson.url).then(ResBuffer => {
                                     writeFileSync(join(bds_dir_pocketmine, "PocketMine-MP.phar"), ResBuffer, "binary")
                                     console.log("Success downloading and saving PocketMine-MP php");
@@ -213,7 +213,7 @@ async function php_download() {
     const PHPBin = (await (await fetch(Extra.Fetchs.php)).json());
     const phpFolder = resolve(bds_dir_pocketmine, "bin");
     const phpExtensiosnsDir = resolve(bds_dir_pocketmine, "bin/php7/lib/php/extensions");
-    
+
     // Check Php Binary
     let urlPHPBin = PHPBin[process.platform]
     if (!(urlPHPBin)) throw new Error("unsupported system")
@@ -224,11 +224,11 @@ async function php_download() {
     if (existsSync(phpFolder)) {
         console.log("Removing old PHP files.");
         rmSync(phpFolder, { recursive: true });
-    }    
+    }
     console.log(`Downloading ${urlPHPBin}`);
     const ZipBuffer = Buffer.from((await (await fetch(urlPHPBin)).arrayBuffer()));
     console.log(`${basename(urlPHPBin)} downloaded`);
-    
+
     console.log(`Extracting ${basename(urlPHPBin)}`);
     const zipExtractBin = new AdmZip(ZipBuffer);
     zipExtractBin.extractAllTo(bds_dir_pocketmine, false)
