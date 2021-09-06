@@ -47,11 +47,6 @@
     "node": ">=14",
     "npm": ">=7"
   },
-  "husky": {
-    "hooks": {
-      "post-merge": "npm install --node-save -d"
-    }
-  },
   "dependencies": {
     "@azure/storage-blob": "^12.6.0",
     "adm-zip": "^0.5.1",
@@ -76,9 +71,8 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "docker-run_build": "github:Sirherobrine23/Docker-Run_Build#main",
+    "docker-run_build": "*",
     "eslint": "^7.19.0",
-    "husky": "^7.0.0",
     "nexe": "*",
     "nodemon": "^2.0.12"
   }
