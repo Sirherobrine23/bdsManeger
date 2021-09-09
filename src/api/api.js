@@ -47,15 +47,13 @@ app.get("/log", (req, res) => {
     } else res.json(RequestConfig.text.split("\n"));
 });
 
-app.all("*", (req, res)=>{
-    res.status(404)
-    return res.send(`<html><div class="">This request does not exist, <a href="${docs.url}/${docs.rest_api}">more information</a></div></html>`)
-});
-
-
 // module exports
 function api(port_api = 1932, callback = function (port){console.log("Bds Maneger Core REST API, http port", port)}){
     const port = (port_api || 1932)
+    app.all("*", (req, res)=>{
+        res.status(404)
+        return res.send(`<html><div class="">This request does not exist, <a href="${docs.url}/${docs.rest_api}">more information</a></div></html>`)
+    });
     app.listen(port)
     if (typeof callback === "function") callback(port);
     return port;
@@ -67,3 +65,6 @@ module.exports = function (apiConfig = {api_port: 1932}, callback = function (po
     return api(port_rest, callback);
 }
 module.exports.api = api;
+
+// Export Route
+module.exports.BdsRoutes = app;
