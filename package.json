@@ -15,7 +15,7 @@
     "ci": "node .Build/test/ci.js",
     "eslint": "eslint --debug .",
     "eslint:fix": "eslint --debug --fix .",
-    "nexe": "node .Build/nexe_build.js",
+    "nexe": "echo Nexe Removed from Bds Maneger Core && exit 1",
     "Docker": "node .Build/DockerImage.js",
     "remove_dev_versions": "node .Build/RemoveVersions.js"
   },
@@ -73,7 +73,6 @@
   "devDependencies": {
     "docker-run_build": "*",
     "eslint": "^7.19.0",
-    "nexe": "*",
     "nodemon": "^2.0.12"
   }
 }
