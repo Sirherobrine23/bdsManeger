@@ -16,6 +16,7 @@
     "eslint": "eslint --debug .",
     "eslint:fix": "eslint --debug --fix .",
     "nexe": "echo Nexe Removed from Bds Maneger Core && exit 1",
+    "dev": "nodemon -L .Build/dev.js",
     "Docker": "node .Build/DockerImage.js",
     "remove_dev_versions": "node .Build/RemoveVersions.js"
   },

@@ -47,6 +47,10 @@ app.get("/log", (req, res) => {
     } else res.json(RequestConfig.text.split("\n"));
 });
 
+// V2
+app.get("/v2", (req, res) => res.redirect("/v2/bds/info"));
+app.use("/v2/bds", require("./v2/routes/bds"))
+
 // module exports
 function api(port_api = 1932, callback = function (port){console.log("Bds Maneger Core REST API, http port", port)}){
     const port = (port_api || 1932)
