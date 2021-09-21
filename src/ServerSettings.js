@@ -262,22 +262,42 @@ function bds_get_config(){
     return JsonConfig;
 }
 
-// To remove
-function config_example(){
-return {
-        name: "Bedrock our Java",
-        description: "BDS Maneger",
-        gamemode: "survival",
-        difficulty: "normal",
-        player_permission: "member",
-        xbox: true,
-        white_list: false,
-        cheats: false,
-        players: 100,
-        port: 19132,
-        port6: 19133
+// Get Withelist
+function bds_get_whitelist(){
+    const BdsPlatform = GetPlatform();
+    const ToReturn = [];
+    
+    // Bedrock
+    if (BdsPlatform === "bedrock") {
+        if (fs.existsSync(path.join(GetServerPaths("bedrock"), "whitelist.json"))) {
+            const LocalWhitelist = JSON.parse(fs.readFileSync(path.join(GetServerPaths("bedrock"), "whitelist.json"), "utf8"));
+            for (let i = 0; i < LocalWhitelist.length; i++) {
+                const Player = LocalWhitelist[i];
+                ToReturn.push({
+                    name: Player.name,
+                    // permissons: Player.permission,
+                });
+            }
+        }
     }
+
+    // Pocketmine
+    else if (BdsPlatform === "pocketmine") {
+        throw new Error("Not implemented yet");
+    }
+
+    // Java and Spigot
+    else if (BdsPlatform === "java" || BdsPlatform === "spigot") {
+        throw new Error("Not implemented yet");
+    }
+    
+    // If not exists Platform return throw
+    else throw new Error("Platform no exists, check config file");
+
+    return ToReturn;
 }
+
+// Export modules
 module.exports.config = bds_config
 module.exports.get_config = bds_get_config
-module.exports.config_example = config_example
+module.exports.get_whitelist = bds_get_whitelist

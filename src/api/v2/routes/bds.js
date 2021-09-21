@@ -10,6 +10,7 @@ const BdsSettings = require("../../../../lib/BdsSettings");
 
 // Express
 const express = require("express");
+const { get_whitelist } = require("../../../ServerSettings");
 const app = express.Router();
 
 // Routes
@@ -64,6 +65,7 @@ app.get("/info/server", ({res}) => {
                 online: Online.length,
                 offline: Offline.length,
             },
+            Config: BdsCore.get_config(),
             Process: {
                 PID: ServerRunner.pid || 0,
                 Uptime: ServerRunner.uptime || 0,
@@ -75,6 +77,60 @@ app.get("/info/server", ({res}) => {
         res.status(500).json({
             error: "Backend Error",
             message: `${error}`
+        });
+    }
+});
+
+// Whitelist
+app.get("/info/server/whitelist", (req, res) => {
+    const ServerConfig = BdsCore.get_config();
+    if (ServerConfig.whitelist) {
+        const { Token = null , Action = null } = req.query;
+        const WgiteList = get_whitelist();
+        if (Action) {
+            if (Action === "add") {
+                if (WgiteList.findIndex(WL => WL.Token === Token) === -1) {
+                    WgiteList.push({
+                        Token: Token,
+                        Time: Date.now()
+                    });
+                    fs.writeFileSync(BdsCore.BdsSettigs.GetPaths("whitelist"), JSON.stringify(WgiteList));
+                    res.json({
+                        success: true,
+                        message: "Whitelist Added"
+                    });
+                } else {
+                    res.json({
+                        success: false,
+                        message: "Whitelist Already Exist"
+                    });
+                }
+            } else if (Action === "remove") {
+                if (WgiteList.findIndex(WL => WL.Token === Token) !== -1) {
+                    WgiteList.splice(WgiteList.findIndex(WL => WL.Token === Token), 1);
+                    fs.writeFileSync(BdsCore.BdsSettigs.GetPaths("whitelist"), JSON.stringify(WgiteList));
+                    res.json({
+                        success: true,
+                        message: "Whitelist Removed"
+                    });
+                } else {
+                    res.json({
+                        success: false,
+                        message: "Whitelist Not Found"
+                    });
+                }
+            } else {
+                res.json({
+                    success: false,
+                    message: "Invalid Action"
+                });
+            }
+        } else {
+            res.json(WgiteList)
+        }
+    } else {
+        res.status(400).json({
+            error: "Whitelist Not Enabled"
         });
     }
 });
@@ -177,6 +233,16 @@ app.post("/save_settings", (req, res) => {
 app.get("/save_settings", ({res}) => res.status(404).json({
     error: "This route is POST, Error 404"
 }));
+
+// Bds Maneger Bridge Communication
+app.get("/bridge", (req, res) => {
+    const ServerHost = require("../../../BdsNetwork").host || req.headers.host.replace(/^(.*?):\d+$/, (match, p1) => p1) || require("../../../BdsNetwork").externalIP.ipv4;
+    const ServerConfig = BdsCore.get_config();
+    res.json({
+        host: ServerHost,
+        port: ServerConfig.portv4,
+    });
+});
 
 // Exports the routes
 module.exports = app;

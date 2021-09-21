@@ -32,7 +32,10 @@ const Versions = GetServerVersion();
 if (kill) bds.kill();
 
 // Set Bds Platform
-if (server) UpdatePlatform(server);
+if (server) {
+    console.log(cli_color.yellow(`Set Platform: ${server}`));
+    UpdatePlatform(server);
+}
 
 // Start Server
 async function StartServer(){
