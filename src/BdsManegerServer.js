@@ -102,7 +102,7 @@ function start() {
     }
     
     // Log file
-    const LogFile = path.join(GetPaths("log"), `${GetPlatform()}_${new Date().toString()}_Bds_log.log`);
+    const LogFile = path.join(GetPaths("log"), `${GetPlatform()}_${new Date().toString().replace(/:|\(|\)/g, "_")}_Bds_log.log`);
     const LatestLog_Path = path.join(GetPaths("log"), "latest.log");
     const LogSaveFunction = data => {
         fs.appendFileSync(LogFile, data);
@@ -190,12 +190,26 @@ function start() {
         return command;
     };
     const say = (text = "") => ServerExec.stdin.write(BdsInfo.Servers.bedrock.say.replace("{{Text}}", text));
+    
+    // Mount commands to Return
     const returnFuntion = {
         uuid: randomUUID(),
+        pid: ServerExec.pid,
+        uptime: 0,
+        StartTime: (new Date()),
         command, log, exit, on, stop, op, deop, ban, kick, tp, say
     }
-    ServerExec.on("exit", () => delete global.BdsExecs[returnFuntion.uuid]);
+
+    // Uptime Server
+    const OnStop = setInterval(() => returnFuntion.uptime = (new Date().getTime() - returnFuntion.StartTime.getTime()) / 1000, 1000);
+    ServerExec.on("exit", () => {
+        delete global.BdsExecs[returnFuntion.uuid]
+        clearInterval(OnStop);
+    });
+
+    // Return
     global.BdsExecs[returnFuntion.uuid] = returnFuntion;
+    module.exports.BdsRun = returnFuntion;
     return returnFuntion;
 }
 
@@ -253,8 +267,6 @@ function Player_Json(data = "aaaaaa\n\n\naa", callback = () => {}){
         }).filter(a=>a);
         callback(JavaMap);
     }
-    // JSPrismarine
-    // else if (Current_platorm === "jsprismarine") console.log("It's still not working");
 }
 
 const UpdateUserJSON = function (New_Object = []){

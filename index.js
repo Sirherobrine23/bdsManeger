@@ -70,6 +70,9 @@ function token_register(Admin_Scoper = ["web_admin", "admin"]) {
     return bdsuid;
 }
 
+const path_tokens = path.join(bds_dir, "bds_tokens.json")
+if (!(fs.existsSync(path_tokens))) token_register();
+
 /**
  * Register tokens to use in Bds Maneger REST and other supported applications
  * 
