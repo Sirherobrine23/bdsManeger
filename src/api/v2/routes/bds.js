@@ -6,6 +6,7 @@ const os = require("os");
 const BdsCore = require("../../../../index");
 const BdsSystemInfo = require("../../../../lib/BdsSystemInfo");
 const BdsChecks = require("../../../UsersAndtokenChecks");
+const BdsSettings = require("../../../../lib/BdsSettings");
 
 // Express
 const express = require("express");
@@ -15,7 +16,7 @@ const app = express.Router();
 app.get("/info", ({res}) => {
     try {
         const BdsConfig = BdsCore.getBdsConfig();
-        const Players = JSON.parse(fs.readFileSync(BdsCore.BdsSettigs.GetPaths("player"), "utf8"))[BdsConfig.server.platform];
+        const Players = JSON.parse(fs.readFileSync(BdsCore.BdsSettigs.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
         const Offline = Players.filter(player => player.Action === "disconnect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)));
         const Online = Players.filter(player => player.Action === "connect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player && Offline.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)) === -1)))
         const Info = {
@@ -24,7 +25,7 @@ app.get("/info", ({res}) => {
                 Total_dependencies: Object.keys(BdsCore.package_json.dependencies).length + Object.keys(BdsCore.package_json.devDependencies).length,
             },
             server: {
-                version: BdsConfig.server.versions[BdsConfig.server.platform],
+                version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
                 versions: BdsConfig.server.versions,
                 players: {
                     online: Online.length,
@@ -36,6 +37,37 @@ app.get("/info", ({res}) => {
                 Arch: BdsCore.arch,
                 Kernel: BdsSystemInfo.GetKernel(),
                 Cpu_Model: os.cpus()[0].model || null,
+            }
+        }
+        res.json(Info);
+    } catch (error) {
+        res.status(500).json({
+            error: "Backend Error",
+            message: `${error}`
+        });
+    }
+});
+
+// Server Info
+app.get("/info/server", ({res}) => {
+    let ServerRunner = require("../../../BdsManegerServer").BdsRun;
+    if (!ServerRunner)ServerRunner = {};
+    try {
+        const BdsConfig = BdsCore.getBdsConfig();
+        const Players = JSON.parse(fs.readFileSync(BdsCore.BdsSettigs.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
+        const Offline = Players.filter(player => player.Action === "disconnect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)));
+        const Online = Players.filter(player => player.Action === "connect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player && Offline.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)) === -1)))
+        const Info = {
+            version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
+            Platform: BdsSettings.GetPlatform(),
+            players: {
+                online: Online.length,
+                offline: Offline.length,
+            },
+            Process: {
+                PID: ServerRunner.pid || 0,
+                Uptime: ServerRunner.uptime || 0,
+                StartTime: ServerRunner.StartTime || NaN,
             }
         }
         res.json(Info);
@@ -148,3 +180,10 @@ app.get("/save_settings", ({res}) => res.status(404).json({
 
 // Exports the routes
 module.exports = app;
+module.exports.APIPaths = [...app.stack.map(d => {
+    if (d.route) {
+        if (d.route.path) return d.route.path;
+        else return d.route.regexp.source;
+    }
+    return null;
+}).filter(d => d)];

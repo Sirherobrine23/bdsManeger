@@ -3,7 +3,7 @@ const { execSync } = require("child_process");
 function getProcess(){
     let MountProcess = [];
     if (process.platform === "win32") {
-        MountProcess = execSync("wmic path win32_process get Processid,Commandline,WorkingSetSize").toString().split(/\n/gi).filter(a => a.trim()).map(Line => {
+        MountProcess = execSync("wmic path win32_process get Processid,Commandline,WorkingSetSize", {maxBuffer: Infinity}).toString().split(/\n/gi).filter(a => a.trim()).map(Line => {
             try {
                 Line = Line.split(/\r/gi).filter(a => a).join("").trim();
                 const line_split = Line.split(/\s+/gi);

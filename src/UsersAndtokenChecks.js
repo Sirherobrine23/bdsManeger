@@ -15,7 +15,7 @@ function CheckPlayer(player = "null"){
 }
 
 function token_verify(token){
-    const path_tokens = join(bds_dir, "bds_tokens.json")
+    const path_tokens = join(bds_dir, "bds_tokens.json");
     if (existsSync(path_tokens)) var tokens = JSON.parse(readFileSync(path_tokens, "utf8")); else return false
     for (let token_verify of tokens) {
         const element = token_verify.token

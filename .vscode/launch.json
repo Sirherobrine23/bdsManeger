@@ -17,7 +17,8 @@
             "type": "node",
             "request": "launch",
             "name": "API",
-            "program": "${workspaceFolder}/.Build/dev.js",
+            "program": "${workspaceFolder}/bin/bds_maneger.js",
+            "args": ["-sk"]
         }
     ]
 }
