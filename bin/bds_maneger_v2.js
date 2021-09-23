@@ -4,7 +4,6 @@ process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 
 // External Modules
 const cli_color = require("cli-color");
-const inquirer = require("inquirer");
 const serverline = require("serverline");
 
 // Bin Args
@@ -46,9 +45,11 @@ async function Runner() {
         }
     }
 
+    if (!(ProcessArgs.start || ProcessArgs.s)) return;
+
     // Start
     const BdsCoreStart = BdsCore.start();
-    BdsCoreStart.log(data => process.stdout.write(cli_color.blueBright(data)));
+    BdsCoreStart.log(data => console.log(cli_color.blueBright(data.replace(/\n$/gi, ""))));
     BdsCoreStart.exit(code => {
         console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsCoreStart.uptime}`));
         process.exit(code);
@@ -56,8 +57,10 @@ async function Runner() {
     serverline.init();
     serverline.setCompletion(["tp"]);
     serverline.setPrompt("Command > ");
-    serverline.on('line', function(line) {
-        BdsCoreStart.command(line);
+    serverline.on("line", function(line) {
+        if (/^@/.test(line)) {
+            console.log("🤪It's not working yet!");
+        } else BdsCoreStart.command(line);
     });
 }
 Runner();

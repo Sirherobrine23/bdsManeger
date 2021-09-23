@@ -72,6 +72,7 @@ function start() {
     else if (GetPlatform() === "pocketmine") {
         // Start PocketMine-MP
         SetupCommands.command = path.join(path.resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
+        if (process.platform === "win32") SetupCommands.command = path.join(path.resolve(GetServerPaths("pocketmine"), "bin/php"), "php.exe");
         SetupCommands.args.push("./PocketMine-MP.phar");
         SetupCommands.cwd = GetServerPaths("pocketmine");
     }

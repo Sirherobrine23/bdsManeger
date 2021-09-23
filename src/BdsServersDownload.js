@@ -3,7 +3,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { writeFileSync, existsSync, readFileSync, readdirSync, rmSync } = fs;
-const { join, resolve, basename } = path;
+const { join, resolve } = path;
 var AdmZip = require("adm-zip");
 const BdsInfo = require("../lib/BdsSystemInfo");
 const { GetServerPaths, GetServerVersion, UpdateServerVersion, GetPlatform } = require("../lib/BdsSettings");
@@ -214,7 +214,7 @@ module.exports = function (version = true, force_install = false, callback = (er
 }
 
 // New Download Method
-module.exports.v2 = async (version = true, force = true) => {
+module.exports.v2 = async (version = true) => {
     const CurrentPlatform = GetPlatform();
     const valid_platform = (await BdsInfo()).valid_platform;
     const LocalServersVersions = bds.BdsSettigs.GetServerVersion();
@@ -238,7 +238,7 @@ module.exports.v2 = async (version = true, force = true) => {
     // Bedrock
     if (CurrentPlatform === "bedrock") {
         if (valid_platform.bedrock) {
-            if (!(force === true && typeof force === "boolean") && LocalServersVersions.bedrock !== version) {
+            if (LocalServersVersions.bedrock !== version) {
                 // Add info to ReturnObject
                 ReturnObject.url = ServerDownloadJSON.bedrock[version][bds.arch][process.platform];
                 ReturnObject.data = ServerDownloadJSON.bedrock[version].data;
@@ -279,7 +279,7 @@ module.exports.v2 = async (version = true, force = true) => {
     // Java
     else if (CurrentPlatform === "java") {
         if (valid_platform.java) {
-            if (!(force === true && typeof force === "boolean") && LocalServersVersions.java !== version) {
+            if (LocalServersVersions.java !== version) {
                 // Add info to ReturnObject
                 ReturnObject.url = ServerDownloadJSON.java[version].url;
                 ReturnObject.data = ServerDownloadJSON.java[version].data;
@@ -304,7 +304,7 @@ module.exports.v2 = async (version = true, force = true) => {
     // Spigot
     else if (CurrentPlatform === "spigot") {
         if (valid_platform.spigot) {
-            if (!(force === true && typeof force === "boolean") && LocalServersVersions.spigot !== version) {
+            if (LocalServersVersions.spigot !== version) {
                 // Add info to ReturnObject
                 const FindedSpigot = ServerDownloadJSON.spigot.findOne(spigot => spigot.version === version);
                 ReturnObject.url = FindedSpigot.url;
@@ -326,7 +326,7 @@ module.exports.v2 = async (version = true, force = true) => {
     // Dragonfly
     else if (CurrentPlatform === "dragonfly") {
         if (valid_platform.dragonfly) {
-            if (!(force === true && typeof force === "boolean") && LocalServersVersions.dragonfly !== version) {
+            if (LocalServersVersions.dragonfly !== version) {
                 // Add info to ReturnObject
                 ReturnObject.url = "https://github.com/df-mc/dragonfly/tree/master";
                 ReturnObject.data = "";
@@ -355,7 +355,29 @@ module.exports.v2 = async (version = true, force = true) => {
     }
 
     // Pocketmine-MP
-    else if (CurrentPlatform === "pocketmine") {throw new Error("We are still creating for Pocketmine-MP");}
+    else if (CurrentPlatform === "pocketmine") {
+        if (valid_platform.pocketmine) {
+            if (LocalServersVersions.pocketmine !== version) {
+                // Add info to ReturnObject
+                ReturnObject.url = ServerDownloadJSON.pocketmine[version].url;
+                ReturnObject.data = ServerDownloadJSON.pocketmine[version].data;
+
+                // Download PHP Bin
+                await php_download();
+
+                // Download php file and save
+                const PocketmineBufferPhp = await Request.buffer(ReturnObject.url);
+                fs.writeFileSync(path.join(ServersPaths.pocketmine, "PocketMine-MP.phar"), PocketmineBufferPhp, "binary");
+
+                // Update Server Version
+                bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
+            } else {
+                ReturnObject.skip = true;
+            }
+        } else {
+            throw Error("Pocketmine-MP not suported");
+        }
+    }
 
     // if the platform does not exist
     else throw Error("No Valid Platform");
@@ -379,17 +401,13 @@ async function php_download() {
 
     // Remove Old php Binary if it exists
     if (existsSync(phpFolder)) {
-        console.log("Removing old PHP files.");
         rmSync(phpFolder, { recursive: true });
-    }    
-    console.log(`Downloading ${urlPHPBin}`);
+    }
     const ZipBuffer = Buffer.from((await (await fetch(urlPHPBin)).arrayBuffer()));
-    console.log(`${basename(urlPHPBin)} downloaded`);
-    
-    console.log(`Extracting ${basename(urlPHPBin)}`);
     const zipExtractBin = new AdmZip(ZipBuffer);
     zipExtractBin.extractAllTo(bds_dir_pocketmine, false)
-    console.log("Successfully extracting the binaries")
+
+    if (process.platform === "win32") return resolve();
 
     let phpConfigInit = readFileSync(join(phpFolder, "php7", "bin", "php.ini"), "utf8");
     if (!(existsSync(phpExtensiosnsDir))) return true;
