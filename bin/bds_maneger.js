@@ -9,6 +9,7 @@ process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 const argv = require("minimist")(process.argv.slice(2));
 if (Object.getOwnPropertyNames(argv).length <= 1) argv.help = true
 
+// Bds Core Imports
 const bds = require("../index");
 const SystemInfo = require("../lib/BdsSystemInfo");
 const { bds_dir, GetServerVersion, GetPlatform, UpdatePlatform, GetServerPaths, GetPaths } = require("../lib/BdsSettings");
