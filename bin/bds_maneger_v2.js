@@ -5,6 +5,7 @@ process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // External Modules
 const cli_color = require("cli-color");
 const inquirer = require("inquirer");
+const serverline = require("serverline");
 
 // Bin Args
 const ProcessArgs = require("minimist")(process.argv.slice(2));
@@ -52,26 +53,11 @@ async function Runner() {
         console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsCoreStart.uptime}`));
         process.exit(code);
     });
-    const BdsCliMenus = require("./bds_maneger/menus");
-    const InfinitCommands = async () => {
-        const CommandtoRun = (await inquirer.prompt([
-            {
-                type: "list",
-                name: "commands",
-                message: "Select a command",
-                choices: [
-                    "tp"
-                ]
-            }
-        ])).commands;
-        if (CommandtoRun === "tp") {
-            BdsCliMenus.tp();
-            return await InfinitCommands();
-        } else {
-            BdsCliMenus.Command();
-            return await InfinitCommands();
-        }
-    }
-    InfinitCommands();
+    serverline.init();
+    serverline.setCompletion(["tp"]);
+    serverline.setPrompt("Command > ");
+    serverline.on('line', function(line) {
+        BdsCoreStart.command(line);
+    });
 }
 Runner();

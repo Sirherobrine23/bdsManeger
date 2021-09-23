@@ -222,7 +222,7 @@ module.exports.v2 = async (version = true, force = true) => {
 
     // Load Version List
     const ServerDownloadJSON = await Request.json(Extra.Fetchs.servers);
-    
+
     // Check is latest version options or boolean
     if (typeof version === "boolean" || /true|false|latest/.test(`${version}`.toLocaleLowerCase())) version = ServerDownloadJSON.latest[CurrentPlatform];
     if (!version) throw Error("No version found");
@@ -238,7 +238,7 @@ module.exports.v2 = async (version = true, force = true) => {
     // Bedrock
     if (CurrentPlatform === "bedrock") {
         if (valid_platform.bedrock) {
-            if (!(force === true && typeof force === "boolean") && LocalServersVersions !== version) {
+            if (!(force === true && typeof force === "boolean") && LocalServersVersions.bedrock !== version) {
                 // Add info to ReturnObject
                 ReturnObject.url = ServerDownloadJSON.bedrock[version][bds.arch][process.platform];
                 ReturnObject.data = ServerDownloadJSON.bedrock[version].data;
@@ -279,13 +279,14 @@ module.exports.v2 = async (version = true, force = true) => {
     // Java
     else if (CurrentPlatform === "java") {
         if (valid_platform.java) {
-            if (!(force === true && typeof force === "boolean") && LocalServersVersions !== version) {
+            if (!(force === true && typeof force === "boolean") && LocalServersVersions.java !== version) {
                 // Add info to ReturnObject
                 ReturnObject.url = ServerDownloadJSON.java[version].url;
                 ReturnObject.data = ServerDownloadJSON.java[version].data;
 
                 // Download and write java file
-                fs.writeFileSync(path.join(ServersPaths.java, "MinecraftServerJava.jar"), await Request.buffer(ReturnObject.url), "binary");
+                const JavaBufferJar = await Request.buffer(ReturnObject.url);
+                fs.writeFileSync(path.join(ServersPaths.java, "MinecraftServerJava.jar"), JavaBufferJar, "binary");
 
                 // Write EULA
                 fs.writeFileSync(path.join(ServersPaths.java, "eula.txt"), "eula=true");
@@ -303,7 +304,7 @@ module.exports.v2 = async (version = true, force = true) => {
     // Spigot
     else if (CurrentPlatform === "spigot") {
         if (valid_platform.spigot) {
-            if (!(force === true && typeof force === "boolean") && LocalServersVersions !== version) {
+            if (!(force === true && typeof force === "boolean") && LocalServersVersions.spigot !== version) {
                 // Add info to ReturnObject
                 const FindedSpigot = ServerDownloadJSON.spigot.findOne(spigot => spigot.version === version);
                 ReturnObject.url = FindedSpigot.url;
@@ -325,11 +326,11 @@ module.exports.v2 = async (version = true, force = true) => {
     // Dragonfly
     else if (CurrentPlatform === "dragonfly") {
         if (valid_platform.dragonfly) {
-            if (!(force === true && typeof force === "boolean") && LocalServersVersions !== version) {
+            if (!(force === true && typeof force === "boolean") && LocalServersVersions.dragonfly !== version) {
                 // Add info to ReturnObject
                 ReturnObject.url = "https://github.com/df-mc/dragonfly/tree/master";
                 ReturnObject.data = "";
-                
+
                 // Build Dragonfly
                 const TmpDragonflyDir = path.join(os.tmpdir(), `dragonfly_${Math.random().toString(36).substring(7)}`);
                 child_process.execFileSync("git", ["clone", "https://github.com/df-mc/dragonfly", "--depth", "1", TmpDragonflyDir]);
@@ -352,7 +353,10 @@ module.exports.v2 = async (version = true, force = true) => {
             throw Error("Dragonfly not suported");
         }
     }
-    
+
+    // Pocketmine-MP
+    else if (CurrentPlatform === "pocketmine") {throw new Error("We are still creating for Pocketmine-MP");}
+
     // if the platform does not exist
     else throw Error("No Valid Platform");
 
