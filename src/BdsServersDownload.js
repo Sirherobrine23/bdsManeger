@@ -1,5 +1,9 @@
-const { writeFileSync, existsSync, readFileSync, readdirSync, rmSync } = require("fs");
-const { join, resolve, basename } = require("path");
+const child_process = require("child_process");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const { writeFileSync, existsSync, readFileSync, readdirSync, rmSync } = fs;
+const { join, resolve } = path;
 var AdmZip = require("adm-zip");
 const BdsInfo = require("../lib/BdsSystemInfo");
 const { GetServerPaths, GetServerVersion, UpdateServerVersion, GetPlatform } = require("../lib/BdsSettings");
@@ -23,14 +27,14 @@ module.exports = function (version = true, force_install = false, callback = (er
                     // JSON Configs and others
                     const ServerVersion = GetServerVersion();
                     const CurrentPlatform = GetPlatform();
-                    if (typeof version === "boolean" || /true|latest/gi.test(version)) version = Servers.latest[CurrentPlatform]
+                    if (typeof version === "boolean" || /true|latest/gi.test(`${version}`.toLocaleLowerCase())) version = Servers.latest[CurrentPlatform];
 
                     // Donwload
                     console.log(`Installing version ${version}`);
                     // Bedrock Installer Script
                     if (CurrentPlatform === "bedrock") {
                         if (valid_platform.bedrock === true){
-                            if (version === "latest") version = Servers.latest.bedrock
+                            
                             if (!(force_install === true) && ServerVersion.bedrock === version) {
                                 console.warn("Jumping, installed version")
                                 if (typeof callback === "function") callback(undefined, true);
@@ -190,8 +194,9 @@ module.exports = function (version = true, force_install = false, callback = (er
 
                     // Unidentified platform
                     else {
-                        promise_reject(Error("Bds maneger Config file error"));
-                        if (typeof callback === "function") callback(err);
+                        const Err = Error("Bds maneger Config file error");
+                        promise_reject(Err);
+                        if (typeof callback === "function") callback(Err);
                     }
                 } catch (err) {
                     promise_reject(err);
@@ -208,6 +213,180 @@ module.exports = function (version = true, force_install = false, callback = (er
     });
 }
 
+// New Download Method
+module.exports.v2 = async (version = true) => {
+    const CurrentPlatform = GetPlatform();
+    const valid_platform = (await BdsInfo()).valid_platform;
+    const LocalServersVersions = bds.BdsSettigs.GetServerVersion();
+    const { ServersPaths } = bds.BdsSettigs;
+
+    // Load Version List
+    const ServerDownloadJSON = await Request.json(Extra.Fetchs.servers);
+
+    // Check is latest version options or boolean
+    if (typeof version === "boolean" || /true|false|latest/.test(`${version}`.toLocaleLowerCase())) version = ServerDownloadJSON.latest[CurrentPlatform];
+    if (!version) throw Error("No version found");
+
+    const ReturnObject = {
+        version: version,
+        platform: CurrentPlatform,
+        url: "",
+        data: "",
+        skip: false
+    }
+
+    // Bedrock
+    if (CurrentPlatform === "bedrock") {
+        if (valid_platform.bedrock) {
+            if (LocalServersVersions.bedrock !== version) {
+                // Add info to ReturnObject
+                ReturnObject.url = ServerDownloadJSON.bedrock[version][bds.arch][process.platform];
+                ReturnObject.data = ServerDownloadJSON.bedrock[version].data;
+
+                // Download and Add buffer to AdmZip
+                const BedrockZip = new AdmZip(await Request.buffer(ReturnObject.url));
+
+                // Create Backup Bedrock Config
+                const BedrockConfigFiles = {
+                    proprieties: "",
+                    whitelist: "",
+                    permissions: "",
+                }
+
+                // Get Bedrock Config Files
+                if (fs.existsSync(path.join(ServersPaths.bedrock, "bedrock_server.properties"))) BedrockConfigFiles.proprieties = fs.readFileSync(path.join(ServersPaths.bedrock, "bedrock_server.properties"), "utf8");
+                if (fs.existsSync(path.join(ServersPaths.bedrock, "whitelist.json"))) BedrockConfigFiles.whitelist = fs.readFileSync(path.join(ServersPaths.bedrock, "whitelist.json"), "utf8");
+                if (fs.existsSync(path.join(ServersPaths.bedrock, "permissions.json"))) BedrockConfigFiles.permissions = fs.readFileSync(path.join(ServersPaths.bedrock, "permissions.json"), "utf8");
+
+                // Extract to Bedrock Dir
+                BedrockZip.extractAllTo(ServersPaths.bedrock, true);
+
+                // Write Bedrock Config Files
+                if (BedrockConfigFiles.proprieties) fs.writeFileSync(path.join(ServersPaths.bedrock, "bedrock_server.properties"), BedrockConfigFiles.proprieties, "utf8");
+                if (BedrockConfigFiles.whitelist) fs.writeFileSync(path.join(ServersPaths.bedrock, "whitelist.json"), BedrockConfigFiles.whitelist, "utf8");
+                if (BedrockConfigFiles.permissions) fs.writeFileSync(path.join(ServersPaths.bedrock, "permissions.json"), BedrockConfigFiles.permissions, "utf8");
+
+                // Update Server Version
+                bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
+            } else {
+                ReturnObject.skip = true;
+            }
+        } else {
+            throw Error("Bedrock not suported");
+        }
+    }
+
+    // Java
+    else if (CurrentPlatform === "java") {
+        if (valid_platform.java) {
+            if (LocalServersVersions.java !== version) {
+                // Add info to ReturnObject
+                ReturnObject.url = ServerDownloadJSON.java[version].url;
+                ReturnObject.data = ServerDownloadJSON.java[version].data;
+
+                // Download and write java file
+                const JavaBufferJar = await Request.buffer(ReturnObject.url);
+                fs.writeFileSync(path.join(ServersPaths.java, "MinecraftServerJava.jar"), JavaBufferJar, "binary");
+
+                // Write EULA
+                fs.writeFileSync(path.join(ServersPaths.java, "eula.txt"), "eula=true");
+
+                // Update Server Version
+                bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
+            } else {
+                ReturnObject.skip = true;
+            }
+        } else {
+            throw Error("Java not suported");
+        }
+    }
+
+    // Spigot
+    else if (CurrentPlatform === "spigot") {
+        if (valid_platform.spigot) {
+            if (LocalServersVersions.spigot !== version) {
+                // Add info to ReturnObject
+                const FindedSpigot = ServerDownloadJSON.spigot.findOne(spigot => spigot.version === version);
+                ReturnObject.url = FindedSpigot.url;
+                ReturnObject.data = FindedSpigot.data;
+
+                // Download and write java file
+                fs.writeFileSync(path.join(ServersPaths.spigot, "spigot.jar"), await Request.buffer(ReturnObject.url), "binary");
+
+                // Update Server Version
+                bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
+            } else {
+                ReturnObject.skip = true;
+            }
+        } else {
+            throw Error("Spigot not suported");
+        }
+    }
+
+    // Dragonfly
+    else if (CurrentPlatform === "dragonfly") {
+        if (valid_platform.dragonfly) {
+            if (LocalServersVersions.dragonfly !== version) {
+                // Add info to ReturnObject
+                ReturnObject.url = "https://github.com/df-mc/dragonfly/tree/master";
+                ReturnObject.data = "";
+
+                // Build Dragonfly
+                const TmpDragonflyDir = path.join(os.tmpdir(), `dragonfly_${Math.random().toString(36).substring(7)}`);
+                child_process.execFileSync("git", ["clone", "https://github.com/df-mc/dragonfly", "--depth", "1", TmpDragonflyDir]);
+                let DragonflyPackageOut = path.join(ServersPaths.dragonfly, "DragonFly");
+                if (process.platform === "win32") DragonflyPackageOut += ".exe";
+                child_process.execFileSync("go", ["build", "-o", DragonflyPackageOut], {cwd: TmpDragonflyDir});
+
+                // move Dragonfly to ServersPaths
+                fs.renameSync(DragonflyPackageOut, path.join(ServersPaths.dragonfly, path.basename(DragonflyPackageOut)));
+
+                // Remove Build Dir
+                fs.rmSync(TmpDragonflyDir, {recursive: true, force: true});
+
+                // Update Server Version
+                bds.BdsSettigs.UpdateServerVersion(Math.random().toString(), CurrentPlatform);
+            } else {
+                ReturnObject.skip = true;
+            }
+        } else {
+            throw Error("Dragonfly not suported");
+        }
+    }
+
+    // Pocketmine-MP
+    else if (CurrentPlatform === "pocketmine") {
+        if (valid_platform.pocketmine) {
+            if (LocalServersVersions.pocketmine !== version) {
+                // Add info to ReturnObject
+                ReturnObject.url = ServerDownloadJSON.pocketmine[version].url;
+                ReturnObject.data = ServerDownloadJSON.pocketmine[version].data;
+
+                // Download PHP Bin
+                await php_download();
+
+                // Download php file and save
+                const PocketmineBufferPhp = await Request.buffer(ReturnObject.url);
+                fs.writeFileSync(path.join(ServersPaths.pocketmine, "PocketMine-MP.phar"), PocketmineBufferPhp, "binary");
+
+                // Update Server Version
+                bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
+            } else {
+                ReturnObject.skip = true;
+            }
+        } else {
+            throw Error("Pocketmine-MP not suported");
+        }
+    }
+
+    // if the platform does not exist
+    else throw Error("No Valid Platform");
+
+    // Return info download
+    return ReturnObject;
+}
+
+// Php download and install
 async function php_download() {
     const bds_dir_pocketmine = GetServerPaths("pocketmine");
     const PHPBin = (await (await fetch(Extra.Fetchs.php)).json());
@@ -222,17 +401,13 @@ async function php_download() {
 
     // Remove Old php Binary if it exists
     if (existsSync(phpFolder)) {
-        console.log("Removing old PHP files.");
         rmSync(phpFolder, { recursive: true });
-    }    
-    console.log(`Downloading ${urlPHPBin}`);
+    }
     const ZipBuffer = Buffer.from((await (await fetch(urlPHPBin)).arrayBuffer()));
-    console.log(`${basename(urlPHPBin)} downloaded`);
-    
-    console.log(`Extracting ${basename(urlPHPBin)}`);
     const zipExtractBin = new AdmZip(ZipBuffer);
     zipExtractBin.extractAllTo(bds_dir_pocketmine, false)
-    console.log("Successfully extracting the binaries")
+
+    if (process.platform === "win32") return resolve();
 
     let phpConfigInit = readFileSync(join(phpFolder, "php7", "bin", "php.ini"), "utf8");
     if (!(existsSync(phpExtensiosnsDir))) return true;

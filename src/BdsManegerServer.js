@@ -46,7 +46,7 @@ function start() {
             // Set Env and Cwd
             SetupCommands.cwd = GetServerPaths("bedrock");
             SetupCommands.env.LD_LIBRARY_PATH = GetServerPaths("bedrock");
-            
+
             // In case the cpu is different from x64, the command will use qemu static to run the server
             if (process.arch !== "x64") {
                 if (!(commandExists("qemu-x86_64-static"))) throw new Error("Install qemu static")
@@ -67,40 +67,25 @@ function start() {
             SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "MinecraftServerJava.jar", "nogui");
         } else {require("open")(bds.package_json.docs_base + "Java-Download#windows"); throw new Error(`Open: ${bds.package_json.docs_base + "Java-Download#windows"}`)}
     }
-    
+
     // Minecraft Bedrock (Pocketmine-MP)
     else if (GetPlatform() === "pocketmine") {
         // Start PocketMine-MP
         SetupCommands.command = path.join(path.resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
+        if (process.platform === "win32") SetupCommands.command = path.join(path.resolve(GetServerPaths("pocketmine"), "bin/php"), "php.exe");
         SetupCommands.args.push("./PocketMine-MP.phar");
         SetupCommands.cwd = GetServerPaths("pocketmine");
     }
-    
+
     // Show Error platform
     else throw Error("Bds Config Error")
-    
+
     // Setup commands
     const ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
         cwd: SetupCommands.cwd,
         env: SetupCommands.env
     });
-    
-    // Post Start
-    if (GetPlatform() === "java") {
-        const eula_file_path = path.join(GetServerPaths("java"), "eula.txt");
-        if (fs.existsSync(eula_file_path)) {
-            const eula_file = fs.readFileSync(eula_file_path, "utf8");
-            console.log(eula_file);
-            if (eula_file.includes("eula=false")) {
-                fs.writeFileSync(eula_file_path, eula_file.replace(/eula=false/gi, "eula=true"));
-                throw new Error("Restart application/CLI")
-            }
-        } else {
-            console.log("EULA file not found");
-            throw new Error("EULA file not found")
-        }
-    }
-    
+
     // Log file
     const LogFile = path.join(GetPaths("log"), `${GetPlatform()}_${new Date().toString().replace(/:|\(|\)/g, "_")}_Bds_log.log`);
     const LatestLog_Path = path.join(GetPaths("log"), "latest.log");
@@ -110,11 +95,11 @@ function start() {
         return data;
     }
     fs.writeFileSync(LatestLog_Path, "");
-    
+
     // Player JSON File
     ServerExec.stdout.on("data", data => Player_Json(data, UpdateUserJSON));
     ServerExec.stderr.on("data", data => Player_Json(data, UpdateUserJSON));
-    
+
     // Log File
     ServerExec.stdout.on("data", LogSaveFunction);
     ServerExec.stderr.on("data", LogSaveFunction);
@@ -149,7 +134,7 @@ function start() {
     };
     const on = function(action = String, callback = Function) {
         if (!(action === "all" || action === "connect" || action === "disconnect")) throw new Error("Use some valid action: all, connect, disconnect");
-        
+
         // Functions
         const data = data => Player_Json(data, function (array_status){
             array_status.filter(On => {if ("all" === action || On.Action === action) return true; else return false;}).forEach(_player => callback(_player))
@@ -190,7 +175,7 @@ function start() {
         return command;
     };
     const say = (text = "") => ServerExec.stdin.write(BdsInfo.Servers.bedrock.say.replace("{{Text}}", text));
-    
+
     // Mount commands to Return
     const returnFuntion = {
         uuid: randomUUID(),
@@ -222,7 +207,7 @@ function Player_Json(data = "aaaaaa\n\n\naa", callback = () => {}){
         const BedrockMap = data.split(/\n|\r/gi).map(line => {
             if (line.includes("connected") || line.includes("disconnected")) {
                 let SplitLine = line.replace(/\[.+\]\s+Player/gi, "").trim().split(/\s+/gi);
-                
+
                 // player
                 let Player = line.trim().replace(/\[.+\]\s+Player/gi, "").trim().replace(/disconnected:|connected:/, "").trim().split(/,\s+xuid:/).filter(a=>a).map(a=>a.trim()).filter(a=>a);
 
@@ -253,7 +238,7 @@ function Player_Json(data = "aaaaaa\n\n\naa", callback = () => {}){
                 let Actions = null;
                 if (/joined/.test(line)) Actions = "connect";
                 else if (/left/.test(line)) Actions = "disconnect";
-                
+
                 // Player Object
                 const JavaObject = {
                     Player: line.replace(/joined the game|left the game/gi, "").trim(),
@@ -279,7 +264,7 @@ const UpdateUserJSON = function (New_Object = []){
         jsprismarine: [],
     }
     if (fs.existsSync(Player_Json_path)) Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"));
-    
+
     // Array
     Players_Json[Current_platorm] = Players_Json[Current_platorm].concat(New_Object)
 
@@ -340,11 +325,11 @@ const CurrentBackups = GetCronBackup().map(Crron => {
             // Azure
             if (Crron.Azure) Cloud_Backup.Azure(CurrentBackup.file_name, CurrentBackup.file_path);
             else console.info("Azure Backup Disabled");
-            
+
             // Google Driver
             if (Crron.Driver) Cloud_Backup.Driver(CurrentBackup.file_name, CurrentBackup.file_path);
             else console.info("Google Driver Backup Disabled");
-            
+
             // Oracle Bucket
             if (Crron.Oracle) Cloud_Backup.Oracle(CurrentBackup.file_name, CurrentBackup.file_path);
             else console.info("Oracle Bucket Backup Disabled");

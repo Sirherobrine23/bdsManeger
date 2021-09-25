@@ -5,7 +5,7 @@ const fs = require("fs");
 const { randomUUID } = require("crypto");
 const { bds_dir } = require("./lib/BdsSettings");
 
-if (typeof fetch === "undefined") global.fetch = require("node-fetch");
+require("./lib/Requests")
 
 const bds_core_package = resolve(__dirname, "package.json")
 module.exports.package_path = bds_core_package
