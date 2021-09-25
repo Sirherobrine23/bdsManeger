@@ -76,6 +76,7 @@
   "devDependencies": {
     "docker-run_build": "*",
     "eslint": "^7.19.0",
-    "nodemon": "^2.0.12"
+    "nodemon": "^2.0.12",
+    "os-tmpdir": "^2.0.0"
   }
 }
