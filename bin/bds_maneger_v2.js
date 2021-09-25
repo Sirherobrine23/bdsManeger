@@ -14,6 +14,7 @@ const ProcessArgs = require("minimist")(process.argv.slice(2));
 const BdsCore = require("../index");
 const BdsReq = require("../lib/Requests");
 const BdsExtraInfo = require("../BdsManegerInfo.json");
+const commandExits = require("../lib/commandExist")
 
 // Async functiona
 async function Runner() {
