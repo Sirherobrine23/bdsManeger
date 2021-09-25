@@ -8,7 +8,7 @@ Any contribution is welcome, but before a look at [CONTRIBUTING.md](CONTRIBUTING
 
 ### All
 
-* [Nodejs 14+](https://nodejs.org/en/download/)
+* [Nodejs 15.6.0+](https://nodejs.org/en/download/current/)
 * [OpenJDK 16+](https://www.oracle.com/java/technologies/javase-jdk16-downloads.html)
 
 ### Windows 10+

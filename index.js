@@ -2,7 +2,7 @@
 const { resolve } = require("path");
 const path = require("path")
 const fs = require("fs");
-const randomUUID = require("uuid").v4;
+const { randomUUID } = require("crypto");
 const { bds_dir } = require("./lib/BdsSettings");
 
 require("./lib/Requests")
