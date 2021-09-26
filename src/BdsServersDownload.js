@@ -328,24 +328,16 @@ module.exports.v2 = async (version = true) => {
         if (valid_platform.dragonfly) {
             if (LocalServersVersions.dragonfly !== version) {
                 // Add info to ReturnObject
-                ReturnObject.url = "https://github.com/df-mc/dragonfly/tree/master";
-                ReturnObject.data = "";
+                ReturnObject.url = ServerDownloadJSON.dragonfly[version][process.platform][bds.arch]
+                ReturnObject.data = ServerDownloadJSON.dragonfly[version].data;
 
-                // Build Dragonfly
-                const TmpDragonflyDir = path.join(os.tmpdir(), `dragonfly_${Math.random().toString(36).substring(7)}`);
-                child_process.execFileSync("git", ["clone", "https://github.com/df-mc/dragonfly", "--depth", "1", TmpDragonflyDir]);
-                let DragonflyPackageOut = path.join(ServersPaths.dragonfly, "DragonFly");
-                if (process.platform === "win32") DragonflyPackageOut += ".exe";
-                child_process.execFileSync("go", ["build", "-o", DragonflyPackageOut], {cwd: TmpDragonflyDir});
-
-                // move Dragonfly to ServersPaths
-                fs.renameSync(DragonflyPackageOut, path.join(ServersPaths.dragonfly, path.basename(DragonflyPackageOut)));
-
-                // Remove Build Dir
-                fs.rmSync(TmpDragonflyDir, {recursive: true, force: true});
+                // Download
+                let DgBin = path.join(ServersPaths.dragonfly, "Dragonfly");
+                if (process.platform === "win32") DgBin += ".exe";
+                fs.writeFileSync(DgBin, await Request.buffer(ReturnObject.url), "binary");
 
                 // Update Server Version
-                bds.BdsSettigs.UpdateServerVersion(Math.random().toString(), CurrentPlatform);
+                bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
             } else {
                 ReturnObject.skip = true;
             }
