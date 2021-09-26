@@ -1,6 +1,4 @@
-const child_process = require("child_process");
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
 const { writeFileSync, existsSync, readFileSync, readdirSync, rmSync } = fs;
 const { join, resolve } = path;

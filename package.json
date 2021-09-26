@@ -44,9 +44,14 @@
   },
   "homepage": "https://docs.bdsmaneger.com/Bds Maneger core",
   "engines": {
-    "node": ">=15.6.0",
-    "npm": ">=7"
+    "node": ">=15.6.0"
   },
+  "os": [
+    "linux",
+    "darwin",
+    "win32",
+    "android"
+  ],
   "dependencies": {
     "@azure/storage-blob": "^12.6.0",
     "adm-zip": "^0.5.1",
