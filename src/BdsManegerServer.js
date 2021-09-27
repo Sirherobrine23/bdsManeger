@@ -82,10 +82,10 @@ function start() {
     else if (CurrentBdsPlatform === "dragonfly") {
         SetupCommands.cwd = GetServerPaths("dragonfly");
         if (process.platform === "win32") {
-            SetupCommands.command = "dragonfly.exe";
+            SetupCommands.command = "Dragonfly.exe";
         } else {
-            child_process.execFileSync("chmod", ["a+x", "dragonfly"], {cwd: SetupCommands.cwd});
-            SetupCommands.command = "./dragonfly";
+            SetupCommands.command = "./Dragonfly";
+            child_process.execFileSync("chmod", ["a+x", SetupCommands.command], {cwd: SetupCommands.cwd});
         }
     }
 
