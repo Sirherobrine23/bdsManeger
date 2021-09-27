@@ -14,7 +14,8 @@ const ProcessArgs = require("minimist")(process.argv.slice(2));
 const BdsCore = require("../index");
 const BdsReq = require("../lib/Requests");
 const BdsExtraInfo = require("../BdsManegerInfo.json");
-const commandExits = require("../lib/commandExist")
+const commandExits = require("../lib/commandExist");
+const BdsMenus = require("./bds_maneger/menus");
 
 // Async functiona
 async function Runner() {
@@ -100,16 +101,16 @@ async function Runner() {
     serverline.setPrompt("Command > ");
     serverline.on("line", async function(line) {
         if (/^@/.test(line)) {
-            console.log("🤪It's not working yet!");
-            // const command = (await inquirer.prompt([
-            //     {
-            //         type: "list",
-            //         name: "command",
-            //         message: "Select the command to run",
-            //         choices: ["tp", "stop", "restart", "update", "info", "download"]
-            //     }
-            // ])).command;
+            serverline.close();
+            if (/^@stop/.test(line)) {
+                BdsCoreStart.stop();
+                return;
+            } else if (/^@tp/.test(line)) {
+                await BdsMenus.TpMenu();
+            }
+            return serverline.init();
         } else BdsCoreStart.command(line);
     });
+    if (!(ProcessArgs["no-api"])) BdsCore.api()
 }
 Runner();

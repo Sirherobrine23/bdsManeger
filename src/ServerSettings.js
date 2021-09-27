@@ -3,15 +3,18 @@ const path = require("path");
 const propertiesToJSON = require("properties-to-json");
 const BdsInfo = require("../lib/BdsSystemInfo");
 const { GetServerPaths, GetPlatform } = require("../lib/BdsSettings");
+const TOML = require("@iarna/toml");
 
 const ConfigFilePath = {
     bedrock: path.join(GetServerPaths("bedrock"), "server.properties"),
     java: path.join(GetServerPaths("java"), "server.properties"),
-    pocketmine: path.join(GetServerPaths("pocketmine"), "server.properties")
+    pocketmine: path.join(GetServerPaths("pocketmine"), "server.properties"),
+    dragonfly: path.join(GetServerPaths("dragonfly"), "config.toml"),
 }
 
 // Set Config
 function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Maneger", gamemode: "creative", difficulty: "normal", players: 10, commands: true, account: true, whitelist: true, port: 19132, portv6: 19133, seed: ""}){
+    const BdsPlatform = GetPlatform();
     const JsonConfig = {
         world: "Bds Maneger",
         description: "The Bds Maneger",
@@ -44,7 +47,7 @@ function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Man
     if (typeof NewConfig.portv6 === "number" && NewConfig.portv6) JsonConfig.portv6 = NewConfig.portv6
     
     const Config = [];
-    if (GetPlatform() === "bedrock") {
+    if (BdsPlatform === "bedrock") {
         const bedrockCPUThread = BdsInfo.GetCpuCoreCount();
         var tickDistance; if (!(bedrockCPUThread % 2)) tickDistance = bedrockCPUThread; else tickDistance = 1;
         Config.push(
@@ -77,7 +80,7 @@ function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Man
             "correct-player-movement=false",
             "server-authoritative-block-breaking=false",
         );
-    } else if (GetPlatform() === "java") {
+    } else if (BdsPlatform === "java") {
         Config.push(
             "# By The Bds Maneger project",
             `# Date: ${Date.now()}`,
@@ -133,7 +136,35 @@ function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Man
             "spawn-protection=16",
             "max-world-size=29999984",
         );
-    } else if (GetPlatform() === "pocketmine") {
+    } else if (BdsPlatform === "dragonfly") {
+        Config.push(
+            "",
+            "[Network]",
+            `  Address = ":${JsonConfig.port}"`,
+            "",
+            "[Players]",
+            "  Folder = \"players\"",
+            "  MaxCount = 0",
+            "  MaximumChunkRadius = 32",
+            "  SaveData = true",
+            "",
+            "[Resources]",
+            "  Folder = \"resources\"",
+            "",
+            "[Server]",
+            "  AuthEnabled = true",
+            "  JoinMessage = \"%v has joined the game\"",
+            `  Name = "${JsonConfig.description}"`,
+            "  QuitMessage = \"%v has left the game\"",
+            "  ShutdownMessage = \"Server closed.\"",
+            "",
+            "[World]",
+            "  Folder = \"world\"",
+            `  Name = "${JsonConfig.world}"`,
+            "  SimulationDistance = 8",
+            ""
+        );
+    } else if (BdsPlatform === "pocketmine") {
         // Whitelist
         if (JsonConfig.whitelist === true) JsonConfig.whitelist = "on";
         else JsonConfig.whitelist = "off";
@@ -178,12 +209,13 @@ function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Man
             "auto-save=on",
         );
     }
-    fs.writeFileSync(ConfigFilePath[GetPlatform()], Config.join("\n"))
+    fs.writeFileSync(ConfigFilePath[BdsPlatform], Config.join("\n"))
     return Config.join("\n");
 }
 
 // Get Config
 function bds_get_config(){
+    const BdsPlatform = GetPlatform();
     var config;
     const JsonConfig = {
         world: "",
@@ -196,8 +228,8 @@ function bds_get_config(){
         portv6: 0,
     };
     
-    if (GetPlatform() === "bedrock") {
-        if (fs.existsSync(ConfigFilePath[GetPlatform()])) {
+    if (BdsPlatform === "bedrock") {
+        if (fs.existsSync(ConfigFilePath[BdsPlatform])) {
             config = propertiesToJSON(fs.readFileSync(ConfigFilePath["bedrock"], "utf8"));
             
             // Players
@@ -217,8 +249,8 @@ function bds_get_config(){
             // JsonConfig.worldtype = "default";
         }
     }
-    else if (GetPlatform() === "java") {
-        if (fs.existsSync(ConfigFilePath[GetPlatform()])) {
+    else if (BdsPlatform === "java") {
+        if (fs.existsSync(ConfigFilePath[BdsPlatform])) {
             config = propertiesToJSON(fs.readFileSync(path.join(ConfigFilePath["java"], "server.properties"), "utf8"));
             
             // Players
@@ -238,8 +270,8 @@ function bds_get_config(){
             // JsonConfig.worldtype = config["level-type"];
         }
     }
-    else if (GetPlatform() === "pocketmine") {
-        if (fs.existsSync(ConfigFilePath[GetPlatform()])) {
+    else if (BdsPlatform === "pocketmine") {
+        if (fs.existsSync(ConfigFilePath[BdsPlatform])) {
             config = propertiesToJSON(fs.readFileSync(path.join(ConfigFilePath["pocketmine"], "server.properties"), "utf8"));
             
             // Players
@@ -258,13 +290,28 @@ function bds_get_config(){
             JsonConfig.commands = false;
             // JsonConfig.worldtype = config["level-type"];
         }
+    } else if (BdsPlatform === "dragonfly") {
+        if (fs.existsSync(ConfigFilePath[BdsPlatform])) {
+            const ConfigFile = TOML.parse(fs.readFileSync(ConfigFilePath[BdsPlatform], "utf8"));
+            JsonConfig.world = ConfigFile.World.Name;
+            JsonConfig.description = ConfigFile.Server.Name;
+            JsonConfig.gamemode = "creative";
+            JsonConfig.difficulty = null;
+            JsonConfig.players = parseInt(ConfigFile.Players.MaxCount || 0);
+            JsonConfig.account = false;
+            JsonConfig.whitelist = null;
+            JsonConfig.portv4 = parseInt(ConfigFile.Network.Address.replace(":", ""));
+            JsonConfig.portv6 = parseInt(ConfigFile.Network.Address.replace(":", ""));
+            JsonConfig.seed = null;
+            JsonConfig.commands = false;
+        }
     } else throw new Error("Platform no exists, check config file");
     return JsonConfig;
 }
 
 // Get Withelist
 function bds_get_whitelist(){
-    const BdsPlatform = GetPlatform();
+    const BdsPlatform = BdsPlatform;
     const ToReturn = [];
     
     // Bedrock

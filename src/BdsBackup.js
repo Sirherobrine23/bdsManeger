@@ -12,6 +12,7 @@ function Backup() {
         java: GetServerPaths("java"),
         pocketmine: GetServerPaths("pocketmine"),
         spigot: GetServerPaths("spigot"),
+        dragonfly: GetServerPaths("dragonfly"),
     }
     const CurrentDate = new Date();
     const ZipName = `Bds_Maneger_Core_Backups_${CurrentDate.getDate()}-${CurrentDate.getMonth()}-${CurrentDate.getFullYear()}.zip`
@@ -34,6 +35,20 @@ function Backup() {
         if (fs.existsSync(join(Paths.pocketmine, "worlds"))) zip.addLocalFolder(join(Paths.pocketmine, "worlds"), join("Servers", "pocketmine", "worlds"));
         for (let index of ["pocketmine.yml", "server.properties", "white-list.txt", "ops.txt", "banned-players.txt", "banned-ips.txt"]) if (fs.existsSync(join(Paths.pocketmine, index))) zip.addLocalFile(join(Paths.pocketmine, index), "pocketmine");
     } else console.info("Skipping the pocketmine as it was not installed");
+
+    // Spigot
+    if (fs.existsSync(join(Paths.spigot, "spigot.jar"))) {
+        if (fs.existsSync(join(Paths.spigot, "worlds"))) zip.addLocalFolder(join(Paths.spigot, "worlds"), join("Servers", "spigot", "worlds"));
+        for (let index of ["spigot.yml", "server.properties", "white-list.txt", "ops.txt", "banned-players.txt", "banned-ips.txt"]) if (fs.existsSync(join(Paths.spigot, index))) zip.addLocalFile(join(Paths.spigot, index), "spigot");
+    } else console.info("Skipping the spigot as it was not installed");
+
+    // Dragonfly
+    if (fs.existsSync(join(Paths.dragonfly, "config.toml"))) {
+        for (let index of fs.readdirSync(Paths.dragonfly).map(value => join(Paths.dragonfly, value))) {
+            if (fs.lstatSync(index).isDirectory()) zip.addLocalFolder(index, join("Servers", "dragonfly"));
+            else if (fs.lstatSync(index).isFile()) zip.addLocalFile(index, join("Servers", "dragonfly"));
+        }
+    } else console.info("Skipping the dragonfly as it was not installed");
 
     // The Bds Maneger Core Backup
     for (let index of ["BdsConfig.yaml", "bds_tokens.json"]) if (fs.existsSync(join(bds_dir, index))) zip.addLocalFile(join(bds_dir, index));

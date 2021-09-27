@@ -83,4 +83,3 @@ async function Command() {
 
 module.exports.Command = Command;
 module.exports.TpMenu = TpMenu;
-TpMenu();
