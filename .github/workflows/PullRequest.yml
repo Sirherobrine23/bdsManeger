@@ -70,4 +70,4 @@ jobs:
 
       # Run docker image with dev test
       - name: Run Docker Image (Multiarch)
-        run: docker run --rm -ti bdscore_pull:latest
+        run: docker run --rm -i -e PULL_REQUEST="true" bdscore_pull:latest

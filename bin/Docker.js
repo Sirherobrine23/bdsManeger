@@ -25,6 +25,12 @@ function StartServer(){
     ServerStarted.log(a => process.stdout.write(a));
     ServerStarted.exit(code => process.exit(code));
     BdsCore.api();
+    if (process.env.PULL_REQUEST === "true") {
+        console.log((require("cli-color")).red("Pull Request Actived 1 Min to exit"));
+        setTimeout(() => {
+            ServerStarted.stop();
+        }, 1 * 60 * 1000)
+    }
     ShowToken();
     if (process.env.UPDATE_SERVER === "true") {
         new CronJob("0 */1 * * *", async () => {
