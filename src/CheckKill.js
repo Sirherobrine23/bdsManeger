@@ -54,8 +54,10 @@ function Detect(){
     const CurrentProcess = getProcess();
     for (let check of CurrentProcess) {
         if (/MinecraftServerJava.jar/.test(check.command)) return true;
+        if (/spigot.jar/.test(check.command)) return true;
         if (/bedrock_server/.test(check.command)) return true;
         if (/PocketMine-MP.phar/.test(check.command)) return true;
+        if (/Dragonfly/.test(check.command)) return true;
     }
     return false
 }
@@ -68,12 +70,20 @@ function Kill(){
             console.log("Killing Minecraft Server Java");
             killWithPid(check.pid);
         }
+        if (/spigot.jar/.test(check.command)) {
+            console.log("Killing Spigot");
+            killWithPid(check.pid);
+        }
         if (/bedrock_server/.test(check.command)) {
             console.log("Killing Minecraft Bedrock Server");
             killWithPid(check.pid);
         }
         if (/PocketMine-MP.phar/.test(check.command)) {
             console.log("Killing Pocketmine-MP");
+            killWithPid(check.pid);
+        }
+        if (/Dragonfly/.test(check.command)) {
+            console.log("Killing Dragonfly");
             killWithPid(check.pid);
         }
     }

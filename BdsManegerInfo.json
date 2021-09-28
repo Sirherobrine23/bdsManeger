@@ -21,7 +21,8 @@
         ],
         "java": [],
         "pocketmine": [],
-        "spigot": []
+        "spigot": [],
+        "dragonfly": []
     },
     "StartedServer": {
         "bedrock": {
@@ -39,12 +40,22 @@
         "spigot": {
             "value": null,
             "regex": false
+        },
+        "dragonfly": {
+            "value": null,
+            "regex": false
         }
     },
     "Servers": {
         "bedrock": {
-            "stop": "stop",
-            "op": "op \"{{Player}}\"",
+            "stop": {
+                "value": "stop",
+                "type": "command"
+            },
+            "op": {
+                "value": "op \"{{}}\"",
+                "type": "command"
+            },
             "deop": "op \"{{Player}}\"",
             "ban": "tp \"{{Player}}\" ~ ~99999 ~",
             "kick": "kick \"{{Player}}\" \"{{Text}}\"",
@@ -61,13 +72,64 @@
             "say": "say {{Text}}"
         },
         "pocketmine": {
-            "stop": "stop",
-            "op": "op {{Player}}",
-            "deop": "op {{Player}}",
-            "ban": "ban {{Player}}",
-            "kick": "kick {{Player}}",
-            "tp": "tp \"{{Player}}\" {{X}} {{Y}} {{X}}",
-            "say": "say {{Text}}"
+            "stop": {
+                "value": "stop",
+                "type": "command"
+            },
+            "op": {
+                "value": "op {{Player}}",
+                "type": "command"
+            },
+            "deop": {
+                "value": "deop {{Player}}",
+                "type": "command"
+            },
+            "ban": {
+                "value": "ban {{Player}}",
+                "type": "command"
+            },
+            "kick": {
+                "value": "kick {{Player}}",
+                "type": "command"
+            },
+            "tp": {
+                "value": "tp {{Player}} {{X}} {{Y}} {{X}}",
+                "type": "command"
+            },
+            "say": {
+                "value": "say {{Text}}",
+                "type": "command"
+            }
+        },
+        "dragonfly": {
+            "stop": {
+                "value": "SIGNKILL",
+                "type": "process"
+            },
+            "op": {
+                "value": null,
+                "type": null
+            },
+            "deop": {
+                "value": null,
+                "type": null
+            },
+            "ban": {
+                "value": null,
+                "type": null
+            },
+            "kick": {
+                "value": null,
+                "type": null
+            },
+            "tp": {
+                "value": null,
+                "type": null
+            },
+            "say": {
+                "value": null,
+                "type": null
+            }
         }
     },
     "contributors": [

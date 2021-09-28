@@ -9,15 +9,14 @@ const commandExists = require("../lib/commandExist");
 const BdsDetect = require("./CheckKill").Detect;
 const bds = require("../index");
 const { GetServerPaths, GetPaths, GetServerSettings, GetPlatform, GetCronBackup } = require("../lib/BdsSettings");
-const BdsInfo = require("../BdsManegerInfo.json");
 const { Backup } = require("./BdsBackup");
 
 // Set bdsexec functions
 global.BdsExecs = {};
 
 function start() {
-    if (BdsDetect()){let ErrorReturn = "You already have a server running"; console.warn(ErrorReturn); throw new Error(ErrorReturn);}
-
+    if (BdsDetect()) throw new Error("You already have a server running");
+    const CurrentBdsPlatform = GetPlatform();
     const SetupCommands = {
         command: String,
         args: [],
@@ -28,7 +27,7 @@ function start() {
     }
 
     // Minecraft Bedrock Oficial
-    if (GetPlatform() === "bedrock"){
+    if (CurrentBdsPlatform === "bedrock"){
         // Check Darwin Platform
         if (process.platform === "darwin") throw new Error("Use a imagem Docker");
 
@@ -57,7 +56,7 @@ function start() {
     }
 
     // Minecraft Java Oficial
-    else if (GetPlatform() === "java") {
+    else if (CurrentBdsPlatform === "java") {
         const JavaConfig = GetServerSettings("java")
 
         // Checking if java is installed on the device
@@ -68,8 +67,30 @@ function start() {
         } else {require("open")(bds.package_json.docs_base + "Java-Download#windows"); throw new Error(`Open: ${bds.package_json.docs_base + "Java-Download#windows"}`)}
     }
 
+    // Spigot
+    else if (CurrentBdsPlatform === "spigot") {
+        const JavaConfig = GetServerSettings("java")
+        // Checking if java is installed on the device
+        if (commandExists("java")) {
+            SetupCommands.cwd = GetServerPaths("spigot");
+            SetupCommands.command = "java";
+            SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "spigot.jar", "nogui");
+        } else {require("open")(bds.package_json.docs_base + "Java-Download#windows"); throw new Error(`Open: ${bds.package_json.docs_base + "Java-Download#windows"}`)}
+    }
+
+    // Dragonfly
+    else if (CurrentBdsPlatform === "dragonfly") {
+        SetupCommands.cwd = GetServerPaths("dragonfly");
+        if (process.platform === "win32") {
+            SetupCommands.command = "Dragonfly.exe";
+        } else {
+            SetupCommands.command = "./Dragonfly";
+            child_process.execFileSync("chmod", ["a+x", SetupCommands.command], {cwd: SetupCommands.cwd});
+        }
+    }
+
     // Minecraft Bedrock (Pocketmine-MP)
-    else if (GetPlatform() === "pocketmine") {
+    else if (CurrentBdsPlatform === "pocketmine") {
         // Start PocketMine-MP
         SetupCommands.command = path.join(path.resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
         if (process.platform === "win32") SetupCommands.command = path.join(path.resolve(GetServerPaths("pocketmine"), "bin/php"), "php.exe");
@@ -109,22 +130,7 @@ function start() {
     ServerExec.stdout.on("data", data => {if (global.bds_log_string) global.bds_log_string = data; else global.bds_log_string += data});
 
     // sets bds core commands
-    const command = async function (command = "list", callback = function (){}) {
-        return new Promise((resolve) => {
-            ServerExec.stdin.write(`${command}\n`);
-            if (typeof callback === "function") {
-                const TempLog = []
-                const ControlTempHost = data => {TempLog.push(data); return data;}
-                ServerExec.stdout.on("data", data => ControlTempHost(data));
-                ServerExec.stderr.on("data", data => ControlTempHost(data));
-                setTimeout(() => {
-                    callback(TempLog.join("\n"));
-                    resolve(TempLog.join("\n"));
-                }, 2500);
-            }
-        });
-    };
-    const log = function (logCallback = data => process.stdout.write(data)){
+    const log = function (logCallback){
         if (typeof logCallback !== "function") throw new Error("Log Callback is not a function");
         ServerExec.stdout.on("data", data => logCallback(data));
         ServerExec.stderr.on("data", data => logCallback(data));
@@ -134,7 +140,7 @@ function start() {
     };
     const on = function(action = String, callback = Function) {
         if (!(action === "all" || action === "connect" || action === "disconnect")) throw new Error("Use some valid action: all, connect, disconnect");
-
+        
         // Functions
         const data = data => Player_Json(data, function (array_status){
             array_status.filter(On => {if ("all" === action || On.Action === action) return true; else return false;}).forEach(_player => callback(_player))
@@ -142,39 +148,130 @@ function start() {
         ServerExec.stdout.on("data", data);
         ServerExec.stderr.on("data", data);
     };
+    const command = function (command = "list") {
+        ServerExec.stdin.write(`${command}\n`);
+        return command;
+    };
     const stop = function (){
-        ServerExec.stdin.write(BdsInfo.Servers[GetPlatform()].stop+"\n");
-        return BdsInfo.Servers[GetPlatform()].stop;
+        if (CurrentBdsPlatform === "bedrock") {
+            ServerExec.stdin.write("stop\n");
+            return "stop";
+        } else if (CurrentBdsPlatform === "dragonfly") {
+            ServerExec.kill("SIGKILL");
+            return "process";
+        } else if (CurrentBdsPlatform === "java") {
+            ServerExec.stdin.write("stop\n");
+            return "stop";
+        } else if (CurrentBdsPlatform === "pocketmine") {
+            ServerExec.stdin.write("stop\n");
+            return "stop";
+        } else if (CurrentBdsPlatform === "spigot") {
+            ServerExec.stdin.write("stop\n");
+            return "stop";
+        } else throw new Error("Bds Core Bad Config Error");
     };
     const op = function (player = "Steve") {
-        let command = BdsInfo.Servers[GetPlatform()].op.replace("{{Player}}", player);
-        ServerExec.stdin.write(command+"\n");
-        return command;
+        if (CurrentBdsPlatform === "bedrock") {
+            ServerExec.stdin.write(`op "${player}"\n`);
+            return "op";
+        } else if (CurrentBdsPlatform === "dragonfly") {
+            throw new Error("Dragonfly does not support commands");
+        } else if (CurrentBdsPlatform === "java") {
+            ServerExec.stdin.write(`op ${player}\n`);
+            return "op";
+        } else if (CurrentBdsPlatform === "pocketmine") {
+            ServerExec.stdin.write(`op ${player}\n`);
+            return "op";
+        } else if (CurrentBdsPlatform === "spigot") {
+            ServerExec.stdin.write(`op ${player}\n`);
+            return "op";
+        } else throw new Error("Bds Core Bad Config Error");
     };
     const deop = function (player = "Steve") {
-        let command = BdsInfo.Servers[GetPlatform()].deop.replace("{{Player}}", player);
-        ServerExec.stdin.write(command+"\n");
-        return command;
+        if (CurrentBdsPlatform === "bedrock") {
+            ServerExec.stdin.write(`deop "${player}"\n`);
+            return "deop";
+        } else if (CurrentBdsPlatform === "dragonfly") {
+            throw new Error("Dragonfly does not support commands");
+        } else if (CurrentBdsPlatform === "java") {
+            ServerExec.stdin.write(`deop ${player}\n`);
+            return "deop";
+        } else if (CurrentBdsPlatform === "pocketmine") {
+            ServerExec.stdin.write(`deop ${player}\n`);
+            return "deop";
+        } else if (CurrentBdsPlatform === "spigot") {
+            ServerExec.stdin.write(`deop ${player}\n`);
+            return "deop";
+        } else throw new Error("Bds Core Bad Config Error");
     };
     const ban = function (player = "Steve") {
-        let command = BdsInfo.Servers[GetPlatform()].ban.replace("{{Player}}", player);
-        ServerExec.stdin.write(command+"\n");
-        return command;
+        if (CurrentBdsPlatform === "bedrock") {
+            ServerExec.stdin.write(`kick "${player}"\n`);
+            return "kick";
+        } else if (CurrentBdsPlatform === "dragonfly") {
+            throw new Error("Dragonfly does not support commands");
+        } else if (CurrentBdsPlatform === "java") {
+            ServerExec.stdin.write(`ban ${player}\n`);
+            return "ban";
+        } else if (CurrentBdsPlatform === "pocketmine") {
+            ServerExec.stdin.write(`ban ${player}\n`);
+            return "ban";
+        } else if (CurrentBdsPlatform === "spigot") {
+            ServerExec.stdin.write(`ban ${player}\n`);
+            return "ban";
+        } else throw new Error("Bds Core Bad Config Error");
     };
     const kick = function (player = "Steve", text = "you got kicked") {
-        let command = BdsInfo.Servers[GetPlatform()].kick.replace("{{Player}}", player).replace("{{Text}}", text);
-        ServerExec.stdin.write(command+"\n");
-        return command;
+        if (CurrentBdsPlatform === "bedrock") {
+            ServerExec.stdin.write(`kick "${player}" ${text}\n`);
+            return "kick";
+        } else if (CurrentBdsPlatform === "dragonfly") {
+            throw new Error("Dragonfly does not support commands");
+        } else if (CurrentBdsPlatform === "java") {
+            ServerExec.stdin.write(`kick ${player} ${text}\n`);
+            return "kick";
+        } else if (CurrentBdsPlatform === "pocketmine") {
+            ServerExec.stdin.write(`kick ${player} ${text}\n`);
+            return "kick";
+        } else if (CurrentBdsPlatform === "spigot") {
+            ServerExec.stdin.write(`kick ${player} ${text}\n`);
+            return "kick";
+        } else throw new Error("Bds Core Bad Config Error");
     };
     const tp = function (player = "Steve", cord = {x: 0, y: 128, z: 0}) {
-        let command = BdsInfo.Servers[GetPlatform()].tp.replace("{{Player}}", player);
-        if (cord.x) command = command.replace("{{X}}", cord.x); else command = command.replace("{{X}}", 0);
-        if (cord.y) command = command.replace("{{Y}}", cord.y); else command = command.replace("{{Y}}", 128);
-        if (cord.y) command = command.replace("{{Z}}", cord.y); else command = command.replace("{{Z}}", 0);
-        ServerExec.stdin.write(command+"\n");
-        return command;
+        if (CurrentBdsPlatform === "bedrock") {
+            ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
+            return "tp";
+        } else if (CurrentBdsPlatform === "dragonfly") {
+            throw new Error("Dragonfly does not support commands");
+        } else if (CurrentBdsPlatform === "java") {
+            ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
+            return "tp";
+        } else if (CurrentBdsPlatform === "pocketmine") {
+            ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
+            return "tp";
+        } else if (CurrentBdsPlatform === "spigot") {
+            ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
+            return "tp";
+        } else throw new Error("Bds Core Bad Config Error");
     };
-    const say = (text = "") => ServerExec.stdin.write(BdsInfo.Servers.bedrock.say.replace("{{Text}}", text));
+    function say(text = ""){
+        if (CurrentBdsPlatform === "bedrock") {
+            ServerExec.stdin.write(`say ${text}\n`);
+            return "say";
+        } else if (CurrentBdsPlatform === "dragonfly") {
+            throw new Error("Dragonfly does not support commands");
+        } else if (CurrentBdsPlatform === "java") {
+            ServerExec.stdin.write(`say ${text}\n`);
+            return "say";
+        } else if (CurrentBdsPlatform === "pocketmine") {
+            ServerExec.stdin.write(`say ${text}\n`);
+            return "say";
+        } else if (CurrentBdsPlatform === "spigot") {
+            ServerExec.stdin.write(`say ${text}\n`);
+            return "say";
+        } else throw new Error("Bds Core Bad Config Error");
+    }
 
     // Mount commands to Return
     const returnFuntion = {
