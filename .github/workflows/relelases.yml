@@ -58,7 +58,7 @@ jobs:
         run: npm install --no-save -d
 
       - name: Get And Export Release Version
-        shell: node
+        shell: node -p '{0}'
         run: |
           const version = require("./package.json").version;
           const ActionsCore = require("@actions/core");
