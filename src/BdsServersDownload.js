@@ -51,7 +51,7 @@ async function php_download() {
 // New Download Method
 async function BdsDownloadV2(version = "latest") {
     const CurrentPlatform = GetPlatform();
-    const valid_platform = (await BdsInfo()).valid_platform;
+    const { valid_platform, require_qemu } = await BdsInfo();
     const LocalServersVersions = bds.BdsSettigs.GetServerVersion();
     const { ServersPaths } = bds.BdsSettigs;
 
@@ -75,8 +75,7 @@ async function BdsDownloadV2(version = "latest") {
         if (valid_platform.bedrock) {
             if (LocalServersVersions.bedrock !== version) {
                 // Add info to ReturnObject
-                if (valid_platform.require_qemu) ReturnObject.url = ServerDownloadJSON.bedrock[version]["x64"][process.platform];
-                else ReturnObject.url = ServerDownloadJSON.bedrock[version][bds.arch][process.platform];
+                if (require_qemu) ReturnObject.url = ServerDownloadJSON.bedrock[version]["x64"][process.platform]; else ReturnObject.url = ServerDownloadJSON.bedrock[version][bds.arch][process.platform];
                 ReturnObject.data = ServerDownloadJSON.bedrock[version].data;
 
                 // Download and Add buffer to AdmZip
