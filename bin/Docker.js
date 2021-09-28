@@ -23,8 +23,14 @@ function StartServer(){
     console.log("The entire log can be accessed via the api and/or the docker log");
     const ServerStarted = BdsCore.start();
     ServerStarted.log(a => process.stdout.write(a));
-    ServerStarted.exit(process.exit);
+    ServerStarted.exit(code => process.exit(code));
     BdsCore.api();
+    if (process.env.PULL_REQUEST === "true") {
+        console.log((require("cli-color")).red("Pull Request Actived 1 Min to exit"));
+        setTimeout(() => {
+            ServerStarted.stop();
+        }, 1 * 60 * 1000)
+    }
     ShowToken();
     if (process.env.UPDATE_SERVER === "true") {
         new CronJob("0 */1 * * *", async () => {
@@ -56,19 +62,19 @@ function StartServer(){
     }
 }
 
-// Check Installed Server
-const AllVersions = BdsCore.BdsSettigs.GetJsonConfig().server.versions;
-if (Object.getOwnPropertyNames(AllVersions).filter(platform => AllVersions[platform]).length >= 1) {
-    if (process.env.UPDATE_SERVER === "true") {
-        BdsCore.download(true, true, (err) => {
-            if (err) {
+async function RenderCLI(){
+    // Check Installed Server
+    const AllVersions = BdsCore.BdsSettigs.GetJsonConfig().server.versions;
+    if (Object.getOwnPropertyNames(AllVersions).filter(platform => AllVersions[platform]).length >= 1) {
+        if (process.env.UPDATE_SERVER === "true") {
+            try {
+                await BdsCore.download(true, true);
+                StartServer();
+            } catch (err) {
                 console.log(err);
                 process.exit(1);
             }
-            StartServer();
-        });
-    } else {
-        (async () => {
+        } else {
             // Check for Update
             if (AllVersions[GetPlatform()] === Object.getOwnPropertyNames((await (await fetch(BdsInfo.Fetchs.servers)).json())[GetPlatform()])[0]) {
                 console.log("The entire log can be accessed via the api and/or the docker log");
@@ -85,34 +91,35 @@ if (Object.getOwnPropertyNames(AllVersions).filter(platform => AllVersions[platf
                     StartServer();
                 });
             }
-        })();
-    }
-} else {
-    console.log("Server is not installed, starting server implementation");
-    // Import ENV to Settings Server
-    const { DESCRIPTION, WORLD_NAME, GAMEMODE, DIFFICULTY, ACCOUNT, PLAYERS, SERVER, ENABLE_COMMANDS } = process.env;
-    // Update Platform
-    BdsCore.change_platform(SERVER || "bedrock");
-    BdsCore.download(true, true, (err) => {
-        if (err) {
-            console.log(err);
+        }
+    } else {
+        console.log("Server is not installed, starting server implementation");
+        // Import ENV to Settings Server
+        const { DESCRIPTION, WORLD_NAME, GAMEMODE, DIFFICULTY, ACCOUNT, PLAYERS, SERVER, ENABLE_COMMANDS } = process.env;
+        // Update Platform
+        BdsCore.change_platform(SERVER || "bedrock");
+        try {
+            await BdsCore.download(true, true);
+            // Create JSON Config
+            const ServerConfig = {
+                world: WORLD_NAME,
+                description: DESCRIPTION,
+                gamemode: GAMEMODE,
+                difficulty: DIFFICULTY,
+                players: parseInt(PLAYERS),
+                commands: ENABLE_COMMANDS === "true",
+                account: ACCOUNT === "true",
+                whitelist: false,
+                port: 19132,
+                portv6: 19133,
+            }
+            BdsCore.bds_maneger_token_register(["admin"]);
+            BdsCore.set_config(ServerConfig);
+            StartServer();
+        } catch (err) {
+            console.log(`${err}`);
             process.exit(1);
         }
-        // Create JSON Config
-        const ServerConfig = {
-            world: WORLD_NAME,
-            description: DESCRIPTION,
-            gamemode: GAMEMODE,
-            difficulty: DIFFICULTY,
-            players: parseInt(PLAYERS),
-            commands: ENABLE_COMMANDS === "true",
-            account: ACCOUNT === "true",
-            whitelist: false,
-            port: 19132,
-            portv6: 19133,
-        }
-        BdsCore.bds_maneger_token_register(["admin"]);
-        BdsCore.set_config(ServerConfig);
-        StartServer();
-    });
+    }
 }
+RenderCLI();
