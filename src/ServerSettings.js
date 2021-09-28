@@ -311,8 +311,8 @@ function bds_get_config(){
 
 // Get Withelist
 function bds_get_whitelist(){
-    const BdsPlatform = BdsPlatform;
-    const ToReturn = [];
+    const BdsPlatform = GetPlatform();
+   const ToReturn = [];
     
     // Bedrock
     if (BdsPlatform === "bedrock") {
