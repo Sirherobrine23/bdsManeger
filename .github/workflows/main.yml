@@ -50,9 +50,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: '${{ secrets.NPM_ORG_TOKEN }}'
 
-  docker_core:
-    needs: [npm]
+  DockerImage:
+    needs:
+      - npm
     runs-on: ubuntu-latest
+    name: Build Docker Image to Bds Core and Bds Base
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -70,18 +72,30 @@ jobs:
       - name: checkout
         uses: actions/checkout@master
 
-      - name: Bds Maneger Core Image
-        uses: docker/build-push-action@v2
-        with:
-          push: true
-          target: bdscore
-          tags: ghcr.io/the-bds-maneger/core:main
-          platforms: ${{ env.DOCKER_ARCH }}
+      - name: Install Node Depedencies
+        run: npm install --no-save -d
 
-      - name: Bds Maneger base Image
+      - name: Get And Export Release Version
+        shell: node
+        run: |
+          const version = require("./package.json").version;
+          const ActionsCore = require("@actions/core");
+          console.log(version);
+          ActionsCore.exportVariable("BdsCoreVersion", version);
+
+      - name: Build Docker image (Bds Maneger Base)
         uses: docker/build-push-action@v2
         with:
           push: true
           target: bdsbase
           tags: ghcr.io/the-bds-maneger/base:main
+          platforms: ${{ env.DOCKER_ARCH }}
+      
+      - name: Build Docker image (Bds Maneger core)
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          target: bdscore
+          cache-from: ghcr.io/the-bds-maneger/base:main
+          tags: ghcr.io/the-bds-maneger/core:main
           platforms: ${{ env.DOCKER_ARCH }}

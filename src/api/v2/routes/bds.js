@@ -37,9 +37,15 @@ app.get("/info", ({res}) => {
                 System: process.platform,
                 Arch: BdsCore.arch,
                 Kernel: BdsSystemInfo.GetKernel(),
-                Cpu_Model: os.cpus()[0].model || null,
+                Cpu_Model: (os.cpus()[0] || {}).model || null,
+                IsDocker: false,
+                IsNpx: false,
+                IsCLI: false,
             }
         }
+        if (process.env.BDS_DOCKER_IMAGE) Info.host.IsDocker = true;
+        if (process.env.npm_lifecycle_event === "npx") Info.host.IsNpx = true;
+        if (process.env.IS_BDS_CLI) Info.host.IsCLI = true;
         res.json(Info);
     } catch (error) {
         res.status(500).json({
