@@ -75,7 +75,8 @@ async function BdsDownloadV2(version = "latest") {
         if (valid_platform.bedrock) {
             if (LocalServersVersions.bedrock !== version) {
                 // Add info to ReturnObject
-                ReturnObject.url = ServerDownloadJSON.bedrock[version][bds.arch][process.platform];
+                if (valid_platform.require_qemu) ReturnObject.url = ServerDownloadJSON.bedrock[version]["x64"][process.platform];
+                else ReturnObject.url = ServerDownloadJSON.bedrock[version][bds.arch][process.platform];
                 ReturnObject.data = ServerDownloadJSON.bedrock[version].data;
 
                 // Download and Add buffer to AdmZip
