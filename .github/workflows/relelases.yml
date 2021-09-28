@@ -22,6 +22,7 @@ jobs:
         run: npm install --no-save
 
       - name: Publish
+        continue-on-error: true
         run: npm publish
         env:
           NODE_AUTH_TOKEN: '${{ secrets.NPM_ORG_TOKEN }}'
