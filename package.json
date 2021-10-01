@@ -65,7 +65,7 @@
     "express-fileupload": "^1.2.1",
     "express-prettify": "^0.1.1",
     "express-rate-limit": "^5.2.3",
-    "googleapis": "^87.0.0",
+    "googleapis": "^88.2.0",
     "inquirer": "^8.1.5",
     "js-yaml": "^4.1.0",
     "minimist": "^1.2.5",
