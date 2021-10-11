@@ -81,7 +81,7 @@
   },
   "devDependencies": {
     "@actions/core": "^1.5.0",
-    "eslint": "^7.19.0",
+    "eslint": "^8.0.0",
     "nodemon": "^2.0.12",
     "os-tmpdir": "^2.0.0"
   }
