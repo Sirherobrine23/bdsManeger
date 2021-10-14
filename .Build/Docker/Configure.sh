@@ -7,13 +7,13 @@ apt update
 apt -qq install -y curl wget git zsh sudo unzip zip jq python python3 screen
 
 # Install nodejs from github release
-get_current_node_version=$(curl -sL https://api.github.com/repos/nodejs/node/releases/latest | grep tag_name | cut -d '"' -f 4)
+NODEVERSION=$(curl -sL https://api.github.com/repos/nodejs/node/releases | grep tag_name | cut -d '"' -f 4 | sort -V | tail -n 1)
 case $(uname -m) in
-    x86_64 ) wget -q "https://nodejs.org/download/release/$get_current_node_version/node-$get_current_node_version-linux-x64.tar.xz" -O /tmp/node.tar.xz;;
-    aarch64 ) wget -q "https://nodejs.org/download/release/$get_current_node_version/node-$get_current_node_version-linux-arm64.tar.xz" -O /tmp/node.tar.xz;;
-    armv7l ) wget -q "https://nodejs.org/download/release/$get_current_node_version/node-$get_current_node_version-linux-armv7l.tar.xz" -O /tmp/node.tar.xz;;
-    ppc64el ) wget -q "https://nodejs.org/download/release/$get_current_node_version/node-$get_current_node_version-linux-ppc64le.tar.xz" -O /tmp/node.tar.xz;;
-    s390x ) wget -q "https://nodejs.org/download/release/$get_current_node_version/node-$get_current_node_version-linux-s390x.tar.xz" -O /tmp/node.tar.xz;;
+    x86_64 ) wget -q "https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-x64.tar.xz" -O /tmp/node.tar.xz;;
+    aarch64 ) wget -q "https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-arm64.tar.xz" -O /tmp/node.tar.xz;;
+    armv7l ) wget -q "https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-armv7l.tar.xz" -O /tmp/node.tar.xz;;
+    ppc64el ) wget -q "https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-ppc64le.tar.xz" -O /tmp/node.tar.xz;;
+    s390x ) wget -q "https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-s390x.tar.xz" -O /tmp/node.tar.xz;;
     *) echo "Unsupported architecture"; exit 1;;
 esac
 
