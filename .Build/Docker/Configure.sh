@@ -4,7 +4,7 @@ set -ex
 apt update
 
 # Install Necessary Packages
-apt -qq install -y curl wget git zsh sudo unzip zip jq python python3 screen
+apt -qq install -y curl wget git zsh sudo unzip zip jq python3 screen
 
 # Install nodejs from github release
 NODEVERSION=$(curl -sL https://api.github.com/repos/nodejs/node/releases | grep tag_name | cut -d '"' -f 4 | sort -V | tail -n 1)
