@@ -7,6 +7,7 @@ const BdsCore = require("../index");
 const { GetPlatform, bds_dir } = require("../lib/BdsSettings");
 const { CronJob } = require("cron");
 const BdsInfo = require("../BdsManegerInfo.json");
+const { PlatformVersionsV2 } = require("../src/BdsServersDownload");
 
 // Get Current Tokens and Show in the console
 function ShowToken() {
@@ -36,7 +37,7 @@ function StartServer(){
         new CronJob("0 */1 * * *", async () => {
             try {
                 const CurrentLocalVersion = BdsCore.getBdsConfig().server.versions[GetPlatform()],
-                    CurrentRemoteVersion = Object.getOwnPropertyNames((await (await fetch(BdsInfo.Fetchs.servers)).json())[GetPlatform()])[0];
+                    CurrentRemoteVersion = (await PlatformVersionsV2(GetPlatform())).latest;
                 if (CurrentLocalVersion !== CurrentRemoteVersion) {
                     let currenttime = `Hello we are starting the server upgrade from version ${CurrentLocalVersion} to version ${CurrentRemoteVersion}, you have 20 seconds to exit the server`
                     console.log("Update Server:", currenttime);

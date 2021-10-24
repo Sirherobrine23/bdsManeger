@@ -3,11 +3,45 @@ const path = require("path");
 const { writeFileSync, existsSync, readFileSync, readdirSync, rmSync } = fs;
 const { join, resolve } = path;
 var AdmZip = require("adm-zip");
-const BdsInfo = require("../lib/BdsSystemInfo");
 const { GetServerPaths, GetPlatform } = require("../lib/BdsSettings");
 const Extra = require("../BdsManegerInfo.json");
 const bds = require("../index");
 const Request = require("../lib/Requests");
+
+// Get Platform Object Versions
+async function PlatformVersionsV2(SelectPlatform = "") {
+    const CurrentPlatform = SelectPlatform || GetPlatform();
+    let ResToRetuen = {
+        latest: "",
+        versions: {
+            "123.123.123": {
+                data: `${new Date()}`,
+                url: "",
+                linux: {
+                    aarch64: "",
+                    armv7: "",
+                    x64: "",
+                    i386: ""
+                },
+                win32: {
+                    aarch64: "",
+                    x64: "",
+                    i386: ""
+                },
+                darwin: {
+                    aarch64: "",
+                    x64: ""
+                },
+                android: {
+                    aarch64: "",
+                    x64: ""
+                }
+            }
+        }
+    }
+    ResToRetuen = await Request.json(`https://raw.githubusercontent.com/The-Bds-Maneger/ServerVersions/main/${CurrentPlatform}/server.json`);
+    return ResToRetuen;
+}
 
 // Php download and install
 async function php_download() {
@@ -51,32 +85,27 @@ async function php_download() {
 // New Download Method
 async function BdsDownloadV2(version = "latest") {
     const CurrentPlatform = GetPlatform();
-    const { valid_platform, require_qemu } = await BdsInfo();
+    const { valid_platform, require_qemu } = await (require("../lib/BdsSystemInfo")).CheckSystemAsync();
     const LocalServersVersions = bds.BdsSettigs.GetServerVersion();
     const { ServersPaths } = bds.BdsSettigs;
-
-    // Load Version List
-    const ServerDownloadJSON = await Request.json(Extra.Fetchs.servers);
-
-    // Check is latest version options or boolean
-    if (typeof version === "boolean" || /true|false|null|undefined|latest/.test(`${version}`.toLocaleLowerCase())) version = ServerDownloadJSON.latest[CurrentPlatform];
-    if (!version) throw Error("No version found");
 
     const ReturnObject = {
         version,
         platform: CurrentPlatform,
         url: "",
-        data: "",
+        data: new Date(),
         skip: false
     }
 
     // Bedrock
     if (CurrentPlatform === "bedrock") {
+        const BedrockVersions = await PlatformVersionsV2("bedrock");
+        if (typeof version === "boolean" || /true|false|null|undefined|latest/.test(`${version}`.toLocaleLowerCase())) version = BedrockVersions.latest;
         if (valid_platform.bedrock) {
             if (LocalServersVersions.bedrock !== version) {
                 // Add info to ReturnObject
-                if (require_qemu) ReturnObject.url = ServerDownloadJSON.bedrock[version]["x64"][process.platform]; else ReturnObject.url = ServerDownloadJSON.bedrock[version][bds.arch][process.platform];
-                ReturnObject.data = ServerDownloadJSON.bedrock[version].data;
+                if (require_qemu) ReturnObject.url = BedrockVersions.versions[version][process.platform]["x64"]; else ReturnObject.url = BedrockVersions.versions[version][process.platform][bds.arch];
+                ReturnObject.data = BedrockVersions.versions[version].data ? new Date(BedrockVersions.versions[version].data) : null;
 
                 // Download and Add buffer to AdmZip
                 const BedrockZip = new AdmZip(await Request.buffer(ReturnObject.url));
@@ -113,11 +142,13 @@ async function BdsDownloadV2(version = "latest") {
 
     // Java
     else if (CurrentPlatform === "java") {
+        const JavaVersions = await PlatformVersionsV2("java");
+        if (typeof version === "boolean" || /true|false|null|undefined|latest/.test(`${version}`.toLocaleLowerCase())) version = JavaVersions.latest;
         if (valid_platform.java) {
             if (LocalServersVersions.java !== version) {
                 // Add info to ReturnObject
-                ReturnObject.url = ServerDownloadJSON.java[version].url;
-                ReturnObject.data = ServerDownloadJSON.java[version].data;
+                ReturnObject.url = JavaVersions.versions[version].url;
+                ReturnObject.data = JavaVersions.versions[version].data;
 
                 // Download and write java file
                 const JavaBufferJar = await Request.buffer(ReturnObject.url);
@@ -138,12 +169,13 @@ async function BdsDownloadV2(version = "latest") {
 
     // Spigot
     else if (CurrentPlatform === "spigot") {
+        const SpigotVersions = await PlatformVersionsV2("spigot");
+        if (typeof version === "boolean" || /true|false|null|undefined|latest/.test(`${version}`.toLocaleLowerCase())) version = SpigotVersions.latest;
         if (valid_platform.spigot) {
             if (LocalServersVersions.spigot !== version) {
                 // Add info to ReturnObject
-                const FindedSpigot = ServerDownloadJSON.spigot.find(spigot => spigot.version === version);
-                ReturnObject.url = FindedSpigot.url;
-                ReturnObject.data = FindedSpigot.data;
+                ReturnObject.url = SpigotVersions.versions[version].url;
+                ReturnObject.data = SpigotVersions.versions[version].data;
 
                 // Download and write java file
                 fs.writeFileSync(path.join(ServersPaths.spigot, "spigot.jar"), await Request.buffer(ReturnObject.url), "binary");
@@ -160,11 +192,13 @@ async function BdsDownloadV2(version = "latest") {
 
     // Dragonfly
     else if (CurrentPlatform === "dragonfly") {
+        const DragonflyVersions = await PlatformVersionsV2("dragonfly");
+        if (typeof version === "boolean" || /true|false|null|undefined|latest/.test(`${version}`.toLocaleLowerCase())) version = DragonflyVersions.latest;
         if (valid_platform.dragonfly) {
             if (LocalServersVersions.dragonfly !== version) {
                 // Add info to ReturnObject
-                ReturnObject.url = ServerDownloadJSON.dragonfly[version][process.platform][bds.arch]
-                ReturnObject.data = ServerDownloadJSON.dragonfly[version].data;
+                ReturnObject.url = DragonflyVersions.versions[version][process.platform][bds.arch]
+                ReturnObject.data = DragonflyVersions.versions[version].data;
 
                 // Download
                 let DgBin = path.join(ServersPaths.dragonfly, "Dragonfly");
@@ -183,11 +217,13 @@ async function BdsDownloadV2(version = "latest") {
 
     // Pocketmine-MP
     else if (CurrentPlatform === "pocketmine") {
+        const PocketmineVersions = await PlatformVersionsV2("pocketmine");
+        if (typeof version === "boolean" || /true|false|null|undefined|latest/.test(`${version}`.toLocaleLowerCase())) version = PocketmineVersions.latest;
         if (valid_platform.pocketmine) {
             if (LocalServersVersions.pocketmine !== version) {
                 // Add info to ReturnObject
-                ReturnObject.url = ServerDownloadJSON.pocketmine[version].url;
-                ReturnObject.data = ServerDownloadJSON.pocketmine[version].data;
+                ReturnObject.url = PocketmineVersions.versions[version].url;
+                ReturnObject.data = PocketmineVersions.versions[version].data;
 
                 // Download PHP Bin
                 await php_download();
@@ -216,3 +252,4 @@ async function BdsDownloadV2(version = "latest") {
 // Export
 module.exports = BdsDownloadV2;
 module.exports.v2 = BdsDownloadV2;
+module.exports.PlatformVersionsV2 = PlatformVersionsV2;
