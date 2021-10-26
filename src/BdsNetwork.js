@@ -3,6 +3,52 @@ const Request = require("../lib/Requests");
 const os = require("os");
 const { GetTempHost } = require("../lib/BdsSettings");
 
+function LocalInterfaces() {
+  const interfaces = os.networkInterfaces();
+  const localInterfaces = [];
+  for (const name of Object.getOwnPropertyNames(interfaces)) {
+    const Inter = {
+      interfaceName: name,
+      mac: "",
+      v4: {
+        addresses: "",
+        netmask: "",
+        cidr: ""
+      },
+      v6: {
+        addresses: "",
+        netmask: "",
+        cidr: ""
+      },
+    }
+    for (let iface of interfaces[name]) {
+      if (!Inter.mac && iface.mac) Inter.mac = iface.mac;
+      if (iface.family === "IPv4") {
+        Inter.v4.addresses = iface.address;
+        Inter.v4.netmask = iface.netmask;
+        Inter.v4.cidr = iface.cidr;
+      } else if (iface.family === "IPv6") {
+        Inter.v6.addresses = iface.address;
+        Inter.v6.netmask = iface.netmask;
+        Inter.v6.cidr = iface.cidr;
+      }
+    }
+    if (!(interfaces[name][0].internal)) localInterfaces.push(Inter);
+  }
+  return localInterfaces;
+}
+
+async function GetExternalPublicAddress() {
+  const ExternlIPs = {
+    ipv4: null,
+    ipv6: null
+  }
+  ExternlIPs["ipv4"] = (await Request.TEXT("https://api.ipify.org")).replace("\n", "")
+  ExternlIPs["ipv6"] = (await Request.TEXT("https://api64.ipify.org/")).replace("\n", "")
+  if (ExternlIPs["ipv6"] === ExternlIPs["ipv4"]) ExternlIPs["ipv6"] = null;
+  return ExternlIPs;
+}
+
 Request.TEXT("https://api.ipify.org").then(external_ipv4 => {
     Request.TEXT("https://api64.ipify.org/").then(external_ipv6 => {
         const externalIP = {
@@ -49,46 +95,39 @@ const Interfaces = Object.getOwnPropertyNames(interfaces).map(inter => {
     }
 }).filter(a=>a);
 
-// Temp Host
-var host = null,
-    HostResponse = null;
-
-if (GetTempHost()){
-    // Get HOST
-    Request.JSON("https://bds-core-back-end.vercel.app/Gethost", {
-        method: "POST",
+async function GetHost() {
+  const MacAddr = LocalInterfaces().map(Int => Int.mac);
+  const ExternalAddress = (await GetExternalPublicAddress()).ipv4;
+  const RequestUpstream = await fetch(`https://upstream.bdsmaneger.com/v1/public_domain?MacAddress=${JSON.stringify(MacAddr)}&ExternalAdress=${ExternalAddress}`, {mode: "cors"});
+  if (!RequestUpstream.ok) {
+    throw {
+      Backend: await RequestUpstream.json()
+    }
+  }
+  const HostInfo = await RequestUpstream.json();
+  const _toReturn = {
+    host: "",
+    UpstreamID: "",
+    delete_host: async () => {
+      const RequestDeleteHost = await fetch("https://upstream.bdsmaneger.com/v1/public_domain", {
+        method: "DELETE",
         mode: "cors",
         body: JSON.stringify({
-            mac: Interfaces[0].MAC,
-            ip: external_ip.ipv4,
-        }),
-        headers: {
-            "Content-Type": "application/json"
-        }
-    }).then(HostResponse => {
-        global.BdsTempHost = HostResponse.user.host.host
-        host = HostResponse.user.host.host
-        console.log(`Bds Maneger Core Temp Host ID: ${HostResponse.user.ID}`)
-        // Delete Host
-        process.on("exit", function () {
-            Request.JSON("https://bds-core-back-end.vercel.app/DeleteHost", {
-                method: "post",
-                body: JSON.stringify({
-                    "ID": HostResponse.user.ID
-                }),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }).then(deleted_host => {
-                if (deleted_host.error) console.log(deleted_host.error)
-            });
-        });
-    });
-} else module.exports.host = null
+          UUID: HostInfo.ID
+        })
+      });
+      return await RequestDeleteHost.json();
+    }
+  }
+  _toReturn["host"] = HostInfo.host.host
+  _toReturn["UpstreamID"] = HostInfo.ID
+  return _toReturn;
+}
 
 module.exports = {
     internal_ip,
     Interfaces,
     HostResponse,
     host,
+    GetHost
 }
