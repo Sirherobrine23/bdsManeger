@@ -11,6 +11,7 @@ const ProcessArgs = require("minimist")(process.argv.slice(2));
 
 // Import Bds Core
 const BdsCore = require("../index");
+const BdsNetwork = require("../src/BdsNetwork");
 const commandExits = require("../lib/commandExist");
 const readline = require("readline");
 // const BdsMenus = require("./bds_maneger/menus");
@@ -71,6 +72,7 @@ async function help() {
     "*   -i, --info                 Print info about Bds Maneger Core and Platforms",
     "*   -d, --download             Download a server",
     "*   -s, --start                Start a server",
+    "*       --get_domain           Get temporary public domain to connect in to server or API",
     "*   -p, --platform             Change the platform",
     "*   -n, --no-api               Don't start the Bds Maneger API Rest",
     "*",
@@ -107,7 +109,7 @@ async function Runner() {
     await info();
     return;
   }
-  
+
   // Help
   if (ProcessArgs.help || ProcessArgs.h) {
     await help();
@@ -116,9 +118,24 @@ async function Runner() {
 
   // Download
   if (ProcessArgs.download || ProcessArgs.d) await DownloadServer();
+
+  // Start Server
   if (!(ProcessArgs.start || ProcessArgs.s)) return;
 
-  // Start
+  // Get Temporary External Domain
+  if (ProcessArgs.get_domain) {
+    try {
+      const HostInfo = await BdsNetwork.GetHost();
+      console.log("Domain:", HostInfo.host);
+      process.on("exit", async () => {
+        await HostInfo.delete_host();
+        console.log("Sucess remove host");
+      });
+    } catch (err) {
+      console.log("Cannot get domain");
+    }
+  }
+
   const BdsCoreStart = BdsCore.start();
   BdsCoreStart.log(data => console.log(cli_color.blueBright(data.replace(/\n$/gi, ""))));
   BdsCoreStart.exit(code => {
