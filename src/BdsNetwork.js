@@ -1,7 +1,6 @@
 // External User ip
 const Request = require("../lib/Requests");
 const os = require("os");
-const { GetTempHost } = require("../lib/BdsSettings");
 
 function LocalInterfaces() {
   const interfaces = os.networkInterfaces();
