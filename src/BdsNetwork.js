@@ -127,7 +127,8 @@ async function GetHost() {
 module.exports = {
     internal_ip,
     Interfaces,
-    HostResponse,
-    host,
+    LocalInterfaces,
+    GetExternalPublicAddress,
+    host: null,
     GetHost
 }
