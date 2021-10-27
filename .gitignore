@@ -1,12 +1,6 @@
 # Log
 *.log
 
-# test files
-*.test
-*test*.js*
-test/
-Test/
-
 # Node
 node_modules/
 .dccache
