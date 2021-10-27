@@ -1,188 +1,112 @@
 /* eslint-disable no-irregular-whitespace */
-const { resolve } = require("path");
 const path = require("path")
 const fs = require("fs");
 const { randomUUID } = require("crypto");
 const { bds_dir } = require("./lib/BdsSettings");
 
-require("./lib/Requests")
-
-const bds_core_package = resolve(__dirname, "package.json")
-module.exports.package_path = bds_core_package
+// Bds Maneger Core Package JSON File
+module.exports.package_path = path.resolve(__dirname, "package.json");
 module.exports.package_json = require("./package.json");
 module.exports.extra_json = require("./BdsManegerInfo.json");
+module.exports.BdsCoreVersion = module.exports.package_json.version;
 
 // Inport and Export Arch
 const { arch } = require("./lib/BdsSystemInfo");
 module.exports.arch = arch
 
+// Core Settings
 const { GetJsonConfig, UpdatePlatform, UpdateTelegramToken } = require("./lib/BdsSettings");
+module.exports.getBdsConfig = GetJsonConfig;
+module.exports.change_platform = UpdatePlatform;
+module.exports.platform_update = UpdatePlatform;
+module.exports.telegram_token_save = UpdateTelegramToken;
+
+// Platforms Checkers
+const { CheckSystemAsync, GetKernel } = require("./lib/BdsSystemInfo");
+module.exports.CheckSystem = CheckSystemAsync;
+module.exports.GetKernel = GetKernel;
 
 // Bds Maneger Core Network
-const maneger_ips = require("./src/BdsNetwork")
-module.exports.internal_ip = maneger_ips.internal_ip
-module.exports.external_ip = maneger_ips.external_ip
-module.exports.tmphost = {
-    host: maneger_ips.host,
-    Response: maneger_ips.HostResponse
-}
+const BdsNetwork = require("./src/BdsNetwork")
+module.exports.internal_ip = BdsNetwork.LocalInterfaces;
+module.exports.external_ip = BdsNetwork.GetExternalPublicAddress;
 
-// Get Old Method Config
-module.exports.getBdsConfig = GetJsonConfig;
+// Bds Maneger Core API
+const BdsManegerAPI = require("./src/api/api");
+module.exports.api = BdsManegerAPI;
+module.exports.BdsManegerAPI = BdsManegerAPI;
 
-/**
- * Update Current Platform
- */
-module.exports.change_platform = module.exports.platform_update = UpdatePlatform;
-
-/**
- * Save Telegram token in Settings File
- */
-module.exports.telegram_token_save = UpdateTelegramToken
-
-/**
- * The Bds Maneger Core Internal API REST
- * 
- * @param {number} port - The port number, default is 1932
- * 
- * @param {function} callback - The callback function after start API
- */
-module.exports.api = require("./src/api/api");
-
+// Bds Maneger Core API token Register
+const path_tokens = path.join(bds_dir, "bds_tokens.json");
 function token_register(Admin_Scoper = ["web_admin", "admin"]) {
-    Admin_Scoper = Array.from(Admin_Scoper).filter(scoper => /admin/.test(scoper));
-    const bds_token_path = path.join(bds_dir, "bds_tokens.json");
-    let tokens = [];
-    if (fs.existsSync(bds_token_path)) tokens = JSON.parse(fs.readFileSync(bds_token_path, "utf8"));
-    
-    // Get UUID
-    const getBdsUUId = randomUUID().split("-");
-    const bdsuid = "bds_" + (getBdsUUId[0]+getBdsUUId[2].slice(0, 15));
-    
-    // Save BdsUUID
-    tokens.push({
-        token: bdsuid,
-        date: new Date(),
-        scopers: Admin_Scoper
-    });
-    fs.writeFileSync(bds_token_path, JSON.stringify(tokens, null, 4), "utf8");
-    console.log(`Bds Maneger API REST token: "${bdsuid}"`);
-    return bdsuid;
+  Admin_Scoper = Array.from(Admin_Scoper).filter(scoper => /admin/.test(scoper));
+  let tokens = [];
+  if (fs.existsSync(path_tokens)) tokens = JSON.parse(fs.readFileSync(path_tokens, "utf8"));
+  // Get UUID
+  const getBdsUUId = randomUUID().split("-");
+  const bdsuid = "bds_" + (getBdsUUId[0]+getBdsUUId[2].slice(0, 15));
+  // Save BdsUUID
+  tokens.push({
+    token: bdsuid,
+    date: new Date(),
+    scopers: Admin_Scoper
+  });
+  fs.writeFileSync(path_tokens, JSON.stringify(tokens, null, 4), "utf8");
+  return bdsuid;
 }
 
-const path_tokens = path.join(bds_dir, "bds_tokens.json")
+// Bds Maneger Core API Delet token
+function delete_token(Token = "") {
+  if (!Token) return false;
+  if (typeof Token !== "string") return false;
+  let tokens = [];
+  if (fs.existsSync(path_tokens)) tokens = JSON.parse(fs.readFileSync(path_tokens, "utf8"));
+  if (tokens.filter(token => token.token === Token).length > 0) {
+    fs.writeFileSync(path_tokens, JSON.stringify(tokens, null, 4), "utf8");
+    return true;
+  } else return false;
+}
+
+// Check Exists Tokens Files
 if (!(fs.existsSync(path_tokens))) token_register();
 
-/**
- * Register tokens to use in Bds Maneger REST and other supported applications
- * 
- * @example token_register()
- */
-module.exports.token_register = token_register
+// Server Settings
+module.exports.token_register = token_register;
+module.exports.bds_maneger_token_register = token_register;
+module.exports.delete_token = delete_token;
+module.exports.bds_maneger_delete_token = delete_token;
 
-/**
- * Register tokens to use in Bds Maneger REST and other supported applications
- * 
- * @example token_register()
- */
-module.exports.bds_maneger_token_register = token_register
-
-/**
- * Update, Get and more to Modifications Bds Settings File
- */
+// Bds Maneger Settings
 module.exports.BdsSettigs = require("./lib/BdsSettings");
 
-// Requires
+// Bds Maneger Core Backups
 const { World_BAckup } = require("./src/BdsBackup");
+module.exports.backup = World_BAckup;
+module.exports.core_backup = World_BAckup;
+
+// Server Settings
 const { config, get_config } = require("./src/ServerSettings");
+module.exports.set_config = config;
+module.exports.update_config = config;
+module.exports.get_config = get_config;
+module.exports.server_config = get_config;
+module.exports.get_server_config = get_config;
+
+// Dowloand Server
 const download = require("./src/BdsServersDownload");
-const { start, stop, BdsCommand, CronBackups } = require("./src/BdsManegerServer")
+module.exports.download = download;
+module.exports.download_server = download;
 
-/**
- * sending commands more simply to the server
- * 
- * @example bds.command("say hello from Bds Maneger")
- */
-module.exports.command = BdsCommand
-// New management method
+// Bds Maneger Core Server
+const { start, stop, BdsCommand } = require("./src/BdsManegerServer")
+module.exports.command = BdsCommand;
+module.exports.server_command = BdsCommand;
+module.exports.start = start;
+module.exports.stop = stop;
 
-// Start Server
-/**
- * to start the server here in the sera script with child_process, then you will have to use the return function for your log custumization or anything else
- * 
- * @example const server = bds.start();
- * server.log(function (log){console.log(log)})
- */
-module.exports.start = start
-
-// Stop Server
-/**
- * use this command for the server, that's all
- */
-module.exports.stop = stop
-
-// Create Backup of Bds Maneger Core and Servers along with your maps and settings
-/**
- * backup your map locally
- */
-module.exports.backup = World_BAckup
-
+// Process Manager Kill and Detect Server
 const { Kill, Detect } = require("./src/CheckKill")
-
-/**
- * identify if there are any servers running in the background
- * 
- * @example bds.detect()
- * true: if the server is running
- * false: if not already
- */
-module.exports.detect = Detect
-module.exports.bds_detect = Detect
-
-/**
- * this function will be used to kill the server in the background
- */
-module.exports.kill = Kill
-
-/**
- * download some version of the java and Bedrock servers in the highest possible form
- * 
- * use download( version, boolean ) // the boolean is for if you want to force the installation of the server
- * 
- * @example
- * bedrock: download("1.16.201.02")
- * 
- * java: download("1.16.5")
- * 
- * any platform: download("latest") || download(true) // It will download the latest version available for download
- */
-module.exports.download = download
-
-/**
- * use this command to modify server settings
- * 
- * @example set_config({
-        world: "Bds Maneger",
-        description: "The Bds Maneger",
-        gamemode: "creative",
-        difficulty: "normal",
-        players: 10,
-        commands: true,
-        account: true,
-        whitelist: true,
-        port: 19132,
-        portv6: 19133,
-        seed: ""
-    });
- */
-module.exports.set_config = config
-
-/**
- * takes the server settings in JSON format
- */
-module.exports.get_config = get_config
-
-/**
- * Load Crontab Backup
- */
-module.exports.Cron_Loaded = CronBackups;
+module.exports.detect = Detect;
+module.exports.bds_detect = Detect;
+module.exports.detect_server = Detect;
+module.exports.kill = Kill;
