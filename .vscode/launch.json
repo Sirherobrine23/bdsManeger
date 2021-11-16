@@ -1,24 +1,18 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "pwa-node",
-            "request": "launch",
-            "name": "API",
-            "program": "${workspaceFolder}/bin/bds_maneger.js",
-            "args": ["-sk"]
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Start Telegram bot dev",
-            "program": "${workspaceFolder}/bin/telegram_bot.js"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Docker Build and Run",
-            "program": "${workspaceFolder}/.Build/DockerImage.js",
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Start Index",
+      "program": "${workspaceFolder}/index.js"
+    },
+    {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "API",
+      "program": "${workspaceFolder}/bin/bds_maneger.js",
+      "args": ["-sk"]
+    }
+  ]
 }

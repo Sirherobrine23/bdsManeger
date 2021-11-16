@@ -2,7 +2,7 @@
 const path = require("path")
 const fs = require("fs");
 const { randomUUID } = require("crypto");
-const { bds_dir } = require("./lib/BdsSettings");
+const BdsSettings = require("./lib/BdsSettings");
 
 // Bds Maneger Core Package JSON File
 module.exports.package_path = path.resolve(__dirname, "package.json");
@@ -15,11 +15,10 @@ const { arch } = require("./lib/BdsSystemInfo");
 module.exports.arch = arch
 
 // Core Settings
-const { GetJsonConfig, UpdatePlatform, UpdateTelegramToken } = require("./lib/BdsSettings");
-module.exports.getBdsConfig = GetJsonConfig;
-module.exports.change_platform = UpdatePlatform;
-module.exports.platform_update = UpdatePlatform;
-module.exports.telegram_token_save = UpdateTelegramToken;
+module.exports.getBdsConfig = BdsSettings.GetJsonConfig;
+module.exports.change_platform = BdsSettings.UpdatePlatform;
+module.exports.platform_update = BdsSettings.UpdatePlatform;
+module.exports.telegram_token_save = BdsSettings.UpdateTelegramToken;
 
 // Platforms Checkers
 const { CheckSystemAsync, GetKernel } = require("./lib/BdsSystemInfo");
@@ -32,12 +31,12 @@ module.exports.internal_ip = BdsNetwork.LocalInterfaces;
 module.exports.external_ip = BdsNetwork.GetExternalPublicAddress;
 
 // Bds Maneger Core API
-const BdsManegerAPI = require("./src/api/api");
+const BdsManegerAPI = require("./src/api");
 module.exports.api = BdsManegerAPI;
 module.exports.BdsManegerAPI = BdsManegerAPI;
 
 // Bds Maneger Core API token Register
-const path_tokens = path.join(bds_dir, "bds_tokens.json");
+const path_tokens = path.join(BdsSettings.bds_dir, "bds_tokens.json");
 function token_register(Admin_Scoper = ["web_admin", "admin"]) {
   Admin_Scoper = Array.from(Admin_Scoper).filter(scoper => /admin/.test(scoper));
   let tokens = [];
@@ -110,3 +109,5 @@ module.exports.detect = Detect;
 module.exports.bds_detect = Detect;
 module.exports.detect_server = Detect;
 module.exports.kill = Kill;
+
+setInterval(() => {} , 1000);
