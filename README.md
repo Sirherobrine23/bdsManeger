@@ -31,11 +31,7 @@ We have a separate repository for all Bds Maneger Project documentation, [link h
 
 All options can be found in the bds maneger core documentation.
 
-`npx --package=@the-bds-maneger/core@latest bds_maneger -sk`
-
-### Telegram Bot
-
-`npx --package=@the-bds-maneger/core@latest bds_telegram`
+`npx @the-bds-maneger/core@latest -sk`
 
 ## Install Bds Maneger Core globally
 

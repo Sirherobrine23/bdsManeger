@@ -30,10 +30,3 @@ describe("Small functions", () => {
     done();
   });
 });
-
-describe("Slow Functions", function () {
-  it ("Download Server", async function () {
-    this.timeout(60 * 1000);
-    await BdsCore.download_server();
-  });
-});

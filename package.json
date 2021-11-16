@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.14.1",
+  "version": "1.15.0",
   "description": "Scripts to manage minecraft server's",
   "private": false,
   "main": "index.js",
@@ -11,7 +11,7 @@
     "start": "node bin/bds_maneger.js -s",
     "start:telegram": "node bin/telegram_bot.js -e js",
     "stop": "node -p 'console.log(require(\"./\").kill());'",
-    "test": "mocha .test/*.js",
+    "test": "mocha --exit .test/*.js",
     "ci": "node .Build/test/ci.js",
     "eslint": "eslint --debug .",
     "eslint:fix": "eslint --debug --fix .",
@@ -20,8 +20,7 @@
     "remove_dev_versions": "node .Build/RemoveVersions.js"
   },
   "bin": {
-    "bds_maneger": "bin/bds_maneger.js",
-    "bds_telegram": "bin/telegram_bot.js"
+    "bds_maneger": "bin/BdsManeger.js"
   },
   "repository": {
     "type": "git",
@@ -72,11 +71,9 @@
     "node-cron": "^3.0.0",
     "node-fetch": "^3.0.0",
     "oci-sdk": "^2.0.0",
-    "open": "^8.0.0",
     "ora": "^6.0.1",
     "properties-to-json": "^0.2.1",
     "request-ip": "^2.1.3",
-    "serverline": "^1.5.0",
     "telegraf": "^4.0.0"
   },
   "devDependencies": {
@@ -84,7 +81,6 @@
     "chai": "^4.3.4",
     "eslint": "^8.0.0",
     "mocha": "^9.1.3",
-    "nodemon": "^2.0.12",
-    "os-tmpdir": "^2.0.0"
+    "nodemon": "^2.0.12"
   }
 }
