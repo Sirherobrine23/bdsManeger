@@ -28,6 +28,10 @@ app.use(require("request-ip").mw());
 
 // Routes
 
+app.all(["/v2", "/v2/*"], ({res}) => res.status(401).json({
+  Error: "v2 route moved to root routes"
+}));
+
 // ? /bds/
 app.get(["/bds/info", "/bds", "/"], ({res}) => {
   try {

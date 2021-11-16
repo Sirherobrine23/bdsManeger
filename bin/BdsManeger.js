@@ -40,8 +40,8 @@ fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirna
         }
       });
       BeforeRun.push(PluginArg);
-      MoreHelp.push(cli_color.redBright(`${path.basename(Plugin).replace(/\.js$/gi, "")} - ${__module.description}`), "", ...(__module.help || []), "");
     });
+    MoreHelp.push(cli_color.redBright(`Plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")} - ${__module.description}`), "", ...(__module.help || []), "");
   } catch (err) {
     console.log(cli_color.redBright(`Error loading plugin: ${Plugin}`));
     console.log(cli_color.redBright(err));
