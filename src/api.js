@@ -7,7 +7,6 @@ const BdsManegerCore = require("../index");
 const BdsSystemInfo = require("../lib/BdsSystemInfo");
 const BdsChecks = require("./UsersAndtokenChecks");
 const BdsSettings = require("../lib/BdsSettings");
-const docs = require("../BdsManegerInfo.json").docs;
 
 // Init Express
 const express = require("express");
