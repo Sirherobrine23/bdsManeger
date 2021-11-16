@@ -1,12 +1,13 @@
 // Node Modules
 const os = require("os");
 const fs = require("fs");
-
+const path = require("path");
+const { randomUUID } = require("crypto")
 // Bds Maneger Core
 const BdsManegerCore = require("../index");
-const BdsSystemInfo = require("../lib/BdsSystemInfo");
+const BdsSystemInfo = require("../src/lib/BdsSystemInfo");
 const BdsChecks = require("./UsersAndtokenChecks");
-const BdsSettings = require("../lib/BdsSettings");
+const BdsSettings = require("../src/lib/BdsSettings");
 
 // Init Express
 const express = require("express");
@@ -429,7 +430,43 @@ function MainAPI(apiConfig = {api_port: 1932}, callback = function (port){consol
   return API(port_rest, callback);
 }
 
+// Bds Maneger Core API token Register
+const path_tokens = path.join(BdsSettings.bds_dir, "bds_tokens.json");
+function token_register(Admin_Scoper = ["web_admin", "admin"]) {
+  Admin_Scoper = Array.from(Admin_Scoper).filter(scoper => /admin/.test(scoper));
+  let tokens = [];
+  if (fs.existsSync(path_tokens)) tokens = JSON.parse(fs.readFileSync(path_tokens, "utf8"));
+  // Get UUID
+  const getBdsUUId = randomUUID().split("-");
+  const bdsuid = "bds_" + (getBdsUUId[0]+getBdsUUId[2].slice(0, 15));
+  // Save BdsUUID
+  tokens.push({
+    token: bdsuid,
+    date: new Date(),
+    scopers: Admin_Scoper
+  });
+  fs.writeFileSync(path_tokens, JSON.stringify(tokens, null, 4), "utf8");
+  return bdsuid;
+}
+
+// Bds Maneger Core API Delet token
+function delete_token(Token = "") {
+  if (!Token) return false;
+  if (typeof Token !== "string") return false;
+  let tokens = [];
+  if (fs.existsSync(path_tokens)) tokens = JSON.parse(fs.readFileSync(path_tokens, "utf8"));
+  if (tokens.filter(token => token.token === Token).length > 0) {
+    fs.writeFileSync(path_tokens, JSON.stringify(tokens, null, 4), "utf8");
+    return true;
+  } else return false;
+}
+
+// Check Exists Tokens Files
+if (!(fs.existsSync(path_tokens))) token_register();
+
 module.exports = MainAPI;
 module.exports.api = API;
 module.exports.BdsRoutes = app;
-
+module.exports.token_register = token_register;
+module.exports.delete_token = delete_token;
+module.exports.TokensFilePath = path_tokens;

@@ -1,8 +1,8 @@
 const fs = require("fs");
 const { Telegraf, Markup } = require("telegraf");
 const bds = require("../../index");
-const { GetPlatform, GetPaths, GetTelegramToken, UpdateTelegramToken } = require("../../lib/BdsSettings");
-const { GetKernel, arch, system } = require("../../lib/BdsSystemInfo");
+const { GetPlatform, GetPaths, GetTelegramToken, UpdateTelegramToken } = require("../../src/lib/BdsSettings");
+const { GetKernel, arch, system } = require("../../src/lib/BdsSystemInfo");
 const { Detect } = require("../../src/CheckKill");
 const { CheckTelegramUser } = require("../../src/UsersAndtokenChecks");
 const BdsInfo = require("../../BdsManegerInfo.json");

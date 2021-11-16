@@ -1,7 +1,7 @@
 const { join, resolve } = require("path");
 const fs = require("fs");
 const AdmZip = require("adm-zip");
-const { GetServerPaths, GetPaths, bds_dir } = require("../lib/BdsSettings");
+const { GetServerPaths, GetPaths, bds_dir } = require("../src/lib/BdsSettings");
 
 function Backup() {
   const zip = new AdmZip();

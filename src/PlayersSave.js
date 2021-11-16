@@ -1,6 +1,6 @@
 const bds = require("../index")
 const { CheckBan } = require("./UsersAndtokenChecks");
-const { GetPlatform, GetPaths } = require("../lib/BdsSettings");
+const { GetPlatform, GetPaths } = require("../src/lib/BdsSettings");
 const fs = require("fs");
 
 function MytypeKill(player) {

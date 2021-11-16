@@ -1,8 +1,8 @@
 var fs = require("fs");
 const path = require("path");
 const propertiesToJSON = require("properties-to-json");
-const BdsInfo = require("../lib/BdsSystemInfo");
-const { GetServerPaths, GetPlatform } = require("../lib/BdsSettings");
+const BdsInfo = require("../src/lib/BdsSystemInfo");
+const { GetServerPaths, GetPlatform } = require("../src/lib/BdsSettings");
 const TOML = require("@iarna/toml");
 
 const ConfigFilePath = {

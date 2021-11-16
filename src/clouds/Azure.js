@@ -1,6 +1,6 @@
 const path = require("path");
 const { BlobServiceClient, StorageSharedKeyCredential } = require("@azure/storage-blob");
-const NewBdsSettings = require("../../lib/BdsSettings");
+const NewBdsSettings = require("../../src/lib/BdsSettings");
 
 // Upload Function
 async function Uploadbackups(object = "Backup.zip", fileLocation = "Backup.zip", callback = function (){}) {
