@@ -107,6 +107,7 @@ function GetCpuCoreCount() {
 }
 
 module.exports = CheckSystemAsync;
+module.exports.SystemInfo = CheckSystemAsync;
 module.exports.arch = arch
 module.exports.GetKernel = GetKernel;
 module.exports.CheckSystemAsync = CheckSystemAsync;
