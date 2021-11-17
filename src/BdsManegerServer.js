@@ -11,10 +11,10 @@ module.exports.GetSessions = () => ServerSessions;
 
 module.exports.StartServer = function start() {
   const commandExists = require("../src/lib/commandExist");
-  const BdsDetect = require("./CheckKill").Detect;
-  if (BdsDetect()) throw new Error("You already have a server running");
+  const io = require("./api").SocketIO;
   const CurrentBdsPlatform = BdsSettings.GetPlatform();
   const SetupCommands = {
+    RunInCroot: false,
     command: String,
     args: [],
     cwd: String,
@@ -99,10 +99,13 @@ module.exports.StartServer = function start() {
   else throw Error("Bds Config Error")
 
   // Setup commands
-  const ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
-    cwd: SetupCommands.cwd,
+  let __ServerExec = child_process.exec("exit 0");
+  if (SetupCommands.RunInCroot) throw new Error("RunInCroot is not supported yet");
+  else __ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
+  cwd: SetupCommands.cwd,
     env: SetupCommands.env
   });
+  const ServerExec = __ServerExec;
 
   // Log file
   const LogFile = path.join(BdsSettings.GetPaths("log"), `${BdsSettings.GetPlatform()}_${new Date().toString().replace(/:|\(|\)/g, "_")}_Bds_log.log`);
@@ -284,6 +287,37 @@ module.exports.StartServer = function start() {
   ServerExec.on("exit", () => {
     delete ServerSessions[returnFuntion.uuid]
     clearInterval(OnStop);
+  });
+
+  // Socket.io
+  io.on("connection", (socket) => {
+    socket.on("ServerCommand", (data = "") => {
+      if (typeof data === "string") return returnFuntion.command(data);
+      else if (typeof data === "object") {
+        if (typeof data.uuid === "string") {
+          if (data.uuid === returnFuntion.uuid) return returnFuntion.command(data.command);
+        }
+      }
+      return;
+    });
+    ServerExec.on("exit", code => socket.emit("ServerExit", {
+      UUID: returnFuntion.uuid,
+      exitCode: code
+    }));
+    ServerExec.stdout.on("data", (data = "") => {
+      socket.emit("ServerLog", {
+        UUID: returnFuntion.uuid,
+        data: data,
+        IsStderr: false
+      });
+    });
+    ServerExec.stderr.on("data", (data = "") => {
+      socket.emit("ServerLog", {
+        UUID: returnFuntion.uuid,
+        data: data,
+        IsStderr: true
+      });
+    });
   });
 
   // Return

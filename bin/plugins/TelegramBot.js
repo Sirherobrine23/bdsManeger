@@ -25,7 +25,9 @@ const HelpAndStart = [
 ];
 
 // Set Telegram Bot
-const bot = new Telegraf(GetTelegramToken());
+const TelegramToken = GetTelegramToken();
+if (!TelegramToken) throw new Error("Add Telegram Token");
+const bot = new Telegraf(TelegramToken);
 
 // Start and Help Command
 bot.start((ctx)=>ctx.reply(HelpAndStart.join("\n")));

@@ -14,7 +14,6 @@ const express = require("express");
 const app = express();
 
 // Express Middleware
-const rateLimit = require("express-rate-limit");
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const pretty = require("express-prettify");
@@ -22,13 +21,26 @@ const cors = require("cors");
 app.use(cors());
 app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(rateLimit({windowMs: 15 * 60 * 1000, /* 15 minutes */ max: 100 /* limit each IP to 100 requests per windowMs*/ }));
 app.use(pretty({always: true, spaces: 2}));
 app.use(fileUpload({limits: { fileSize: 512 * 1024 }}));
 app.use(require("request-ip").mw());
 
-// Routes
+// Init Socket.io
+const Server = require("http").createServer(app);
+const SocketIo = require("socket.io");
+const io = new SocketIo.Server(Server);
+io.use(function (socket, next) {
+  if (socket.handshake.query.token) {
+    if (BdsChecks.token_verify(socket.handshake.query.token)) {
+      socket.token = socket.handshake.query.token;
+      next();
+    }
+  }
+  return next(new Error("Token is not valid"));
+});
+module.exports.SocketIO = io;
 
+// Routes
 app.all(["/v2", "/v2/*"], ({res}) => res.status(401).json({
   Error: "v2 route moved to root routes"
 }));
@@ -36,14 +48,14 @@ app.all(["/v2", "/v2/*"], ({res}) => res.status(401).json({
 // ? /bds/
 app.get(["/bds/info", "/bds", "/"], ({res}) => {
   try {
-    const BdsConfig = BdsManegerCore.getBdsConfig();
-    const Players = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettigs.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
+    const BdsConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
+    const Players = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
     const Offline = Players.filter(player => player.Action === "disconnect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)));
     const Online = Players.filter(player => player.Action === "connect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player && Offline.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)) === -1)))
     const Info = {
       core: {
-        version: BdsManegerCore.package_json.version,
-        Total_dependencies: Object.keys(BdsManegerCore.package_json.dependencies).length + Object.keys(BdsManegerCore.package_json.devDependencies).length,
+        version: BdsManegerCore.version,
+        Total_dependencies: Object.keys(BdsManegerCore.ExtraJSON.Package.dependencies).length + Object.keys(BdsManegerCore.ExtraJSON.Package.devDependencies).length,
       },
       server: {
         version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
@@ -58,14 +70,17 @@ app.get(["/bds/info", "/bds", "/"], ({res}) => {
         Arch: BdsManegerCore.arch,
         Kernel: BdsSystemInfo.GetKernel(),
         Cpu_Model: (os.cpus()[0] || {}).model || null,
-        IsDocker: false,
-        IsNpx: false,
-        IsCLI: false,
+        Cores: os.cpus().length
+      },
+      Backend: {
+        npx: false,
+        Docker: false,
+        CLI: false,
       }
     }
-    if (process.env.BDS_DOCKER_IMAGE) Info.host.IsDocker = true;
-    if (process.env.npm_lifecycle_event === "npx") Info.host.IsNpx = true;
-    if (process.env.IS_BDS_CLI) Info.host.IsCLI = true;
+    if (process.env.BDS_DOCKER_IMAGE) Info.Backend.Docker = true;
+    if (process.env.npm_lifecycle_event === "npx") Info.Backend.npx = true;
+    if (process.env.IS_BDS_CLI) Info.Backend.CLI = true;
     res.json(Info);
   } catch (error) {
     res.status(500).json({
@@ -80,8 +95,8 @@ app.get("/bds/info/server", ({res}) => {
   let ServerRunner = require("./BdsManegerServer").BdsRun;
   if (!ServerRunner)ServerRunner = {};
   try {
-    const BdsConfig = BdsManegerCore.getBdsConfig();
-    const Players = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettigs.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
+    const BdsConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
+    const Players = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
     const Offline = Players.filter(player => player.Action === "disconnect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)));
     const Online = Players.filter(player => player.Action === "connect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player && Offline.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)) === -1)))
     const Info = {
@@ -91,7 +106,7 @@ app.get("/bds/info/server", ({res}) => {
         online: Online.length,
         offline: Offline.length,
       },
-      Config: BdsManegerCore.get_config(),
+      Config: BdsManegerCore.BdsSettings.GetJsonConfig(),
       Process: {
         PID: ServerRunner.pid || 0,
         Uptime: ServerRunner.uptime || 0,
@@ -107,9 +122,62 @@ app.get("/bds/info/server", ({res}) => {
   }
 });
 
+// Check Token
+// app.all("*", (req, res, next) => {
+//   if (req.method === "GET") {
+//     if (req.query.token) {
+//       if (BdsChecks.token_verify(req.query.token)) {
+//         req.token = req.query.token;
+//         return next();
+//       }
+//     } else if (req.headers.token) {
+//       if (BdsChecks.token_verify(req.headers.token)) {
+//         req.token = req.headers.token;
+//         return next();
+//       }
+//     } else if (req.query.Token) {
+//       if (BdsChecks.token_verify(req.query.Token)) {
+//         req.token = req.query.Token;
+//         return next();
+//       }
+//     } else if (req.headers.Token) {
+//       if (BdsChecks.token_verify(req.headers.Token)) {
+//         req.token = req.headers.token;
+//         return next();
+//       }
+//     }
+//   } else {
+//     if (req.body.token) {
+//       if (BdsChecks.token_verify(req.body.token)) {
+//         req.token = req.body.token;
+//         return next();
+//       }
+//     } else if (req.headers.token) {
+//       if (BdsChecks.token_verify(req.headers.token)) {
+//         req.token = req.headers.token;
+//         return next();
+//       }
+//     } else if (req.body.Token) {
+//       if (BdsChecks.token_verify(req.body.Token)) {
+//         req.token = req.body.Token;
+//         return next();
+//       }
+//     } else if (req.headers.Token) {
+//       if (BdsChecks.token_verify(req.headers.Token)) {
+//         req.token = req.headers.Token;
+//         return next();
+//       }
+//     }
+//   }
+//   return res.status(401).json({
+//     error: "Unauthorized",
+//     message: "Token is not valid"
+//   });
+// });
+
 // Whitelist
 app.get("/bds/info/server/whitelist", (req, res) => {
-  const ServerConfig = BdsManegerCore.get_config();
+  const ServerConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
   if (ServerConfig.whitelist) {
     const { Token = null , Action = null } = req.query;
     const WgiteList = BdsSettings.get_whitelist();
@@ -120,7 +188,7 @@ app.get("/bds/info/server/whitelist", (req, res) => {
             Token: Token,
             Time: Date.now()
           });
-          fs.writeFileSync(BdsManegerCore.BdsSettigs.GetPaths("whitelist"), JSON.stringify(WgiteList));
+          fs.writeFileSync(BdsManegerCore.BdsSettings.GetPaths("whitelist"), JSON.stringify(WgiteList));
           res.json({
             success: true,
             message: "Whitelist Added"
@@ -134,7 +202,7 @@ app.get("/bds/info/server/whitelist", (req, res) => {
       } else if (Action === "remove") {
         if (WgiteList.findIndex(WL => WL.Token === Token) !== -1) {
           WgiteList.splice(WgiteList.findIndex(WL => WL.Token === Token), 1);
-          fs.writeFileSync(BdsManegerCore.BdsSettigs.GetPaths("whitelist"), JSON.stringify(WgiteList));
+          fs.writeFileSync(BdsManegerCore.BdsSettings.GetPaths("whitelist"), JSON.stringify(WgiteList));
           res.json({
             success: true,
             message: "Whitelist Removed"
@@ -260,7 +328,7 @@ app.post("/bds/save_settings", (req, res) => {
 // Bds Maneger Bridge Communication
 app.get("/bds/bridge", (req, res) => {
   const ServerHost = require("./BdsNetwork").host || req.headers.host.replace(/^(.*?):\d+$/, (match, p1) => p1) || require("./BdsNetwork").externalIP.ipv4;
-  const ServerConfig = BdsManegerCore.get_config();
+  const ServerConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
   res.json({
     host: ServerHost,
     port: ServerConfig.portv4,
@@ -268,7 +336,7 @@ app.get("/bds/bridge", (req, res) => {
 });
 
 // ? /player
-const GetPlayerJson = (Platform = BdsManegerCore.getBdsConfig().server.platform) => ([...{...JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettigs.GetPaths("player"), "utf8"))}[Platform]]);
+const GetPlayerJson = (Platform = BdsManegerCore.BdsSettings.GetJsonConfig().server.platform) => ([...{...JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))}[Platform]]);
 app.get("/players", (req, res) => {
   const { Platform = BdsSettings.GetPlatform(), Player = null, Action = null } = req.query;
   let PlayerList = GetPlayerJson(Platform);
@@ -417,17 +485,10 @@ function API(port_api = 1932, callback = port => {console.log("Bds Maneger Core 
     });
   });
   const port = (port_api || 1932);
-  app.listen(port, () => {
+  Server.listen(port, () => {
     if (typeof callback === "function") callback(port);
   });
   return port;
-}
-
-function MainAPI(apiConfig = {api_port: 1932}, callback = function (port){console.log("Bds Maneger Core REST API, http port", port)}){
-  var port_rest = 1932;
-  if (typeof apiConfig === "object" && apiConfig.api_port !== undefined) port_rest = apiConfig.api_port;
-  else if (typeof apiConfig === "number") port_rest = apiConfig;
-  return API(port_rest, callback);
 }
 
 // Bds Maneger Core API token Register
@@ -464,9 +525,11 @@ function delete_token(Token = "") {
 // Check Exists Tokens Files
 if (!(fs.existsSync(path_tokens))) token_register();
 
-module.exports = MainAPI;
 module.exports.api = API;
-module.exports.BdsRoutes = app;
 module.exports.token_register = token_register;
 module.exports.delete_token = delete_token;
 module.exports.TokensFilePath = path_tokens;
+module.exports.BdsRoutes = {
+  App: app,
+  Server: Server
+};

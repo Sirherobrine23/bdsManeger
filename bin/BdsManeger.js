@@ -39,7 +39,7 @@ fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirna
     });
     MoreHelp.push(cli_color.redBright(`Plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")} - ${__module.description}`), "", ...(__module.help || []), "");
   } catch (err) {
-    console.log(cli_color.redBright(`Error loading plugin: ${Plugin}`));
+    console.log(cli_color.redBright(`Error loading plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")}`));
     console.log(cli_color.redBright(err));
   }
 });
@@ -50,7 +50,7 @@ async function DownloadServer() {
   const waitUserSelectVersion = (await inquirer.prompt({
     type: "list",
     name: "version",
-    message: `Select the version to download ${GetPlatform()}`,
+    message: `Select the version to download ${BdsCore.BdsSettings.GetPlatform()}`,
     choices: Object.keys(PlatformVersion.versions).map(version => ({name: `v${version}`, value: version}))
   })).version;
   const RunSpinner = ora("Downloading...").start();
@@ -157,6 +157,8 @@ async function Runner() {
   // Download
   if (ProcessArgs.download || ProcessArgs.d) await DownloadServer();
 
+  // Kill
+  if (ProcessArgs.kill || ProcessArgs.k) BdsCore.BdsCkeckKill.Kill();
 
   // Load Plugins
   for (let Plugin of BeforeRun) {
@@ -166,11 +168,18 @@ async function Runner() {
   // Start Server
   if (!(ProcessArgs.start || ProcessArgs.s)) return;
 
+  const BdsManegerServer = BdsCore.BdsManegerServer.StartServer();
+  BdsManegerServer.log(data => process.stdout.write(cli_color.blueBright(data)));
+  if (!(ProcessArgs["no-api"])) BdsCore.BdsManegerAPI.api();
+  const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
+  __readline.on("line", data => BdsManegerServer.command(data));
+  __readline.on("close", () => BdsManegerServer.stop());
   // Get Temporary External Domain
   if (ProcessArgs.get_domain) {
     try {
       const HostInfo = await BdsCore.BdsNetwork.GetHost();
       console.log("Domain:", HostInfo.host);
+      BdsManegerServer.exit(async () => await HostInfo.delete_host());
       process.on("exit", async () => {
         await HostInfo.delete_host();
         console.log("Sucess remove host");
@@ -179,15 +188,9 @@ async function Runner() {
       console.log("Cannot get domain");
     }
   }
-
-  const BdsManegerServer = BdsCore.BdsManegerServer.StartServer();
-  BdsManegerServer.log(data => console.log(cli_color.blueBright(data.replace(/\n$/gi, ""))));
   BdsManegerServer.exit(code => {
-      console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.uptime}`));
-      process.exit(code);
+    console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.uptime}`));
+    process.exit(code);
   });
-  if (!(ProcessArgs["no-api"])) BdsCore.api();
-  const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
-  __readline.on("line", data => BdsManegerServer.command(data));
 }
 Runner();
