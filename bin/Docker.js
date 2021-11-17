@@ -3,7 +3,7 @@ process.env.BDS_DOCKER_IMAGE = true;
 const fs = require("fs");
 
 const BdsCore = require("../index");
-const { GetPlatform, bds_dir } = require("../src/lib/BdsSettings");
+const { GetPlatform } = require("../src/lib/BdsSettings");
 const { CronJob } = require("cron");
 const { PlatformVersionsV2 } = require("../src/BdsServersDownload");
 
