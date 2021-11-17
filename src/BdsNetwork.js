@@ -1,5 +1,5 @@
 // External User ip
-const Request = require("../lib/Requests");
+const Request = require("../src/lib/Requests");
 const os = require("os");
 
 function LocalInterfaces() {
@@ -19,7 +19,7 @@ function LocalInterfaces() {
     netmask: "",
     cidr: ""
     },
-  }
+  };
   for (let iface of interfaces[name]) {
     if (!Inter.mac && iface.mac) Inter.mac = iface.mac;
     if (iface.family === "IPv4") {

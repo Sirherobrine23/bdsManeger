@@ -1,7 +1,7 @@
 const fs = require("fs");
 const { google } = require("googleapis");
 const { authorize } = require("./Auth/Google");
-const { GetCloudConfig } = require("../../lib/BdsSettings");
+const { GetCloudConfig } = require("../../src/lib/BdsSettings");
 
 module.exports.Uploadbackups = async function (file_name = "Backup.zip", fileLocation = "Backup.zip", BackupCallback){
     return new Promise(async function (resolve, reject){

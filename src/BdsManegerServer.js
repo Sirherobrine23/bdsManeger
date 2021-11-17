@@ -1,23 +1,20 @@
 const child_process = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const randomUUID = require("uuid").v4;
-const { CronJob } = require("cron");
-
-// Bds Maneger Inports
-const commandExists = require("../lib/commandExist");
-const BdsDetect = require("./CheckKill").Detect;
-const bds = require("../index");
-const { GetServerPaths, GetPaths, GetServerSettings, GetPlatform, GetCronBackup } = require("../lib/BdsSettings");
+const { randomUUID } = require("crypto");
 const { Backup } = require("./BdsBackup");
+const { CronJob } = require("cron");
+const BdsSettings = require("../src/lib/BdsSettings");
 
-// Set bdsexec functions
-global.BdsExecs = {};
+const ServerSessions = {};
+module.exports.GetSessions = () => ServerSessions;
 
-function start() {
-  if (BdsDetect()) throw new Error("You already have a server running");
-  const CurrentBdsPlatform = GetPlatform();
+module.exports.StartServer = function start() {
+  const commandExists = require("../src/lib/commandExist");
+  const io = require("./api").SocketIO;
+  const CurrentBdsPlatform = BdsSettings.GetPlatform();
   const SetupCommands = {
+    RunInCroot: false,
     command: String,
     args: [],
     cwd: String,
@@ -34,17 +31,17 @@ function start() {
     // Windows Platform
     else if (process.platform === "win32") {
       SetupCommands.command = "bedrock_server.exe";
-      SetupCommands.cwd = GetServerPaths("bedrock")
+      SetupCommands.cwd = BdsSettings.GetServerPaths("bedrock")
     }
 
     // Linux Platform
     else if (process.platform === "linux"){
       // Set Executable file
-      try {child_process.execSync("chmod 777 bedrock_server", {cwd: GetServerPaths("bedrock")});} catch (error) {console.log(error);}
+      try {child_process.execSync("chmod 777 bedrock_server", {cwd: BdsSettings.GetServerPaths("bedrock")});} catch (error) {console.log(error);}
 
       // Set Env and Cwd
-      SetupCommands.cwd = GetServerPaths("bedrock");
-      SetupCommands.env.LD_LIBRARY_PATH = GetServerPaths("bedrock");
+      SetupCommands.cwd = BdsSettings.GetServerPaths("bedrock");
+      SetupCommands.env.LD_LIBRARY_PATH = BdsSettings.GetServerPaths("bedrock");
 
       // In case the cpu is different from x64, the command will use qemu static to run the server
       if (process.arch !== "x64") {
@@ -57,30 +54,30 @@ function start() {
 
   // Minecraft Java Oficial
   else if (CurrentBdsPlatform === "java") {
-    const JavaConfig = GetServerSettings("java")
+    const JavaConfig = BdsSettings.GetServerSettings("java")
 
     // Checking if java is installed on the device
     if (commandExists("java")) {
-      SetupCommands.cwd = GetServerPaths("java");
+      SetupCommands.cwd = BdsSettings.GetServerPaths("java");
       SetupCommands.command = "java";
       SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "MinecraftServerJava.jar", "nogui");
-    } else {require("open")(bds.package_json.docs_base + "Java-Download#windows"); throw new Error(`Open: ${bds.package_json.docs_base + "Java-Download#windows"}`)}
+    } else throw new Error("Install Java");
   }
 
   // Spigot
   else if (CurrentBdsPlatform === "spigot") {
-    const JavaConfig = GetServerSettings("java")
+    const JavaConfig = BdsSettings.GetServerSettings("java")
     // Checking if java is installed on the device
     if (commandExists("java")) {
-      SetupCommands.cwd = GetServerPaths("spigot");
+      SetupCommands.cwd = BdsSettings.GetServerPaths("spigot");
       SetupCommands.command = "java";
       SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "spigot.jar", "nogui");
-    } else {require("open")(bds.package_json.docs_base + "Java-Download#windows"); throw new Error(`Open: ${bds.package_json.docs_base + "Java-Download#windows"}`)}
+    } else throw new Error("Install Java");
   }
 
   // Dragonfly
   else if (CurrentBdsPlatform === "dragonfly") {
-    SetupCommands.cwd = GetServerPaths("dragonfly");
+    SetupCommands.cwd = BdsSettings.GetServerPaths("dragonfly");
     if (process.platform === "win32") {
       SetupCommands.command = "Dragonfly.exe";
     } else {
@@ -92,24 +89,27 @@ function start() {
   // Minecraft Bedrock (Pocketmine-MP)
   else if (CurrentBdsPlatform === "pocketmine") {
     // Start PocketMine-MP
-    SetupCommands.command = path.join(path.resolve(GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
-    if (process.platform === "win32") SetupCommands.command = path.join(path.resolve(GetServerPaths("pocketmine"), "bin/php"), "php.exe");
+    SetupCommands.command = path.join(path.resolve(BdsSettings.GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
+    if (process.platform === "win32") SetupCommands.command = path.join(path.resolve(BdsSettings.GetServerPaths("pocketmine"), "bin/php"), "php.exe");
     SetupCommands.args.push("./PocketMine-MP.phar");
-    SetupCommands.cwd = GetServerPaths("pocketmine");
+    SetupCommands.cwd = BdsSettings.GetServerPaths("pocketmine");
   }
 
   // Show Error platform
   else throw Error("Bds Config Error")
 
   // Setup commands
-  const ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
-    cwd: SetupCommands.cwd,
+  let __ServerExec = child_process.exec("exit 0");
+  if (SetupCommands.RunInCroot) throw new Error("RunInCroot is not supported yet");
+  else __ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
+  cwd: SetupCommands.cwd,
     env: SetupCommands.env
   });
+  const ServerExec = __ServerExec;
 
   // Log file
-  const LogFile = path.join(GetPaths("log"), `${GetPlatform()}_${new Date().toString().replace(/:|\(|\)/g, "_")}_Bds_log.log`);
-  const LatestLog_Path = path.join(GetPaths("log"), "latest.log");
+  const LogFile = path.join(BdsSettings.GetPaths("log"), `${BdsSettings.GetPlatform()}_${new Date().toString().replace(/:|\(|\)/g, "_")}_Bds_log.log`);
+  const LatestLog_Path = path.join(BdsSettings.GetPaths("log"), "latest.log");
   const LogSaveFunction = data => {
     fs.appendFileSync(LogFile, data);
     fs.appendFileSync(LatestLog_Path, data);
@@ -285,18 +285,49 @@ function start() {
   // Uptime Server
   const OnStop = setInterval(() => returnFuntion.uptime = (new Date().getTime() - returnFuntion.StartTime.getTime()) / 1000, 1000);
   ServerExec.on("exit", () => {
-    delete global.BdsExecs[returnFuntion.uuid]
+    delete ServerSessions[returnFuntion.uuid]
     clearInterval(OnStop);
   });
 
+  // Socket.io
+  io.on("connection", (socket) => {
+    socket.on("ServerCommand", (data = "") => {
+      if (typeof data === "string") return returnFuntion.command(data);
+      else if (typeof data === "object") {
+        if (typeof data.uuid === "string") {
+          if (data.uuid === returnFuntion.uuid) return returnFuntion.command(data.command);
+        }
+      }
+      return;
+    });
+    ServerExec.on("exit", code => socket.emit("ServerExit", {
+      UUID: returnFuntion.uuid,
+      exitCode: code
+    }));
+    ServerExec.stdout.on("data", (data = "") => {
+      socket.emit("ServerLog", {
+        UUID: returnFuntion.uuid,
+        data: data,
+        IsStderr: false
+      });
+    });
+    ServerExec.stderr.on("data", (data = "") => {
+      socket.emit("ServerLog", {
+        UUID: returnFuntion.uuid,
+        data: data,
+        IsStderr: true
+      });
+    });
+  });
+
   // Return
-  global.BdsExecs[returnFuntion.uuid] = returnFuntion;
+  ServerSessions[returnFuntion.uuid] = returnFuntion;
   module.exports.BdsRun = returnFuntion;
   return returnFuntion;
 }
 
-function Player_Json(data = "aaaaaa\n\n\naa", callback = () => {}){
-  const Current_platorm = GetPlatform();
+function Player_Json(data = "", callback = () => {}){
+  const Current_platorm = BdsSettings.GetPlatform();
   // Bedrock
   if (Current_platorm === "bedrock") {
     // "[INFO] Player connected: Sirherobrine, xuid: 2535413418839840",
@@ -352,8 +383,8 @@ function Player_Json(data = "aaaaaa\n\n\naa", callback = () => {}){
 }
 
 const UpdateUserJSON = function (New_Object = []){
-  const Player_Json_path = GetPaths("player");
-  const Current_platorm = GetPlatform();
+  const Player_Json_path = BdsSettings.GetPaths("player");
+  const Current_platorm = BdsSettings.GetPlatform();
   let Players_Json = {
     bedrock: [],
     java: [],
@@ -370,8 +401,8 @@ const UpdateUserJSON = function (New_Object = []){
 }
 
 // Search player in JSON
-function Player_Search(player = "dontSteve") {
-  const Player_Json_path = GetPaths("player"), Current_platorm = GetPlatform();
+module.exports.Player_Search = function Player_Search(player = "dontSteve") {
+  const Player_Json_path = BdsSettings.GetPaths("player"), Current_platorm = BdsSettings.GetPlatform();
   const Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"))[Current_platorm]
   for (let Player of Players_Json) {
     if (Player.Player === player.trim()) return Player;
@@ -379,42 +410,19 @@ function Player_Search(player = "dontSteve") {
   return {};
 }
 
-function GetSessions(){
-  const ArraySessions = Object.getOwnPropertyNames(global.BdsExecs)
+module.exports.GetFistSession = function GetFistSession(){
+  const ArraySessions = Object.getOwnPropertyNames(ServerSessions)
   if (ArraySessions.length === 0) throw "Start Server";
-  if (ArraySessions.length >= 2) throw "Select a session manually:" + ArraySessions.join(", ")
-  return global.BdsExecs[0]
+  return ServerSessions[0]
 }
 
-function BdsCommand(command = "list", SessionID = null) {
-  if (!(command)) return false;
-  try {
-    var Session = {}
-    if (!(SessionID)) Session = GetSessions(); else Session = global.BdsExecs[SessionID]
-    Session.command(command);
-    return true
-  } catch (error) {
-    return false
+module.exports.CronBackups = BdsSettings.GetCronBackup().map(Crron => {
+  const Cloud_Backup = {
+    Azure: require("./clouds/Azure").Uploadbackups,
+    Driver: require("./clouds/GoogleDriver").Uploadbackups,
+    Oracle: require("./clouds/OracleCI").Uploadbackups,
   }
-}
-
-function stop(SessionID = null) {
-  try {
-    var Session = {}
-    if (!(SessionID)) Session = GetSessions(); else Session = global.BdsExecs[SessionID]
-    Session.stop()
-    return true
-  } catch (error) {
-    return false
-  }
-}
-
-const Cloud_Backup = {
-  Azure: require("./clouds/Azure").Uploadbackups,
-  Driver: require("./clouds/GoogleDriver").Uploadbackups,
-  Oracle: require("./clouds/OracleCI").Uploadbackups,
-}
-const CurrentBackups = GetCronBackup().map(Crron => {
+  //
   return {
     CronFunction: new CronJob(Crron.cron, async () => {
       console.log("Starting Server and World Backup");
@@ -433,12 +441,3 @@ const CurrentBackups = GetCronBackup().map(Crron => {
     })
   }
 });
-
-module.exports = {
-  start,
-  BdsCommand,
-  stop,
-  GetSessions,
-  CronBackups: CurrentBackups,
-  Player_Search,
-}

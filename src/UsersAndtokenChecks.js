@@ -1,4 +1,4 @@
-const { bds_dir, GetServerBan, GetTelegramAdmins, GetPlatform, GetPaths } = require("../lib/BdsSettings");
+const { bds_dir, GetServerBan, GetTelegramAdmins, GetPlatform, GetPaths } = require("../src/lib/BdsSettings");
 const { existsSync, readFileSync } = require("fs")
 const { join } = require("path")
 

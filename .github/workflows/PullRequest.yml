@@ -1,5 +1,8 @@
 name: Docker And Node Test
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main

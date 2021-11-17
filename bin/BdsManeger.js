@@ -4,6 +4,10 @@ process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
 // Internal Modules
 const fs = require("fs");
 const path = require("path");
+const readline = require("readline");
+
+// Import Bds Core
+const BdsCore = require("../index");
 
 // External Modules
 const cli_color = require("cli-color");
@@ -11,14 +15,6 @@ const inquirer = require("inquirer");
 
 // Bin Args
 const ProcessArgs = require("minimist")(process.argv.slice(2));
-
-// Import Bds Core
-const BdsCore = require("../index");
-const BdsNetwork = require("../src/BdsNetwork");
-const commandExits = require("../lib/commandExist");
-const readline = require("readline");
-const { PlatformVersionsV2 } = require("../src/BdsServersDownload");
-const { GetPlatform } = require("../lib/BdsSettings");
 
 // Load Bds Maneger CLI Plugins
 const MoreHelp = [];
@@ -43,23 +39,23 @@ fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirna
     });
     MoreHelp.push(cli_color.redBright(`Plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")} - ${__module.description}`), "", ...(__module.help || []), "");
   } catch (err) {
-    console.log(cli_color.redBright(`Error loading plugin: ${Plugin}`));
+    console.log(cli_color.redBright(`Error loading plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")}`));
     console.log(cli_color.redBright(err));
   }
 });
 
 async function DownloadServer() {
   const ora = (await import("ora")).default;
-  const PlatformVersion = await PlatformVersionsV2()
+  const PlatformVersion = await BdsCore.BdsDownload.PlatformVersionsV2();
   const waitUserSelectVersion = (await inquirer.prompt({
     type: "list",
     name: "version",
-    message: `Select the version to download ${GetPlatform()}`,
+    message: `Select the version to download ${BdsCore.BdsSettings.GetPlatform()}`,
     choices: Object.keys(PlatformVersion.versions).map(version => ({name: `v${version}`, value: version}))
   })).version;
   const RunSpinner = ora("Downloading...").start();
   try {
-    const DownloadRes = await BdsCore.download(waitUserSelectVersion);
+    const DownloadRes = await BdsCore.BdsDownload(waitUserSelectVersion);
     RunSpinner.succeed(`Downloaded ${DownloadRes.version}, Published in ${DownloadRes.data.getDate()}/${DownloadRes.data.getMonth()}/${DownloadRes.data.getFullYear()}`);
   } catch (err) {
     RunSpinner.fail(String(err));
@@ -68,22 +64,28 @@ async function DownloadServer() {
 }
 
 async function info() {
-  const { valid_platform } = await (require("../lib/BdsSystemInfo"))();
+  const commandExist = require("../src/lib/commandExist");
+  const { valid_platform } = await (require("../src/lib/BdsSystemInfo"))();
   var checkothearch = "";
-  if (process.platform === "linux" && BdsCore.arch !== "x64"){checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExits("qemu-x86_64-static")}\n`}
-  if (process.platform === "android" && BdsCore.arch !== "x64"){checkothearch = `qemu-x86_64 is installed to emulate an x64 system: ${commandExits("qemu-x86_64")}\n`}
+  if (process.platform === "linux" && BdsCore.BdsSystemInfo.arch !== "x64"){
+    checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExist("qemu-x86_64-static")}\n`
+  }
+  if (process.platform === "android" && BdsCore.BdsSystemInfo.arch !== "x64"){
+    checkothearch = `qemu-x86_64 is installed to emulate an x64 system: ${commandExist("qemu-x86_64")}\n`
+  }
   const info = [
-      `Bds Maneger Core And Bds Maneger CLI version: ${cli_color.magentaBright(BdsCore.package_json.version)}`,
-      `System: ${cli_color.yellow(process.platform)}, architecture: ${cli_color.blue(BdsCore.arch)}`,
-      checkothearch,
-      "**************************************************************",
-      "* Servers currently available:",
-      `*   - Bedrock:          ${valid_platform.bedrock}`,
-      `*   - Java and Spigot:  ${valid_platform.java ? cli_color.green("Available") : cli_color.red("Needs Java installed https://upstream.bdsmaneger.com/docs/Java?Installer=info")}`,
-      `*   - Dragonfly:        ${valid_platform.dragonfly}`,
-      `*   - Pocketmine-MP:    ${valid_platform.pocketmine}`,
-      "*",
-      "**************************************************************"
+    "",
+    `Bds Maneger Core And Bds Maneger CLI version: ${cli_color.magentaBright(BdsCore.version)}`,
+    `System: ${cli_color.yellow(process.platform)}, architecture: ${cli_color.blue(BdsCore.BdsSystemInfo.arch)}`,
+    checkothearch,
+    "**************************************************************",
+    "* Servers currently available:",
+    `*   - Bedrock:          ${valid_platform.bedrock ? cli_color.greenBright("Avaible") : cli_color.redBright("Not Avaible")}`,
+    `*   - Java and Spigot:  ${valid_platform.java ? cli_color.greenBright("Avaible") : cli_color.redBright("Not Avaible")}`,
+    `*   - Dragonfly:        ${valid_platform.dragonfly ? cli_color.greenBright("Avaible") : cli_color.redBright("Not Avaible")}`,
+    `*   - Pocketmine-MP:    ${valid_platform.pocketmine ? cli_color.greenBright("Avaible") : cli_color.redBright("Not Avaible")}`,
+    "*",
+    "**************************************************************"
   ];
   console.log(cli_color.whiteBright(info.join("\n").replace(/true/gi, cli_color.greenBright("true")).replace(/false/gi, cli_color.redBright("false")).replace(/undefined/gi, cli_color.red("undefined"))));
   // End
@@ -92,8 +94,8 @@ async function info() {
 
 async function help() {
   const help = [
-    `Bds Maneger CLI version: ${cli_color.magentaBright(BdsCore.package_json.version)}`,
-    `System: ${cli_color.yellow(process.platform)}, architecture: ${cli_color.blue(BdsCore.arch)}`,
+    `Bds Maneger CLI version: ${cli_color.magentaBright(BdsCore.version)}`,
+    `System: ${cli_color.yellow(process.platform)}, architecture: ${cli_color.blue(BdsCore.BdsSystemInfo.arch)}`,
     "",
     " Usage: bds-maneger-cli [options]",
     "",
@@ -132,7 +134,7 @@ async function Runner() {
   if (ProcessArgs.platform || ProcessArgs.p) {
     const UpdatePla = ora("Updating Bds Platform").start();
     try {
-      BdsCore.platform_update(ProcessArgs.platform || ProcessArgs.p);
+      BdsCore.BdsSettings.UpdatePlatform(ProcessArgs.platform || ProcessArgs.p);
       UpdatePla.succeed(`Now the platform is the ${ProcessArgs.platform || ProcessArgs.p}`);
     } catch (error) {
       UpdatePla.fail(`Unable to update platform to ${ProcessArgs.platform || ProcessArgs.p}`);
@@ -155,14 +157,29 @@ async function Runner() {
   // Download
   if (ProcessArgs.download || ProcessArgs.d) await DownloadServer();
 
+  // Kill
+  if (ProcessArgs.kill || ProcessArgs.k) BdsCore.BdsCkeckKill.Kill();
+
+  // Load Plugins
+  for (let Plugin of BeforeRun) {
+    if (!(ProcessArgs[Plugin.arg])) Plugin.main(ProcessArgs[Plugin.arg], ProcessArgs).catch(err => console.log("Plugin Crash:", "\n\n", err));
+  }
+
   // Start Server
   if (!(ProcessArgs.start || ProcessArgs.s)) return;
 
+  const BdsManegerServer = BdsCore.BdsManegerServer.StartServer();
+  BdsManegerServer.log(data => process.stdout.write(cli_color.blueBright(data)));
+  if (!(ProcessArgs["no-api"])) BdsCore.BdsManegerAPI.api();
+  const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
+  __readline.on("line", data => BdsManegerServer.command(data));
+  __readline.on("close", () => BdsManegerServer.stop());
   // Get Temporary External Domain
   if (ProcessArgs.get_domain) {
     try {
-      const HostInfo = await BdsNetwork.GetHost();
+      const HostInfo = await BdsCore.BdsNetwork.GetHost();
       console.log("Domain:", HostInfo.host);
+      BdsManegerServer.exit(async () => await HostInfo.delete_host());
       process.on("exit", async () => {
         await HostInfo.delete_host();
         console.log("Sucess remove host");
@@ -171,20 +188,9 @@ async function Runner() {
       console.log("Cannot get domain");
     }
   }
-
-  // Load Plugins
-  for (let Plugin of BeforeRun) {
-    if (!(ProcessArgs[Plugin.arg])) Plugin.main(ProcessArgs[Plugin.arg], ProcessArgs).catch(err => console.log("Plugin Crash:", "\n\n", err));
-  }
-
-  const BdsManegerServer = BdsCore.start();
-  BdsManegerServer.log(data => console.log(cli_color.blueBright(data.replace(/\n$/gi, ""))));
   BdsManegerServer.exit(code => {
-      console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.uptime}`));
-      process.exit(code);
+    console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.uptime}`));
+    process.exit(code);
   });
-  if (!(ProcessArgs["no-api"])) BdsCore.api();
-  const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
-  __readline.on("line", data => BdsManegerServer.command(data));
 }
 Runner();

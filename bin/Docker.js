@@ -1,126 +1,95 @@
 #!/usr/bin/env node
 process.env.BDS_DOCKER_IMAGE = true;
-const path = require("path");
 const fs = require("fs");
 
 const BdsCore = require("../index");
-const { GetPlatform, bds_dir } = require("../lib/BdsSettings");
+const { GetPlatform } = require("../src/lib/BdsSettings");
 const { CronJob } = require("cron");
-const BdsInfo = require("../BdsManegerInfo.json");
 const { PlatformVersionsV2 } = require("../src/BdsServersDownload");
 
 // Get Current Tokens and Show in the console
 function ShowToken() {
-    const TokenFilePath = path.join(bds_dir, "bds_tokens.json");
-    let Tokens = 1
-    if (fs.existsSync(TokenFilePath)) {
-        [...JSON.parse(fs.readFileSync(TokenFilePath, "utf8"))].slice(0, 5).forEach(token => {console.log(Tokens+":", "Bds API Token:", token.token); Tokens++});
-    } else {
-        console.log("No Tokens Found");
-    }
+  const TokenFilePath = BdsCore.BdsManegerAPI.TokensFilePath;
+  let Tokens = 1
+  if (fs.existsSync(TokenFilePath)) {
+    [...JSON.parse(fs.readFileSync(TokenFilePath, "utf8"))].slice(0, 5).forEach(token => {console.log(Tokens+":", "Bds API Token:", token.token); Tokens++});
+  } else {
+    console.log(Tokens+":", "Bds API Token:", BdsCore.BdsManegerAPI.token_register());
+  }
 }
 
-function StartServer(){
-    console.log("The entire log can be accessed via the api and/or the docker log");
-    const ServerStarted = BdsCore.start();
-    ServerStarted.log(a => process.stdout.write(a));
-    ServerStarted.exit(code => process.exit(code));
-    BdsCore.api();
-    if (process.env.PULL_REQUEST === "true") {
-        console.log((require("cli-color")).red("Pull Request Actived 1 Min to exit"));
-        setTimeout(() => {
-            ServerStarted.stop();
-        }, 1 * 60 * 1000)
+async function CheckAndUpdateServer() {
+  const LatestVersion = (await BdsCore.BdsDownload.PlatformVersionsV2()).latest;
+  const LocalVersion = BdsCore.BdsSettings.GetServerVersion()[GetPlatform()];
+  if (!LocalVersion) {
+    console.log("Server is not installed, starting server implementation");
+    const __InitInstall = await BdsCore.BdsDownload(true);
+    console.log("Installed Version:", __InitInstall.version, `Release Version: ${__InitInstall.data.getDate()}/${__InitInstall.data.getMonth()}/${__InitInstall.data.getFullYear()}`);
+  } else if (LocalVersion !== LatestVersion) {
+    console.log("Server is out of date, starting server implementation");
+    const __UpdateInstall = await BdsCore.BdsDownload(true);
+    console.log("Updated Version:", __UpdateInstall.version, `Release Version: ${__UpdateInstall.data.getDate()}/${__UpdateInstall.data.getMonth()}/${__UpdateInstall.data.getFullYear()}`);
+  }
+}
+
+async function StartServer(){
+  ShowToken();
+  console.log("The entire log can be accessed via the api and/or the docker log");
+  const ServerStarted = BdsCore.BdsManegerServer.StartServer();
+  ServerStarted.log(a => process.stdout.write(a));
+  ServerStarted.exit(code => process.exit(code));
+  BdsCore.BdsManegerAPI.api();
+  if (process.env.PULL_REQUEST === "true") {
+    console.log((require("cli-color")).red("Pull Request Actived 1 Min to exit"));
+    setTimeout(() => {
+      ServerStarted.stop();
+    }, 1 * 60 * 1000)
+  }
+  new CronJob("0 */1 * * *", async () => {
+    try {
+      const CurrentLocalVersion = BdsCore.BdsSettings.GetServerVersion()[GetPlatform()],
+        CurrentRemoteVersion = (await PlatformVersionsV2(GetPlatform())).latest;
+      if (CurrentLocalVersion !== CurrentRemoteVersion) {
+        let currenttime = `Hello we are starting the server upgrade from version ${CurrentLocalVersion} to version ${CurrentRemoteVersion}, you have 20 seconds to exit the server`
+        console.log("Update Server:", currenttime);
+        ServerStarted.say(currenttime);
+        let countdown = 20;
+        while (countdown > 1) {
+          currenttime = `${countdown} seconds remaining to stop Server!`;
+          console.log(currenttime);
+          ServerStarted.say(currenttime);
+          countdown--;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        currenttime = "Stopping the server"
+        console.log(currenttime);
+        ServerStarted.say(currenttime);
+        await new Promise(resolve => setTimeout(resolve, 600));
+        ServerStarted.stop();
+      }
+    } catch (err) {
+      console.log(err);
     }
-    ShowToken();
-    if (process.env.UPDATE_SERVER === "true") {
-        new CronJob("0 */1 * * *", async () => {
-            try {
-                const CurrentLocalVersion = BdsCore.getBdsConfig().server.versions[GetPlatform()],
-                    CurrentRemoteVersion = (await PlatformVersionsV2(GetPlatform())).latest;
-                if (CurrentLocalVersion !== CurrentRemoteVersion) {
-                    let currenttime = `Hello we are starting the server upgrade from version ${CurrentLocalVersion} to version ${CurrentRemoteVersion}, you have 20 seconds to exit the server`
-                    console.log("Update Server:", currenttime);
-                    ServerStarted.say(currenttime);
-                    let countdown = 20;
-                    while (countdown > 1) {
-                        currenttime = `${countdown} seconds remaining to stop Server!`;
-                        console.log(currenttime);
-                        ServerStarted.say(currenttime);
-                        countdown--;
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
-                    currenttime = "Stopping the server"
-                    console.log(currenttime);
-                    ServerStarted.say(currenttime);
-                    await new Promise(resolve => setTimeout(resolve, 600));
-                    ServerStarted.stop();
-                }
-            } catch (err) {
-                console.log(err);
-            }
-        });
-    }
+  });
 }
 
 async function RenderCLI(){
-    // Check Installed Server
-    const AllVersions = BdsCore.BdsSettigs.GetJsonConfig().server.versions;
-    if (Object.getOwnPropertyNames(AllVersions).filter(platform => AllVersions[platform]).length >= 1) {
-        if (process.env.UPDATE_SERVER === "true") {
-            try {
-                await BdsCore.download(true, true);
-                StartServer();
-            } catch (err) {
-                console.log(err);
-                process.exit(1);
-            }
-        } else {
-            // Check for Update
-            if (AllVersions[GetPlatform()] === Object.getOwnPropertyNames((await (await fetch(BdsInfo.Fetchs.servers)).json())[GetPlatform()])[0]) {
-                console.log("The entire log can be accessed via the api and/or the docker log");
-                const ServerStarted = BdsCore.start();
-                ServerStarted.log(a => process.stdout.write(a));
-                ServerStarted.exit(process.exit);
-                BdsCore.api();
-            } else {
-                BdsCore.download(true, true, (err) => {
-                    if (err) {
-                        console.log(err);
-                        process.exit(1);
-                    }
-                    StartServer();
-                });
-            }
-        }
-    } else {
-        console.log("Server is not installed, starting server implementation");
-        // Import ENV to Settings Server
-        const { DESCRIPTION, WORLD_NAME, GAMEMODE, DIFFICULTY, ACCOUNT, PLAYERS, SERVER, ENABLE_COMMANDS } = process.env;
-        // Update Platform
-        BdsCore.change_platform(SERVER || "bedrock");
-        try {
-            await BdsCore.download(true, true);
-            // Create JSON Config
-            const ServerConfig = {
-                world: WORLD_NAME,
-                description: DESCRIPTION,
-                gamemode: GAMEMODE,
-                difficulty: DIFFICULTY,
-                players: parseInt(PLAYERS),
-                commands: ENABLE_COMMANDS === "true",
-                account: ACCOUNT === "true",
-                whitelist: false,
-                port: 19132,
-                portv6: 19133,
-            }
-            BdsCore.bds_maneger_token_register(["admin"]);
-            BdsCore.set_config(ServerConfig);
-            StartServer();
-        } catch (err) {
-            console.log(`${err}`);
-            process.exit(1);
-        }
-    }
+  await CheckAndUpdateServer();
+  const { DESCRIPTION, WORLD_NAME, GAMEMODE, DIFFICULTY, ACCOUNT, PLAYERS, SERVER, ENABLE_COMMANDS } = process.env;
+  BdsCore.BdsSettings.UpdatePlatform(SERVER || "bedrock");
+  const ServerConfig = {
+    world: WORLD_NAME,
+    description: DESCRIPTION,
+    gamemode: GAMEMODE,
+    difficulty: DIFFICULTY,
+    players: parseInt(PLAYERS),
+    commands: ENABLE_COMMANDS === "true",
+    account: ACCOUNT === "true",
+    whitelist: false,
+    port: 19132,
+    portv6: 19133,
+  }
+  BdsCore.BdsServerSettings.config(ServerConfig);
+  await StartServer();
 }
 RenderCLI();

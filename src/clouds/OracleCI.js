@@ -2,7 +2,7 @@ const oci_storage = require("oci-objectstorage");
 const oci_common = require("oci-common");
 const fs = require("fs");
 const { resolve } = require("path");
-const { CloudConfig } = require("../../lib/BdsSettings");
+const { CloudConfig } = require("../../src/lib/BdsSettings");
 
 async function Uploadbackups(object = "Backup.zip", fileLocation = resolve(__dirname, "../Backup.zip"), callback = function (data){console.log(data)}){
     return new Promise(async function (resolve, reject){

@@ -3,10 +3,10 @@ const path = require("path");
 const { writeFileSync, existsSync, readFileSync, readdirSync, rmSync } = fs;
 const { join, resolve } = path;
 var AdmZip = require("adm-zip");
-const { GetServerPaths, GetPlatform } = require("../lib/BdsSettings");
+const { GetServerPaths, GetPlatform } = require("../src/lib/BdsSettings");
 const Extra = require("../BdsManegerInfo.json");
 const bds = require("../index");
-const Request = require("../lib/Requests");
+const Request = require("../src/lib/Requests");
 
 // Get Platform Object Versions
 async function PlatformVersionsV2(SelectPlatform = "") {
@@ -53,7 +53,7 @@ async function php_download() {
   // Check Php Binary
   let urlPHPBin = PHPBin[process.platform]
   if (!(urlPHPBin)) throw new Error("unsupported system")
-  urlPHPBin = urlPHPBin[bds.arch];
+  urlPHPBin = urlPHPBin[bds.BdsSystemInfo.arch];
   if (!(urlPHPBin)) throw new Error("unsupported arch")
 
   // Remove Old php Binary if it exists
@@ -85,26 +85,30 @@ async function php_download() {
 // New Download Method
 async function BdsDownloadV2(version = "latest") {
   const CurrentPlatform = GetPlatform();
-  const { valid_platform, require_qemu } = await (require("../lib/BdsSystemInfo")).CheckSystemAsync();
-  const LocalServersVersions = bds.BdsSettigs.GetServerVersion();
-  const { ServersPaths } = bds.BdsSettigs;
+  const { valid_platform, require_qemu } = await (require("../src/lib/BdsSystemInfo")).CheckSystemAsync();
+  const LocalServersVersions = bds.BdsSettings.GetServerVersion();
+  const { ServersPaths } = bds.BdsSettings;
 
   const ReturnObject = {
-    version,
+    version: version,
     platform: CurrentPlatform,
     url: "",
     data: new Date(),
     skip: false
-  }
+  };
 
   // Bedrock
   if (CurrentPlatform === "bedrock") {
     const BedrockVersions = await PlatformVersionsV2("bedrock");
-    if (typeof version === "boolean" || /true|false|null|undefined|latest/.test(`${version}`.toLocaleLowerCase())) version = BedrockVersions.latest;
+    if (/true|false|null|undefined|latest/.test(`${version}`.toLocaleLowerCase())) {
+      version = BedrockVersions.latest;
+      ReturnObject.version = version;
+    }
     if (valid_platform.bedrock) {
       if (LocalServersVersions.bedrock !== version) {
         // Add info to ReturnObject
-        if (require_qemu) ReturnObject.url = BedrockVersions.versions[version][process.platform]["x64"]; else ReturnObject.url = BedrockVersions.versions[version][process.platform][bds.arch];
+        if (require_qemu) ReturnObject.url = BedrockVersions.versions[version][process.platform]["x64"];
+        else ReturnObject.url = BedrockVersions.versions[version][process.platform][bds.BdsSystemInfo.arch];
         ReturnObject.data = BedrockVersions.versions[version].data ? new Date(BedrockVersions.versions[version].data) : null;
 
         // Download and Add buffer to AdmZip
@@ -115,7 +119,7 @@ async function BdsDownloadV2(version = "latest") {
           proprieties: "",
           whitelist: "",
           permissions: "",
-        }
+        };
 
         // Get Bedrock Config Files
         if (fs.existsSync(path.join(ServersPaths.bedrock, "bedrock_server.properties"))) BedrockConfigFiles.proprieties = fs.readFileSync(path.join(ServersPaths.bedrock, "bedrock_server.properties"), "utf8");
@@ -131,7 +135,7 @@ async function BdsDownloadV2(version = "latest") {
         if (BedrockConfigFiles.permissions) fs.writeFileSync(path.join(ServersPaths.bedrock, "permissions.json"), BedrockConfigFiles.permissions, "utf8");
 
         // Update Server Version
-        bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
+        bds.BdsSettings.UpdateServerVersion(version, CurrentPlatform);
       } else {
         ReturnObject.skip = true;
       }
@@ -197,7 +201,7 @@ async function BdsDownloadV2(version = "latest") {
     if (valid_platform.dragonfly) {
       if (LocalServersVersions.dragonfly !== version) {
         // Add info to ReturnObject
-        ReturnObject.url = DragonflyVersions.versions[version][process.platform][bds.arch]
+        ReturnObject.url = DragonflyVersions.versions[version][process.platform][bds.BdsSystemInfo.arch];
         ReturnObject.data = DragonflyVersions.versions[version].data;
 
         // Download
