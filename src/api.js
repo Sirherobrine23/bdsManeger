@@ -18,12 +18,17 @@ const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const pretty = require("express-prettify");
 const cors = require("cors");
+const express_rate_limit = require("express-rate-limit");
 app.use(cors());
 app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(pretty({always: true, spaces: 2}));
 app.use(fileUpload({limits: { fileSize: 512 * 1024 }}));
 app.use(require("request-ip").mw());
+app.use(express_rate_limit({
+  windowMs: 1 * 60 * 1000, // 1 minutes
+  max: 500 // limit each IP to 500 requests per windowMs
+}));
 
 // Init Socket.io
 const Server = require("http").createServer(app);
