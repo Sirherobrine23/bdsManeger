@@ -30,6 +30,21 @@ async function CheckAndUpdateServer() {
     const __UpdateInstall = await BdsCore.BdsDownload(true);
     console.log("Updated Version:", __UpdateInstall.version, `Release Version: ${__UpdateInstall.data.getDate()}/${__UpdateInstall.data.getMonth()}/${__UpdateInstall.data.getFullYear()}`);
   }
+}
+
+async function StartServer(){
+  ShowToken();
+  console.log("The entire log can be accessed via the api and/or the docker log");
+  const ServerStarted = BdsCore.BdsManegerServer.StartServer();
+  ServerStarted.log(a => process.stdout.write(a));
+  ServerStarted.exit(code => process.exit(code));
+  BdsCore.BdsManegerAPI.api();
+  if (process.env.PULL_REQUEST === "true") {
+    console.log((require("cli-color")).red("Pull Request Actived 1 Min to exit"));
+    setTimeout(() => {
+      ServerStarted.stop();
+    }, 1 * 60 * 1000)
+  }
   new CronJob("0 */1 * * *", async () => {
     try {
       const CurrentLocalVersion = BdsCore.BdsSettings.GetServerVersion()[GetPlatform()],
@@ -56,21 +71,6 @@ async function CheckAndUpdateServer() {
       console.log(err);
     }
   });
-}
-
-async function StartServer(){
-  ShowToken();
-  console.log("The entire log can be accessed via the api and/or the docker log");
-  const ServerStarted = BdsCore.BdsManegerServer.StartServer();
-  ServerStarted.log(a => process.stdout.write(a));
-  ServerStarted.exit(code => process.exit(code));
-  BdsCore.BdsManegerAPI.api();
-  if (process.env.PULL_REQUEST === "true") {
-    console.log((require("cli-color")).red("Pull Request Actived 1 Min to exit"));
-    setTimeout(() => {
-      ServerStarted.stop();
-    }, 1 * 60 * 1000)
-  }
 }
 
 async function RenderCLI(){

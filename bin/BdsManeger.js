@@ -64,10 +64,15 @@ async function DownloadServer() {
 }
 
 async function info() {
+  const commandExist = require("../src/lib/commandExist");
   const { valid_platform } = await (require("../src/lib/BdsSystemInfo"))();
   var checkothearch = "";
-  if (process.platform === "linux" && BdsCore.BdsSystemInfo.arch !== "x64"){checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExits("qemu-x86_64-static")}\n`}
-  if (process.platform === "android" && BdsCore.BdsSystemInfo.arch !== "x64"){checkothearch = `qemu-x86_64 is installed to emulate an x64 system: ${commandExits("qemu-x86_64")}\n`}
+  if (process.platform === "linux" && BdsCore.BdsSystemInfo.arch !== "x64"){
+    checkothearch = `qemu-x86_64-static is installed to emulate an x64 system: ${commandExist("qemu-x86_64-static")}\n`
+  }
+  if (process.platform === "android" && BdsCore.BdsSystemInfo.arch !== "x64"){
+    checkothearch = `qemu-x86_64 is installed to emulate an x64 system: ${commandExist("qemu-x86_64")}\n`
+  }
   const info = [
     "",
     `Bds Maneger Core And Bds Maneger CLI version: ${cli_color.magentaBright(BdsCore.version)}`,

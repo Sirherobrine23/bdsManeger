@@ -61,7 +61,7 @@ module.exports.StartServer = function start() {
       SetupCommands.cwd = BdsSettings.GetServerPaths("java");
       SetupCommands.command = "java";
       SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "MinecraftServerJava.jar", "nogui");
-    } else throw new Error("Install Java")
+    } else throw new Error("Install Java");
   }
 
   // Spigot
@@ -72,7 +72,7 @@ module.exports.StartServer = function start() {
       SetupCommands.cwd = BdsSettings.GetServerPaths("spigot");
       SetupCommands.command = "java";
       SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "spigot.jar", "nogui");
-    } else {require("open")(PackageJson.docs_base + "Java-Download#windows"); throw new Error(`Open: ${PackageJson.docs_base + "Java-Download#windows"}`)}
+    } else throw new Error("Install Java");
   }
 
   // Dragonfly
