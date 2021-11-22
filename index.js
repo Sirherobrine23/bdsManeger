@@ -19,7 +19,7 @@ module.exports.BdsSystemInfo = require("./src/lib/BdsSystemInfo");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: System Info");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Network");
-module.exports.BdsNetwork = require("./src/BdsNetwork")
+module.exports.BdsNetwork = require("./src/BdsNetwork");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Network");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Backups");

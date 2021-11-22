@@ -2,7 +2,7 @@
 const os = require("os");
 const fs = require("fs");
 const path = require("path");
-const { randomUUID } = require("crypto")
+const { randomUUID } = require("crypto");
 // Bds Maneger Core
 const BdsManegerCore = require("../index");
 const BdsSystemInfo = require("../src/lib/BdsSystemInfo");
@@ -225,7 +225,7 @@ app.get("/bds/info/server/whitelist", (req, res) => {
         });
       }
     } else {
-      res.json(WgiteList)
+      res.json(WgiteList);
     }
   } else {
     res.status(400).json({
@@ -368,7 +368,7 @@ app.get("/players/kick", (req, res) => {
   if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
 
   // Kick player
-  const RunnerServer = require("../../../BdsManegerServer").BdsRun;
+  const RunnerServer = require("./BdsManegerServer").BdsRun;
   try {
     RunnerServer.kick(Player, Text);
     res.json({ success: true });
@@ -387,7 +387,7 @@ app.get("/players/ban", (req, res) => {
   if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
 
   // Ban player
-  const RunnerServer = require("../../../BdsManegerServer").BdsRun;
+  const RunnerServer = require("./BdsManegerServer").BdsRun;
   try {
     RunnerServer.ban(Player);
     res.json({ success: true });
@@ -406,7 +406,7 @@ app.get("/players/op", (req, res) => {
   if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
 
   // Op player
-  const RunnerServer = require("../../../BdsManegerServer").BdsRun;
+  const RunnerServer = require("./BdsManegerServer").BdsRun;
   try {
     RunnerServer.op(Player);
     res.json({ success: true });
@@ -425,7 +425,7 @@ app.get("/players/deop", (req, res) => {
   if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
 
   // Deop player
-  const RunnerServer = require("../../../BdsManegerServer").BdsRun;
+  const RunnerServer = require("./BdsManegerServer").BdsRun;
   try {
     RunnerServer.deop(Player);
     res.json({ success: true });
@@ -444,7 +444,7 @@ app.get("/players/say", (req, res) => {
   if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
 
   // Say to Server
-  const RunnerServer = require("../../../BdsManegerServer").BdsRun;
+  const RunnerServer = require("./BdsManegerServer").BdsRun;
   try {
     RunnerServer.say(Text);
     res.json({ success: true });
@@ -463,7 +463,7 @@ app.get("/players/tp", (req, res) => {
   if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
 
   // Tp player
-  const RunnerServer = require("../../../BdsManegerServer").BdsRun;
+  const RunnerServer = require("./BdsManegerServer").BdsRun;
   try {
     RunnerServer.tp(Player, {
       x: X,

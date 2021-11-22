@@ -99,7 +99,7 @@ module.exports.StartServer = function start() {
   else throw Error("Bds Config Error")
 
   // Setup commands
-  let __ServerExec = child_process.exec("exit 0");
+  let __ServerExec = child_process.exec("exit 0"); // lgtm [js/useless-assignment-to-local]
   if (SetupCommands.RunInCroot) throw new Error("RunInCroot is not supported yet");
   else __ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
   cwd: SetupCommands.cwd,

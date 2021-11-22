@@ -39,6 +39,7 @@ async function PlatformVersionsV2(SelectPlatform = "") {
       }
     }
   }
+  // lgtm [js/useless-assignment-to-local]
   ResToRetuen = await Request.json(`https://raw.githubusercontent.com/The-Bds-Maneger/ServerVersions/main/${CurrentPlatform}/server.json`);
   return ResToRetuen;
 }
