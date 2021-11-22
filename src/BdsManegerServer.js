@@ -290,33 +290,31 @@ module.exports.StartServer = function start() {
   });
 
   // Socket.io
-  io.on("connection", (socket) => {
-    socket.on("ServerCommand", (data = "") => {
-      if (typeof data === "string") return returnFuntion.command(data);
-      else if (typeof data === "object") {
-        if (typeof data.uuid === "string") {
-          if (data.uuid === returnFuntion.uuid) return returnFuntion.command(data.command);
-        }
+  io.on("ServerCommand", (data = "") => {
+    if (typeof data === "string") return returnFuntion.command(data);
+    else if (typeof data === "object") {
+      if (typeof data.uuid === "string") {
+        if (data.uuid === returnFuntion.uuid) return returnFuntion.command(data.command);
       }
-      return;
-    });
-    ServerExec.on("exit", code => socket.emit("ServerExit", {
+    }
+    return;
+  });
+  ServerExec.on("exit", code => io.emit("ServerExit", {
+    UUID: returnFuntion.uuid,
+    exitCode: code
+  }));
+  ServerExec.stdout.on("data", (data = "") => {
+    io.emit("ServerLog", {
       UUID: returnFuntion.uuid,
-      exitCode: code
-    }));
-    ServerExec.stdout.on("data", (data = "") => {
-      socket.emit("ServerLog", {
-        UUID: returnFuntion.uuid,
-        data: data,
-        IsStderr: false
-      });
+      data: data,
+      IsStderr: false
     });
-    ServerExec.stderr.on("data", (data = "") => {
-      socket.emit("ServerLog", {
-        UUID: returnFuntion.uuid,
-        data: data,
-        IsStderr: true
-      });
+  });
+  ServerExec.stderr.on("data", (data = "") => {
+    io.emit("ServerLog", {
+      UUID: returnFuntion.uuid,
+      data: data,
+      IsStderr: true
     });
   });
 
