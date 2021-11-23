@@ -35,13 +35,18 @@ const Server = require("http").createServer(app);
 const SocketIo = require("socket.io");
 const io = new SocketIo.Server(Server);
 io.use(function (socket, next) {
-  if (socket.handshake.query.token) {
-    if (BdsChecks.token_verify(socket.handshake.query.token)) {
-      socket.token = socket.handshake.query.token;
-      next();
+  const { headers, query } = socket.handshake;
+  const Token = headers["AuthorizationToken"] || query["token"] || query["Token"];
+  if (Token) {
+    if (BdsChecks.token_verify(Token)) {
+      socket.token = Token;
+      return next();
     }
   }
   return next(new Error("Token is not valid"));
+});
+io.on("connection", socket => {
+  console.log("Socket.io connection ID:", socket.token);
 });
 module.exports.SocketIO = io;
 
