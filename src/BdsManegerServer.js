@@ -6,6 +6,9 @@ const { Backup } = require("./BdsBackup");
 const { CronJob } = require("cron");
 const BdsSettings = require("../src/lib/BdsSettings");
 
+const PlayerJson = require("./ManegerServer/Players_json");
+const BasicCommands = require("./ManegerServer/BasicCommands");
+
 const ServerSessions = {};
 module.exports.GetSessions = () => ServerSessions;
 
@@ -117,10 +120,6 @@ module.exports.StartServer = function start() {
   }
   fs.writeFileSync(LatestLog_Path, "");
 
-  // Player JSON File
-  ServerExec.stdout.on("data", data => Player_Json(data, UpdateUserJSON));
-  ServerExec.stderr.on("data", data => Player_Json(data, UpdateUserJSON));
-
   // Log File
   ServerExec.stdout.on("data", LogSaveFunction);
   ServerExec.stderr.on("data", LogSaveFunction);
@@ -142,7 +141,7 @@ module.exports.StartServer = function start() {
     if (!(action === "all" || action === "connect" || action === "disconnect")) throw new Error("Use some valid action: all, connect, disconnect");
     
     // Functions
-    const data = data => Player_Json(data, function (array_status){
+    const data = data => PlayerJson.UpdateUserJSON(data, function (array_status){
       array_status.filter(On => {if ("all" === action || On.Action === action) return true; else return false;}).forEach(_player => callback(_player))
     });
     ServerExec.stdout.on("data", data);
@@ -152,134 +151,18 @@ module.exports.StartServer = function start() {
     ServerExec.stdin.write(`${command}\n`);
     return command;
   };
-  const stop = function (){
-    if (CurrentBdsPlatform === "bedrock") {
-      ServerExec.stdin.write("stop\n");
-      return "stop";
-    } else if (CurrentBdsPlatform === "dragonfly") {
-      ServerExec.kill("SIGKILL");
-      return "process";
-    } else if (CurrentBdsPlatform === "java") {
-      ServerExec.stdin.write("stop\n");
-      return "stop";
-    } else if (CurrentBdsPlatform === "pocketmine") {
-      ServerExec.stdin.write("stop\n");
-      return "stop";
-    } else if (CurrentBdsPlatform === "spigot") {
-      ServerExec.stdin.write("stop\n");
-      return "stop";
-    } else throw new Error("Bds Core Bad Config Error");
-  };
-  const op = function (player = "Steve") {
-    if (CurrentBdsPlatform === "bedrock") {
-      ServerExec.stdin.write(`op "${player}"\n`);
-      return "op";
-    } else if (CurrentBdsPlatform === "dragonfly") {
-      throw new Error("Dragonfly does not support commands");
-    } else if (CurrentBdsPlatform === "java") {
-      ServerExec.stdin.write(`op ${player}\n`);
-      return "op";
-    } else if (CurrentBdsPlatform === "pocketmine") {
-      ServerExec.stdin.write(`op ${player}\n`);
-      return "op";
-    } else if (CurrentBdsPlatform === "spigot") {
-      ServerExec.stdin.write(`op ${player}\n`);
-      return "op";
-    } else throw new Error("Bds Core Bad Config Error");
-  };
-  const deop = function (player = "Steve") {
-    if (CurrentBdsPlatform === "bedrock") {
-      ServerExec.stdin.write(`deop "${player}"\n`);
-      return "deop";
-    } else if (CurrentBdsPlatform === "dragonfly") {
-      throw new Error("Dragonfly does not support commands");
-    } else if (CurrentBdsPlatform === "java") {
-      ServerExec.stdin.write(`deop ${player}\n`);
-      return "deop";
-    } else if (CurrentBdsPlatform === "pocketmine") {
-      ServerExec.stdin.write(`deop ${player}\n`);
-      return "deop";
-    } else if (CurrentBdsPlatform === "spigot") {
-      ServerExec.stdin.write(`deop ${player}\n`);
-      return "deop";
-    } else throw new Error("Bds Core Bad Config Error");
-  };
-  const ban = function (player = "Steve") {
-    if (CurrentBdsPlatform === "bedrock") {
-      ServerExec.stdin.write(`kick "${player}"\n`);
-      return "kick";
-    } else if (CurrentBdsPlatform === "dragonfly") {
-      throw new Error("Dragonfly does not support commands");
-    } else if (CurrentBdsPlatform === "java") {
-      ServerExec.stdin.write(`ban ${player}\n`);
-      return "ban";
-    } else if (CurrentBdsPlatform === "pocketmine") {
-      ServerExec.stdin.write(`ban ${player}\n`);
-      return "ban";
-    } else if (CurrentBdsPlatform === "spigot") {
-      ServerExec.stdin.write(`ban ${player}\n`);
-      return "ban";
-    } else throw new Error("Bds Core Bad Config Error");
-  };
-  const kick = function (player = "Steve", text = "you got kicked") {
-    if (CurrentBdsPlatform === "bedrock") {
-      ServerExec.stdin.write(`kick "${player}" ${text}\n`);
-      return "kick";
-    } else if (CurrentBdsPlatform === "dragonfly") {
-      throw new Error("Dragonfly does not support commands");
-    } else if (CurrentBdsPlatform === "java") {
-      ServerExec.stdin.write(`kick ${player} ${text}\n`);
-      return "kick";
-    } else if (CurrentBdsPlatform === "pocketmine") {
-      ServerExec.stdin.write(`kick ${player} ${text}\n`);
-      return "kick";
-    } else if (CurrentBdsPlatform === "spigot") {
-      ServerExec.stdin.write(`kick ${player} ${text}\n`);
-      return "kick";
-    } else throw new Error("Bds Core Bad Config Error");
-  };
-  const tp = function (player = "Steve", cord = {x: 0, y: 128, z: 0}) {
-    if (CurrentBdsPlatform === "bedrock") {
-      ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
-      return "tp";
-    } else if (CurrentBdsPlatform === "dragonfly") {
-      throw new Error("Dragonfly does not support commands");
-    } else if (CurrentBdsPlatform === "java") {
-      ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
-      return "tp";
-    } else if (CurrentBdsPlatform === "pocketmine") {
-      ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
-      return "tp";
-    } else if (CurrentBdsPlatform === "spigot") {
-      ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
-      return "tp";
-    } else throw new Error("Bds Core Bad Config Error");
-  };
-  function say(text = ""){
-    if (CurrentBdsPlatform === "bedrock") {
-      ServerExec.stdin.write(`say ${text}\n`);
-      return "say";
-    } else if (CurrentBdsPlatform === "dragonfly") {
-      throw new Error("Dragonfly does not support commands");
-    } else if (CurrentBdsPlatform === "java") {
-      ServerExec.stdin.write(`say ${text}\n`);
-      return "say";
-    } else if (CurrentBdsPlatform === "pocketmine") {
-      ServerExec.stdin.write(`say ${text}\n`);
-      return "say";
-    } else if (CurrentBdsPlatform === "spigot") {
-      ServerExec.stdin.write(`say ${text}\n`);
-      return "say";
-    } else throw new Error("Bds Core Bad Config Error");
-  }
+  
+  const BasicCo = BasicCommands.BasicCommands(ServerExec);
 
   // Mount commands to Return
   const returnFuntion = {
     uuid: randomUUID(),
+    LogPath: LogFile,
     pid: ServerExec.pid,
     uptime: 0,
     StartTime: (new Date()),
-    command, log, exit, on, stop, op, deop, ban, kick, tp, say
+    ...BasicCo,
+    command, log, exit, on
   }
 
   // Uptime Server
@@ -291,15 +174,15 @@ module.exports.StartServer = function start() {
 
   // Socket.io
   io.on("connection", socket => {
-  socket.on("ServerCommand", (data, callback) => {
-    if (typeof data === "string") return returnFuntion.command(data);
-    else if (typeof data === "object") {
-      if (typeof data.uuid === "string") {
-        if (data.uuid === returnFuntion.uuid) return returnFuntion.command(data.command);
+    socket.on("ServerCommand", (data) => {
+      if (typeof data === "string") return returnFuntion.command(data);
+      else if (typeof data === "object") {
+        if (typeof data.uuid === "string") {
+          if (data.uuid === returnFuntion.uuid) return returnFuntion.command(data.command);
+        }
       }
-    }
-    return;
-  });
+      return;
+    });
   });
   ServerExec.on("exit", code => io.emit("ServerExit", {
     UUID: returnFuntion.uuid,
@@ -320,84 +203,20 @@ module.exports.StartServer = function start() {
     });
   });
 
+  // Player JSON File
+  ServerExec.stdout.on("data", data => PlayerJson.CreatePlayerJson(data, Actions => {
+    PlayerJson.UpdateUserJSON(Actions);
+    io.emit("PlayerAction", Actions);
+  }));
+  ServerExec.stderr.on("data", data => PlayerJson.CreatePlayerJson(data, Actions => {
+    PlayerJson.UpdateUserJSON(Actions);
+    io.emit("PlayerAction", Actions);
+  }));
+
   // Return
   ServerSessions[returnFuntion.uuid] = returnFuntion;
   module.exports.BdsRun = returnFuntion;
   return returnFuntion;
-}
-
-function Player_Json(data = "", callback = () => {}){
-  const Current_platorm = BdsSettings.GetPlatform();
-  // Bedrock
-  if (Current_platorm === "bedrock") {
-    // "[INFO] Player connected: Sirherobrine, xuid: 2535413418839840",
-    // "[INFO] Player disconnected: Sirherobrine, xuid: 2535413418839840",
-    const BedrockMap = data.split(/\n|\r/gi).map(line => {
-      if (line.includes("connected") || line.includes("disconnected")) {
-        let SplitLine = line.replace(/\[.+\]\s+Player/gi, "").trim().split(/\s+/gi);
-
-        // player
-        let Player = line.trim().replace(/\[.+\]\s+Player/gi, "").trim().replace(/disconnected:|connected:/, "").trim().split(/,\s+xuid:/).filter(a=>a).map(a=>a.trim()).filter(a=>a);
-
-        //
-        let Actions = null;
-        if (/^disconnected/.test(SplitLine[0].trim())) Actions = "disconnect";
-        else if (/^connected/.test(SplitLine[0].trim())) Actions = "connect";
-
-        // Object Map
-        const ObjectReturn = {
-          Player: Player[0],
-          Action: Actions,
-          xuid: Player[1] || null,
-          Date: new Date(),
-        }
-
-        // Return
-        return ObjectReturn
-      } else return false;
-    }).filter(a=>a);
-    callback(BedrockMap);
-  }
-  // Java and Pocketmine-MP
-  else if (Current_platorm === "java" || Current_platorm === "pocketmine") {
-    const JavaMap = data.split(/\n|\r/gi).map(line => {
-      if (line.trim().includes("joined the game") || line.includes("left the game")) {
-        line = line.replace(/^\[.+\] \[.+\/.+\]:/, "").trim();
-        let Actions = null;
-        if (/joined/.test(line)) Actions = "connect";
-        else if (/left/.test(line)) Actions = "disconnect";
-
-        // Player Object
-        const JavaObject = {
-          Player: line.replace(/joined the game|left the game/gi, "").trim(),
-          Action: Actions,
-          Date: new Date(),
-        }
-
-        // Return JSON
-        return JavaObject
-      } else return false;
-    }).filter(a=>a);
-    callback(JavaMap);
-  }
-}
-
-const UpdateUserJSON = function (New_Object = []){
-  const Player_Json_path = BdsSettings.GetPaths("player");
-  const Current_platorm = BdsSettings.GetPlatform();
-  let Players_Json = {
-    bedrock: [],
-    java: [],
-    pocketmine: [],
-    jsprismarine: [],
-  }
-  if (fs.existsSync(Player_Json_path)) Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"));
-
-  // Array
-  Players_Json[Current_platorm] = Players_Json[Current_platorm].concat(New_Object)
-
-  fs.writeFileSync(Player_Json_path, JSON.stringify(Players_Json, null, 2));
-  return Players_Json
 }
 
 // Search player in JSON

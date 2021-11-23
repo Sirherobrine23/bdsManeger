@@ -55,6 +55,59 @@ app.all(["/v2", "/v2/*"], ({res}) => res.status(401).json({
   Error: "v2 route moved to root routes"
 }));
 
+// Check Token
+function CheckToken (req, res, next) {
+  if (req.method === "GET") {
+    if (req.query.token) {
+      if (BdsChecks.token_verify(req.query.token)) {
+        req.token = req.query.token;
+        return next();
+      }
+    } else if (req.headers.token) {
+      if (BdsChecks.token_verify(req.headers.token)) {
+        req.token = req.headers.token;
+        return next();
+      }
+    } else if (req.query.Token) {
+      if (BdsChecks.token_verify(req.query.Token)) {
+        req.token = req.query.Token;
+        return next();
+      }
+    } else if (req.headers.Token) {
+      if (BdsChecks.token_verify(req.headers.Token)) {
+        req.token = req.headers.token;
+        return next();
+      }
+    }
+  } else {
+    if (req.body.token) {
+      if (BdsChecks.token_verify(req.body.token)) {
+        req.token = req.body.token;
+        return next();
+      }
+    } else if (req.headers.token) {
+      if (BdsChecks.token_verify(req.headers.token)) {
+        req.token = req.headers.token;
+        return next();
+      }
+    } else if (req.body.Token) {
+      if (BdsChecks.token_verify(req.body.Token)) {
+        req.token = req.body.Token;
+        return next();
+      }
+    } else if (req.headers.Token) {
+      if (BdsChecks.token_verify(req.headers.Token)) {
+        req.token = req.headers.Token;
+        return next();
+      }
+    }
+  }
+  return res.status(401).json({
+    error: "Unauthorized",
+    message: "Token is not valid"
+  });
+}
+
 // ? /bds/
 app.get(["/bds/info", "/bds", "/"], ({res}) => {
   try {
@@ -100,6 +153,24 @@ app.get(["/bds/info", "/bds", "/"], ({res}) => {
   }
 });
 
+// Get Server Log
+app.get(["/bds/log", "/log"], CheckToken, (req, res) => {
+  const Sessions = BdsManegerCore.BdsManegerServer.GetSessions();
+  return res.json(Object.keys(Sessions).map(session => {
+    try {
+      return {
+        UUID: session,
+        data: fs.readFileSync(Sessions[session].LogPath, "utf8").replaceAll("\r\n", "\n").split("\n")
+      };
+    } catch (err) {
+      return {
+        UUID: session,
+        Error: String(err)
+      };
+    }
+  }));
+});
+
 // Server Info
 app.get("/bds/info/server", ({res}) => {
   let ServerRunner = require("./BdsManegerServer").BdsRun;
@@ -132,128 +203,9 @@ app.get("/bds/info/server", ({res}) => {
   }
 });
 
-// Check Token
-// app.all("*", (req, res, next) => {
-//   if (req.method === "GET") {
-//     if (req.query.token) {
-//       if (BdsChecks.token_verify(req.query.token)) {
-//         req.token = req.query.token;
-//         return next();
-//       }
-//     } else if (req.headers.token) {
-//       if (BdsChecks.token_verify(req.headers.token)) {
-//         req.token = req.headers.token;
-//         return next();
-//       }
-//     } else if (req.query.Token) {
-//       if (BdsChecks.token_verify(req.query.Token)) {
-//         req.token = req.query.Token;
-//         return next();
-//       }
-//     } else if (req.headers.Token) {
-//       if (BdsChecks.token_verify(req.headers.Token)) {
-//         req.token = req.headers.token;
-//         return next();
-//       }
-//     }
-//   } else {
-//     if (req.body.token) {
-//       if (BdsChecks.token_verify(req.body.token)) {
-//         req.token = req.body.token;
-//         return next();
-//       }
-//     } else if (req.headers.token) {
-//       if (BdsChecks.token_verify(req.headers.token)) {
-//         req.token = req.headers.token;
-//         return next();
-//       }
-//     } else if (req.body.Token) {
-//       if (BdsChecks.token_verify(req.body.Token)) {
-//         req.token = req.body.Token;
-//         return next();
-//       }
-//     } else if (req.headers.Token) {
-//       if (BdsChecks.token_verify(req.headers.Token)) {
-//         req.token = req.headers.Token;
-//         return next();
-//       }
-//     }
-//   }
-//   return res.status(401).json({
-//     error: "Unauthorized",
-//     message: "Token is not valid"
-//   });
-// });
-
-// Whitelist
-app.get("/bds/info/server/whitelist", (req, res) => {
-  const ServerConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
-  if (ServerConfig.whitelist) {
-    const { Token = null , Action = null } = req.query;
-    const WgiteList = BdsSettings.get_whitelist();
-    if (Action) {
-      if (Action === "add") {
-        if (WgiteList.findIndex(WL => WL.Token === Token) === -1) {
-          WgiteList.push({
-            Token: Token,
-            Time: Date.now()
-          });
-          fs.writeFileSync(BdsManegerCore.BdsSettings.GetPaths("whitelist"), JSON.stringify(WgiteList));
-          res.json({
-            success: true,
-            message: "Whitelist Added"
-          });
-        } else {
-          res.json({
-            success: false,
-            message: "Whitelist Already Exist"
-          });
-        }
-      } else if (Action === "remove") {
-        if (WgiteList.findIndex(WL => WL.Token === Token) !== -1) {
-          WgiteList.splice(WgiteList.findIndex(WL => WL.Token === Token), 1);
-          fs.writeFileSync(BdsManegerCore.BdsSettings.GetPaths("whitelist"), JSON.stringify(WgiteList));
-          res.json({
-            success: true,
-            message: "Whitelist Removed"
-          });
-        } else {
-          res.json({
-            success: false,
-            message: "Whitelist Not Found"
-          });
-        }
-      } else {
-        res.json({
-          success: false,
-          message: "Invalid Action"
-        });
-      }
-    } else {
-      res.json(WgiteList);
-    }
-  } else {
-    res.status(400).json({
-      error: "Whitelist Not Enabled"
-    });
-  }
-});
-
 // Download Server
-app.get("/bds/download_server", (req, res) => {
-  const { Token = null, Version = "latest" } = req.query;
-
-  // Check is Token is String
-  if (!Token) return res.status(400).json({
-    error: "Bad Request",
-    message: "Token is required"
-  });
-
-  // Check Token
-  if (!(BdsChecks.token_verify(Token))) return res.status(400).json({
-    error: "Bad Request",
-    message: "Token is invalid"
-  });
+app.get("/bds/download_server", CheckToken, (req, res) => {
+  const { Version = "latest" } = req.query;
 
   // Download Server
   BdsManegerCore.download(Version, true).then(() => {
@@ -269,8 +221,8 @@ app.get("/bds/download_server", (req, res) => {
 });
 
 // Update/Set Server Settings
-app.post("/bds/save_settings", (req, res) => {
-  const { Token = null,
+app.post("/bds/save_settings", CheckToken, (req, res) => {
+  const {
     WorldName = "Bds Maneger",
     ServerDescription = "The Bds Maneger",
     DefaultGamemode = "creative",
@@ -283,18 +235,6 @@ app.post("/bds/save_settings", (req, res) => {
     port_v4 = "19132",
     port_v6 = "19133",
   } = req.body;
-
-  // Check is Token is String
-  if (!Token) return res.status(400).json({
-    error: "Bad Request",
-    message: "Token is required"
-  });
-
-  // Check Token
-  if (!(BdsChecks.token_verify(Token))) return res.status(400).json({
-    error: "Bad Request",
-    message: "Token is invalid"
-  });
 
   // Save Settings
   try {
@@ -347,7 +287,7 @@ app.get("/bds/bridge", (req, res) => {
 
 // ? /player
 const GetPlayerJson = (Platform = BdsManegerCore.BdsSettings.GetJsonConfig().server.platform) => ([...{...JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))}[Platform]]);
-app.get("/players", (req, res) => {
+app.get("/players", CheckToken, (req, res) => {
   const { Platform = BdsSettings.GetPlatform(), Player = null, Action = null } = req.query;
   let PlayerList = GetPlayerJson(Platform);
   if (Player) PlayerList = PlayerList.filter(PLS => PLS.Player === Player);
@@ -367,10 +307,8 @@ app.get("/players", (req, res) => {
 
 // Players Actions in Backside Manager
 // kick player
-app.get("/players/kick", (req, res) => {
-  const { Token = null, Player = "Sirherobrine", Text = "You have been removed from the Server" } = req.query;
-  if (!Token) return res.status(400).json({ error: "Token is required" });
-  if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
+app.get("/players/kick", CheckToken, (req, res) => {
+  const { Player = "Sirherobrine", Text = "You have been removed from the Server" } = req.query;
 
   // Kick player
   const RunnerServer = require("./BdsManegerServer").BdsRun;
@@ -386,10 +324,8 @@ app.get("/players/kick", (req, res) => {
 });
 
 // Ban player
-app.get("/players/ban", (req, res) => {
-  const { Token = null, Player = "Sirherobrine" } = req.query;
-  if (!Token) return res.status(400).json({ error: "Token is required" });
-  if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
+app.get("/players/ban", CheckToken, (req, res) => {
+  const { Player = "Sirherobrine" } = req.query;
 
   // Ban player
   const RunnerServer = require("./BdsManegerServer").BdsRun;
@@ -405,10 +341,8 @@ app.get("/players/ban", (req, res) => {
 });
 
 // Op player
-app.get("/players/op", (req, res) => {
-  const { Token = null, Player = "Sirherobrine" } = req.query;
-  if (!Token) return res.status(400).json({ error: "Token is required" });
-  if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
+app.get("/players/op", CheckToken, CheckToken, (req, res) => {
+  const { Player = "Sirherobrine" } = req.query;
 
   // Op player
   const RunnerServer = require("./BdsManegerServer").BdsRun;
@@ -425,9 +359,7 @@ app.get("/players/op", (req, res) => {
 
 // Deop player
 app.get("/players/deop", (req, res) => {
-  const { Token = null, Player = "Sirherobrine" } = req.query;
-  if (!Token) return res.status(400).json({ error: "Token is required" });
-  if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
+  const { Player = "Sirherobrine" } = req.query;
 
   // Deop player
   const RunnerServer = require("./BdsManegerServer").BdsRun;
@@ -443,10 +375,8 @@ app.get("/players/deop", (req, res) => {
 });
 
 // Say to Server
-app.get("/players/say", (req, res) => {
-  const { Token = null, Text = "Hello Server" } = req.query;
-  if (!Token) return res.status(400).json({ error: "Token is required" });
-  if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
+app.get("/players/say", CheckToken, (req, res) => {
+  const { Text = "Hello Server" } = req.query;
 
   // Say to Server
   const RunnerServer = require("./BdsManegerServer").BdsRun;
@@ -463,9 +393,7 @@ app.get("/players/say", (req, res) => {
 
 // Tp player
 app.get("/players/tp", (req, res) => {
-  const { Token = null, Player = "Sirherobrine", X = 0, Y = 0, Z = 0 } = req.query;
-  if (!Token) return res.status(400).json({ error: "Token is required" });
-  if (!BdsChecks.token_verify(Token)) return res.status(400).json({ error: "Token is invalid" });
+  const { Player = "Sirherobrine", X = 0, Y = 0, Z = 0 } = req.query;
 
   // Tp player
   const RunnerServer = require("./BdsManegerServer").BdsRun;
@@ -485,6 +413,12 @@ app.get("/players/tp", (req, res) => {
 });
 
 // Export API Routes
+/**
+ * @param {Number} port_api - Port of API, default is 1932
+ * @callback {Function} callback - Callback function when API is ready
+ * 
+ * Launch an API To manage the server Remotely, some features are limited.
+ */
 function API(port_api = 1932, callback = port => {console.log("Bds Maneger Core REST API, http port", port)}){
   const MapRoutes = app._router.stack.map(d => {if (d.route) {if (d.route.path) return d.route.path;else return d.route.regexp.source;} else return null;}).filter(d => d);
   app.all("*", (req, res) => {
@@ -503,6 +437,13 @@ function API(port_api = 1932, callback = port => {console.log("Bds Maneger Core 
 
 // Bds Maneger Core API token Register
 const path_tokens = path.join(BdsSettings.bds_dir, "bds_tokens.json");
+/**
+ * 
+ * Register new Token to API and more features in the Bds Maneger Core.
+ * 
+ * @param {Array} Admin_Scoper - Array of Admin Scoper (Soon will be implemented)
+ * @returns {String} Token - Token of the API
+ */
 function token_register(Admin_Scoper = ["web_admin", "admin"]) {
   Admin_Scoper = Array.from(Admin_Scoper).filter(scoper => /admin/.test(scoper));
   let tokens = [];
@@ -520,7 +461,14 @@ function token_register(Admin_Scoper = ["web_admin", "admin"]) {
   return bdsuid;
 }
 
-// Bds Maneger Core API Delet token
+// Bds Maneger Core API Delete token
+/**
+ * 
+ * Delete Token of the API
+ * 
+ * @param {String} Token - Token of the API to delete
+ * @returns {Boolean} - True if the token is deleted
+ */
 function delete_token(Token = "") {
   if (!Token) return false;
   if (typeof Token !== "string") return false;
