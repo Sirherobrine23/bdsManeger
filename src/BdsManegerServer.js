@@ -290,7 +290,8 @@ module.exports.StartServer = function start() {
   });
 
   // Socket.io
-  io.on("ServerCommand", (data = "") => {
+  io.on("connection", socket => {
+  socket.on("ServerCommand", (data, callback) => {
     if (typeof data === "string") return returnFuntion.command(data);
     else if (typeof data === "object") {
       if (typeof data.uuid === "string") {
@@ -298,6 +299,7 @@ module.exports.StartServer = function start() {
       }
     }
     return;
+  });
   });
   ServerExec.on("exit", code => io.emit("ServerExit", {
     UUID: returnFuntion.uuid,
