@@ -1,7 +1,7 @@
 const fs = require("fs");
 const BdsSettings = require("../lib/BdsSettings");
 
-function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "connect", Platform: "", xuid: "", Date: ""},{Player: "", Action: "disconnect", Platform: "", xuid: "", Date: ""}]) => {d}){
+function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "connect", Platform: "", xuid: "", Date: ""},{Player: "", Action: "disconnect", Platform: "", xuid: "", Date: ""}]) => console.log(d)){
   const Current_platorm = BdsSettings.GetPlatform();
   // Bedrock
   if (Current_platorm === "bedrock") {
@@ -19,7 +19,7 @@ function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "conn
           Action: Actions,
           Platform: Current_platorm,
           xuid: line.replace(/^.*,.*xuid:/gi, "").trim(),
-          Date: `${new Date()}`,
+          Date: (new Date()).toString()
         }
 
         // Return
@@ -43,7 +43,7 @@ function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "conn
           Player: line.replace(/joined the game|left the game/gi, "").trim(),
           Action: Actions,
           Platform: Current_platorm,
-          Date: `${new Date()}`,
+          Date: (new Date()).toString()
         }
 
         // Return JSON
@@ -63,7 +63,7 @@ function UpdateUserJSON(New_Object = []){
       Player: "Steve",
       Action: "connect",
       Platform: Current_platorm,
-      Date: `${new Date()}`
+      Date: (new Date()).toString()
     }
   ];
   Players_Json = [];
