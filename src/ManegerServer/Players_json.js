@@ -68,14 +68,9 @@ function UpdateUserJSON(New_Object = []){
   ];
   Players_Json = [];
   if (fs.existsSync(Player_Json_path)) Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"));
-  if (Players_Json.version === undefined) {
-    Players_Json.version = 2;
-    let OldPlayers_Json = {
-      bedrock: [],
-      java: [],
-      pocketmine: [],
-      jsprismarine: [],
-    }
+  if (typeof Players_Json.map !== "function") {
+    let OldPlayers_Json = Players_Json;
+    Players_Json = [];
     OldPlayers_Json.bedrock.forEach(a=>Players_Json.push({
       Player: a.Player,
       Action: a.Action,
