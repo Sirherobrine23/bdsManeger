@@ -286,23 +286,15 @@ app.get("/bds/bridge", (req, res) => {
 });
 
 // ? /player
-const GetPlayerJson = (Platform = BdsManegerCore.BdsSettings.GetJsonConfig().server.platform) => ([...{...JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))}[Platform]]);
 app.get("/players", CheckToken, (req, res) => {
-  const { Platform = BdsSettings.GetPlatform(), Player = null, Action = null } = req.query;
-  let PlayerList = GetPlayerJson(Platform);
+  let PlayerList = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))
+  const { Platform = null, Player = null, Action = null } = req.query;
+
+  if (Platform) PlayerList = PlayerList.filter(PLS => PLS.Platform === Platform);
   if (Player) PlayerList = PlayerList.filter(PLS => PLS.Player === Player);
   if (Action) PlayerList = PlayerList.filter(PLS => PLS.Action === Action);
-  
-  if (Player || Action) {
-    if (PlayerList.length > 0) res.json(PlayerList);
-    else res.status(404).json({
-      Error: "Player not found",
-      querys: req.query
-    });
-    return;
-  }
-  res.json(PlayerList);
-  return;
+
+  return res.json(PlayerList);
 });
 
 // Players Actions in Backside Manager
