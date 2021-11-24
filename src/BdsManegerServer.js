@@ -128,90 +128,102 @@ module.exports.StartServer = function start() {
   global.bds_log_string = ""
   ServerExec.stdout.on("data", data => {if (global.bds_log_string) global.bds_log_string = data; else global.bds_log_string += data});
 
-  // sets bds core commands
-  const log = function (logCallback){
-    if (typeof logCallback !== "function") throw new Error("Log Callback is not a function");
-    ServerExec.stdout.on("data", data => logCallback(data));
-    ServerExec.stderr.on("data", data => logCallback(data));
+  /**
+   * Emit command in to the server
+   * 
+   * @param {string} command
+   * @param {Array} command
+   */
+  const ServerCommand = function (Command = "list") {
+    if (!(typeof Command === "string" || typeof Command === "object" && typeof Command.map === "function")) throw new Error("Command must be a string or an array");
+    if (typeof Command === "string") {
+      ServerExec.stdin.write(`${Command}\n`);
+    } else if (typeof Command === "object" && typeof Command.map === "function") {
+      Command.filter(a => typeof a === "string").forEach(command => ServerExec.stdin.write(`${command}\n`));
+    }
+    return;
   };
-  const exit = function (exitCallback = process.exit){if (
-    typeof exitCallback === "function") ServerExec.on("exit", code => exitCallback(code));
-  };
-  const on = function(action = String, callback = Function) {
-    if (!(action === "all" || action === "connect" || action === "disconnect")) throw new Error("Use some valid action: all, connect, disconnect");
-    
-    // Functions
-    const data = data => PlayerJson.UpdateUserJSON(data, function (array_status){
-      array_status.filter(On => {if ("all" === action || On.Action === action) return true; else return false;}).forEach(_player => callback(_player))
+  /**
+   * When a player connects or disconnects, the server will issue an event.
+   * 
+   * @param {string} Action - The event to listen for.
+   * @param {function} Callback - The callback to run when the event is triggered.
+   */
+  const PlayerAction = function(Action = "all", callback = (PlayerActions = [{Player: "", Action: "connect", Platform: "", xuid: "", Date: ""},{Player: "", Action: "disconnect", Platform: "", xuid: "", Date: ""}]) => console.log(PlayerActions)){
+    if (!(Action === "all" || Action === "connect" || Action === "disconnect")) throw new Error("Use some valid Action: all, connect, disconnect");
+    const { CreatePlayerJson } = PlayerJson;
+    const RunON = data => CreatePlayerJson(data, (PlayerActions) => {
+      if (Action !== "all") PlayerActions = PlayerActions.filter(On => On.Action === Action);
+      return callback(PlayerActions);
     });
-    ServerExec.stdout.on("data", data);
-    ServerExec.stderr.on("data", data);
+    ServerExec.stdout.on("data", RunON);
+    ServerExec.stderr.on("data", RunON);
+    return;
   };
-  const command = function (command = "list") {
-    ServerExec.stdin.write(`${command}\n`);
-    return command;
-  };
-  
-  const BasicCo = BasicCommands.BasicCommands(ServerExec);
+  /**
+   * Register a function to run when the server issues a log or when it exits.
+   * 
+   * @param {string} FunctionAction - Action to Register to run callback
+   * @callback
+   */
+  const ServerOn = function (FunctionAction = "log", callback = (data = FunctionAction === "log" ? "" : 0) => console.log(data)) {
+    if (!(FunctionAction === "log" || FunctionAction === "exit")) throw new Error("Use some valid FunctionAction: log, exit");
+    if (FunctionAction === "log") {
+      ServerExec.stdout.on("data", data => callback(data));
+      ServerExec.stderr.on("data", data => callback(data));
+    } else if (FunctionAction === "exit") ServerExec.on("exit", code => callback(code));
+    else throw new Error("Use some valid FunctionAction: log, exit");
+    return;
+  }
 
   // Mount commands to Return
   const returnFuntion = {
     uuid: randomUUID(),
     LogPath: LogFile,
-    pid: ServerExec.pid,
-    uptime: 0,
-    StartTime: (new Date()),
-    ...BasicCo,
-    command, log, exit, on
+    PID: ServerExec.pid,
+    Uptime: 0,
+    StartTime: new Date(),
+    on: ServerOn,
+    PlayerAction: PlayerAction,
+    SendCommand: ServerCommand,
+    ...(BasicCommands.BasicCommands(ServerExec))
   }
 
   // Uptime Server
-  const OnStop = setInterval(() => returnFuntion.uptime = (new Date().getTime() - returnFuntion.StartTime.getTime()) / 1000, 1000);
-  ServerExec.on("exit", () => {
+  const UptimeCount = setInterval(() => returnFuntion.Uptime++, 1000);
+  ServerExec.on("exit", code => {
     delete ServerSessions[returnFuntion.uuid]
-    clearInterval(OnStop);
+    io.emit("ServerExit", {
+      UUID: returnFuntion.uuid,
+      exitCode: code
+    })
+    clearInterval(UptimeCount);
   });
 
   // Socket.io
   io.on("connection", socket => {
     socket.on("ServerCommand", (data) => {
-      if (typeof data === "string") return returnFuntion.command(data);
+      if (typeof data === "string") return returnFuntion.SendCommand(data);
       else if (typeof data === "object") {
         if (typeof data.uuid === "string") {
-          if (data.uuid === returnFuntion.uuid) return returnFuntion.command(data.command);
+          if (data.uuid === returnFuntion.uuid) return returnFuntion.SendCommand(data.command);
         }
       }
       return;
     });
   });
-  ServerExec.on("exit", code => io.emit("ServerExit", {
-    UUID: returnFuntion.uuid,
-    exitCode: code
-  }));
-  ServerExec.stdout.on("data", (data = "") => {
+  
+  ServerOn("log", data => {
     io.emit("ServerLog", {
       UUID: returnFuntion.uuid,
-      data: data,
-      IsStderr: false
+      data: data
+    });
+    PlayerJson.CreatePlayerJson(data, Actions => {
+      if (Actions.length === 0) return;
+      PlayerJson.UpdateUserJSON(Actions);
+      io.emit("PlayerAction", Actions);
     });
   });
-  ServerExec.stderr.on("data", (data = "") => {
-    io.emit("ServerLog", {
-      UUID: returnFuntion.uuid,
-      data: data,
-      IsStderr: true
-    });
-  });
-
-  // Player JSON File
-  ServerExec.stdout.on("data", data => PlayerJson.CreatePlayerJson(data, Actions => {
-    PlayerJson.UpdateUserJSON(Actions);
-    io.emit("PlayerAction", Actions);
-  }));
-  ServerExec.stderr.on("data", data => PlayerJson.CreatePlayerJson(data, Actions => {
-    PlayerJson.UpdateUserJSON(Actions);
-    io.emit("PlayerAction", Actions);
-  }));
 
   // Return
   ServerSessions[returnFuntion.uuid] = returnFuntion;

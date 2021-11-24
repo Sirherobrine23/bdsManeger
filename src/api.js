@@ -160,7 +160,7 @@ app.get(["/bds/log", "/log"], CheckToken, (req, res) => {
     try {
       return {
         UUID: session,
-        data: fs.readFileSync(Sessions[session].LogPath, "utf8").replaceAll("\r\n", "\n").split("\n")
+        data: fs.readFileSync(Sessions[session].LogPath, "utf8").replace(/\r\n/gi, "\n").split("\n")
       };
     } catch (err) {
       return {
@@ -173,34 +173,39 @@ app.get(["/bds/log", "/log"], CheckToken, (req, res) => {
 
 // Server Info
 app.get("/bds/info/server", ({res}) => {
-  let ServerRunner = require("./BdsManegerServer").BdsRun;
-  if (!ServerRunner)ServerRunner = {};
-  try {
-    const BdsConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
-    const Players = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
-    const Offline = Players.filter(player => player.Action === "disconnect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)));
-    const Online = Players.filter(player => player.Action === "connect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player && Offline.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)) === -1)))
-    const Info = {
-      version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
-      Platform: BdsSettings.GetPlatform(),
-      players: {
-        online: Online.length,
-        offline: Offline.length,
-      },
-      Config: BdsManegerCore.BdsSettings.GetJsonConfig(),
-      Process: {
-        PID: ServerRunner.pid || 0,
-        Uptime: ServerRunner.uptime || 0,
-        StartTime: ServerRunner.StartTime || NaN,
-      }
-    }
-    res.json(Info);
-  } catch (error) {
-    res.status(500).json({
-      error: "Backend Error",
-      message: `${error}`
-    });
+  const ServerSessions = require("./BdsManegerServer").GetSessions();
+  const ServerRunner = Object.keys(ServerSessions).map(session => ServerSessions[session]).map(a => ({
+    UUID: a.uuid || "",
+    PID: a.PID || 0,
+    Uptime: a.Uptime || 0,
+    StartTime: a.StartTime || NaN
+  }));
+  const BdsConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
+  const Players = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
+  const Offline = Players.filter(player => player.Action === "disconnect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)));
+  const Online = Players.filter(player => player.Action === "connect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player && Offline.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)) === -1)))
+  
+  // Delete Info
+  delete BdsConfig.telegram;
+  delete BdsConfig.cloud;
+
+  const Info = {
+    version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
+    Platform: BdsSettings.GetPlatform(),
+    players: {
+      online: Online.length,
+      offline: Offline.length,
+    },
+    Config: BdsConfig,
+    Process: ServerRunner
   }
+  return res.json(Info);
+});
+
+// Create Backup
+app.get("/bds/backup", CheckToken, ({res}) => {
+  const BackupBuffer = BdsManegerCore.BdsBackup.CreateBackup();
+  return res.send(BackupBuffer.Buffer);
 });
 
 // Download Server
