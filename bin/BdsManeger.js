@@ -169,17 +169,17 @@ async function Runner() {
   if (!(ProcessArgs.start || ProcessArgs.s)) return;
 
   const BdsManegerServer = BdsCore.BdsManegerServer.StartServer();
-  BdsManegerServer.log(data => process.stdout.write(cli_color.blueBright(data)));
+  BdsManegerServer.on("log", data => process.stdout.write(cli_color.blueBright(data)));
   if (!(ProcessArgs["no-api"])) BdsCore.BdsManegerAPI.api();
   const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
-  __readline.on("line", data => BdsManegerServer.command(data));
+  __readline.on("line", data => BdsManegerServer.SendCommand(data));
   __readline.on("close", () => BdsManegerServer.stop());
   // Get Temporary External Domain
   if (ProcessArgs.get_domain) {
     try {
       const HostInfo = await BdsCore.BdsNetwork.GetHost();
       console.log("Domain:", HostInfo.host);
-      BdsManegerServer.exit(async () => await HostInfo.delete_host());
+      BdsManegerServer.on("exit", async () => await HostInfo.delete_host())
       process.on("exit", async () => {
         await HostInfo.delete_host();
         console.log("Sucess remove host");
@@ -188,8 +188,8 @@ async function Runner() {
       console.log("Cannot get domain");
     }
   }
-  BdsManegerServer.exit(code => {
-    console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.uptime}`));
+  BdsManegerServer.on("exit", code => {
+    console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.Uptime}`));
     process.exit(code);
   });
 }

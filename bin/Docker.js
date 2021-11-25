@@ -36,9 +36,9 @@ async function StartServer(){
   ShowToken();
   console.log("The entire log can be accessed via the api and/or the docker log");
   const ServerStarted = BdsCore.BdsManegerServer.StartServer();
-  ServerStarted.log(a => process.stdout.write(a));
-  ServerStarted.exit(code => process.exit(code));
   BdsCore.BdsManegerAPI.api();
+  ServerStarted.on("log", a => process.stdout.write(a));
+  ServerStarted.on("exit", code => process.exit(code));
   if (process.env.PULL_REQUEST === "true") {
     console.log((require("cli-color")).red("Pull Request Actived 1 Min to exit"));
     setTimeout(() => {
