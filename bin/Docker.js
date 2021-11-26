@@ -9,12 +9,12 @@ const { PlatformVersionsV2 } = require("../src/BdsServersDownload");
 
 // Get Current Tokens and Show in the console
 function ShowToken() {
-  const TokenFilePath = BdsCore.BdsManegerAPI.TokensFilePath;
+  const TokenFilePath = BdsCore.BdsToken.TokenFile;
   let Tokens = 1
   if (fs.existsSync(TokenFilePath)) {
-    [...JSON.parse(fs.readFileSync(TokenFilePath, "utf8"))].slice(0, 5).forEach(token => {console.log(Tokens+":", "Bds API Token:", token.token); Tokens++});
+    [...JSON.parse(fs.readFileSync(TokenFilePath, "utf8"))].slice(0, 5).forEach(token => {console.log(Tokens+":", "Bds API Token:", token.Token); Tokens++});
   } else {
-    console.log(Tokens+":", "Bds API Token:", BdsCore.BdsManegerAPI.token_register());
+    console.log(Tokens+":", "Bds API Token:", (BdsCore.BdsToken.CreateToken()).Token);
   }
 }
 

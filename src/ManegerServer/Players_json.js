@@ -9,13 +9,12 @@ function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "conn
     // "[INFO] Player disconnected: Sirherobrine, xuid: 2535413418839840",
     const BedrockMap = data.split(/\n|\r/gi).map(line => {
       if (line.includes("connected")) {
-        let SplitLine = line.replace(/\[.+\]\s+Player/gi, "").trim().split(/\s+/gi);
         let Actions = "";
-        if (/^disconnected/.test(SplitLine[0].trim())) Actions = "disconnect"; else Actions = "connect";
+        if (/^disconnected/.test(line)) Actions = "disconnect"; else Actions = "connect";
 
         // Object Map
         const ObjectReturn = {
-          Player: line.replace(/^.*connected:/gi, "").replace(/, xuid:.*$/gi, "").trim(),
+          Player: line.replace(/^.*connected:|,.*xuid:.*$/gi, "").trim(),
           Action: Actions,
           Platform: Current_platorm,
           xuid: line.replace(/^.*,.*xuid:/gi, "").trim(),

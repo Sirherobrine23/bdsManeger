@@ -1,13 +1,11 @@
 // Node Modules
 const os = require("os");
 const fs = require("fs");
-const path = require("path");
-const { randomUUID } = require("crypto");
 // Bds Maneger Core
 const BdsManegerCore = require("../index");
 const BdsSystemInfo = require("../src/lib/BdsSystemInfo");
-const BdsChecks = require("./UsersAndtokenChecks");
 const BdsSettings = require("../src/lib/BdsSettings");
+const TokenManeger = require("./lib/Token");
 
 // Init Express
 const express = require("express");
@@ -38,7 +36,7 @@ io.use(function (socket, next) {
   const { headers, query } = socket.handshake;
   const Token = headers["AuthorizationToken"] || query["token"] || query["Token"];
   if (Token) {
-    if (BdsChecks.token_verify(Token)) {
+    if (TokenManeger.CheckToken(Token, "all")) {
       socket.token = Token;
       return next();
     }
@@ -57,46 +55,51 @@ app.all(["/v2", "/v2/*"], ({res}) => res.status(401).json({
 
 // Check Token
 function CheckToken (req, res, next) {
-  if (req.method === "GET") {
+  if (req.headers["AuthorizationToken"]) {
+    if (TokenManeger.CheckToken(req.headers["AuthorizationToken"], "all")) {
+      req.token = req.headers["AuthorizationToken"];
+      return next();
+    }
+  } else if (req.method === "GET") {
     if (req.query.token) {
-      if (BdsChecks.token_verify(req.query.token)) {
+      if (TokenManeger.CheckToken(req.query.token, "all")) {
         req.token = req.query.token;
         return next();
       }
     } else if (req.headers.token) {
-      if (BdsChecks.token_verify(req.headers.token)) {
+      if (TokenManeger.CheckToken(req.headers.token, "all")) {
         req.token = req.headers.token;
         return next();
       }
     } else if (req.query.Token) {
-      if (BdsChecks.token_verify(req.query.Token)) {
+      if (TokenManeger.CheckToken(req.query.Token, "all")) {
         req.token = req.query.Token;
         return next();
       }
     } else if (req.headers.Token) {
-      if (BdsChecks.token_verify(req.headers.Token)) {
+      if (TokenManeger.CheckToken(req.headers.Token, "all")) {
         req.token = req.headers.token;
         return next();
       }
     }
   } else {
     if (req.body.token) {
-      if (BdsChecks.token_verify(req.body.token)) {
+      if (TokenManeger.CheckToken(req.body.token, "all")) {
         req.token = req.body.token;
         return next();
       }
     } else if (req.headers.token) {
-      if (BdsChecks.token_verify(req.headers.token)) {
+      if (TokenManeger.CheckToken(req.headers.token, "all")) {
         req.token = req.headers.token;
         return next();
       }
     } else if (req.body.Token) {
-      if (BdsChecks.token_verify(req.body.Token)) {
+      if (TokenManeger.CheckToken(req.body.Token, "all")) {
         req.token = req.body.Token;
         return next();
       }
     } else if (req.headers.Token) {
-      if (BdsChecks.token_verify(req.headers.Token)) {
+      if (TokenManeger.CheckToken(req.headers.Token, "all")) {
         req.token = req.headers.Token;
         return next();
       }
@@ -432,58 +435,7 @@ function API(port_api = 1932, callback = port => {console.log("Bds Maneger Core 
   return port;
 }
 
-// Bds Maneger Core API token Register
-const path_tokens = path.join(BdsSettings.bds_dir, "bds_tokens.json");
-/**
- * 
- * Register new Token to API and more features in the Bds Maneger Core.
- * 
- * @param {Array} Admin_Scoper - Array of Admin Scoper (Soon will be implemented)
- * @returns {String} Token - Token of the API
- */
-function token_register(Admin_Scoper = ["web_admin", "admin"]) {
-  Admin_Scoper = Array.from(Admin_Scoper).filter(scoper => /admin/.test(scoper));
-  let tokens = [];
-  if (fs.existsSync(path_tokens)) tokens = JSON.parse(fs.readFileSync(path_tokens, "utf8"));
-  // Get UUID
-  const getBdsUUId = randomUUID().split("-");
-  const bdsuid = "bds_" + (getBdsUUId[0]+getBdsUUId[2].slice(0, 15));
-  // Save BdsUUID
-  tokens.push({
-    token: bdsuid,
-    date: new Date(),
-    scopers: Admin_Scoper
-  });
-  fs.writeFileSync(path_tokens, JSON.stringify(tokens, null, 4), "utf8");
-  return bdsuid;
-}
-
-// Bds Maneger Core API Delete token
-/**
- * 
- * Delete Token of the API
- * 
- * @param {String} Token - Token of the API to delete
- * @returns {Boolean} - True if the token is deleted
- */
-function delete_token(Token = "") {
-  if (!Token) return false;
-  if (typeof Token !== "string") return false;
-  let tokens = [];
-  if (fs.existsSync(path_tokens)) tokens = JSON.parse(fs.readFileSync(path_tokens, "utf8"));
-  if (tokens.filter(token => token.token === Token).length > 0) {
-    fs.writeFileSync(path_tokens, JSON.stringify(tokens, null, 4), "utf8");
-    return true;
-  } else return false;
-}
-
-// Check Exists Tokens Files
-if (!(fs.existsSync(path_tokens))) token_register();
-
 module.exports.api = API;
-module.exports.token_register = token_register;
-module.exports.delete_token = delete_token;
-module.exports.TokensFilePath = path_tokens;
 module.exports.BdsRoutes = {
   App: app,
   Server: Server

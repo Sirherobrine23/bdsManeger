@@ -12,6 +12,11 @@ const BasicCommands = require("./ManegerServer/BasicCommands");
 const ServerSessions = {};
 module.exports.GetSessions = () => ServerSessions;
 
+const PlayersCallbacks = [];
+module.exports.RegisterPlayerGlobalyCallbacks = function RegisterPlayerGlobalyCallbacks(callback){
+  PlayersCallbacks.push(callback);
+}
+
 module.exports.StartServer = function start() {
   const commandExists = require("../src/lib/commandExist");
   const io = require("./api").SocketIO;
@@ -218,10 +223,13 @@ module.exports.StartServer = function start() {
       UUID: returnFuntion.uuid,
       data: data
     });
-    PlayerJson.CreatePlayerJson(data, Actions => {
+    PlayerJson.CreatePlayerJson(data, async Actions => {
       if (Actions.length === 0) return;
       PlayerJson.UpdateUserJSON(Actions);
       io.emit("PlayerAction", Actions);
+      PlayersCallbacks.forEach(async callback => {
+        if (typeof callback === "function") return callback(Actions);
+      });
     });
   });
 
@@ -229,22 +237,6 @@ module.exports.StartServer = function start() {
   ServerSessions[returnFuntion.uuid] = returnFuntion;
   module.exports.BdsRun = returnFuntion;
   return returnFuntion;
-}
-
-// Search player in JSON
-module.exports.Player_Search = function Player_Search(player = "dontSteve") {
-  const Player_Json_path = BdsSettings.GetPaths("player"), Current_platorm = BdsSettings.GetPlatform();
-  const Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"))[Current_platorm]
-  for (let Player of Players_Json) {
-    if (Player.Player === player.trim()) return Player;
-  }
-  return {};
-}
-
-module.exports.GetFistSession = function GetFistSession(){
-  const ArraySessions = Object.getOwnPropertyNames(ServerSessions)
-  if (ArraySessions.length === 0) throw "Start Server";
-  return ServerSessions[0]
 }
 
 module.exports.CronBackups = BdsSettings.GetCronBackup().map(Crron => {
