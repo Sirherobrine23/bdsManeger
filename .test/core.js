@@ -21,9 +21,9 @@ describe("Small functions", () => {
     BdsCore.BdsSettings.UpdatePlatform("dragonfly");
     done();
   });
-  it("Register And Delete API Token", function (done) {
-    const Token = BdsCore.BdsManegerAPI.token_register();
-    BdsCore.BdsManegerAPI.delete_token(Token);
+  it("Register And Delete Token", function (done) {
+    const Token = BdsCore.BdsToken.CreateToken();
+    BdsCore.BdsToken.DeleteToken(Token.Token);
     done();
   });
   it("Get Server Config", function (done) {

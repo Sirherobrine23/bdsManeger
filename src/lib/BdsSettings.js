@@ -96,7 +96,7 @@ var Config = {
   telegram: {
     admins: ["all_users"],
     ban: ["Steve_mine_mine"],
-    token: null
+    token: ""
   }
 }
 

@@ -14,6 +14,10 @@ if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Settings");
 module.exports.BdsSettings = require("./src/lib/BdsSettings");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Settings");
 
+if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Token");
+module.exports.BdsToken = require("./src/lib/Token");
+if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Token");
+
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: System Info");
 module.exports.BdsSystemInfo = require("./src/lib/BdsSystemInfo");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: System Info");

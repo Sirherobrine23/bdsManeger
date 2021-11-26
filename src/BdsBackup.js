@@ -51,7 +51,7 @@ function CreateBackup() {
   }
 
   // The Bds Maneger Core Backup
-  for (let index of ["BdsConfig.yaml", "bds_tokens.json"]) if (fs.existsSync(join(bds_dir, index))) zip.addLocalFile(join(bds_dir, index));
+  for (let index of ["BdsConfig.yaml", "BdsToken.json"]) if (fs.existsSync(join(bds_dir, index))) zip.addLocalFile(join(bds_dir, index));
   
   for (let index of Object.getOwnPropertyNames(GetPaths("all")).filter(path => !/servers|backups/.test(path)).map(name => GetPaths(name))) {
     if (fs.existsSync(index)) {
