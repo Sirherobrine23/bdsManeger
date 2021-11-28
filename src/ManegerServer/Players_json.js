@@ -10,7 +10,7 @@ function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "conn
     const BedrockMap = data.split(/\n|\r/gi).map(line => {
       if (line.includes("connected")) {
         let Actions = "";
-        if (/^disconnected/.test(line)) Actions = "disconnect"; else Actions = "connect";
+        if (/disconnected|disconnected.*:/.test(line)) Actions = "disconnect"; else Actions = "connect";
 
         // Object Map
         const ObjectReturn = {
