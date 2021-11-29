@@ -61,3 +61,5 @@ import BdsManegerServer from "./esm/BdsManegerServer";
 ModuleExport.BdsManegerServer = BdsManegerServer;
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Server Maneger");
 if (process.env.ShowLoadTime) console.log("Bds Maneger Core: Complete");
+
+export default ModuleExport;
