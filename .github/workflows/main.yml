@@ -45,6 +45,9 @@ jobs:
       - name: Install Packages
         run: npm install
 
+      - name: Install node depedencies
+        run: npm run esm_module
+
       - name: NPM Publish
         run: npm publish --tag dev
         env:
@@ -74,6 +77,9 @@ jobs:
 
       - name: Install Node Depedencies
         run: npm install --no-save -d
+
+      - name: Install node depedencies
+        run: npm run esm_module
 
       - name: Get And Export Release Version
         shell: node -p '{0}'

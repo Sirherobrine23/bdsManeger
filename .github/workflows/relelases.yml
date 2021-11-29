@@ -21,6 +21,9 @@ jobs:
       - name: Install Depedencies
         run: npm install --no-save
 
+      - name: Install node depedencies
+        run: npm run esm_module
+        
       - name: Publish
         continue-on-error: true
         run: npm publish

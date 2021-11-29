@@ -12,10 +12,10 @@
     "import": "./index_esm.js"
   },
   "scripts": {
-    "postinstall": "cjs2esm",
     "start": "node bin/bds_maneger.js -sk",
     "test": "mocha --exit .test/*.js",
     "ci": "node .Build/test/ci.js",
+    "esm_module": "cjs2esm",
     "eslint": "eslint --debug --fix .",
     "Docker": "docker-compose build && docker-compose up",
     "cirelease": "node .Build/RemoveVersions.js"
