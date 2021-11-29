@@ -39,6 +39,7 @@ RUN npm install
 # Copy BdsManger Core
 COPY ./ ./
 RUN chmod a+x -v bin/*
+RUN npm run esm_module
 
 # Set Entrypint
 ENTRYPOINT [ "node", "./bin/Docker.js" ]

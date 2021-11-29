@@ -49,6 +49,9 @@ jobs:
 
     - name: Install node depedencies
       run: npm install --no-save
+
+    - name: Install node depedencies
+      run: npm run esm_module
     
     - name: Run test
       run: npm test
