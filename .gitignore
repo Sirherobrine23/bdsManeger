@@ -11,3 +11,4 @@ the-bds-maneger-core-*.tgz
 .husky
 Servers
 .Build/Releases.json
+esm/
