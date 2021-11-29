@@ -17,12 +17,13 @@ const fileUpload = require("express-fileupload");
 const pretty = require("express-prettify");
 const cors = require("cors");
 const express_rate_limit = require("express-rate-limit");
+const request_ip = require("request-ip");
 app.use(cors());
 app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(pretty({always: true, spaces: 2}));
 app.use(fileUpload({limits: { fileSize: 512 * 1024 }}));
-app.use(require("request-ip").mw());
+app.use(request_ip.mw());
 app.use(express_rate_limit({
   windowMs: 1 * 60 * 1000, // 1 minutes
   max: 500 // limit each IP to 500 requests per windowMs
@@ -311,14 +312,13 @@ app.get("/players/kick", CheckToken, (req, res) => {
   const { Player = "Sirherobrine", Text = "You have been removed from the Server" } = req.query;
 
   // Kick player
-  const RunnerServer = require("./BdsManegerServer").BdsRun;
-  try {
-    RunnerServer.kick(Player, Text);
-    res.json({ success: true });
-  } catch (error) {
+  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  if (Sessions.length > 0) {
+    Sessions.forEach(RunnerServer => RunnerServer.kick(Player, Text));
+    return res.json({ success: true });
+  } else {
     res.status(400).json({
-      error: "Server nots Run",
-      text: `${error}`
+      error: "Server nots Run"
     });
   }
 });
@@ -328,16 +328,14 @@ app.get("/players/ban", CheckToken, (req, res) => {
   const { Player = "Sirherobrine" } = req.query;
 
   // Ban player
-  const RunnerServer = require("./BdsManegerServer").BdsRun;
-  try {
-    RunnerServer.ban(Player);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(400).json({
-      error: "Server nots Run",
-      text: `${error}`
-    });
+  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  if (Sessions.length > 0) {
+    Sessions.forEach(RunnerServer => RunnerServer.ban(Player));
+    return res.sendStatus(200);
   }
+  res.status(400).json({
+    error: "Server nots Run"
+  });
 });
 
 // Op player
@@ -345,16 +343,14 @@ app.get("/players/op", CheckToken, CheckToken, (req, res) => {
   const { Player = "Sirherobrine" } = req.query;
 
   // Op player
-  const RunnerServer = require("./BdsManegerServer").BdsRun;
-  try {
-    RunnerServer.op(Player);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(400).json({
-      error: "Server nots Run",
-      text: `${error}`
-    });
+  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  if (Sessions.length > 0) {
+    Sessions.forEach(RunnerServer => RunnerServer.op(Player));
+    return res.sendStatus(200);
   }
+  res.status(400).json({
+    error: "Server nots Run"
+  });
 });
 
 // Deop player
@@ -362,16 +358,14 @@ app.get("/players/deop", (req, res) => {
   const { Player = "Sirherobrine" } = req.query;
 
   // Deop player
-  const RunnerServer = require("./BdsManegerServer").BdsRun;
-  try {
-    RunnerServer.deop(Player);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(400).json({
-      error: "Server nots Run",
-      text: `${error}`
-    });
+  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  if (Sessions.length > 0) {
+    Sessions.forEach(RunnerServer => RunnerServer.deop(Player));
+    return res.sendStatus(200);
   }
+  res.status(400).json({
+    error: "Server nots Run"
+  });
 });
 
 // Say to Server
@@ -379,16 +373,14 @@ app.get("/players/say", CheckToken, (req, res) => {
   const { Text = "Hello Server" } = req.query;
 
   // Say to Server
-  const RunnerServer = require("./BdsManegerServer").BdsRun;
-  try {
-    RunnerServer.say(Text);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(400).json({
-      error: "Server nots Run",
-      text: `${error}`
-    });
+  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  if (Sessions.length > 0) {
+    Sessions.forEach(RunnerServer => RunnerServer.say(Text));
+    return res.sendStatus(200);
   }
+  res.status(400).json({
+    error: "Server nots Run"
+  });
 });
 
 // Tp player
@@ -396,20 +388,14 @@ app.get("/players/tp", (req, res) => {
   const { Player = "Sirherobrine", X = 0, Y = 0, Z = 0 } = req.query;
 
   // Tp player
-  const RunnerServer = require("./BdsManegerServer").BdsRun;
-  try {
-    RunnerServer.tp(Player, {
-      x: X,
-      y: Y,
-      z: Z
-    });
-    res.json({ success: true });
-  } catch (error) {
-    res.status(400).json({
-      error: "Server nots Run",
-      text: `${error}`
-    });
+  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  if (Sessions.length > 0) {
+    Sessions.forEach(RunnerServer => RunnerServer.tp(Player, X, Y, Z));
+    return res.sendStatus(200);
   }
+  res.status(400).json({
+    error: "Server nots Run"
+  });
 });
 
 // Export API Routes

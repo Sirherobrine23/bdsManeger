@@ -11,6 +11,7 @@ const BasicCommands = require("./ManegerServer/BasicCommands");
 
 const ServerSessions = {};
 module.exports.GetSessions = () => ServerSessions;
+module.exports.GetSessionsArray = () => Object.keys(ServerSessions).map(key => ServerSessions[key]);
 
 const PlayersCallbacks = [];
 module.exports.RegisterPlayerGlobalyCallbacks = function RegisterPlayerGlobalyCallbacks(callback){
@@ -235,7 +236,6 @@ module.exports.StartServer = function start() {
 
   // Return
   ServerSessions[returnFuntion.uuid] = returnFuntion;
-  module.exports.BdsRun = returnFuntion;
   return returnFuntion;
 }
 

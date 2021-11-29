@@ -7,17 +7,18 @@
   "description": "Scripts to manage minecraft server's",
   "private": false,
   "main": "index.js",
+  "exports": {
+    "require": "./index.js",
+    "import": "./index_esm.js"
+  },
   "scripts": {
-    "start": "node bin/bds_maneger.js -s",
-    "start:telegram": "node bin/telegram_bot.js -e js",
-    "stop": "node -p 'console.log(require(\"./\").kill());'",
+    "install": "cjs2esm",
+    "start": "node bin/bds_maneger.js -sk",
     "test": "mocha --exit .test/*.js",
     "ci": "node .Build/test/ci.js",
-    "eslint": "eslint --debug .",
-    "eslint:fix": "eslint --debug --fix .",
-    "nexe": "echo Nexe Removed from Bds Maneger Core && exit 1",
+    "eslint": "eslint --debug --fix .",
     "Docker": "docker-compose build && docker-compose up",
-    "remove_dev_versions": "node .Build/RemoveVersions.js"
+    "cirelease": "node .Build/RemoveVersions.js"
   },
   "bin": {
     "bds_maneger": "bin/BdsManeger.js"
@@ -80,9 +81,10 @@
   "devDependencies": {
     "@actions/core": "^1.5.0",
     "chai": "^4.3.4",
+    "cjs2esm": "^2.0.2",
     "eslint": "^8.0.0",
+    "json-schema": ">=0.4.0",
     "mocha": "^9.1.3",
-    "nodemon": "^2.0.12",
-    "json-schema": ">=0.4.0"
+    "nodemon": "^2.0.12"
   }
 }

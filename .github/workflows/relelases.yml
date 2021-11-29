@@ -28,7 +28,7 @@ jobs:
           NODE_AUTH_TOKEN: '${{ secrets.NPM_ORG_TOKEN }}'
 
       - name: Remove Dev Versions
-        run: npm run remove_dev_versions
+        run: npm run cirelease
         env:
           NODE_AUTH_TOKEN: '${{ secrets.NPM_ORG_TOKEN }}'
 
