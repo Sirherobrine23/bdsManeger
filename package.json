@@ -12,7 +12,7 @@
     "import": "./index_esm.js"
   },
   "scripts": {
-    "install": "cjs2esm",
+    "postinstall": "cjs2esm",
     "start": "node bin/bds_maneger.js -sk",
     "test": "mocha --exit .test/*.js",
     "ci": "node .Build/test/ci.js",
