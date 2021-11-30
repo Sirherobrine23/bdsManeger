@@ -13,7 +13,7 @@ jobs:
     if: ${{ github.actor }} == ${{ github.repository_owner }} && (contains('tag', ${{ github.ref }}) && contains('v', ${{ github.ref }}) || contains('V', ${{ github.ref }}))
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-node@v2.4.1
+      - uses: actions/setup-node@v2.5.0
         with:
           node-version: 16.x
           registry-url: https://registry.npmjs.org/
