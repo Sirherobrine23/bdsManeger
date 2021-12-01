@@ -33,7 +33,7 @@ npm -g install npm@$(curl -sL https://api.github.com/repos/npm/cli/releases/late
 if ! [ "$(uname -m)" == "x86_64" ];then
     mkdir -p /lib64
     apt install -y qemu-user-static
-    wget -q "https://github.com/The-Bds-Maneger/external_files/raw/main/linux_libries.zip" -O /tmp/libries.zip
+    wget -q "https://github.com/The-Bds-Maneger/external_files/raw/main/Linux/libs_amd64.zip" -O /tmp/libries.zip
     unzip -o /tmp/libries.zip -d /
     rm -rfv /tmp/libries.zip
 fi
