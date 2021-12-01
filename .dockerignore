@@ -1,10 +1,5 @@
 node_modules/
-Docker/
-!Docker/root_path
 .git/
-Docker.sh
-BuildRunDocker.js
-docker_config.json
 *.log
 Test
 test

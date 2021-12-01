@@ -11,7 +11,8 @@
 
 # test files
 *.test
-*test*.js*
+*test*.*js
+*Test*.*js
 test/
 Test/
 

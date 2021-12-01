@@ -1,7 +1,7 @@
 // Mount Module Oject
 const ModuleExport = {}
 import package_json from "./package.json";
-import BdsManegerInfo from "./BdsManegerInfo.json";
+import BdsManegerInfo from "./src/BdsManegerInfo.json";
 
 const BdsManegerCoreJSONs = {
   Package: package_json,
