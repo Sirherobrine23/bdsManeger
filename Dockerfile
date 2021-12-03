@@ -24,7 +24,7 @@ ENV PLAYERS="5" \
     ENABLE_COMMANDS="false" \
     ACCOUNT="false" \
     SERVER="bedrock" \
-    UPDATE_SERVER="true"
+    SERVER_VERSION="true"
 
 # Bds Maneger Core required ports
 EXPOSE 19132/udp 19133/udp 1932/tcp
@@ -38,8 +38,7 @@ RUN npm install
 
 # Copy BdsManger Core
 COPY ./ ./
-RUN chmod a+x -v bin/*
-RUN npm run esm_module
+RUN chmod a+x -vR bin/*
 
 # Set Entrypint
 ENTRYPOINT [ "node", "./bin/Docker.js" ]
