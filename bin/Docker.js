@@ -1,35 +1,46 @@
 #!/usr/bin/env node
 process.env.BDS_DOCKER_IMAGE = true;
-const fs = require("fs");
 const BdsCore = require("../index");
 const { CronJob } = require("cron");
 
-async function UpdateInstallServer(OldServerRunner) {
+async function UpdateInstallServer(OldServerRunner, pre_stop = () => {}) {
   if (process.env.SERVER_VERSION === "true") {
+    if (typeof pre_stop === "function") await pre_stop();
     if (typeof OldServerRunner === "function") {
       OldServerRunner.stop();
     }
-      const BackupBds = BdsCore.BdsBackup.CreateBackup();
-      const ServerDownloadResult = await BdsCore.BdsDownload("latest");
-      if (!ServerDownloadResult.skip) {
-        console.log("Server Update Sucess, Version:", ServerDownloadResult.version);
-        return StartServer();
-      }
-    } else {
-      await BdsCore.BdsDownload(process.env.SERVER_VERSION);
+    // Create Backup and Write
+    (BdsCore.BdsBackup.CreateBackup()).write_file()
+    const ServerDownloadResult = await BdsCore.BdsDownload("latest");
+    if (ServerDownloadResult.skip) {
+      console.log("Server Update Sucess, Version:", ServerDownloadResult.version);
     }
+    return StartServer();
+  } else {
+    await BdsCore.BdsDownload(process.env.SERVER_VERSION);
+  }
 }
 
 function StartServer() {
   let IsUpdate = false;
   const Server = BdsCore.BdsManegerServer.StartServer();
-  Server.on("log", data => process.stdout.write(data));
+  Server.on("log", data => {
+    if (process.env.PULLIMAGE) {
+      const { value: DataToTest, regex: IsRegex } = BdsCore.ExtraJSON.Extra.StartedServer[BdsCore.BdsSettings.GetPlatform()];
+      if (IsRegex) {
+        if (RegExp(DataToTest, "gi").test(data)) {
+          return Server.stop();
+        }
+      } else return Server.stop();
+    }
+    return process.stdout.write(data)
+  });
   Server.on("exit", code => {
     if (!IsUpdate) process.exit(code);
   });
   new CronJob("*/1 * * * *", async () => {
     console.log("Checking for updates...");
-    await UpdateInstallServer(Server);
+    await UpdateInstallServer(Server, () => IsUpdate = true);
   });
 }
 
