@@ -21,10 +21,16 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: Edit Version
-      env:
-        RunID: ${{ github.run_id }}
-      run: node .github/ChangeVersion.js
+    - name: Edit Version to next release
+      if: github.event_name != 'release'
+      shell: node {0}
+      run: |
+        const fs = require("fs");
+        const JsonPackage = JSON.parse(fs.readFileSync(process.cwd()+"/package.json", "utf8"));
+        const run_ID = "${{ github.run_id }}";
+        JsonPackage.version = `${run_ID.slice(0, 2)}.${run_ID.slice(3, 6)}.${run_ID.slice(7, 11)}`;
+        fs.writeFileSync(process.cwd()+"/package.json", JSON.stringify(JsonPackage, null, 2));
+        console.log("New Version to Package:", JsonPackage.version);
 
     - name: Install node depedencies
       run: npm install --no-save
