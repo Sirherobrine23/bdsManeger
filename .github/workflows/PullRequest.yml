@@ -1,31 +1,10 @@
 name: Docker And Node Test
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
 
 jobs:
-  CodeQL:
-    name: Analyze
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
-      with:
-        languages: "javascript"
-
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
-
   Node:
     runs-on: ubuntu-latest
     strategy:
