@@ -2,23 +2,16 @@ const child_process = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { randomUUID } = require("crypto");
-const { Backup } = require("./BdsBackup");
+const BdsBackup = require("./BdsBackup");
 const { CronJob } = require("cron");
 const BdsSettings = require("../src/lib/BdsSettings");
 
 const PlayerJson = require("./ManegerServer/Players_json");
 const BasicCommands = require("./ManegerServer/BasicCommands");
-
 const ServerSessions = {};
-module.exports.GetSessions = () => ServerSessions;
-module.exports.GetSessionsArray = () => Object.keys(ServerSessions).map(key => ServerSessions[key]);
-
 const PlayersCallbacks = [];
-module.exports.RegisterPlayerGlobalyCallbacks = function RegisterPlayerGlobalyCallbacks(callback){
-  PlayersCallbacks.push(callback);
-}
 
-module.exports.StartServer = function start() {
+function StartServer() {
   const commandExists = require("../src/lib/commandExist");
   const io = require("./api").SocketIO;
   const CurrentBdsPlatform = BdsSettings.GetPlatform();
@@ -239,28 +232,26 @@ module.exports.StartServer = function start() {
   return returnFuntion;
 }
 
-module.exports.CronBackups = BdsSettings.GetCronBackup().map(Crron => {
-  const Cloud_Backup = {
-    Azure: require("./clouds/Azure").Uploadbackups,
-    Driver: require("./clouds/GoogleDriver").Uploadbackups,
-    Oracle: require("./clouds/OracleCI").Uploadbackups,
-  }
-  //
-  return {
-    CronFunction: new CronJob(Crron.cron, async () => {
-      console.log("Starting Server and World Backup");
-      const CurrentBackup = Backup();
-      // Azure
-      if (Crron.Azure) Cloud_Backup.Azure(CurrentBackup.file_name, CurrentBackup.file_path);
-      else console.info("Azure Backup Disabled");
-
-      // Google Driver
-      if (Crron.Driver) Cloud_Backup.Driver(CurrentBackup.file_name, CurrentBackup.file_path);
-      else console.info("Google Driver Backup Disabled");
-
-      // Oracle Bucket
-      if (Crron.Oracle) Cloud_Backup.Oracle(CurrentBackup.file_name, CurrentBackup.file_path);
-      else console.info("Oracle Bucket Backup Disabled");
-    })
-  }
+const CronBackups = BdsSettings.GetCronBackup().map(CronConfig => {
+  if (!CronConfig.enabled) return;
+  const BackupUpload = require("@the-bds-maneger/clouds_uploads");
+  return new CronJob(CronConfig.cron, async () => {
+    console.log("Starting Backup, Cron:", CronConfig.cron);
+    const CurrentBackup = BdsBackup.CreateBackup();
+    const BackupClass = new BackupUpload(CurrentBackup.Buffer, CurrentBackup.file_name);
+    BackupClass.upload.GoogleDriver = CronConfig.Driver;
+    BackupClass.upload.OracleCloudInfrastructure = CronConfig.Oracle;
+    BackupClass.upload.Azure = CronConfig.Azure;
+    return await BackupClass.Start();
+  });
 });
+
+module.exports = {
+  GetSessions: () => ServerSessions,
+  GetSessionsArray: () => Object.keys(ServerSessions).map(key => ServerSessions[key]),
+  RegisterPlayerGlobalyCallbacks: function RegisterPlayerGlobalyCallbacks(callback){
+    PlayersCallbacks.push(callback);
+  },
+  StartServer: StartServer,
+  CronBackups: CronBackups
+}

@@ -1,21 +1,25 @@
-const { join, basename } = require("path");
-const { existsSync, writeFileSync, mkdirSync, readFileSync } = require("fs");
+const fs = require("fs");
+const path = require("path");
+const { existsSync, writeFileSync, mkdirSync, readFileSync } = fs;
 const { homedir } = require("os");
 const yaml = require("js-yaml");
 const deepmerge = require("deepmerge");
 
 // PATHs
-const home = homedir();
-const bds_dir = join(home, "bds_core");
-if (!(existsSync(bds_dir))) mkdirSync(bds_dir, {recursive: true})
+const home = homedir(),
+  bds_dir = path.join(home, "bds_core"),
+  ExternalPlugins = path.join(bds_dir, "plugins");
+
+if (!(existsSync(bds_dir))) fs.mkdirSync(bds_dir, {recursive: true});
+if (!(existsSync(ExternalPlugins))) fs.mkdirSync(ExternalPlugins, {recursive: true});
 
 // Config Base to Bds Maneger Core and others Projects
 var Config = {
   paths: {
-    servers: join(bds_dir, "Servers"),
-    backups: join(bds_dir, "Backups"),
-    log: join(bds_dir, "Logs"),
-    player: join(bds_dir, "Players.json")
+    servers: path.join(bds_dir, "Servers"),
+    backups: path.join(bds_dir, "Backups"),
+    log: path.join(bds_dir, "Logs"),
+    player: path.join(bds_dir, "Players.json")
   },
   bds: {
     enable_tmp_host: false
@@ -67,30 +71,6 @@ var Config = {
       pocketmine: true,
       jsprismarine: true,
       spigot: true,
-    },
-    {
-      username: "Alex",
-      bedrock: true,
-      java: true,
-      pocketmine: true,
-      jsprismarine: true,
-      spigot: true,
-    },
-    {
-      username: "steve",
-      bedrock: true,
-      java: true,
-      pocketmine: true,
-      jsprismarine: true,
-      spigot: true,
-    },
-    {
-      username: "alex",
-      bedrock: true,
-      java: true,
-      pocketmine: true,
-      jsprismarine: true,
-      spigot: true,
     }
   ],
   telegram: {
@@ -101,7 +81,7 @@ var Config = {
 }
 
 // Config
-const ConfigPath = join(bds_dir, "BdsConfig.yaml")
+const ConfigPath = path.join(bds_dir, "BdsConfig.yaml")
 
 const SaveConfig = () => writeFileSync(ConfigPath, yaml.dump(Config));
 process.on("exit", () => SaveConfig());
@@ -121,16 +101,16 @@ if (!(existsSync(Config.paths["servers"]))) mkdirSync(Config.paths["servers"], {
 
 // Server Paths
 const ServersPaths = {
-  bedrock: join(Config.paths.servers, "Bedrock"),
-  java: join(Config.paths.servers, "Java"),
-  pocketmine: join(Config.paths.servers, "Pocketmine-MP"),
-  dragonfly: join(Config.paths.servers, "Dragonfly_go"),
-  spigot: join(Config.paths.servers, "Spigot")
+  bedrock: path.join(Config.paths.servers, "Bedrock"),
+  java: path.join(Config.paths.servers, "Java"),
+  pocketmine: path.join(Config.paths.servers, "Pocketmine-MP"),
+  dragonfly: path.join(Config.paths.servers, "Dragonfly_go"),
+  spigot: path.join(Config.paths.servers, "Spigot")
 }
 
 Object.getOwnPropertyNames(ServersPaths).map(Servers => ServersPaths[Servers]).forEach(Servers => {
   if (!(existsSync(Servers))) {
-    console.log(`Creating the ${basename(Servers)} Folder`);
+    console.log(`Creating the ${path.basename(Servers)} Folder`);
     mkdirSync(Servers, {recursive: true})
   }
 });
@@ -267,6 +247,8 @@ if (!(existsSync(GetPaths("player")))) {
 
 module.exports = {
   bds_dir: bds_dir,
+  BdsDir: bds_dir,
+  ExternalPlugins: ExternalPlugins,
   ServersPaths: ServersPaths,
   GetJsonConfig,
   GetPaths,

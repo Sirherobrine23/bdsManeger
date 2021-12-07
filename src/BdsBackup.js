@@ -64,11 +64,13 @@ function CreateBackup() {
 
   // Zip Buffer
   const ZipBuffer = zip.toBuffer();
-  fs.writeFileSync(PathBackup, ZipBuffer, "binary");
   return {
     file_path: PathBackup,
     Buffer: ZipBuffer,
     file_name: ZipName,
+    write_file: () => {
+      fs.writeFileSync(PathBackup, ZipBuffer, "binary");
+    }
   }
 }
 

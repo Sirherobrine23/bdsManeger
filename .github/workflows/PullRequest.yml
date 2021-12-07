@@ -1,31 +1,10 @@
 name: Docker And Node Test
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
 
 jobs:
-  CodeQL:
-    name: Analyze
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
-      with:
-        languages: "javascript"
-
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
-
   Node:
     runs-on: ubuntu-latest
     strategy:
@@ -42,10 +21,16 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: Edit Version
-      env:
-        RunID: ${{ github.run_id }}
-      run: node .github/ChangeVersion.js
+    - name: Edit Version to next release
+      if: github.event_name != 'release'
+      shell: node {0}
+      run: |
+        const fs = require("fs");
+        const JsonPackage = JSON.parse(fs.readFileSync(process.cwd()+"/package.json", "utf8"));
+        const run_ID = "${{ github.run_id }}";
+        JsonPackage.version = `${run_ID.slice(0, 2)}.${run_ID.slice(3, 6)}.${run_ID.slice(7, 11)}`;
+        fs.writeFileSync(process.cwd()+"/package.json", JSON.stringify(JsonPackage, null, 2));
+        console.log("New Version to Package:", JsonPackage.version);
 
     - name: Install node depedencies
       run: npm install --no-save

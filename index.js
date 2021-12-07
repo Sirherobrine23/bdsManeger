@@ -3,7 +3,7 @@
 // Load Root JSON
 const BdsManegerCoreJSONs = {
   Package: require("./package.json"),
-  Extra: require("./BdsManegerInfo.json")
+  Extra: require("./src/BdsManegerInfo.json")
 };
 
 // Bds Maneger Core Version
