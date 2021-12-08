@@ -95,7 +95,7 @@ jobs:
             fetch("https://registry.npmjs.org/@the-bds-maneger/core").then(res => res.json()).then(data => {
               data.versions = Object.getOwnPropertyNames(data.versions).filter(version => /[0-9]+\.[0-9][0-9][0-9]/.test(version) && version !== data["dist-tags"].dev && version !== data["dist-tags"].latest)
               fs.writeFileSync(path.resolve(__dirname, "Releases.json"), JSON.stringify(data, null, 2));
-              const Package = require("../package.json");
+              const Package = require("./package.json");
               data.versions.map(version => {
                 const cmd = `npm unpublish ${Package.name}@${version}`;
                 console.log(cli_color.yellow(cmd));
@@ -146,17 +146,17 @@ jobs:
         shell: node {0}
         run: |
           const fs = require("fs");
-          const JsonPackage = JSON.parse(fs.readFileSync(process.cwd()+"/package.json", "utf8"));
+          const JsonPackage = JSON.parse(fs.readFileSync("./package.json", "utf8"));
           const run_ID = "${{ github.run_id }}";
           JsonPackage.version = `${run_ID.slice(0, 2)}.${run_ID.slice(3, 6)}.${run_ID.slice(7, 11)}`;
-          fs.writeFileSync(process.cwd()+"/package.json", JSON.stringify(JsonPackage, null, 2));
+          fs.writeFileSync("./package.json", JSON.stringify(JsonPackage, null, 2));
           console.log("New Version to Package:", JsonPackage.version);
 
 
       - name: Get Version and Set in Env
         shell: node {0}
         run: |
-          const { version } = require("../package.json");
+          const { version } = require("./package.json");
           const ActionsCore = require("@actions/core");
           console.log(version);
           ActionsCore.exportVariable("CoreVersion", version);
