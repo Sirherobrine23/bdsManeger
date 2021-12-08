@@ -138,6 +138,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Setup Node.JS and NPM
+        uses: actions/setup-node@v2.5.0
+        with:
+          node-version: 16.x
+          registry-url: https://registry.npmjs.org/
+
       - name: Checkout Code
         uses: actions/checkout@v2
 
@@ -150,8 +156,9 @@ jobs:
           const run_ID = "${{ github.run_id }}";
           JsonPackage.version = `${run_ID.slice(0, 2)}.${run_ID.slice(3, 6)}.${run_ID.slice(7, 11)}`;
           fs.writeFileSync(process.cwd()+"/package.json", JSON.stringify(JsonPackage, null, 2));
-          console.log("New Version to Package:", JsonPackage.version);
+          console.log("New Version to Package:", JsonPackage.version)
 
+      - run: npm ci
 
       - name: Get Version and Set in Env
         shell: node {0}
@@ -160,10 +167,6 @@ jobs:
           const ActionsCore = require("@actions/core");
           console.log(version);
           ActionsCore.exportVariable("CoreVersion", version);
-
-      - name: Install Node Dependencies
-        if: github.event_name != 'release'
-        run: npm ci
 
       - name: Build Bds Maneger Core (Release)
         uses: docker/build-push-action@v2
