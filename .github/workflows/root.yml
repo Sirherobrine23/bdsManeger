@@ -163,10 +163,10 @@ jobs:
       - name: Get Version and Set in Env
         shell: node {0}
         run: |
+          const fs = require("fs");
           const { version } = require(process.cwd()+"/package.json");
-          const ActionsCore = require("@actions/core");
           console.log(version);
-          ActionsCore.exportVariable("CoreVersion", version);
+          fs.appendFileSync(process.env.GITHUB_ENV, `CoreVersion=${version}`)
 
       - name: Build Bds Maneger Core (Release)
         uses: docker/build-push-action@v2
