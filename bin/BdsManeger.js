@@ -44,10 +44,10 @@ fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirna
   }
 });
 
-async function DownloadServer() {
+async function DownloadServer(waitUserSelectVersion = "") {
   const ora = (await import("ora")).default;
   const PlatformVersion = await BdsCore.BdsDownload.PlatformVersionsV2();
-  const waitUserSelectVersion = (await inquirer.prompt({
+  if (!waitUserSelectVersion) waitUserSelectVersion = (await inquirer.prompt({
     type: "list",
     name: "version",
     message: `Select the version to download ${BdsCore.BdsSettings.GetPlatform()}`,
@@ -155,7 +155,7 @@ async function Runner() {
   }
 
   // Download
-  if (ProcessArgs.download || ProcessArgs.d) await DownloadServer();
+  if (ProcessArgs.download || ProcessArgs.d) await DownloadServer(ProcessArgs.download || ProcessArgs.d);
 
   // Kill
   if (ProcessArgs.kill || ProcessArgs.k) BdsCore.BdsCkeckKill.Kill();
@@ -173,7 +173,7 @@ async function Runner() {
   if (!(ProcessArgs["no-api"])) BdsCore.BdsManegerAPI.api();
   const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
   __readline.on("line", data => BdsManegerServer.SendCommand(data));
-  __readline.on("close", () => BdsManegerServer.stop());
+  if (process.env.DOCKER_IMAGE !== "true") __readline.on("close", () => BdsManegerServer.stop());
   // Get Temporary External Domain
   if (ProcessArgs.get_domain) {
     try {
