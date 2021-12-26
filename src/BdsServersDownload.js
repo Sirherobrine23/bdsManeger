@@ -110,7 +110,7 @@ async function BdsDownloadV2(version = "latest") {
         // Add info to ReturnObject
         if (require_qemu) ReturnObject.url = BedrockVersions.versions[version][process.platform]["x64"];
         else ReturnObject.url = BedrockVersions.versions[version][process.platform][bds.BdsSystemInfo.arch];
-        ReturnObject.data = BedrockVersions.versions[version].data ? new Date(BedrockVersions.versions[version].data) : null;
+        if (BedrockVersions.versions[version].data) ReturnObject.data = new Date(BedrockVersions.versions[version].data);
 
         // Download and Add buffer to AdmZip
         const BedrockZip = new AdmZip(await Request.buffer(ReturnObject.url));
@@ -135,8 +135,7 @@ async function BdsDownloadV2(version = "latest") {
         if (BedrockConfigFiles.whitelist) fs.writeFileSync(path.join(ServersPaths.bedrock, "whitelist.json"), BedrockConfigFiles.whitelist, "utf8");
         if (BedrockConfigFiles.permissions) fs.writeFileSync(path.join(ServersPaths.bedrock, "permissions.json"), BedrockConfigFiles.permissions, "utf8");
 
-        // Update Server Version
-        bds.BdsSettings.UpdateServerVersion(version, CurrentPlatform);
+        
       } else {
         ReturnObject.skip = true;
       }
@@ -153,7 +152,7 @@ async function BdsDownloadV2(version = "latest") {
       if (LocalServersVersions.java !== version) {
         // Add info to ReturnObject
         ReturnObject.url = JavaVersions.versions[version].url;
-        ReturnObject.data = JavaVersions.versions[version].data;
+        if (JavaVersions.versions[version].data) ReturnObject.data = new Date(JavaVersions.versions[version].data);
 
         // Download and write java file
         const JavaBufferJar = await Request.buffer(ReturnObject.url);
@@ -161,9 +160,6 @@ async function BdsDownloadV2(version = "latest") {
 
         // Write EULA
         fs.writeFileSync(path.join(ServersPaths.java, "eula.txt"), "eula=true");
-
-        // Update Server Version
-        bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
       } else {
         ReturnObject.skip = true;
       }
@@ -180,13 +176,12 @@ async function BdsDownloadV2(version = "latest") {
       if (LocalServersVersions.spigot !== version) {
         // Add info to ReturnObject
         ReturnObject.url = SpigotVersions.versions[version].url;
-        ReturnObject.data = SpigotVersions.versions[version].data;
+        if (SpigotVersions.versions[version].data) ReturnObject.data = new Date(SpigotVersions.versions[version].data);
 
         // Download and write java file
         fs.writeFileSync(path.join(ServersPaths.spigot, "spigot.jar"), await Request.buffer(ReturnObject.url), "binary");
 
-        // Update Server Version
-        bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
+        
       } else {
         ReturnObject.skip = true;
       }
@@ -203,15 +198,14 @@ async function BdsDownloadV2(version = "latest") {
       if (LocalServersVersions.dragonfly !== version) {
         // Add info to ReturnObject
         ReturnObject.url = DragonflyVersions.versions[version][process.platform][bds.BdsSystemInfo.arch];
-        ReturnObject.data = DragonflyVersions.versions[version].data;
+        if (DragonflyVersions.versions[version].data) ReturnObject.data = new Date(DragonflyVersions.versions[version].data);
 
         // Download
         let DgBin = path.join(ServersPaths.dragonfly, "Dragonfly");
         if (process.platform === "win32") DgBin += ".exe";
         fs.writeFileSync(DgBin, await Request.buffer(ReturnObject.url), "binary");
 
-        // Update Server Version
-        bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
+        
       } else {
         ReturnObject.skip = true;
       }
@@ -228,7 +222,7 @@ async function BdsDownloadV2(version = "latest") {
       if (LocalServersVersions.pocketmine !== version) {
         // Add info to ReturnObject
         ReturnObject.url = PocketmineVersions.versions[version].url;
-        ReturnObject.data = PocketmineVersions.versions[version].data;
+        if (PocketmineVersions.versions[version].data) ReturnObject.data = new Date(PocketmineVersions.versions[version].data);
 
         // Download PHP Bin
         await php_download();
@@ -237,8 +231,7 @@ async function BdsDownloadV2(version = "latest") {
         const PocketmineBufferPhp = await Request.buffer(ReturnObject.url);
         fs.writeFileSync(path.join(ServersPaths.pocketmine, "PocketMine-MP.phar"), PocketmineBufferPhp, "binary");
 
-        // Update Server Version
-        bds.BdsSettigs.UpdateServerVersion(version, CurrentPlatform);
+        
       } else {
         ReturnObject.skip = true;
       }
@@ -250,11 +243,13 @@ async function BdsDownloadV2(version = "latest") {
   // if the platform does not exist
   else throw Error("No Valid Platform");
 
+  // Update Config Version
+  bds.BdsSettings.UpdateServerVersion(ReturnObject.version, CurrentPlatform);
+
   // Return info download
   return ReturnObject;
 }
 
 // Export
-module.exports = BdsDownloadV2;
-module.exports.v2 = BdsDownloadV2;
-module.exports.PlatformVersionsV2 = PlatformVersionsV2;
+module.exports.DownloadServer = BdsDownloadV2;
+module.exports.GetServerVersion = PlatformVersionsV2;

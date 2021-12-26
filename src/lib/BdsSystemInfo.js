@@ -3,7 +3,7 @@ const { readdirSync } = require("fs");
 const { execSync } = require("child_process");
 const commadExist = require("./commandExist");
 const Request = require("./Requests");
-const { PlatformVersionsV2 } = require("../BdsServersDownload");
+const { GetServerVersion } = require("../BdsServersDownload");
 
 // System Architect (x64, aarch64 and others)
 let arch;
@@ -15,9 +15,9 @@ async function CheckSystemAsync() {
   const
     PHPBin = await Request.JSON("https://raw.githubusercontent.com/The-Bds-Maneger/Php_Static_Binary/main/binarys.json"),
     Servers = {
-      bedrock: await PlatformVersionsV2("bedrock"),
-      spigot: await PlatformVersionsV2("spigot"),
-      dragonfly: await PlatformVersionsV2("dragonfly"),
+      bedrock: await GetServerVersion("bedrock"),
+      spigot: await GetServerVersion("spigot"),
+      dragonfly: await GetServerVersion("dragonfly"),
     }
   const BasicConfigJSON = {
     require_qemu: false,

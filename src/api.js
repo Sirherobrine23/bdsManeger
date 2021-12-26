@@ -116,9 +116,6 @@ function CheckToken (req, res, next) {
 app.get(["/bds/info", "/bds", "/"], ({res}) => {
   try {
     const BdsConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
-    const Players = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
-    const Offline = Players.filter(player => player.Action === "disconnect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)));
-    const Online = Players.filter(player => player.Action === "connect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player && Offline.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)) === -1)))
     const Info = {
       core: {
         version: BdsManegerCore.version,
@@ -126,11 +123,7 @@ app.get(["/bds/info", "/bds", "/"], ({res}) => {
       },
       server: {
         version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
-        versions: BdsConfig.server.versions,
-        players: {
-          online: Online.length,
-          offline: Offline.length,
-        }
+        versions: BdsConfig.server.versions
       },
       host: {
         System: process.platform,
@@ -145,7 +138,7 @@ app.get(["/bds/info", "/bds", "/"], ({res}) => {
         CLI: false,
       }
     }
-    if (process.env.BDS_DOCKER_IMAGE) Info.Backend.Docker = true;
+    if (process.env.DOCKER_IMAGE === "true") Info.Backend.Docker = true;
     if (process.env.npm_lifecycle_event === "npx") Info.Backend.npx = true;
     if (process.env.IS_BDS_CLI) Info.Backend.CLI = true;
     res.json(Info);

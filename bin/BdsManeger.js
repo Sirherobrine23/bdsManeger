@@ -46,8 +46,8 @@ fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirna
 
 async function DownloadServer(waitUserSelectVersion = "") {
   const ora = (await import("ora")).default;
-  const PlatformVersion = await BdsCore.BdsDownload.PlatformVersionsV2();
-  if (!waitUserSelectVersion) waitUserSelectVersion = (await inquirer.prompt({
+  const PlatformVersion = await BdsCore.BdsDownload.GetServerVersion();
+  if (waitUserSelectVersion === true || !waitUserSelectVersion) waitUserSelectVersion = (await inquirer.prompt({
     type: "list",
     name: "version",
     message: `Select the version to download ${BdsCore.BdsSettings.GetPlatform()}`,
@@ -55,7 +55,7 @@ async function DownloadServer(waitUserSelectVersion = "") {
   })).version;
   const RunSpinner = ora("Downloading...").start();
   try {
-    const DownloadRes = await BdsCore.BdsDownload(waitUserSelectVersion);
+    const DownloadRes = await BdsCore.BdsDownload.DownloadServer(waitUserSelectVersion);
     RunSpinner.succeed(`Downloaded ${DownloadRes.version}, Published in ${DownloadRes.data.getDate()}/${DownloadRes.data.getMonth()}/${DownloadRes.data.getFullYear()}`);
   } catch (err) {
     RunSpinner.fail(String(err));
@@ -125,6 +125,20 @@ async function help() {
   return process.exit(0);
 }
 
+async function StartServer() {
+  const BdsManegerServer = BdsCore.BdsManegerServer.StartServer();
+  BdsManegerServer.on("log", data => process.stdout.write(cli_color.blueBright(data)));
+  const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
+  __readline.on("line", data => BdsManegerServer.SendCommand(data));
+  if (process.env.DOCKER_IMAGE !== "true") __readline.on("close", BdsManegerServer.stop);
+  // Get Temporary External Domain
+  
+  BdsManegerServer.on("exit", code => {
+    __readline.close();
+    console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.Uptime}`));
+  });
+}
+
 // Async functiona
 async function Runner() {
   // ESM Modules
@@ -161,25 +175,39 @@ async function Runner() {
   if (ProcessArgs.kill || ProcessArgs.k) BdsCore.BdsCkeckKill.Kill();
 
   // Load Plugins
+  let ControlStartWithPlugin = false;
   for (let Plugin of BeforeRun) {
-    if (!(ProcessArgs[Plugin.arg])) Plugin.main(ProcessArgs[Plugin.arg], ProcessArgs).catch(err => console.log("Plugin Crash:", "\n\n", err));
+    if (ProcessArgs[Plugin.arg]) {
+      if (Plugin.externalStart === true) ControlStartWithPlugin = true;
+      Plugin.main(ProcessArgs[Plugin.arg], ProcessArgs).catch(err => console.log("Plugin Crash:", "\n\n", err));
+    }
   }
+
+  // Server Proprieties
+  // --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}
+  const ServerProprieties = BdsCore.BdsServerSettings.get_config();
+
+  if (ProcessArgs["world-name"]) ServerProprieties.world = ProcessArgs["world-name"];
+  if (ProcessArgs.description) ServerProprieties.description = ProcessArgs.description;
+  if (ProcessArgs.gamemode) ServerProprieties.gamemode = ProcessArgs.gamemode;
+  if (ProcessArgs.difficulty) ServerProprieties.difficulty = ProcessArgs.difficulty;
+  if (ProcessArgs.players) ServerProprieties.players = ProcessArgs.players;
+  // if (ProcessArgs.level_seed) ServerProprieties.level_seed = ProcessArgs.level_seed;
+
+  // Save
+  try {BdsCore.BdsServerSettings.config(ServerProprieties);} catch (error) {console.log(error);}
 
   // Start Server
   if (!(ProcessArgs.start || ProcessArgs.s)) return;
-
-  const BdsManegerServer = BdsCore.BdsManegerServer.StartServer();
-  BdsManegerServer.on("log", data => process.stdout.write(cli_color.blueBright(data)));
+  
+  // Do NOT Start API
   if (!(ProcessArgs["no-api"])) BdsCore.BdsManegerAPI.api();
-  const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
-  __readline.on("line", data => BdsManegerServer.SendCommand(data));
-  if (process.env.DOCKER_IMAGE !== "true") __readline.on("close", () => BdsManegerServer.stop());
-  // Get Temporary External Domain
+
+  // Get Domain
   if (ProcessArgs.get_domain) {
     try {
       const HostInfo = await BdsCore.BdsNetwork.GetHost();
       console.log("Domain:", HostInfo.host);
-      BdsManegerServer.on("exit", async () => await HostInfo.delete_host())
       process.on("exit", async () => {
         await HostInfo.delete_host();
         console.log("Sucess remove host");
@@ -188,9 +216,15 @@ async function Runner() {
       console.log("Cannot get domain");
     }
   }
-  BdsManegerServer.on("exit", code => {
-    console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.Uptime}`));
-    process.exit(code);
-  });
+
+  if (ControlStartWithPlugin) return;
+  return StartServer();
 }
-Runner();
+module.exports = {
+  StartServer
+}
+
+if (Object.keys(ProcessArgs).filter(a => a !== "_").length === 0) help();
+else {
+  Runner();
+}

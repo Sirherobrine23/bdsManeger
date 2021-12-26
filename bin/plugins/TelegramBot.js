@@ -107,14 +107,14 @@ module.exports.Args = [
   {
     arg: "t",
     main: async () => {
-      console.log("Start Telegram Bot");
+      console.log("Start Telegram Bot¹");
       return bot.launch()
     }
   },
   {
     arg: "telegram",
     main: async () => {
-      console.log("Start Telegram Bot");
+      console.info("Start Telegram Bot²");
       return bot.launch()
     }
   }
@@ -122,11 +122,3 @@ module.exports.Args = [
 module.exports.help = [
   "   -t, --telegram             Start Telegram Bot"
 ];
-module.exports.DockerImage = {
-  postStart: async () => {
-    if (BdsSettings.GetTelegramToken()) {
-      console.log("Start Telegram Bot");
-      return bot.launch();
-    }
-  }
-};

@@ -44,19 +44,34 @@ RUN \
   rm -rf /tmp/Node && \
   npm -g install npm@latest
 
+# Install openjdk
+RUN apt update && \
+  case $(apt search openjdk) in \
+    *openjdk-15* ) apt install -y openjdk-15*;; \
+    *openjdk-16* ) apt install -y openjdk-16*;; \
+    *openjdk-17* ) apt install -y openjdk-17*;; \
+    *) echo "Unsupported Java Version"; exit 1;; \
+  esac
+
 # Create Volume to Storage Server And Config
 VOLUME [ "/root/bds_core" ]
 
+# Node packages
+COPY package*.json ./
+RUN npm install
+
 # Set default ENVs to Bds Core
-ENV PLAYERS="5" \
+ENV SERVER_VERSION="true" \
+  PLAYERS="5" \
   WORLD_NAME="The Ultimate Server" \
   DESCRIPTION="running Minecraft Server on Bds Maneger by Bds Manager Project" \
   GAMEMODE="survival" \
   DIFFICULTY="normal" \
   ENABLE_COMMANDS="false" \
   ACCOUNT="false" \
+  LEVEL_SEED="" \
   SERVER="bedrock" \
-  SERVER_VERSION="true"
+  TelegramToken=""
 
 # Bds Maneger Core required ports
 EXPOSE 19132/udp 19133/udp 1932/tcp
@@ -65,12 +80,5 @@ EXPOSE 19132/udp 19133/udp 1932/tcp
 WORKDIR /opt/backend_core_scripts/
 
 # Install Core dependencies
-COPY package*.json ./
-RUN npm install
-
-# Copy BdsManger Core
+ENTRYPOINT [ "sh", "-c", "node bin/BdsManeger.js -ska -d latest -p ${SERVER} --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}" ]
 COPY ./ ./
-RUN chmod a+x -vR bin/*
-
-# Set Entrypint
-ENTRYPOINT [ "node", "bin/BdsManeger.js", "-sk", "-d", "latest" ]

@@ -222,8 +222,8 @@ function bds_get_config(){
     description: "",
     gamemode: "",
     difficulty: "",
-    players: "",
-    whitelist: null,
+    players: 0,
+    whitelist: false,
     portv4: 0,
     portv6: 0,
   };
@@ -271,8 +271,9 @@ function bds_get_config(){
     }
   }
   else if (BdsPlatform === "pocketmine") {
-    if (fs.existsSync(ConfigFilePath[BdsPlatform])) {
-      config = propertiesToJSON(fs.readFileSync(path.join(ConfigFilePath["pocketmine"], "server.properties"), "utf8"));
+    const PocketMineProperties = ConfigFilePath["pocketmine"];
+    if (fs.existsSync(PocketMineProperties)) {
+      config = propertiesToJSON(fs.readFileSync(PocketMineProperties, "utf8"));
       
       // Players
       JsonConfig.world = config["level-name"];
