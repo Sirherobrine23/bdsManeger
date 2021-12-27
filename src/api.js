@@ -16,7 +16,7 @@ const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const pretty = require("express-prettify");
 const cors = require("cors");
-const express_rate_limit = require("express-rate-limit");
+const express_rate_limit = require("express-rate-limit").default;
 const request_ip = require("request-ip");
 app.use(cors());
 app.use(bodyParser.json()); /* https://github.com/github/fetch/issues/323#issuecomment-331477498 */
