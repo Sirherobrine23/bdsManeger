@@ -86,8 +86,19 @@ const Interfaces = Object.getOwnPropertyNames(interfaces).map(inter => {
 
 async function GetHost() {
   const MacAddr = LocalInterfaces().map(Int => Int.mac);
+  const MachineID = Buffer.from(JSON.stringify(MacAddr)).toString("base64");
   const ExternalAddress = (await GetExternalPublicAddress()).ipv4;
-  const RequestUpstream = await fetch(`https://upstream.bdsmaneger.com/v1/public_domain?MacAddress=${JSON.stringify(MacAddr)}&ExternalAdress=${ExternalAddress}`, {mode: "cors"});
+  const RequestUpstream = await fetch("https://upstream.bdsmaneger.com/v2/domain", {
+    mode: "cors",
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      "external_ip": ExternalAddress,
+      "machine_id": MachineID
+    })
+  });
   if (!RequestUpstream.ok) {
     throw {
       Backend: await RequestUpstream.json()
@@ -96,20 +107,21 @@ async function GetHost() {
   const HostInfo = await RequestUpstream.json();
   const _toReturn = {
     host: "",
-    UpstreamID: "",
     delete_host: async () => {
       const RequestDeleteHost = await fetch("https://upstream.bdsmaneger.com/v1/public_domain", {
         method: "DELETE",
         mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          UUID: HostInfo.ID
+          "machine_id": MachineID
         })
       });
       return await RequestDeleteHost.json();
     }
   }
-  _toReturn["host"] = HostInfo.host.host
-  _toReturn["UpstreamID"] = HostInfo.ID
+  _toReturn["host"] = HostInfo.domain+".bdsmaneger.com"
   return _toReturn;
 }
 
