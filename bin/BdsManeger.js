@@ -19,9 +19,15 @@ const ProcessArgs = require("minimist")(process.argv.slice(2));
 // Load Bds Maneger CLI Plugins
 const MoreHelp = [];
 const BeforeRun = [];
+let ControlStartWithPlugin = false;
+let ExitSession = true;
 fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirname, "plugins", file)).filter(Mod => fs.lstatSync(Mod).isFile() && Mod.endsWith(".js")).forEach(Plugin => {
   try {
     const __module = require(Plugin);
+    if (__module.externalStart) {
+      ExitSession = false;
+      ControlStartWithPlugin = true;
+    }
     (__module.Args || []).forEach(PluginArg => {
       ["h", "help", "i", "info", "d", "download", "s", "start", "k", "kill", "get_domain", "p", "platform", "n", "no-api"].forEach(Arg => {
         if (PluginArg.arg === Arg) {
@@ -46,16 +52,24 @@ fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirna
 
 async function DownloadServer(waitUserSelectVersion = "") {
   const ora = (await import("ora")).default;
-  const PlatformVersion = await BdsCore.BdsDownload.GetServerVersion();
+  const Platform = BdsCore.BdsSettings.GetPlatform();
+  const BdsCoreUrlManeger = require("@the-bds-maneger/server_versions");
+  const Versions = (await BdsCoreUrlManeger.listAsync());
   if (waitUserSelectVersion === true || !waitUserSelectVersion) waitUserSelectVersion = (await inquirer.prompt({
     type: "list",
     name: "version",
-    message: `Select the version to download ${BdsCore.BdsSettings.GetPlatform()}`,
-    choices: Object.keys(PlatformVersion.versions).map(version => ({name: `v${version}`, value: version}))
+    message: `Select the version to download ${Platform}`,
+    choices: [
+      {
+        name: `Latest Version (${Versions.latest[Platform]})`,
+        value: "latest"
+      },
+      ...(Versions.platform.filter(Version => Version.name === Platform).map(version => ({name: `v${version.version}`, value: version.version})))
+    ]
   })).version;
   const RunSpinner = ora("Downloading...").start();
   try {
-    const DownloadRes = await BdsCore.BdsDownload.DownloadServer(waitUserSelectVersion);
+    const DownloadRes = await BdsCore.BdsDownload.DownloadServer(waitUserSelectVersion || "latest");
     RunSpinner.succeed(`Downloaded ${DownloadRes.version}, Published in ${DownloadRes.data.getDate()}/${DownloadRes.data.getMonth()}/${DownloadRes.data.getFullYear()}`);
   } catch (err) {
     RunSpinner.fail(String(err));
@@ -127,6 +141,7 @@ async function help() {
 
 async function StartServer() {
   const BdsManegerServer = BdsCore.BdsManegerServer.StartServer();
+  console.log(cli_color.greenBright(`Server started Session UUID: ${BdsManegerServer.uuid}`));
   BdsManegerServer.on("log", data => process.stdout.write(cli_color.blueBright(data)));
   const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
   __readline.on("line", data => BdsManegerServer.SendCommand(data));
@@ -136,6 +151,7 @@ async function StartServer() {
   BdsManegerServer.on("exit", code => {
     __readline.close();
     console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.Uptime}`));
+    if (ExitSession) process.exit(code);
   });
 }
 
@@ -174,15 +190,6 @@ async function Runner() {
   // Kill
   if (ProcessArgs.kill || ProcessArgs.k) BdsCore.BdsCkeckKill.Kill();
 
-  // Load Plugins
-  let ControlStartWithPlugin = false;
-  for (let Plugin of BeforeRun) {
-    if (ProcessArgs[Plugin.arg]) {
-      if (Plugin.externalStart === true) ControlStartWithPlugin = true;
-      Plugin.main(ProcessArgs[Plugin.arg], ProcessArgs).catch(err => console.log("Plugin Crash:", "\n\n", err));
-    }
-  }
-
   // Server Proprieties
   // --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}
   const ServerProprieties = BdsCore.BdsServerSettings.get_config();
@@ -217,14 +224,25 @@ async function Runner() {
     }
   }
 
+  // Load Plugins
+  
+  for (let Plugin of BeforeRun) {
+    if (ProcessArgs[Plugin.arg]) {
+      Plugin.main(ProcessArgs[Plugin.arg], ProcessArgs).catch(err => console.log("Plugin Crash:", "\n\n", err));
+    }
+  }
+
   if (ControlStartWithPlugin) return;
-  return StartServer();
+  else return StartServer();
 }
 module.exports = {
   StartServer
 }
 
-if (Object.keys(ProcessArgs).filter(a => a !== "_").length === 0) help();
+if (process.argv.slice(2).length === 0) help();
 else {
-  Runner();
+  Runner().catch(err => {
+    console.log("Bds Core CLI Crash:", "\n\n", err);
+    process.exit(1);
+  });
 }

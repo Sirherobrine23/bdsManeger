@@ -4,15 +4,20 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Start Index",
-      "program": "${workspaceFolder}/index.js"
+      "name": "Debug CLI",
+      "program": "${workspaceFolder}/bin/BdsManeger.js",
+      "args": ["-ska", "-d", "latest"],
+      "port": 5858,
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development"
+      }
     },
     {
-      "type": "pwa-node",
+      "type": "node",
       "request": "launch",
-      "name": "API",
-      "program": "${workspaceFolder}/bin/bds_maneger.js",
-      "args": ["-sk"]
+      "name": "Start Index",
+      "program": "${workspaceFolder}/index.js"
     }
   ]
 }

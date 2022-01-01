@@ -3,7 +3,7 @@ const { readdirSync } = require("fs");
 const { execSync } = require("child_process");
 const commadExist = require("./commandExist");
 const Request = require("./Requests");
-const { GetServerVersion } = require("../BdsServersDownload");
+const BdsCoreUrlManeger = require("@the-bds-maneger/server_versions");
 
 // System Architect (x64, aarch64 and others)
 let arch;
@@ -12,13 +12,13 @@ else arch = process.arch
 
 // Get System Basic Info
 async function CheckSystemAsync() {
-  const
-    PHPBin = await Request.JSON("https://raw.githubusercontent.com/The-Bds-Maneger/Php_Static_Binary/main/binarys.json"),
-    Servers = {
-      bedrock: await GetServerVersion("bedrock"),
-      spigot: await GetServerVersion("spigot"),
-      dragonfly: await GetServerVersion("dragonfly"),
-    }
+  const PHPBin = await Request.JSON("https://raw.githubusercontent.com/The-Bds-Maneger/Php_Static_Binary/main/binarys.json");
+  const ServerVersions = await BdsCoreUrlManeger.listAsync();
+  const Servers = {
+    bedrock: ServerVersions.platform.filter(data => data.name === "bedrock")[0].data,
+    spigot: ServerVersions.platform.filter(data => data.name === "spigot")[0].data,
+    dragonfly: ServerVersions.platform.filter(data => data.name === "dragonfly")[0].data,
+  }
   const BasicConfigJSON = {
     require_qemu: false,
     valid_platform: {
@@ -30,17 +30,16 @@ async function CheckSystemAsync() {
   }
 
   // check php bin
-  if ((PHPBin[process.platform] || {})[arch]) BasicConfigJSON.valid_platform["pocketmine"] = true;
-  else BasicConfigJSON.valid_platform["pocketmine"] = false;
+  if (!((PHPBin[process.platform] || {})[arch])) BasicConfigJSON.valid_platform["pocketmine"] = false;
 
   // Check for Dragonfly
-  if (!(Servers.dragonfly.versions[Servers.dragonfly.latest][process.platform][arch])) BasicConfigJSON.valid_platform["dragonfly"] = false;
+  if (!(Servers.dragonfly[process.platform][arch])) BasicConfigJSON.valid_platform["dragonfly"] = false;
 
   // SoSystem X
   if (process.platform == "linux") {
     // Bedrock Check
-    if (Servers.bedrock.versions[Servers.bedrock.latest][process.platform]) {
-      if (Servers.bedrock.versions[Servers.bedrock.latest][process.platform][arch]) BasicConfigJSON.valid_platform["bedrock"] = true;
+    if (Servers.bedrock[process.platform]) {
+      if (Servers.bedrock[process.platform][arch]) BasicConfigJSON.valid_platform["bedrock"] = true;
       else BasicConfigJSON.valid_platform["bedrock"] = false;
     } else BasicConfigJSON.valid_platform["bedrock"] = false;
 

@@ -71,7 +71,9 @@ ENV SERVER_VERSION="true" \
   ACCOUNT="false" \
   LEVEL_SEED="" \
   SERVER="bedrock" \
+  SERVER_VERSION="latest" \
   TelegramToken=""
+
 
 # Bds Maneger Core required ports
 EXPOSE 19132/udp 19133/udp 1932/tcp
@@ -80,5 +82,5 @@ EXPOSE 19132/udp 19133/udp 1932/tcp
 WORKDIR /opt/backend_core_scripts/
 
 # Install Core dependencies
-ENTRYPOINT [ "sh", "-c", "node bin/BdsManeger.js -ska -d latest -p ${SERVER} --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}" ]
+ENTRYPOINT [ "sh", "-c", "node bin/BdsManeger.js -ska -d ${SERVER_VERSION} -p ${SERVER} --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}" ]
 COPY ./ ./
