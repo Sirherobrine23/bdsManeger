@@ -1,17 +1,16 @@
 const fs = require("fs");
 const path = require("path");
-const { existsSync, writeFileSync, mkdirSync, readFileSync } = fs;
-const { homedir } = require("os");
+const os = require("os");
 const yaml = require("js-yaml");
 const deepmerge = require("deepmerge");
 
 // PATHs
-const home = homedir(),
+const home = os.homedir(),
   bds_dir = path.join(home, "bds_core"),
   ExternalPlugins = path.join(bds_dir, "plugins");
 
-if (!(existsSync(bds_dir))) fs.mkdirSync(bds_dir, {recursive: true});
-if (!(existsSync(ExternalPlugins))) fs.mkdirSync(ExternalPlugins, {recursive: true});
+if (!(fs.existsSync(bds_dir))) fs.mkdirSync(bds_dir, {recursive: true});
+if (!(fs.existsSync(ExternalPlugins))) fs.mkdirSync(ExternalPlugins, {recursive: true});
 
 // Config Base to Bds Maneger Core and others Projects
 var Config = {
@@ -83,21 +82,21 @@ var Config = {
 // Config
 const ConfigPath = path.join(bds_dir, "BdsConfig.yaml")
 
-const SaveConfig = () => writeFileSync(ConfigPath, yaml.dump(Config));
+const SaveConfig = () => fs.writeFileSync(ConfigPath, yaml.dump(Config));
 process.on("exit", () => SaveConfig());
 
-if (existsSync(ConfigPath)) {
+if (fs.existsSync(ConfigPath)) {
   Config.ban = [];
   Config.server.BackupCron = [];
   Config.telegram.admins = [];
   Config.telegram.ban = [];
-  Config = deepmerge(Config, yaml.load(readFileSync(ConfigPath, "utf8")));
-} else writeFileSync(ConfigPath, yaml.dump(Config))
+  try {Config = deepmerge(Config, yaml.load(fs.readFileSync(ConfigPath, "utf8")));} catch (e) {console.log(e);}
+} else fs.writeFileSync(ConfigPath, yaml.dump(Config))
 
 // Paths
-if (!(existsSync(Config.paths["backups"]))) mkdirSync(Config.paths["backups"], {recursive: true})
-if (!(existsSync(Config.paths["log"]))) mkdirSync(Config.paths["log"], {recursive: true})
-if (!(existsSync(Config.paths["servers"]))) mkdirSync(Config.paths["servers"], {recursive: true})
+if (!(fs.existsSync(Config.paths["backups"]))) fs.mkdirSync(Config.paths["backups"], {recursive: true})
+if (!(fs.existsSync(Config.paths["log"]))) fs.mkdirSync(Config.paths["log"], {recursive: true})
+if (!(fs.existsSync(Config.paths["servers"]))) fs.mkdirSync(Config.paths["servers"], {recursive: true})
 
 // Server Paths
 const ServersPaths = {
@@ -109,9 +108,9 @@ const ServersPaths = {
 }
 
 Object.getOwnPropertyNames(ServersPaths).map(Servers => ServersPaths[Servers]).forEach(Servers => {
-  if (!(existsSync(Servers))) {
+  if (!(fs.existsSync(Servers))) {
     console.log(`Creating the ${path.basename(Servers)} Folder`);
-    mkdirSync(Servers, {recursive: true})
+    fs.mkdirSync(Servers, {recursive: true})
   }
 });
 
@@ -235,14 +234,14 @@ function Google_Driver_Settings(rootid = null){
 }
 
 // Create Player JSON
-if (!(existsSync(GetPaths("player")))) {
+if (!(fs.existsSync(GetPaths("player")))) {
   const PlayerBase = {}
   for (let ServerPlat of Object.getOwnPropertyNames(Config.server.versions)) PlayerBase[ServerPlat] = [];
-  writeFileSync(GetPaths("player"), JSON.stringify(PlayerBase, null, 2));
+  fs.writeFileSync(GetPaths("player"), JSON.stringify(PlayerBase, null, 2));
 } else {
-  const PlayerBase = JSON.parse(readFileSync(GetPaths("player"), "utf8"));
+  const PlayerBase = JSON.parse(fs.readFileSync(GetPaths("player"), "utf8"));
   for (let ServerPlat of Object.getOwnPropertyNames(Config.server.versions)) if (!(PlayerBase[ServerPlat])) PlayerBase[ServerPlat] = [];
-  writeFileSync(GetPaths("player"), JSON.stringify(PlayerBase, null, 2));
+  fs.writeFileSync(GetPaths("player"), JSON.stringify(PlayerBase, null, 2));
 }
 
 module.exports = {
