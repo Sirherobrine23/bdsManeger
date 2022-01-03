@@ -8,6 +8,6 @@ module.exports = {
     ignore: [],
   },
   addModuleEntry: false,
-  addPackageJson: true,
+  addPackageJson: false,
   filesWithShebang: [],
 };

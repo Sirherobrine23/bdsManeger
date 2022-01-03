@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const BdsSettings = require("./BdsSettings");
 
+const ModD = {};
 function LoadPlugins() {
   return fs.readdirSync(BdsSettings.ExternalPlugins).filter(file => fs.fstatSync(path.join(BdsSettings.ExternalPlugins, file)).isFile()).map(files => {
     try {
@@ -12,10 +13,11 @@ function LoadPlugins() {
     }
   }).filter(plugin => plugin);
 }
+ModD.LoadPlugins = LoadPlugins;
 
-module.exports.plugin = LoadPlugins();
+ModD.plugin = LoadPlugins();
 fs.watch(BdsSettings.ExternalPlugins, () => {
-  module.exports.plugin = LoadPlugins();
+  ModD.plugin = LoadPlugins();
 });
 
-module.exports.LoadPlugins = LoadPlugins;
+module.exports = ModD;
