@@ -80,10 +80,15 @@ var Config = {
 }
 
 // Config
-const ConfigPath = path.join(bds_dir, "BdsConfig.yaml")
-
-const SaveConfig = () => fs.writeFileSync(ConfigPath, yaml.dump(Config));
-process.on("exit", () => SaveConfig());
+const ConfigPath = path.join(bds_dir, "BdsConfig.yaml");
+let Saving = false;
+const SaveConfig = () => {
+  Saving = true;
+  fs.writeFileSync(ConfigPath, yaml.dump(Config));
+  setTimeout(() => {
+    Saving = false;
+  }, 1 * 30 * 1000);
+}
 
 if (fs.existsSync(ConfigPath)) {
   Config.ban = [];
@@ -92,6 +97,16 @@ if (fs.existsSync(ConfigPath)) {
   Config.telegram.ban = [];
   try {Config = deepmerge(Config, yaml.load(fs.readFileSync(ConfigPath, "utf8")));} catch (e) {console.log(e);}
 } else fs.writeFileSync(ConfigPath, yaml.dump(Config))
+
+fs.watchFile(ConfigPath, () => {
+  if (Saving) return;
+  console.log("Config file changed");
+  Config.ban = [];
+  Config.server.BackupCron = [];
+  Config.telegram.admins = [];
+  Config.telegram.ban = [];
+  try {Config = deepmerge(Config, yaml.load(fs.readFileSync(ConfigPath, "utf8")));} catch (e) {console.log(e);}
+});
 
 // Paths
 if (!(fs.existsSync(Config.paths["backups"]))) fs.mkdirSync(Config.paths["backups"], {recursive: true})

@@ -7,47 +7,52 @@ const path = require("path");
 const readline = require("readline");
 
 // Import Bds Core
-const BdsCore = require("../index");
+const BdsCore = require("../src/index");
 
 // External Modules
 const cli_color = require("cli-color");
 const inquirer = require("inquirer");
-
-// Bin Args
-const ProcessArgs = require("minimist")(process.argv.slice(2));
-
-// Load Bds Maneger CLI Plugins
-const MoreHelp = [];
-const BeforeRun = [];
-let ControlStartWithPlugin = false;
-let ExitSession = true;
-fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirname, "plugins", file)).filter(Mod => fs.lstatSync(Mod).isFile() && Mod.endsWith(".js")).forEach(Plugin => {
-  try {
-    const __module = require(Plugin);
-    if (__module.externalStart) {
-      ExitSession = false;
-      ControlStartWithPlugin = true;
-    }
-    (__module.Args || []).forEach(PluginArg => {
-      ["h", "help", "i", "info", "d", "download", "s", "start", "k", "kill", "get_domain", "p", "platform", "n", "no-api"].forEach(Arg => {
-        if (PluginArg.arg === Arg) {
-          console.log(cli_color.redBright(`${path.basename(Plugin).replace(/\.js$/gi, "")}:`, "Conflicted with Bds Maneger CLI argument"));
-          process.exit(12);
-        }
-      });
-      BeforeRun.forEach(Arg => {
-        if (PluginArg.arg === Arg) {
-          console.log(cli_color.redBright(`${path.basename(Plugin).replace(/\.js$/gi, "")}:`, "Conflicted with another plugin argument"));
-          process.exit(13);
-        }
-      });
-      BeforeRun.push(PluginArg);
-    });
-    MoreHelp.push(cli_color.redBright(`Plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")} - ${__module.description}`), "", ...(__module.help || []), "");
-  } catch (err) {
-    console.log(cli_color.redBright(`Error loading plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")}`));
-    console.log(cli_color.redBright(err));
-  }
+const Yargs = require("yargs").usage("$0 [args]")
+.option("info", {
+  alias: "i",
+  describe: "Show info",
+  type: "boolean"
+})
+.option("download", {
+  describe: "Download Bds Server",
+  type: "string",
+  alias: "d",
+})
+.option("kill", {
+  alias: "k",
+  describe: "Kill Bds Servers",
+  type: "boolean",
+  default: true
+})
+.command("backup", "Backup Bds Server", {}, () => {
+  const Bc = BdsCore.BdsBackup.Backup();
+  Bc.write_file();
+  console.log(cli_color.greenBright(`Backup created save in: ${Bc.file_path}`));
+})
+.option("platform", {
+  alias: "p",
+  describe: "Select BdsManeger Platform available to system and architecture",
+  type: "string"
+})
+.option("get_domain", {
+  describe: "Get Domain to connect to the Server",
+  type: "boolean",
+  default: false
+})
+.option("no-api", {
+  describe: "Desactivate BdsManeger API",
+  type: "boolean",
+  default: false
+})
+.option("debug", {
+  describe: "Debug",
+  type: "boolean",
+  default: false
 });
 
 async function DownloadServer(waitUserSelectVersion = "") {
@@ -105,56 +110,34 @@ async function info() {
   // End
   return;
 }
-
-async function help() {
-  const help = [
-    `Bds Maneger CLI version: ${cli_color.magentaBright(BdsCore.version)}`,
-    `System: ${cli_color.yellow(process.platform)}, architecture: ${cli_color.blue(BdsCore.BdsSystemInfo.arch)}`,
-    "",
-    " Usage: bds-maneger-cli [options]",
-    "",
-    " Options:",
-    "   -h, --help                 Print this help",
-    "   -i, --info                 Print info about Bds Maneger Core and Platforms",
-    "   -d, --download             Download a server",
-    "   -s, --start                Start a server",
-    "   -k, --kill                 Kill Server if running",
-    "       --get_domain           Get temporary public domain to connect in to server or API",
-    "   -p, --platform             Change the platform",
-    "   -n, --no-api               Don't start the Bds Maneger API Rest",
-    "",
-    ...MoreHelp,
-    "",
-    " Examples:",
-    "   bds-maneger-cli -d",
-    "   bds-maneger-cli -s",
-    "   bds-maneger-cli -sk",
-    "   bds-maneger-cli -k",
-    "   bds-maneger-cli -p bedrock",
-    "   bds-maneger-cli -i",
-    "   bds-maneger-cli -h",
-    ""
-  ];
-  console.log(cli_color.whiteBright(help.join("\n").replace(/true/gi, cli_color.greenBright("true")).replace(/false/gi, cli_color.redBright("false")).replace(/undefined/gi, cli_color.red("undefined"))));
-  return process.exit(0);
-}
-
-async function StartServer() {
+module.exports.StartServer = StartServer;
+module.exports.Yargs = Yargs;
+function StartServer(ExitSession = true) {
   const BdsManegerServer = BdsCore.BdsManegerServer.StartServer();
+  if (Yargs.parse()["debug"]) console.log(BdsManegerServer.setup_command.command, ...BdsManegerServer.setup_command.args);
   console.log(cli_color.greenBright(`Server started Session UUID: ${BdsManegerServer.uuid}`));
   BdsManegerServer.on("log", data => process.stdout.write(cli_color.blueBright(data)));
   const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
   __readline.on("line", data => BdsManegerServer.SendCommand(data));
   if (process.env.DOCKER_IMAGE !== "true") __readline.on("close", BdsManegerServer.stop);
-  // Get Temporary External Domain
-  
   BdsManegerServer.on("exit", code => {
     __readline.close();
     console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.Uptime}`));
     if (ExitSession) process.exit(code);
   });
 }
-
+// Load Bds Maneger CLI Plugins
+const Plugins = [];
+fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirname, "plugins", file)).filter(Mod => fs.lstatSync(Mod).isFile() && Mod.endsWith(".js")).forEach(Plugin => {
+  try {
+    require(Plugin);
+    Plugins.push(Plugin);
+  } catch (err) {
+    console.log(cli_color.redBright(`Error loading plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")}`));
+    console.log(cli_color.redBright(err));
+  }
+});
+const ProcessArgs = Yargs.help().version(false).parse();
 // Async functiona
 async function Runner() {
   // ESM Modules
@@ -162,25 +145,28 @@ async function Runner() {
 
   // Update Bds Core Platform
   if (ProcessArgs.platform || ProcessArgs.p) {
-    const UpdatePla = ora("Updating Bds Platform").start();
-    try {
-      BdsCore.BdsSettings.UpdatePlatform(ProcessArgs.platform || ProcessArgs.p);
-      UpdatePla.succeed(`Now the platform is the ${ProcessArgs.platform || ProcessArgs.p}`);
-    } catch (error) {
-      UpdatePla.fail(`Unable to update platform to ${ProcessArgs.platform || ProcessArgs.p}`);
-      process.exit(1);
+    if (process.env.DOCKER_IMAGE === "true") {
+      try {
+        BdsCore.BdsSettings.UpdatePlatform(ProcessArgs.platform || ProcessArgs.p);
+      } catch (err) {
+        console.log(cli_color.redBright(err));
+        process.exit(1);
+      }
+    } else {
+      const UpdatePla = ora("Updating Bds Platform").start();
+      try {
+        BdsCore.BdsSettings.UpdatePlatform(ProcessArgs.platform || ProcessArgs.p);
+        UpdatePla.succeed(`Now the platform is the ${ProcessArgs.platform || ProcessArgs.p}`);
+      } catch (error) {
+        UpdatePla.fail(`Unable to update platform to ${ProcessArgs.platform || ProcessArgs.p}`);
+        process.exit(1);
+      }
     }
   }
 
   // Print Info about Bds Core and Platforms
   if (ProcessArgs.info || ProcessArgs.i) {
     await info();
-    return;
-  }
-
-  // Help
-  if (ProcessArgs.help || ProcessArgs.h) {
-    await help();
     return;
   }
 
@@ -204,9 +190,6 @@ async function Runner() {
   // Save
   try {BdsCore.BdsServerSettings.config(ServerProprieties);} catch (error) {console.log(error);}
 
-  // Start Server
-  if (!(ProcessArgs.start || ProcessArgs.s)) return;
-  
   // Do NOT Start API
   if (!(ProcessArgs["no-api"])) BdsCore.BdsManegerAPI.api();
 
@@ -224,25 +207,17 @@ async function Runner() {
     }
   }
 
-  // Load Plugins
-  
-  for (let Plugin of BeforeRun) {
-    if (ProcessArgs[Plugin.arg]) {
-      Plugin.main(ProcessArgs[Plugin.arg], ProcessArgs).catch(err => console.log("Plugin Crash:", "\n\n", err));
+  for (let Plgun of Plugins) {
+    const { externalStart, name } = require(Plgun);
+    if (externalStart) {
+      console.log(name || Plgun, "Control Start");
+      return;
     }
   }
-
-  if (ControlStartWithPlugin) return;
-  else return StartServer();
-}
-module.exports = {
-  StartServer
+  return StartServer(true);
 }
 
-if (process.argv.slice(2).length === 0) help();
-else {
-  Runner().catch(err => {
-    console.log("Bds Core CLI Crash:", "\n\n", err);
-    process.exit(1);
-  });
-}
+Runner().catch(err => {
+  console.log("Bds Core CLI Crash:", "\n\n", err);
+  process.exit(1);
+});

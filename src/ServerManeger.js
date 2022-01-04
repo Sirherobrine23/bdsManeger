@@ -4,7 +4,7 @@ const path = require("path");
 const { randomUUID } = require("crypto");
 const BdsBackup = require("./BdsBackup");
 const { CronJob } = require("cron");
-const BdsSettings = require("../src/lib/BdsSettings");
+const BdsSettings = require("./lib/BdsSettings");
 
 const PlayersCallbacks = [];
 let ServerSessions = {
@@ -20,7 +20,7 @@ let ServerSessions = {
 
 const PlayerJson = require("./ManegerServer/Players_json");
 function StartServer() {
-  const commandExists = require("../src/lib/commandExist");
+  const commandExists = require("./lib/commandExist");
   const io = require("./api").SocketIO;
   const CurrentBdsPlatform = BdsSettings.GetPlatform();
   const SetupCommands = {
@@ -304,6 +304,7 @@ function StartServer() {
   // Mount commands to Return
   const returnFuntion = {
     uuid: randomUUID(),
+    setup_command: SetupCommands,
     LogPath: LogFile,
     PID: ServerExec.pid,
     Uptime: 0,

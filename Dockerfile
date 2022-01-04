@@ -82,5 +82,5 @@ EXPOSE 19132/udp 19133/udp 1932/tcp
 WORKDIR /opt/backend_core_scripts/
 
 # Install Core dependencies
-ENTRYPOINT [ "sh", "-c", "node bin/BdsManeger.js -ska -d ${SERVER_VERSION} -p ${SERVER} --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}" ]
+ENTRYPOINT [ "sh", "-c", "node bin/BdsManeger.js --kill --auto_update -d ${SERVER_VERSION} -p ${SERVER} --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}" ]
 COPY ./ ./

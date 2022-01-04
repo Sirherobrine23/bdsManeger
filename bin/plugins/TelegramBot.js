@@ -1,14 +1,12 @@
-/**
- * Bds Maneger Telegram Bot v13.1.1
- */
-const { version, BdsSettings, BdsToken, BdsSystemInfo, BdsManegerServer } = require("../../index");
+const { Yargs } = require("../BdsManeger");
+const { version, BdsSettings, BdsToken, BdsSystemInfo, BdsManegerServer } = require("../../src/index");
 const { Telegraf } = require("telegraf");
 const os = require("os");
 const fs = require("fs");
 const path = require("path");
 
 // Set Telegram Bot
-if (process.env.BDS_DOCKER_IMAGE === "true") {
+if (process.env.DOCKER_IMAGE === "true") {
   if (process.env.TelegramToken) BdsSettings.UpdateTelegramToken(process.env.TelegramToken);
 }
 const TelegramToken = BdsSettings.GetTelegramToken();
@@ -102,23 +100,14 @@ bot.command("player", ctx => {
 // Get Catch
 bot.catch(console.log);
 
-module.exports.description = "Start Bot of Telegram";
-module.exports.Args = [
-  {
-    arg: "t",
-    main: async () => {
-      console.log("Start Telegram Bot¹");
-      return bot.launch()
-    }
-  },
-  {
-    arg: "telegram",
-    main: async () => {
-      console.info("Start Telegram Bot²");
-      return bot.launch()
-    }
-  }
-];
-module.exports.help = [
-  "   -t, --telegram             Start Telegram Bot"
-];
+Yargs.option("telegram", {
+  describe: "Start Telegram Bot",
+  alias: "t",
+  type: "boolean",
+  default: false
+});
+
+if (Yargs.parse()["telegram"]) () => {
+  console.log("Start Telegram Bot¹");
+  return bot.launch()
+}

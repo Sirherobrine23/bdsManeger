@@ -1,65 +1,52 @@
-// Mount Module Oject
-const ModuleExport = {}
-import package_json from "./package.json";
-import BdsManegerInfo from "./src/BdsManegerInfo.json";
-
+/* eslint-disable no-irregular-whitespace */
+// process.env.ShowLoadTime = true;
+// Load Root JSON
 const BdsManegerCoreJSONs = {
-  Package: package_json,
-  Extra: BdsManegerInfo
+  Package: require("../package.json"),
+  Extra: require("./BdsManegerInfo.json")
 };
 
-ModuleExport.version = package_json.version;
-ModuleExport.ExtraJSON = BdsManegerCoreJSONs;
+// Bds Maneger Core Version
+module.exports.version = BdsManegerCoreJSONs.Package.version;
+module.exports.ExtraJSON = BdsManegerCoreJSONs;
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Settings");
-import BdsSettings from "./esm/lib/BdsSettings";
-ModuleExport.BdsSettings = BdsSettings;
+module.exports.BdsSettings = require("./lib/BdsSettings");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Settings");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Token");
-import BdsToken from "./esm/lib/Token";
-ModuleExport.BdsToken = BdsToken;
+module.exports.BdsToken = require("./lib/Token");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Token");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: System Info");
-import BdsSystemInfo from "./esm/lib/BdsSystemInfo";
-ModuleExport.BdsSystemInfo = BdsSystemInfo;
+module.exports.BdsSystemInfo = require("./lib/BdsSystemInfo");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: System Info");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Network");
-import BdsNetwork from "./esm/lib/BdsNetwork";
-ModuleExport.BdsNetwork = BdsNetwork;
+module.exports.BdsNetwork = require("./BdsNetwork");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Network");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Backups");
-import BdsBackup from "./esm/BdsBackup";
-ModuleExport.BdsBackup = BdsBackup;
+module.exports.BdsBackup = require("./BdsBackup");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Backups");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Server Settings");
-import BdsServerSettings from "./esm/BdsServerSettings";
-ModuleExport.BdsServerSettings = BdsServerSettings;
+module.exports.BdsServerSettings = require("./ServerSettings");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Server Settings");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Download Server");
-import BdsDownload from "./esm/BdsDownload";
-ModuleExport.BdsDownload = BdsDownload;
+module.exports.BdsDownload = require("./BdsServersDownload");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Download Server");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Check And Kill");
-import BdsCkeckKill from "./esm/BdsCkeckKill";
-ModuleExport.BdsCkeckKill = BdsCkeckKill;
+module.exports.BdsCkeckKill = require("./CheckKill");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Check And Kill");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: API");
-import BdsManegerAPI from "./esm/api";
-ModuleExport.BdsManegerAPI = BdsManegerAPI;
+module.exports.BdsManegerAPI = require("./api");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: API");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Server Maneger");
-import BdsManegerServer from "./esm/BdsManegerServer";
-ModuleExport.BdsManegerServer = BdsManegerServer;
+module.exports.BdsManegerServer = require("./ServerManeger");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Server Maneger");
 if (process.env.ShowLoadTime) console.log("Bds Maneger Core: Complete");
-
-export default ModuleExport;

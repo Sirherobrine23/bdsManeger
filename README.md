@@ -39,7 +39,6 @@ All options can be found in the bds maneger core documentation.
 The commands available after installation:
 
 * bds_maneger
-* bds_telegram
 
 `npm i -g @the-bds-maneger/core@latest`
 

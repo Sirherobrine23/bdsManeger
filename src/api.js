@@ -2,7 +2,7 @@
 const os = require("os");
 const fs = require("fs");
 // Bds Maneger Core
-const BdsManegerCore = require("../index");
+const BdsManegerCore = require("../src/index");
 const BdsSystemInfo = require("../src/lib/BdsSystemInfo");
 const BdsSettings = require("../src/lib/BdsSettings");
 const TokenManeger = require("./lib/Token");
@@ -170,7 +170,7 @@ app.get(["/bds/log", "/log"], CheckToken, (req, res) => {
 
 // Server Info
 app.get("/bds/info/server", ({res}) => {
-  const ServerSessions = require("./BdsManegerServer").GetSessions();
+  const ServerSessions = require("./ServerManeger").GetSessions();
   const ServerRunner = Object.keys(ServerSessions).map(session => ServerSessions[session]).map(a => ({
     UUID: a.uuid || "",
     PID: a.PID || 0,
@@ -305,7 +305,7 @@ app.get("/players/kick", CheckToken, (req, res) => {
   const { Player = "Sirherobrine", Text = "You have been removed from the Server" } = req.query;
 
   // Kick player
-  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  const Sessions = require("./ServerManeger").GetSessionsArray();
   if (Sessions.length > 0) {
     Sessions.forEach(RunnerServer => RunnerServer.kick(Player, Text));
     return res.json({ success: true });
@@ -321,7 +321,7 @@ app.get("/players/ban", CheckToken, (req, res) => {
   const { Player = "Sirherobrine" } = req.query;
 
   // Ban player
-  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  const Sessions = require("./ServerManeger").GetSessionsArray();
   if (Sessions.length > 0) {
     Sessions.forEach(RunnerServer => RunnerServer.ban(Player));
     return res.sendStatus(200);
@@ -336,7 +336,7 @@ app.get("/players/op", CheckToken, CheckToken, (req, res) => {
   const { Player = "Sirherobrine" } = req.query;
 
   // Op player
-  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  const Sessions = require("./ServerManeger").GetSessionsArray();
   if (Sessions.length > 0) {
     Sessions.forEach(RunnerServer => RunnerServer.op(Player));
     return res.sendStatus(200);
@@ -351,7 +351,7 @@ app.get("/players/deop", (req, res) => {
   const { Player = "Sirherobrine" } = req.query;
 
   // Deop player
-  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  const Sessions = require("./ServerManeger").GetSessionsArray();
   if (Sessions.length > 0) {
     Sessions.forEach(RunnerServer => RunnerServer.deop(Player));
     return res.sendStatus(200);
@@ -366,7 +366,7 @@ app.get("/players/say", CheckToken, (req, res) => {
   const { Text = "Hello Server" } = req.query;
 
   // Say to Server
-  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  const Sessions = require("./ServerManeger").GetSessionsArray();
   if (Sessions.length > 0) {
     Sessions.forEach(RunnerServer => RunnerServer.say(Text));
     return res.sendStatus(200);
@@ -381,7 +381,7 @@ app.get("/players/tp", (req, res) => {
   const { Player = "Sirherobrine", X = 0, Y = 0, Z = 0 } = req.query;
 
   // Tp player
-  const Sessions = require("./BdsManegerServer").GetSessionsArray();
+  const Sessions = require("./ServerManeger").GetSessionsArray();
   if (Sessions.length > 0) {
     Sessions.forEach(RunnerServer => RunnerServer.tp(Player, X, Y, Z));
     return res.sendStatus(200);

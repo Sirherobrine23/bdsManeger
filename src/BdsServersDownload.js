@@ -5,7 +5,7 @@ const { join, resolve } = path;
 var AdmZip = require("adm-zip");
 const { GetServerPaths, GetPlatform } = require("../src/lib/BdsSettings");
 const Extra = require("./BdsManegerInfo.json");
-const bds = require("../index");
+const bds = require("../src/index");
 const Request = require("../src/lib/Requests");
 const BdsCoreURlManeger = require("@the-bds-maneger/server_versions");
 

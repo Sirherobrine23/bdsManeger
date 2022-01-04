@@ -1,7 +1,7 @@
 const chai = require("chai");
 const { assert } = chai;
 process.env.ShowLoadTime = true;
-const BdsCore = require("../index");
+const BdsCore = require("../src/index");
 
 describe("Small functions", () => {
   it("Detect Server is running", function (done) {
