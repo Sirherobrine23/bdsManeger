@@ -1,6 +1,6 @@
 const RawGithubUrl = "https://raw.githubusercontent.com/The-Bds-Maneger/Plugins_Repository/main";
 /**
- * Parse Config.y[a]ml to return a object with url, type and versions
+ * Parse /Config.y[a]ml/ to return a object with url, type and versions
  */
 function Parse(RepositoryPath = "", BdsPlatform = "pocketmine", Config = {}) {
   for (let KeyArray of Object.keys(Config)) {
@@ -9,16 +9,30 @@ function Parse(RepositoryPath = "", BdsPlatform = "pocketmine", Config = {}) {
   if (Config.type === undefined) throw new Error("Config Error: type not found");
   const NewConfig = {
     revision: "v1",
-    type: Config.type,
-    versions: []
-  };
+    type: String(Config.type).toLowerCase(),
+    versions: [
+      {
+        dependencies: [""],
+        version: "",
+        minimum: "",
+        url: "",
+      },
+      {
+        dependencies: [],
+        version: 0,
+        minimum: 0,
+        url: "",
+      },
+    ]
+  }; NewConfig.versions = [];
   if (BdsPlatform === "pocketmine") {
     for (const Version of Config.versions) {
       let AddObj = false;
-      const { version, from, minimum } = Version;
+      const { version, from, minimum, dependencies } = Version;
       if (version === undefined) throw new Error("Config Error: version not found");
       if (from === undefined) throw new Error("Config Error: from not found");
       const ObjVersion = {
+        dependencies: dependencies || [],
         version: version,
         minimum: 0,
         url: "",
@@ -34,15 +48,16 @@ function Parse(RepositoryPath = "", BdsPlatform = "pocketmine", Config = {}) {
         if (from === "poggit_pmmp") {
           if (typeof Config.name === "undefined") throw new Error("Config Error: name not found");
           const { poggit_id } = Version;
-          if (typeof poggit_id === "undefined") ObjVersion.url = `https://poggit.pmmp.io/get/${Config.name.trim()}/${ObjVersion.version}`;
-          else ObjVersion.url = `https://poggit.pmmp.io/r/${typeof poggit_id === "number" ? poggit_id : poggit_id.trim()}/${Config.name}.phar`;
+          if (typeof poggit_id === "undefined") ObjVersion.url = `https://poggit.pmmp.io/get/${Config.name.trim()}/${version}`;
+          else ObjVersion.url = `https://poggit.pmmp.io/r/${typeof poggit_id === "number" ? parseInt(poggit_id) : poggit_id.trim()}/${Config.name}.phar`;
           AddObj = true;
         } else if (from === "file") {
           const { file } = Version;
-          if (typeof file === "undefined") throw new Error("Config Error: file not found");
           if (typeof RepositoryPath === "undefined") throw new Error("Config Error: RepositoryPath not found");
-          ObjVersion.url = `${RawGithubUrl}/${RepositoryPath}/${file}`;
-          AddObj = true;
+          if (typeof file === "string") {
+            ObjVersion.url = `${RawGithubUrl}/${RepositoryPath}/${file.replace("./", "")}`;
+            AddObj = true;
+          } else throw new Error("Config Error: file not found");
         } else if (from === "github_release") {
           const { repository, file_name } = Version;
           if (typeof repository === "undefined") throw new Error("Config Error: repository not found");
@@ -52,9 +67,10 @@ function Parse(RepositoryPath = "", BdsPlatform = "pocketmine", Config = {}) {
         } else if (from === "url") {
           const { url } = Version;
           if (typeof url === "undefined") throw new Error("Config Error: url not found");
-          if (/^http[s]?:\/\//.test(url.trim())) ObjVersion.url = url;
-          ObjVersion.url = url;
-          AddObj = true;
+          if (/^http[s]?:\/\//.test(url.trim())) {
+            ObjVersion.url = url.trim();
+            AddObj = true;
+          }
         } else console.error(`Config Error: from ${from} not supported`);
       }
       if (AddObj) NewConfig.versions.push(ObjVersion);

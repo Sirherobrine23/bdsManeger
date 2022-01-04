@@ -50,9 +50,22 @@ async function PluginManeger(BdsPlatform = BdsSettings.GetPlatform()) {
     }
   }
 
+  const PluginList = async () => {
+    const PluginList = (await GetPluginsPath()).filter(Plugin => /config\.y[a]ml$/gi.test(Plugin.path)).map(Plugin => Plugin.path.replace(/\/config\.y[a]ml$/gi, "").replace(RegExp(`^${BdsPlatform}/`), ""));
+    const NewObject = {};
+    for (const PluginPath of PluginList) {
+      const [Letter] = PluginPath.split("/");
+      if (NewObject[Letter] === undefined) NewObject[Letter] = [];
+      NewObject[Letter].push(PluginPath.replace(`${Letter}/`, ""))
+    }
+    console.log(NewObject);
+    return NewObject;
+  }
+
   return {
     GetPlugin,
     InstallPlugin,
+    PluginList
   };
 }
 
