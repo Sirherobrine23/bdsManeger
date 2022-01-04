@@ -4,12 +4,13 @@ const RawGithubUrl = "https://raw.githubusercontent.com/The-Bds-Maneger/Plugins_
  */
 function Parse(RepositoryPath = "", BdsPlatform = "pocketmine", Config = {}) {
   for (let KeyArray of Object.keys(Config)) {
-    if (!(KeyArray === "revision" || KeyArray === "type" || KeyArray === "versions")) console.error(`${KeyArray} is not supported`);
+    if (!(KeyArray === "revision" || KeyArray === "name" || KeyArray === "type" || KeyArray === "versions")) console.error(`${KeyArray} is not supported`);
   }
   if (Config.type === undefined) throw new Error("Config Error: type not found");
   const NewConfig = {
     revision: "v1",
     type: String(Config.type).toLowerCase(),
+    name: String(Config.name||""),
     versions: [
       {
         dependencies: [""],

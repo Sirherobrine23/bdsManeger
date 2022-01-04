@@ -15,7 +15,7 @@ async function PluginManeger(BdsPlatform = BdsSettings.GetPlatform()) {
     if (!pluginName) throw new Error("Plugin name not found");
     const RepositoryPlugins = (await GetPluginsPath());
     if (RepositoryPlugins[0] === undefined) throw new Error(`Bds Platform ${BdsPlatform} not found`);
-    const PluginPath = `${BdsPlatform}/${pluginName.charAt(0).toLocaleLowerCase()}/${pluginName}`;
+    const PluginPath = `${BdsPlatform}/${pluginName.split("").filter(le => /[a-zA-Z0-9]/gi.test(le)).join("").charAt(0).toLocaleLowerCase()}/${pluginName}`;
     const PluginArray = RepositoryPlugins.filter(Plugin => Plugin.path.startsWith(PluginPath));
     if (PluginArray[0] === undefined) throw new Error(`Plugin ${pluginName} not found`);
     const ConfigFile = js_yaml.load(await request.text(`${RawGithubUrl}/${PluginPath}/${path.basename(PluginArray.filter(A => /config\.y[a]ml$/gi.test(A.path))[0].path)}`));
