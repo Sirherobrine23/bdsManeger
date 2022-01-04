@@ -20,8 +20,9 @@ async function PluginManeger(BdsPlatform = BdsSettings.GetPlatform()) {
     if (PluginArray[0] === undefined) throw new Error(`Plugin ${pluginName} not found`);
     const ConfigFile = js_yaml.load(await request.text(`${RawGithubUrl}/${PluginPath}/${path.basename(PluginArray.filter(A => /config\.y[a]ml$/gi.test(A.path))[0].path)}`));
     console.log(ConfigFile);
-    if (fs.existsSync(path.resolve(__dirname, `./PluginManeger/revision/${ConfigFile.revision.trim()}/Config`))) throw new Error(`Plugin ${pluginName} is outdated`);
-    return require(`./PluginManeger/revision/${ConfigFile.revision.trim()}/Config`).Parse(ConfigFile);
+    const ParseConfigVersion = /* ConfigFile.revision.trim() || */ "v1"
+    if (fs.existsSync(path.resolve(__dirname, `./PluginManeger/revision/${ParseConfigVersion}/Config`))) throw new Error(`Plugin ${pluginName} is outdated`);
+    return require(`./PluginManeger/revision/${ParseConfigVersion}/Config`).Parse(PluginPath, BdsPlatform, ConfigFile);
   }
 
   const InstallPlugin = async (PluginName = "", Version = "latest") => {
