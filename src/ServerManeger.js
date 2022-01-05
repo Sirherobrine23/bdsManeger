@@ -339,6 +339,8 @@ function StartServer() {
     });
   });
   
+  const PlayerSession = {};
+  returnFuntion.Players_in_Session = () => PlayerSession;
   ServerOn("log", data => {
     io.emit("ServerLog", {
       UUID: returnFuntion.uuid,
@@ -350,6 +352,27 @@ function StartServer() {
       io.emit("PlayerAction", Actions);
       PlayersCallbacks.forEach(async callback => {
         if (typeof callback === "function") return callback(Actions);
+      });
+      console.log(Actions);
+      Actions.forEach(UseAction => {
+        const { Player, Action, Date } = UseAction;
+        if (PlayerSession[Player] === undefined) {
+          PlayerSession[Player] = {
+            connected: Action === "connect",
+            history: [
+              {
+                Action,
+                Date
+              }
+            ]
+          }
+        } else {
+          PlayerSession[Player].connected = Action === "connect";
+          PlayerSession[Player].history.push({
+            Action,
+            Date
+          });
+        }
       });
     });
   });

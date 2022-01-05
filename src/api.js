@@ -56,9 +56,9 @@ app.all(["/v2", "/v2/*"], ({res}) => res.status(401).json({
 
 // Check Token
 function CheckToken (req, res, next) {
-  if (req.headers["AuthorizationToken"]) {
-    if (TokenManeger.CheckToken(req.headers["AuthorizationToken"], "all")) {
-      req.token = req.headers["AuthorizationToken"];
+  if (req.headers["authorizationtoken"]) {
+    if (TokenManeger.CheckToken(req.headers["authorizationtoken"], "all")) {
+      req.token = req.headers["authorizationtoken"];
       return next();
     }
   } else if (req.method === "GET") {
@@ -178,9 +178,6 @@ app.get("/bds/info/server", ({res}) => {
     StartTime: a.StartTime || NaN
   }));
   const BdsConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
-  const Players = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))[BdsSettings.GetPlatform()];
-  const Offline = Players.filter(player => player.Action === "disconnect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)));
-  const Online = Players.filter(player => player.Action === "connect").filter((thing, index, self) => index === self.findIndex((t) => (t.place === thing.place && t.Player === thing.Player && Offline.findIndex((t) => (t.place === thing.place && t.Player === thing.Player)) === -1)))
   
   // Delete Info
   delete BdsConfig.telegram;
@@ -189,10 +186,20 @@ app.get("/bds/info/server", ({res}) => {
   const Info = {
     version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
     Platform: BdsSettings.GetPlatform(),
-    players: {
-      online: Online.length,
-      offline: Offline.length,
-    },
+    players: Object.keys(ServerSessions).map(session => ServerSessions[session]).map(Session => {
+      const Users = Session.Players_in_Session();
+      const NewUsers = {
+        online: [],
+        offline: [],
+        Users
+      };
+      for (let Player of Object.keys(Users)) {
+        const Playersession = Users[Player];
+        if (Playersession.connected) NewUsers.online.push(Player);
+        else NewUsers.offline.push(Player);
+      }
+      return NewUsers
+    }),
     Config: BdsConfig,
     Process: ServerRunner
   }
@@ -275,6 +282,38 @@ app.post("/bds/save_settings", CheckToken, (req, res) => {
       message: `${error}`
     });
   }
+});
+
+app.post("/bds/save_settings/:Config", CheckToken, (req, res) => {
+  const { Config } = req.params;
+  const ServerConfig = BdsManegerCore.BdsServerSettings.get_config();
+  if (typeof ServerConfig[Config] === "undefined") return res.status(404).json({
+    error: "Config Not Found",
+    message: {
+      Config: Config,
+      ConfigAvailable: Object.keys(ServerConfig)
+    }
+  });
+  ServerConfig[Config] = req.body.Value;
+  try {
+    BdsManegerCore.BdsServerSettings.config(ServerConfig);
+    res.json({
+      message: "Settings Saved",
+      Config: {
+        Config: Config,
+        Value: ServerConfig[Config]
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: "Backend Error",
+      message: (`${err.stack || err}`).split(/\r\n|\n/gi)
+    });
+  }
+});
+
+app.get("/bds/get_settings", ({res}) => {
+  res.json(BdsManegerCore.BdsServerSettings.get_config());
 });
 
 // Bds Maneger Bridge Communication

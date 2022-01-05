@@ -50,3 +50,5 @@ if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Server Maneger");
 module.exports.BdsManegerServer = require("./ServerManeger");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Server Maneger");
 if (process.env.ShowLoadTime) console.log("Bds Maneger Core: Complete");
+
+module.exports.TokenManeger = require("./lib/Token");

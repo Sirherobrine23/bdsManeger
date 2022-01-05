@@ -33,6 +33,7 @@ const Yargs = require("yargs").usage("$0 [args]")
   const Bc = BdsCore.BdsBackup.Backup();
   Bc.write_file();
   console.log(cli_color.greenBright(`Backup created save in: ${Bc.file_path}`));
+  process.exit(0);
 })
 .option("platform", {
   alias: "p",
@@ -206,7 +207,7 @@ async function Runner() {
       console.log("Cannot get domain");
     }
   }
-
+  console.log("Token:", BdsCore.BdsToken.GetAllTokens().map(a => a.Token).join("\n"));
   for (let Plgun of Plugins) {
     const { externalStart, name } = require(Plgun);
     if (externalStart) {

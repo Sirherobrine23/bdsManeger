@@ -12,11 +12,18 @@
     "import": "./esm/index.js"
   },
   "scripts": {
-    "start": "node bin/bds_maneger.js -sk",
+    "start": "node bin/BdsManeger.js -sk",
     "test": "mocha --exit .test/*.js",
     "esm_module": "cjs2esm",
     "eslint": "eslint --debug --fix .",
-    "Docker": "docker-compose build && docker-compose up"
+    "Docker": "docker-compose build && docker-compose up",
+    "dev": "nodemon"
+  },
+  "nodemonConfig": {
+    "ignore": ["test/*"],
+    "delay": 2500,
+    "watch": ["src", "bin", "package.json", "package-lock.json"],
+    "exec": "node ./bin/BdsManeger.js"
   },
   "bin": {
     "bds_maneger": "bin/BdsManeger.js"
