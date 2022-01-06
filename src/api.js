@@ -317,9 +317,9 @@ app.get("/bds/get_settings", ({res}) => {
 });
 
 // Bds Maneger Bridge Communication
-app.get("/bds/bridge", (req, res) => {
-  const ServerHost = require("./BdsNetwork").host || req.headers.host.replace(/^(.*?):\d+$/, (match, p1) => p1) || require("./BdsNetwork").externalIP.ipv4;
-  const ServerConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
+app.get("/bds/Connect", async (req, res) => {
+  const ServerHost = req.headers.host.replace(/^(.*?):\d+$/, (match, p1) => p1) || require("./BdsNetwork").externalIP.ipv4;
+  const ServerConfig = BdsManegerCore.BdsServerSettings.get_config();
   res.json({
     host: ServerHost,
     port: ServerConfig.portv4,
