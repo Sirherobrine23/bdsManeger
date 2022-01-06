@@ -26,3 +26,6 @@ Docker*
 
 # Npm
 the-bds-maneger-core*.tgz
+
+# External Packages
+packages/**/*

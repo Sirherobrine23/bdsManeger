@@ -114,11 +114,22 @@ jobs:
 
       - name: Publish Package
         run: |
+          set -x
           if [[ "${{ github.event_name }}" == "release" ]];then
             npm publish
           else
             npm publish --tag next
           fi
+          cd packages
+          for package in *; do
+            cd "$package"
+            if [[ "${{ github.event_name }}" == "release" ]];then
+              npm publish
+            else
+              npm publish --tag next
+            fi
+            cd ..
+          done
 
   docker:
     runs-on: ubuntu-latest

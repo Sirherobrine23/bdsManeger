@@ -35,7 +35,7 @@ const SocketIo = require("socket.io");
 const io = new SocketIo.Server(Server);
 io.use(function (socket, next) {
   const { headers, query } = socket.handshake;
-  const Token = headers["AuthorizationToken"] || query["token"] || query["Token"];
+  const Token = headers["authorizationtoken"] || query["token"] || query["Token"];
   if (Token) {
     if (TokenManeger.CheckToken(Token, "all")) {
       socket.token = Token;
@@ -150,26 +150,8 @@ app.get(["/bds/info", "/bds", "/"], ({res}) => {
   }
 });
 
-// Get Server Log
-app.get(["/bds/log", "/log"], CheckToken, (req, res) => {
-  const Sessions = BdsManegerCore.BdsManegerServer.GetSessions();
-  return res.json(Object.keys(Sessions).map(session => {
-    try {
-      return {
-        UUID: session,
-        data: fs.readFileSync(Sessions[session].LogPath, "utf8").replace(/\r\n/gi, "\n").split("\n")
-      };
-    } catch (err) {
-      return {
-        UUID: session,
-        Error: String(err)
-      };
-    }
-  }));
-});
-
 // Server Info
-app.get("/bds/info/server", ({res}) => {
+app.get("/bds/info/server", async ({res}) => {
   const ServerSessions = require("./ServerManeger").GetSessions();
   const ServerRunner = Object.keys(ServerSessions).map(session => ServerSessions[session]).map(a => ({
     UUID: a.uuid || "",
@@ -183,9 +165,12 @@ app.get("/bds/info/server", ({res}) => {
   delete BdsConfig.telegram;
   delete BdsConfig.cloud;
 
+  const AsyncHostInfo = await BdsManegerCore.BdsSystemInfo.CheckSystemAsync();
+
   const Info = {
     version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
     Platform: BdsSettings.GetPlatform(),
+    Platform_available: Object.keys(AsyncHostInfo.valid_platform).filter(a => AsyncHostInfo.valid_platform[a]),
     players: Object.keys(ServerSessions).map(session => ServerSessions[session]).map(Session => {
       const Users = Session.Players_in_Session();
       const NewUsers = {
@@ -204,6 +189,24 @@ app.get("/bds/info/server", ({res}) => {
     Process: ServerRunner
   }
   return res.json(Info);
+});
+
+// Get Server Log
+app.get(["/bds/log", "/log"], CheckToken, (req, res) => {
+  const Sessions = BdsManegerCore.BdsManegerServer.GetSessions();
+  return res.json(Object.keys(Sessions).map(session => {
+    try {
+      return {
+        UUID: session,
+        data: fs.readFileSync(Sessions[session].LogPath, "utf8").replace(/\r\n/gi, "\n").split("\n")
+      };
+    } catch (err) {
+      return {
+        UUID: session,
+        Error: String(err)
+      };
+    }
+  }));
 });
 
 // Create Backup

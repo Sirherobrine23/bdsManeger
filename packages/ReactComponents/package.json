@@ -2,9 +2,14 @@
   "name": "@the-bds-maneger/react_components",
   "version": "0.1.0",
   "description": "Components react ready to communicate with the Bds Manege Core API",
-  "main": "index.js",
+  "main": "src/index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
   },
   "repository": {
     "type": "git",
