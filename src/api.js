@@ -32,7 +32,11 @@ app.use(express_rate_limit({
 // Init Socket.io
 const Server = require("http").createServer(app);
 const SocketIo = require("socket.io");
-const io = new SocketIo.Server(Server);
+const io = new SocketIo.Server(Server, {
+  cors: {
+    origin: "*"
+  }
+});
 io.use(function (socket, next) {
   const { headers, query } = socket.handshake;
   const Token = headers["authorizationtoken"] || query["token"] || query["Token"];
@@ -43,9 +47,6 @@ io.use(function (socket, next) {
     }
   }
   return next(new Error("Token is not valid"));
-});
-io.on("connection", socket => {
-  console.log("Socket.io connection ID:", socket.token);
 });
 module.exports.SocketIO = io;
 

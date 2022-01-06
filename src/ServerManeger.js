@@ -328,6 +328,14 @@ function StartServer() {
 
   // Socket.io
   io.on("connection", socket => {
+    try {
+      socket.emit("ServerLog", {
+        UUID: returnFuntion.uuid,
+        data: fs.readFileSync(returnFuntion.LogPath, "utf8")
+      });
+    } catch (err) {
+      console.log(err);
+    }
     socket.on("ServerCommand", (data) => {
       if (typeof data === "string") return returnFuntion.SendCommand(data);
       else if (typeof data === "object") {
