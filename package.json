@@ -20,9 +20,16 @@
     "dev": "nodemon"
   },
   "nodemonConfig": {
-    "ignore": ["test/*"],
+    "ignore": [
+      "test/*"
+    ],
     "delay": 2500,
-    "watch": ["src", "bin", "package.json", "package-lock.json"],
+    "watch": [
+      "src",
+      "bin",
+      "package.json",
+      "package-lock.json"
+    ],
     "exec": "node ./bin/BdsManeger.js"
   },
   "bin": {
@@ -76,6 +83,7 @@
     "node-cron": "^3.0.0",
     "node-fetch": "^3.0.0",
     "ora": "^6.0.1",
+    "prismarine-nbt": "^2.0.0",
     "properties-to-json": "^0.2.1",
     "request-ip": "^2.1.3",
     "socket.io": "^4.3.2",
