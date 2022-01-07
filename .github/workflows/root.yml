@@ -129,10 +129,10 @@ jobs:
           set -x
           if [[ "${{ matrix.npm_registry }}" == "Github" ]];then
             echo "Publish to Github Packages"
-            export NODE_AUTH_TOKEN = "${{ secrets.GITHUB_TOKEN }}"
+            export NODE_AUTH_TOKEN="${{ secrets.GITHUB_TOKEN }}"
           else
             echo "Publish to NPM Registry"
-            export NODE_AUTH_TOKEN = "${{ secrets.NPM_ORG_TOKEN }}"
+            export NODE_AUTH_TOKEN="${{ secrets.NPM_ORG_TOKEN }}"
           fi
           if [[ "${{ github.event_name }}" == "release" ]];then
             npm publish
