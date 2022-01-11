@@ -1,4 +1,3 @@
-const { Yargs } = require("../BdsManeger");
 const { version, BdsSettings, BdsToken, BdsSystemInfo, BdsManegerServer } = require("../../src/index");
 const { Telegraf } = require("telegraf");
 const os = require("os");
@@ -9,8 +8,17 @@ const path = require("path");
 if (process.env.DOCKER_IMAGE === "true") {
   if (process.env.TelegramToken) BdsSettings.more.telegramToken(process.env.TelegramToken);
 }
+
+const { Yargs } = require("../BdsManeger");
+Yargs.option("telegram", {
+  describe: "Start Telegram Bot",
+  alias: "t",
+  type: "boolean",
+  default: false
+});
+
 const TelegramToken = BdsSettings.more.telegramToken();
-if (!TelegramToken) throw new Error("Add Telegram Token");
+if (TelegramToken) {
 const bot = new Telegraf(TelegramToken);
 
 // Bot Start And Help messages
@@ -100,14 +108,8 @@ bot.command("player", ctx => {
 // Get Catch
 bot.catch(console.log);
 
-Yargs.option("telegram", {
-  describe: "Start Telegram Bot",
-  alias: "t",
-  type: "boolean",
-  default: false
-});
-
 if (Yargs.parse()["telegram"]) () => {
   console.log("Start Telegram Bot¹");
   return bot.launch()
 }
+} else console.log("Telegram bot disabled");
