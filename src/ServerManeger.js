@@ -2,8 +2,6 @@ const child_process = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { randomUUID } = require("crypto");
-const BdsBackup = require("./BdsBackup");
-const { CronJob } = require("cron");
 const BdsSettings = require("./lib/BdsSettings");
 
 const PlayersCallbacks = [];
@@ -22,7 +20,7 @@ const PlayerJson = require("./ManegerServer/Players_json");
 function StartServer() {
   const commandExists = require("./lib/commandExist");
   const io = require("./api").SocketIO;
-  const CurrentBdsPlatform = BdsSettings.GetPlatform();
+  const CurrentBdsPlatform = BdsSettings.CurrentPlatorm();
   const SetupCommands = {
     RunInCroot: false,
     command: String,
@@ -41,17 +39,17 @@ function StartServer() {
     // Windows Platform
     else if (process.platform === "win32") {
       SetupCommands.command = "bedrock_server.exe";
-      SetupCommands.cwd = BdsSettings.GetServerPaths("bedrock")
+      SetupCommands.cwd = BdsSettings.GetPaths("bedrock", true)
     }
 
     // Linux Platform
     else if (process.platform === "linux"){
       // Set Executable file
-      try {child_process.execSync("chmod 777 bedrock_server", {cwd: BdsSettings.GetServerPaths("bedrock")});} catch (error) {console.log(error);}
+      try {child_process.execSync("chmod 777 bedrock_server", {cwd: BdsSettings.GetPaths("bedrock", true)});} catch (error) {console.log(error);}
 
       // Set Env and Cwd
-      SetupCommands.cwd = BdsSettings.GetServerPaths("bedrock");
-      SetupCommands.env.LD_LIBRARY_PATH = BdsSettings.GetServerPaths("bedrock");
+      SetupCommands.cwd = BdsSettings.GetPaths("bedrock", true);
+      SetupCommands.env.LD_LIBRARY_PATH = BdsSettings.GetPaths("bedrock", true);
 
       // In case the cpu is different from x64, the command will use qemu static to run the server
       if (process.arch !== "x64") {
@@ -68,7 +66,7 @@ function StartServer() {
 
     // Checking if java is installed on the device
     if (commandExists("java")) {
-      SetupCommands.cwd = BdsSettings.GetServerPaths("java");
+      SetupCommands.cwd = BdsSettings.GetPaths("java", true);
       SetupCommands.command = "java";
       SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "MinecraftServerJava.jar", "nogui");
     } else throw new Error("Install Java");
@@ -79,7 +77,7 @@ function StartServer() {
     const JavaConfig = BdsSettings.GetServerSettings("java")
     // Checking if java is installed on the device
     if (commandExists("java")) {
-      SetupCommands.cwd = BdsSettings.GetServerPaths("spigot");
+      SetupCommands.cwd = BdsSettings.GetPaths("spigot", true);
       SetupCommands.command = "java";
       SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "spigot.jar", "nogui");
     } else throw new Error("Install Java");
@@ -87,7 +85,7 @@ function StartServer() {
 
   // Dragonfly
   else if (CurrentBdsPlatform === "dragonfly") {
-    SetupCommands.cwd = BdsSettings.GetServerPaths("dragonfly");
+    SetupCommands.cwd = BdsSettings.GetPaths("dragonfly", true);
     if (process.platform === "win32") {
       SetupCommands.command = "Dragonfly.exe";
     } else {
@@ -99,10 +97,10 @@ function StartServer() {
   // Minecraft Bedrock (Pocketmine-MP)
   else if (CurrentBdsPlatform === "pocketmine") {
     // Start PocketMine-MP
-    SetupCommands.command = path.join(path.resolve(BdsSettings.GetServerPaths("pocketmine"), "bin", "php7", "bin"), "php");
-    if (process.platform === "win32") SetupCommands.command = path.join(path.resolve(BdsSettings.GetServerPaths("pocketmine"), "bin/php"), "php.exe");
+    SetupCommands.command = path.join(path.resolve(BdsSettings.GetPaths("pocketmine", true), "bin", "php7", "bin"), "php");
+    if (process.platform === "win32") SetupCommands.command = path.join(path.resolve(BdsSettings.GetPaths("pocketmine", true), "bin/php"), "php.exe");
     SetupCommands.args.push("./PocketMine-MP.phar");
-    SetupCommands.cwd = BdsSettings.GetServerPaths("pocketmine");
+    SetupCommands.cwd = BdsSettings.GetPaths("pocketmine", true);
   }
 
   // Show Error platform
@@ -118,13 +116,15 @@ function StartServer() {
   const ServerExec = __ServerExec;
 
   // Log file
-  const LogFile = path.join(BdsSettings.GetPaths("log"), `${BdsSettings.GetPlatform()}_${new Date().toString().replace(/:|\(|\)/g, "_")}_Bds_log.log`);
-  const LatestLog_Path = path.join(BdsSettings.GetPaths("log"), "latest.log");
-  const LogSaveFunction = data => {
-    fs.appendFileSync(LogFile, data);
-    fs.appendFileSync(LatestLog_Path, data);
-    return data;
-  }
+  const LogFolderPath = BdsSettings.GetPaths("Log") || BdsSettings.GetPaths("log");
+  console.log(LogFolderPath);
+  const LogFile = path.join(LogFolderPath, `${BdsSettings.CurrentPlatorm()}_${new Date().toString().replace(/:|\(|\)/g, "_")}_Bds_log.log`),
+    LatestLog_Path = path.join(LogFolderPath, "latest.log"),
+    LogSaveFunction = data => {
+      fs.appendFileSync(LogFile, data);
+      fs.appendFileSync(LatestLog_Path, data);
+      return data;
+    };
   fs.writeFileSync(LatestLog_Path, "");
 
   // Log File
@@ -390,26 +390,11 @@ function StartServer() {
   return returnFuntion;
 }
 
-const CronBackups = BdsSettings.GetCronBackup().map(CronConfig => {
-  if (!CronConfig.enabled) return;
-  const BackupUpload = require("@the-bds-maneger/clouds_uploads");
-  return new CronJob(CronConfig.cron, async () => {
-    console.log("Starting Backup, Cron:", CronConfig.cron);
-    const CurrentBackup = BdsBackup.CreateBackup();
-    const BackupClass = new BackupUpload(CurrentBackup.Buffer, CurrentBackup.file_name);
-    BackupClass.upload.GoogleDriver = CronConfig.Driver;
-    BackupClass.upload.OracleCloudInfrastructure = CronConfig.Oracle;
-    BackupClass.upload.Azure = CronConfig.Azure;
-    return await BackupClass.Start();
-  });
-});
-
 module.exports = {
+  StartServer: StartServer,
   GetSessions: () => ServerSessions,
   GetSessionsArray: () => Object.keys(ServerSessions).map(key => ServerSessions[key]),
   RegisterPlayerGlobalyCallbacks: function RegisterPlayerGlobalyCallbacks(callback){
     PlayersCallbacks.push(callback);
   },
-  StartServer: StartServer,
-  CronBackups: CronBackups
 }

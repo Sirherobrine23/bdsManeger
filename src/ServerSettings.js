@@ -2,19 +2,19 @@ var fs = require("fs");
 const path = require("path");
 const propertiesToJSON = require("properties-to-json");
 const BdsInfo = require("../src/lib/BdsSystemInfo");
-const { GetServerPaths, GetPlatform } = require("../src/lib/BdsSettings");
+const { GetPaths, CurrentPlatorm } = require("../src/lib/BdsSettings");
 const TOML = require("@iarna/toml");
 
 const ConfigFilePath = {
-  bedrock: path.join(GetServerPaths("bedrock"), "server.properties"),
-  java: path.join(GetServerPaths("java"), "server.properties"),
-  pocketmine: path.join(GetServerPaths("pocketmine"), "server.properties"),
-  dragonfly: path.join(GetServerPaths("dragonfly"), "config.toml"),
+  bedrock: path.join(GetPaths("bedrock", true), "server.properties"),
+  java: path.join(GetPaths("java", true), "server.properties"),
+  pocketmine: path.join(GetPaths("pocketmine", true), "server.properties"),
+  dragonfly: path.join(GetPaths("dragonfly", true), "config.toml"),
 }
 
 // Set Config
 function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Maneger", gamemode: "creative", difficulty: "normal", players: 10, commands: true, account: true, whitelist: true, port: 19132, portv6: 19133, seed: ""}){
-  const BdsPlatform = GetPlatform();
+  const BdsPlatform = CurrentPlatorm();
   const JsonConfig = {
     world: "Bds Maneger",
     description: "The Bds Maneger",
@@ -215,7 +215,7 @@ function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Man
 
 // Get Config
 function bds_get_config(){
-  const BdsPlatform = GetPlatform();
+  const BdsPlatform = CurrentPlatorm();
   var config;
   const JsonConfig = {
     world: "",
@@ -312,13 +312,13 @@ function bds_get_config(){
 
 // Get Withelist
 function bds_get_whitelist(){
-  const BdsPlatform = GetPlatform();
+  const BdsPlatform = CurrentPlatorm();
   const ToReturn = [];
   
   // Bedrock
   if (BdsPlatform === "bedrock") {
-    if (fs.existsSync(path.join(GetServerPaths("bedrock"), "whitelist.json"))) {
-      const LocalWhitelist = JSON.parse(fs.readFileSync(path.join(GetServerPaths("bedrock"), "whitelist.json"), "utf8"));
+    if (fs.existsSync(path.join(GetPaths("bedrock", true), "whitelist.json"))) {
+      const LocalWhitelist = JSON.parse(fs.readFileSync(path.join(GetPaths("bedrock", true), "whitelist.json"), "utf8"));
       for (let i = 0; i < LocalWhitelist.length; i++) {
         const Player = LocalWhitelist[i];
         ToReturn.push({

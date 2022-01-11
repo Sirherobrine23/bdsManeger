@@ -16,7 +16,7 @@ let Tokens = [
 ];
 
 const BdsSettings = require("./BdsSettings");
-const TokenFile = path.join(BdsSettings.bds_dir, "BdsToken.json");
+const TokenFile = path.join(BdsSettings.BdsDir, "BdsToken.json");
 const Save = () => fs.writeFileSync(TokenFile, JSON.stringify(Tokens, null, 2));
 if (fs.existsSync(TokenFile)) Tokens = JSON.parse(fs.readFileSync(TokenFile, "utf8"));
 else {

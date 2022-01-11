@@ -7,9 +7,9 @@ const path = require("path");
 
 // Set Telegram Bot
 if (process.env.DOCKER_IMAGE === "true") {
-  if (process.env.TelegramToken) BdsSettings.UpdateTelegramToken(process.env.TelegramToken);
+  if (process.env.TelegramToken) BdsSettings.more.telegramToken(process.env.TelegramToken);
 }
-const TelegramToken = BdsSettings.GetTelegramToken();
+const TelegramToken = BdsSettings.more.telegramToken();
 if (!TelegramToken) throw new Error("Add Telegram Token");
 const bot = new Telegraf(TelegramToken);
 

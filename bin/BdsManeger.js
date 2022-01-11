@@ -1,56 +1,74 @@
 #!/usr/bin/env node
 if (process.platform === "win32") process.title = "Bds Maneger CLI"; else process.title = "Bds-Manger-CLI";
 process.env.IS_BDS_CLI = process.env.IS_BIN_BDS = true;
-// Internal Modules
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
-
-// Import Bds Core
 const BdsCore = require("../src/index");
-
-// External Modules
 const cli_color = require("cli-color");
 const inquirer = require("inquirer");
-const Yargs = require("yargs").usage("$0 [args]")
-.option("info", {
+const Yargs = require("yargs").usage("$0 [args]");
+Yargs.option("info", {
   alias: "i",
   describe: "Show info",
   type: "boolean"
-})
-.option("download", {
+});
+Yargs.option("download", {
   describe: "Download Bds Server",
   type: "string",
   alias: "d",
-})
-.option("kill", {
+});
+Yargs.option("kill", {
   alias: "k",
   describe: "Kill Bds Servers",
   type: "boolean",
   default: true
-})
-.command("backup", "Backup Bds Server", {}, () => {
+});
+Yargs.command("backup", "Backup Bds Server", {}, () => {
   const Bc = BdsCore.BdsBackup.Backup();
   Bc.write_file();
   console.log(cli_color.greenBright(`Backup created save in: ${Bc.file_path}`));
   process.exit(0);
-})
-.option("platform", {
+});
+Yargs.option("platform", {
   alias: "p",
   describe: "Select BdsManeger Platform available to system and architecture",
   type: "string"
-})
-.option("get_domain", {
+});
+Yargs.option("get_domain", {
   describe: "Get Domain to connect to the Server",
   type: "boolean",
   default: false
-})
-.option("no-api", {
+});
+Yargs.option("no-api", {
   describe: "Desactivate BdsManeger API",
   type: "boolean",
   default: false
-})
-.option("debug", {
+});
+// World Options
+Yargs.option("world-name", {
+  describe: "World Name, (Some platforms do not accept spaces)",
+  type: "string"
+});
+Yargs.option("description", {
+  describe: "World Description",
+  type: "string"
+});
+Yargs.option("gamemode", {
+  describe: "Default Server Gamemode",
+  type: "string"
+});
+Yargs.option("difficulty", {
+  describe: "Default Server Difficulty",
+  type: "string"
+});
+Yargs.option("players", {
+  describe: "Max Players to Connect to the Server",
+  type: "number",
+  default: 15
+});
+// Debug
+Yargs.option("debug", {
   describe: "Debug",
   type: "boolean",
   default: false
@@ -58,7 +76,7 @@ const Yargs = require("yargs").usage("$0 [args]")
 
 async function DownloadServer(waitUserSelectVersion = "") {
   const ora = (await import("ora")).default;
-  const Platform = BdsCore.BdsSettings.GetPlatform();
+  const Platform = BdsCore.BdsSettings.CurrentPlatorm();
   const BdsCoreUrlManeger = require("@the-bds-maneger/server_versions");
   const Versions = (await BdsCoreUrlManeger.listAsync());
   if (waitUserSelectVersion === true || !waitUserSelectVersion) waitUserSelectVersion = (await inquirer.prompt({
@@ -148,7 +166,7 @@ async function Runner() {
   if (ProcessArgs.platform || ProcessArgs.p) {
     if (process.env.DOCKER_IMAGE === "true") {
       try {
-        BdsCore.BdsSettings.UpdatePlatform(ProcessArgs.platform || ProcessArgs.p);
+        BdsCore.BdsSettings.ChangePlatform(ProcessArgs.platform || ProcessArgs.p);
       } catch (err) {
         console.log(cli_color.redBright(err));
         process.exit(1);
@@ -156,7 +174,7 @@ async function Runner() {
     } else {
       const UpdatePla = ora("Updating Bds Platform").start();
       try {
-        BdsCore.BdsSettings.UpdatePlatform(ProcessArgs.platform || ProcessArgs.p);
+        BdsCore.BdsSettings.ChangePlatform(ProcessArgs.platform || ProcessArgs.p);
         UpdatePla.succeed(`Now the platform is the ${ProcessArgs.platform || ProcessArgs.p}`);
       } catch (error) {
         UpdatePla.fail(`Unable to update platform to ${ProcessArgs.platform || ProcessArgs.p}`);

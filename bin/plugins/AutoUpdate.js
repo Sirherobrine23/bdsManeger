@@ -12,11 +12,12 @@ Yargs.option("auto_update", {
   type: "boolean",
   default: false
 });
+
 if (Yargs.parse()["auto_update"]) (async () => {
   module.exports.externalStart = true;
   console.log("Auto Update Server Software Enabled");
-  const Platform = BdsCore.BdsSettings.GetPlatform();
-  let TmpVersion = BdsCore.BdsSettings.GetServerVersion()[Platform];
+  const Platform = BdsCore.BdsSettings.CurrentPlatorm();
+  let TmpVersion = BdsCore.BdsSettings.GetBdsConfig().server.versions[Platform];
   let IsFistStart = false;
   StartServer(false);
   // eslint-disable-next-line no-constant-condition
