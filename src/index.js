@@ -7,48 +7,68 @@ const BdsManegerCoreJSONs = {
 };
 
 // Bds Maneger Core Version
-module.exports.version = BdsManegerCoreJSONs.Package.version;
-module.exports.ExtraJSON = BdsManegerCoreJSONs;
+const version = BdsManegerCoreJSONs.Package.version;
+const ExtraJSON = BdsManegerCoreJSONs;
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Settings");
-module.exports.BdsSettings = require("./lib/BdsSettings");
+const BdsSettings = require("./lib/BdsSettings");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Settings");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Token");
-module.exports.BdsToken = require("./lib/Token");
+const BdsToken = require("./lib/Token");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Token");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: System Info");
-module.exports.BdsSystemInfo = require("./lib/BdsSystemInfo");
+const BdsSystemInfo = require("./lib/BdsSystemInfo");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: System Info");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Network");
-module.exports.BdsNetwork = require("./BdsNetwork");
+const BdsNetwork = require("./BdsNetwork");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Network");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Backups");
-module.exports.BdsBackup = require("./BdsBackup");
+const BdsBackup = require("./BdsBackup");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Backups");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Server Settings");
-module.exports.BdsServerSettings = require("./ServerSettings");
+const BdsServerSettings = require("./ServerSettings");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Server Settings");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Download Server");
-module.exports.BdsDownload = require("./BdsServersDownload");
+const BdsDownload = require("./BdsServersDownload");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Download Server");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Check And Kill");
-module.exports.BdsCkeckKill = require("./CheckKill");
+const BdsCkeckKill = require("./CheckKill");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Check And Kill");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: API");
-module.exports.BdsManegerAPI = require("./api");
+const BdsManegerAPI = require("./api");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: API");
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Server Maneger");
-module.exports.BdsManegerServer = require("./ServerManeger");
+const BdsManegerServer = require("./ServerManeger");
 if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Server Maneger");
-if (process.env.ShowLoadTime) console.log("Bds Maneger Core: Complete");
 
-module.exports.TokenManeger = require("./lib/Token");
+if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Plugin Maneger");
+const BdsServerPlugins = require("./PluginManeger");
+if (process.env.ShowLoadTime) console.timeEnd("Bds Maneger Core: Plugin Maneger");
+
+const TokenManeger = require("./lib/Token");
+
+module.exports = {
+  version: version,
+  ExtraJSON: ExtraJSON,
+  BdsSettings: BdsSettings,
+  BdsToken: BdsToken,
+  BdsSystemInfo: BdsSystemInfo,
+  BdsNetwork: BdsNetwork,
+  BdsBackup: BdsBackup,
+  BdsServerSettings: BdsServerSettings,
+  BdsDownload: BdsDownload,
+  BdsCkeckKill: BdsCkeckKill,
+  BdsManegerAPI: BdsManegerAPI,
+  BdsManegerServer: BdsManegerServer,
+  BdsServerPlugins: BdsServerPlugins,
+  TokenManeger: TokenManeger
+};

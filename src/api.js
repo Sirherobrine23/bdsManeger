@@ -1,17 +1,12 @@
 // Node Modules
 const os = require("os");
 const fs = require("fs");
-// Bds Maneger Core
-const BdsManegerCore = require("../src/index");
 const BdsSystemInfo = require("../src/lib/BdsSystemInfo");
 const BdsSettings = require("../src/lib/BdsSettings");
 const TokenManeger = require("./lib/Token");
-
-// Init Express
+const BdsManegerCore = require("../src/index");
 const express = require("express");
 const app = express();
-
-// Express Middleware
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const pretty = require("express-prettify");
@@ -116,14 +111,14 @@ function CheckToken (req, res, next) {
 // ? /bds/
 app.get(["/bds/info", "/bds", "/"], ({res}) => {
   try {
-    const BdsConfig = BdsManegerCore.BdsSettings.GetJsonConfig();
+    const BdsConfig = BdsManegerCore.BdsSettings.GetBdsConfig();
     const Info = {
       core: {
         version: BdsManegerCore.version,
         Total_dependencies: Object.keys(BdsManegerCore.ExtraJSON.Package.dependencies).length + Object.keys(BdsManegerCore.ExtraJSON.Package.devDependencies).length,
       },
       server: {
-        version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
+        version: BdsConfig.server.versions[BdsSettings.CurrentPlatorm()],
         versions: BdsConfig.server.versions
       },
       host: {
@@ -169,8 +164,8 @@ app.get("/bds/info/server", async ({res}) => {
   const AsyncHostInfo = await BdsManegerCore.BdsSystemInfo.CheckSystemAsync();
 
   const Info = {
-    version: BdsConfig.server.versions[BdsSettings.GetPlatform()],
-    Platform: BdsSettings.GetPlatform(),
+    version: BdsConfig.server.versions[BdsSettings.CurrentPlatorm()],
+    Platform: BdsSettings.CurrentPlatorm(),
     Platform_available: Object.keys(AsyncHostInfo.valid_platform).filter(a => AsyncHostInfo.valid_platform[a]),
     players: Object.keys(ServerSessions).map(session => ServerSessions[session]).map(Session => {
       const Users = Session.Players_in_Session();
@@ -330,109 +325,8 @@ app.get("/bds/Connect", async (req, res) => {
   });
 });
 
-// ? /player
-app.get("/players", CheckToken, (req, res) => {
-  let PlayerList = JSON.parse(fs.readFileSync(BdsManegerCore.BdsSettings.GetPaths("player"), "utf8"))
-  const { Platform = null, Player = null, Action = null } = req.query;
-
-  if (Platform) PlayerList = PlayerList.filter(PLS => PLS.Platform === Platform);
-  if (Player) PlayerList = PlayerList.filter(PLS => PLS.Player === Player);
-  if (Action) PlayerList = PlayerList.filter(PLS => PLS.Action === Action);
-
-  return res.json(PlayerList);
-});
-
-// Players Actions in Backside Manager
-// kick player
-app.get("/players/kick", CheckToken, (req, res) => {
-  const { Player = "Sirherobrine", Text = "You have been removed from the Server" } = req.query;
-
-  // Kick player
-  const Sessions = require("./ServerManeger").GetSessionsArray();
-  if (Sessions.length > 0) {
-    Sessions.forEach(RunnerServer => RunnerServer.kick(Player, Text));
-    return res.json({ success: true });
-  } else {
-    res.status(400).json({
-      error: "Server nots Run"
-    });
-  }
-});
-
-// Ban player
-app.get("/players/ban", CheckToken, (req, res) => {
-  const { Player = "Sirherobrine" } = req.query;
-
-  // Ban player
-  const Sessions = require("./ServerManeger").GetSessionsArray();
-  if (Sessions.length > 0) {
-    Sessions.forEach(RunnerServer => RunnerServer.ban(Player));
-    return res.sendStatus(200);
-  }
-  res.status(400).json({
-    error: "Server nots Run"
-  });
-});
-
-// Op player
-app.get("/players/op", CheckToken, CheckToken, (req, res) => {
-  const { Player = "Sirherobrine" } = req.query;
-
-  // Op player
-  const Sessions = require("./ServerManeger").GetSessionsArray();
-  if (Sessions.length > 0) {
-    Sessions.forEach(RunnerServer => RunnerServer.op(Player));
-    return res.sendStatus(200);
-  }
-  res.status(400).json({
-    error: "Server nots Run"
-  });
-});
-
-// Deop player
-app.get("/players/deop", (req, res) => {
-  const { Player = "Sirherobrine" } = req.query;
-
-  // Deop player
-  const Sessions = require("./ServerManeger").GetSessionsArray();
-  if (Sessions.length > 0) {
-    Sessions.forEach(RunnerServer => RunnerServer.deop(Player));
-    return res.sendStatus(200);
-  }
-  res.status(400).json({
-    error: "Server nots Run"
-  });
-});
-
-// Say to Server
-app.get("/players/say", CheckToken, (req, res) => {
-  const { Text = "Hello Server" } = req.query;
-
-  // Say to Server
-  const Sessions = require("./ServerManeger").GetSessionsArray();
-  if (Sessions.length > 0) {
-    Sessions.forEach(RunnerServer => RunnerServer.say(Text));
-    return res.sendStatus(200);
-  }
-  res.status(400).json({
-    error: "Server nots Run"
-  });
-});
-
-// Tp player
-app.get("/players/tp", (req, res) => {
-  const { Player = "Sirherobrine", X = 0, Y = 0, Z = 0 } = req.query;
-
-  // Tp player
-  const Sessions = require("./ServerManeger").GetSessionsArray();
-  if (Sessions.length > 0) {
-    Sessions.forEach(RunnerServer => RunnerServer.tp(Player, X, Y, Z));
-    return res.sendStatus(200);
-  }
-  res.status(400).json({
-    error: "Server nots Run"
-  });
-});
+const PlayersRoute = require("./api/Players");
+app.use(["/bds/players", "/players"], CheckToken, PlayersRoute);
 
 // Export API Routes
 /**
@@ -446,7 +340,7 @@ function API(port_api = 1932, callback = port => {console.log("Bds Maneger Core 
   app.all("*", (req, res) => {
     return res.status(404).json({
       error: "Not Found",
-      message: "The requested URL " + req.originalUrl || req.path + " was not found on this server.",
+      message: `The requested URL ${req.originalUrl} was not found on this server.`,
       AvaibleRoutes: MapRoutes
     });
   });

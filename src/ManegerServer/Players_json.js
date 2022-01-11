@@ -93,8 +93,7 @@ async function pocketmineJson(Data = "") {
 //   return JavaStyle;
 // }
 
-function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "connect", Platform: "", xuid: "", Date: ""},{Player: "", Action: "disconnect", Platform: "", xuid: "", Date: ""}]) => console.log(d)){
-  const Current_platorm = BdsSettings.CurrentPlatorm();
+function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "connect", Platform: "", xuid: "", Date: ""},{Player: "", Action: "disconnect", Platform: "", xuid: "", Date: ""}]) => console.log(d), Current_platorm = BdsSettings.CurrentPlatorm()){
   // Bedrock
   if (Current_platorm === "bedrock") {
     BedrockJson(data).then(Data => {

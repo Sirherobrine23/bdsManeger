@@ -16,7 +16,7 @@
     "test": "mocha --exit .test/*.js",
     "esm_module": "cjs2esm",
     "eslint": "eslint --debug --fix .",
-    "Docker": "docker-compose build && docker-compose up",
+    "Docker": "docker-compose up --build",
     "dev": "nodemon"
   },
   "nodemonConfig": {
@@ -30,7 +30,7 @@
       "package.json",
       "package-lock.json"
     ],
-    "exec": "node ./bin/BdsManeger.js"
+    "exec": "node --trace-warnings ./bin/BdsManeger.js"
   },
   "bin": {
     "bds_maneger": "bin/BdsManeger.js"

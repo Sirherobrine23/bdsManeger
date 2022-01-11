@@ -119,15 +119,7 @@ function GetPaths(PlatformOrPath = "", IsServers = false){
 }
 
 // Create Player JSON
-if (!(fs.existsSync(BdsConfig.paths.Player))) {
-  const PlayerBase = {}
-  for (let ServerPlat of Object.keys(BdsConfig.server.versions)) PlayerBase[ServerPlat] = [];
-  fs.writeFileSync(BdsConfig.paths.Player, JSON.stringify(PlayerBase, "", 2));
-} else {
-  const PlayerBase = JSON.parse(fs.readFileSync(BdsConfig.paths.Player, "utf8"));
-  for (let ServerPlat of Object.keys(BdsConfig.server.versions)) if (!(PlayerBase[ServerPlat])) PlayerBase[ServerPlat] = [];
-  fs.writeFileSync(BdsConfig.paths.Player, JSON.stringify(PlayerBase, "", 2));
-}
+if (!(fs.existsSync(BdsConfig.paths.Player))) fs.writeFileSync(BdsConfig.paths.Player, JSON.stringify([], null, 2));
 
 /**
  * Update Server Version
@@ -162,11 +154,6 @@ function ChangePlatform(platform = ""){
 }
 
 /**
- * Return Latest Bds Maneger Config
- */
-function GetBdsConfig() {return BdsConfig;}
-
-/**
  * Update and Get Telegram Bot Token
  */
 function telegramToken(Token = "") {
@@ -177,18 +164,19 @@ function telegramToken(Token = "") {
   return BdsConfig.telegram.token;
 }
 
-/**
- * Get Current Bds Manager Platform
- */
-function CurrentPlatorm() {return BdsConfig.server.platform;}
-
 module.exports = {
   BdsDir: bds_dir,
-  GetBdsConfig,
+  /**
+   * Return Latest Bds Maneger Config
+   */
+  GetBdsConfig: () => BdsConfig,
+  /**
+   * Get Current Bds Manager Platform
+   */
+  CurrentPlatorm: () => BdsConfig.server.platform,
   GetPaths,
   UpdateServerVersion,
   ChangePlatform,
-  CurrentPlatorm,
   more: {
     telegramToken
   }

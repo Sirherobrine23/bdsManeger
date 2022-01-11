@@ -54,7 +54,7 @@ function Parse(RepositoryPath = "", BdsPlatform = "pocketmine", Config = {}) {
           AddObj = true;
         } else if (from === "file") {
           const { file } = Version;
-          if (typeof RepositoryPath === "undefined") throw new Error("Config Error: RepositoryPath not found");
+          if (RepositoryPath === undefined) throw new Error("Config Error: RepositoryPath not found");
           if (typeof file === "string") {
             ObjVersion.url = `${RawGithubUrl}/${RepositoryPath}/${file.replace("./", "")}`;
             AddObj = true;

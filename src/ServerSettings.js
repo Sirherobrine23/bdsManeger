@@ -249,7 +249,8 @@ async function bds_get_config(){
       JsonConfig.seed = config["level-seed"];
       JsonConfig.commands = (config["allow-cheats"] === "true");
       // JsonConfig.worldtype = "default";
-      JsonConfig.nbt = (await nbt.parse(fs.readFileSync(path.join(GetPaths("bedrock", true), "worlds", JsonConfig.world, "level.dat")))).parsed.value;
+      const BedrockLevelData = path.join(GetPaths("bedrock", true), "worlds", JsonConfig.world, "level.dat");
+      if (fs.existsSync(BedrockLevelData)) JsonConfig.nbt = (await nbt.parse(fs.readFileSync(BedrockLevelData))).parsed.value;
     }
   }
   else if (BdsPlatform === "java") {
@@ -281,8 +282,18 @@ async function bds_get_config(){
       // Players
       JsonConfig.world = config["level-name"];
       JsonConfig.description = config["motd"];
-      JsonConfig.gamemode = (()=>{let test = parseInt(config["gamemode"]);if (test === 0) return "survival";else if (test === 1) return "creative";else return undefined;})();
-      JsonConfig.difficulty = (()=>{let test = parseInt(config["difficulty"]);if (test === 0) return "easy";else if (test === 1) return "peaceful";else if (test === 2) return "normal";else if (test === 3) return "hard";else return undefined;})();
+      // Gamemode
+      if (parseInt(config["gamemode"]) === 0) JsonConfig.gamemode = "survival";
+      else if (parseInt(config["gamemode"]) === 1) JsonConfig.gamemode = "creative";
+      else JsonConfig.gamemode = "";
+      
+      // Difficulty
+      if (parseInt(config["difficulty"]) === 0) JsonConfig.difficulty = "easy";
+      else if (parseInt(config["difficulty"]) === 1) JsonConfig.difficulty = "peaceful";
+      else if (parseInt(config["difficulty"]) === 2) JsonConfig.difficulty = "normal";
+      else if (parseInt(config["difficulty"]) === 3) JsonConfig.difficulty = "hard";
+      else JsonConfig.difficulty = "";
+
       JsonConfig.players = parseInt(config["max-players"]);
       JsonConfig.account = (config["xbox-auth"] === "on");
       JsonConfig.whitelist = (config["white-list"] === "true");
@@ -293,7 +304,8 @@ async function bds_get_config(){
       JsonConfig.seed = config["level-seed"];
       JsonConfig.commands = false;
       // JsonConfig.worldtype = config["level-type"];
-      JsonConfig.nbt = (await nbt.parse(fs.readFileSync(path.join(GetPaths("pocketmine", true), "worlds", JsonConfig.world, "level.dat")))).parsed.value;
+      const PocketmineLevelData = path.join(GetPaths("pocketmine", true), "worlds", JsonConfig.world, "level.dat");
+      if (fs.existsSync(PocketmineLevelData)) JsonConfig.nbt = (await nbt.parse(fs.readFileSync(PocketmineLevelData))).parsed.value;
     }
   } else if (BdsPlatform === "dragonfly") {
     if (fs.existsSync(ConfigFilePath[BdsPlatform])) {

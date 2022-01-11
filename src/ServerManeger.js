@@ -5,30 +5,21 @@ const { randomUUID } = require("crypto");
 const BdsSettings = require("./lib/BdsSettings");
 
 const PlayersCallbacks = [];
-let ServerSessions = {
-  "": {
-    stop: () => "stop" | "process",
-    op: (player = "") => String(player),
-    deop: (player = "") => String(player),
-    ban: (player = "") => String(player),
-    kick: (player = "", text = "") => String(player) + " " + String(text),
-    SendCommand: (Command = "") => {String(Command)}
-  }
-}; ServerSessions = {};
-
 const PlayerJson = require("./ManegerServer/Players_json");
+const BackendServerManeger = {
+  ServerSessions: []
+};
+
 function StartServer() {
-  const commandExists = require("./lib/commandExist");
+  const commandExists = require("./lib/commandExist").commdExistSync;
   const io = require("./api").SocketIO;
   const CurrentBdsPlatform = BdsSettings.CurrentPlatorm();
   const SetupCommands = {
     RunInCroot: false,
-    command: String,
+    command: "",
     args: [],
-    cwd: String,
-    env: {
-      ...process.env
-    },
+    cwd: "",
+    env: {...process.env}
   }
 
   // Minecraft Bedrock Oficial
@@ -44,12 +35,12 @@ function StartServer() {
 
     // Linux Platform
     else if (process.platform === "linux"){
-      // Set Executable file
-      try {child_process.execSync("chmod 777 bedrock_server", {cwd: BdsSettings.GetPaths("bedrock", true)});} catch (error) {console.log(error);}
-
       // Set Env and Cwd
       SetupCommands.cwd = BdsSettings.GetPaths("bedrock", true);
       SetupCommands.env.LD_LIBRARY_PATH = BdsSettings.GetPaths("bedrock", true);
+      
+      // Set Executable file
+      child_process.execSync("chmod 777 bedrock_server", {cwd: SetupCommands.cwd});
 
       // In case the cpu is different from x64, the command will use qemu static to run the server
       if (process.arch !== "x64") {
@@ -97,11 +88,11 @@ function StartServer() {
   // Minecraft Bedrock (Pocketmine-MP)
   else if (CurrentBdsPlatform === "pocketmine") {
     // Start PocketMine-MP
+    SetupCommands.cwd = BdsSettings.GetPaths("pocketmine", true);
     SetupCommands.command = path.join(path.resolve(BdsSettings.GetPaths("pocketmine", true), "bin", "php7", "bin"), "php");
     if (process.platform === "win32") SetupCommands.command = path.join(path.resolve(BdsSettings.GetPaths("pocketmine", true), "bin/php"), "php.exe");
     if (/linux|android/.test(process.platform)) child_process.execFileSync("chmod", ["a+x", SetupCommands.command]);
     SetupCommands.args.push("./PocketMine-MP.phar");
-    SetupCommands.cwd = BdsSettings.GetPaths("pocketmine", true);
   }
 
   // Show Error platform
@@ -131,10 +122,6 @@ function StartServer() {
   // Log File
   ServerExec.stdout.on("data", LogSaveFunction);
   ServerExec.stderr.on("data", LogSaveFunction);
-
-  // Global and Run
-  global.bds_log_string = ""
-  ServerExec.stdout.on("data", data => {if (global.bds_log_string) global.bds_log_string = data; else global.bds_log_string += data});
 
   /**
    * Emit command in to the server
@@ -319,11 +306,11 @@ function StartServer() {
   // Uptime Server
   const UptimeCount = setInterval(() => returnFuntion.Uptime++, 1000);
   ServerExec.on("exit", code => {
-    delete ServerSessions[returnFuntion.uuid]
+    BackendServerManeger.ServerSessions = BackendServerManeger.ServerSessions.filter(Session => Session.uuid !== returnFuntion.uuid);
     io.emit("ServerExit", {
       UUID: returnFuntion.uuid,
       exitCode: code
-    })
+    });
     clearInterval(UptimeCount);
   });
 
@@ -348,6 +335,9 @@ function StartServer() {
     });
   });
   
+  /**
+   * Player Session
+   */
   const PlayerSession = {};
   returnFuntion.Players_in_Session = () => PlayerSession;
   ServerOn("log", data => {
@@ -383,19 +373,15 @@ function StartServer() {
           });
         }
       });
-    });
+    }, CurrentBdsPlatform);
   });
-
   // Return
-  ServerSessions[returnFuntion.uuid] = returnFuntion;
+  BackendServerManeger.ServerSessions.push(returnFuntion);
   return returnFuntion;
 }
 
 module.exports = {
   StartServer: StartServer,
-  GetSessions: () => ServerSessions,
-  GetSessionsArray: () => Object.keys(ServerSessions).map(key => ServerSessions[key]),
-  RegisterPlayerGlobalyCallbacks: function RegisterPlayerGlobalyCallbacks(callback){
-    PlayersCallbacks.push(callback);
-  },
+  GetSessions: () => BackendServerManeger.ServerSessions,
+  RegisterPlayerGlobalyCallbacks: (callback = () => {}) => PlayersCallbacks.push(callback)
 }
