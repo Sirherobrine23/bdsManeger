@@ -99,6 +99,7 @@ function StartServer() {
     // Start PocketMine-MP
     SetupCommands.command = path.join(path.resolve(BdsSettings.GetPaths("pocketmine", true), "bin", "php7", "bin"), "php");
     if (process.platform === "win32") SetupCommands.command = path.join(path.resolve(BdsSettings.GetPaths("pocketmine", true), "bin/php"), "php.exe");
+    if (/linux|android/.test(process.platform)) child_process.execFileSync("chmod", ["a+x", SetupCommands.command]);
     SetupCommands.args.push("./PocketMine-MP.phar");
     SetupCommands.cwd = BdsSettings.GetPaths("pocketmine", true);
   }

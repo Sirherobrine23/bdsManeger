@@ -73,12 +73,22 @@ const ConfigPath = path.join(bds_dir, "BdsConfig.yaml");
 const SaveConfig = () => fs.writeFileSync(ConfigPath, yaml.dump(BdsConfig));
 
 if (fs.existsSync(ConfigPath)) {
-  BdsConfig.ban = [];
+  const UserConfig = yaml.load(fs.readFileSync(ConfigPath, "utf8"));
+  if (UserConfig.version === undefined) {
+    console.log("Updating settings to new version config file.");
+    fs.copyFileSync(ConfigPath, path.join(os.homedir(), "BdsConfigBackup.yml"));
+    console.log("Deleteing cloud Config.");
+    delete UserConfig.cloud;
+    console.log("Deleteing bds Object");
+    delete UserConfig.bds;
+    console.log("Moving User Bans to Server Object");
+    UserConfig.server.ban = UserConfig.ban;
+    delete UserConfig.ban;
+  }
+  BdsConfig.server.ban = [];
   BdsConfig.server.BackupCron = [];
-  BdsConfig.telegram.admins = [];
-  BdsConfig.telegram.ban = [];
-  try {BdsConfig = deepmerge(BdsConfig, yaml.load(fs.readFileSync(ConfigPath, "utf8")));} catch (e) {console.log(e);}
-} else fs.writeFileSync(ConfigPath, yaml.dump(BdsConfig))
+  BdsConfig = deepmerge(BdsConfig, UserConfig);
+} else fs.writeFileSync(ConfigPath, yaml.dump(BdsConfig));
 
 // Paths
 if (!(fs.existsSync(BdsConfig.paths["Backup"]))) fs.promises.mkdir(BdsConfig.paths["Backup"], {recursive: true}).catch(e => console.log(e));

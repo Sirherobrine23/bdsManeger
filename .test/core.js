@@ -14,11 +14,11 @@ describe("Small functions", () => {
     await BdsCore.BdsSystemInfo.SystemInfo();
   });
   it("Update Platform to Java", function(done) {
-    BdsCore.BdsSettings.UpdatePlatform("java");
+    BdsCore.BdsSettings.ChangePlatform("java");
     done();
   });
   it("Update Platform to dragonfly", function(done) {
-    BdsCore.BdsSettings.UpdatePlatform("dragonfly");
+    BdsCore.BdsSettings.ChangePlatform("dragonfly");
     done();
   });
   it("Register And Delete Token", function (done) {

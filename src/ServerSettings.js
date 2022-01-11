@@ -4,6 +4,7 @@ const propertiesToJSON = require("properties-to-json");
 const BdsInfo = require("../src/lib/BdsSystemInfo");
 const { GetPaths, CurrentPlatorm } = require("../src/lib/BdsSettings");
 const TOML = require("@iarna/toml");
+const nbt = require("prismarine-nbt");
 
 const ConfigFilePath = {
   bedrock: path.join(GetPaths("bedrock", true), "server.properties"),
@@ -13,7 +14,7 @@ const ConfigFilePath = {
 }
 
 // Set Config
-function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Maneger", gamemode: "creative", difficulty: "normal", players: 10, commands: true, account: true, whitelist: true, port: 19132, portv6: 19133, seed: ""}){
+async function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Maneger", gamemode: "creative", difficulty: "normal", players: 10, commands: true, account: true, whitelist: true, port: 19132, portv6: 19133, seed: ""}){
   const BdsPlatform = CurrentPlatorm();
   const JsonConfig = {
     world: "Bds Maneger",
@@ -214,7 +215,7 @@ function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Man
 }
 
 // Get Config
-function bds_get_config(){
+async function bds_get_config(){
   const BdsPlatform = CurrentPlatorm();
   var config;
   const JsonConfig = {
@@ -226,6 +227,7 @@ function bds_get_config(){
     whitelist: false,
     portv4: 0,
     portv6: 0,
+    nbt: {}
   };
   
   if (BdsPlatform === "bedrock") {
@@ -247,6 +249,7 @@ function bds_get_config(){
       JsonConfig.seed = config["level-seed"];
       JsonConfig.commands = (config["allow-cheats"] === "true");
       // JsonConfig.worldtype = "default";
+      JsonConfig.nbt = (await nbt.parse(fs.readFileSync(path.join(GetPaths("bedrock", true), "worlds", JsonConfig.world, "level.dat")))).parsed.value;
     }
   }
   else if (BdsPlatform === "java") {
@@ -290,6 +293,7 @@ function bds_get_config(){
       JsonConfig.seed = config["level-seed"];
       JsonConfig.commands = false;
       // JsonConfig.worldtype = config["level-type"];
+      JsonConfig.nbt = (await nbt.parse(fs.readFileSync(path.join(GetPaths("pocketmine", true), "worlds", JsonConfig.world, "level.dat")))).parsed.value;
     }
   } else if (BdsPlatform === "dragonfly") {
     if (fs.existsSync(ConfigFilePath[BdsPlatform])) {
@@ -346,6 +350,7 @@ function bds_get_whitelist(){
 }
 
 // Export modules
-module.exports.config = bds_config
-module.exports.get_config = bds_get_config
-module.exports.get_whitelist = bds_get_whitelist
+module.exports.set_config = bds_config;
+module.exports.config = bds_config;
+module.exports.get_config = bds_get_config;
+module.exports.get_whitelist = bds_get_whitelist;
