@@ -67,7 +67,7 @@
   "dependencies": {
     "@iarna/toml": "^2.2.5",
     "@the-bds-maneger/clouds_uploads": "^0.1.0",
-    "@the-bds-maneger/server_versions": "^16.167.301",
+    "@the-bds-maneger/server_versions": "^1.0.3",
     "adm-zip": "^0.5.1",
     "body-parser": "^1.19.0",
     "cli-color": "^2.0.0",
