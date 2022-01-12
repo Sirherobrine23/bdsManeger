@@ -19,6 +19,9 @@ app.get("/", async (req, res) => {
 
 app.post("/", async (req, res) => {
   const { Platform = BdsSettings.CurrentPlatorm(), Plugin = "", Version = "latest" } = req.body;
+  if (/\.\//gi.test(Plugin)) return res.status(400).json({
+    error: "Invalid Plugin Name"
+  });
   try {
     const PluginList = await (BdsServerPlugins.PluginManeger(Platform)).listVersions();
     const FiltedVersionsAndPlugins = (PluginList.filter(PluginName => PluginName.name === Plugin))[0].versions.filter((Plugin, PluginIndex) => {
