@@ -1,76 +1,64 @@
 const path = require("path");
-const { join, resolve } = path;
 const fs = require("fs");
 const AdmZip = require("adm-zip");
-const { GetServerPaths, GetPaths, bds_dir } = require("../src/lib/BdsSettings");
+const BdsSettings = require("../src/lib/BdsSettings");
+
+function CreateZipBuffer() {
+  const Zip = new AdmZip();
+  const Functions = {};
+
+  /**
+   * Add file or folder to zip file
+   */
+  Functions.Add = (Path = "", Name = path.basename(Path)) => {
+    const _S = fs.statSync(path.resolve(Path));
+    if (_S.isFile()) Zip.addLocalFile(Path, Name);
+    else if (_S.isSymbolicLink()) Zip.addLocalFile(fs.readlinkSync(Path), Name);
+    else Zip.addLocalFolder(Path, Name);
+  }
+
+  /**
+   * Get Buffer to File Zip, not parse arguments to Get Buffer.
+   * 
+   * Parse arguments to Write file in path argument.
+   * 
+   */
+  Functions.WriteOrBuffer = (Path = "") => {
+    if (!Path) return Zip.toBuffer();
+    else fs.writeFileSync(Path, Zip.toBuffer(), "binary");
+  }
+
+  Functions.AdmZip = Zip;
+  return Functions;
+}
 
 function CreateBackup() {
-  const zip = new AdmZip();
-  // Names And Path"s
-  const Paths = {
-    bedrock: GetServerPaths("bedrock"),
-    java: GetServerPaths("java"),
-    pocketmine: GetServerPaths("pocketmine"),
-    spigot: GetServerPaths("spigot"),
-    dragonfly: GetServerPaths("dragonfly"),
-  }
-  const CurrentDate = new Date();
-  const ZipName = `Bds_Maneger_Core_Backups_${CurrentDate.getDate()}-${CurrentDate.getMonth()}-${CurrentDate.getFullYear()}.zip`
-  const PathBackup = join(GetPaths("backups"), ZipName);
+  const ZipFile = CreateZipBuffer();
+  ZipFile.AdmZip.addZipComment("Settings and World Backups, by The Bds Maneger Project©");
 
   // Bedrock
-  if (fs.readdirSync(Paths.bedrock).filter(a => /worlds/.test(a)).length >= 1) {
-    zip.addLocalFolder(join(Paths.bedrock, "worlds"), join("Servers", "Bedrock", "worlds"));
-    for (let index of ["server.properties", "permissions.json", "whitelist.json"]) {if (fs.existsSync(join(Paths.bedrock, index))) zip.addLocalFile(join(Paths.bedrock, index), join("Servers", "Bedrock"));}
-  }
+  const BedrockPath = BdsSettings.GetPaths("bedrock", true);
+  if (fs.existsSync(path.join(BedrockPath, "worlds"))) ZipFile.Add(path.join(BedrockPath, "worlds"), "Server/bedrock/worlds");
+  if (fs.existsSync(path.join(BedrockPath, "server.properties"))) ZipFile.Add(path.join(BedrockPath, "server.properties"), "Server/bedrock");
+  if (fs.existsSync(path.join(BedrockPath, "permissions.json"))) ZipFile.Add(path.join(BedrockPath, "permissions.json"), "Server/bedrock");
+  if (fs.existsSync(path.join(BedrockPath, "whitelist.json"))) ZipFile.Add(path.join(BedrockPath, "whitelist.json"), "Server/bedrock");
 
   // Java
-  if (fs.existsSync(join(Paths.java, "MinecraftServerJava.jar"))) {
-    for (let index of fs.readdirSync(Paths.java).filter(value => !/banned-ips.json|banned-players.json|eula.txt|logs|ops.json|server.jar|MinecraftServerJava.jar|server.properties|usercache.json|whitelist.json/.test(value))) zip.addLocalFolder(join(Paths.java, index), join("Servers", "Java", index));
-    for (let index of ["banned-ips.json", "banned-players.json", "ops.json", "server.properties", "whitelist.json"]) {if (fs.existsSync(join(Paths.java, index))) zip.addLocalFile(join(Paths.java, index), join("Servers", "Java"))}
-  }
-
-  // PocketMine
-  if (fs.existsSync(join(Paths.pocketmine, "PocketMine-MP.phar"))) {
-    if (fs.existsSync(join(Paths.pocketmine, "worlds"))) zip.addLocalFolder(join(Paths.pocketmine, "worlds"), join("Servers", "pocketmine", "worlds"));
-    for (let index of ["pocketmine.yml", "server.properties", "white-list.txt", "ops.txt", "banned-players.txt", "banned-ips.txt"]) if (fs.existsSync(join(Paths.pocketmine, index))) zip.addLocalFile(join(Paths.pocketmine, index), "pocketmine");
-  }
-
-  // Spigot
-  if (fs.existsSync(join(Paths.spigot, "spigot.jar"))) {
-    if (fs.existsSync(join(Paths.spigot, "worlds"))) zip.addLocalFolder(join(Paths.spigot, "worlds"), join("Servers", "spigot", "worlds"));
-    for (let index of ["spigot.yml", "server.properties", "white-list.txt", "ops.txt", "banned-players.txt", "banned-ips.txt"]) if (fs.existsSync(join(Paths.spigot, index))) zip.addLocalFile(join(Paths.spigot, index), "spigot");
-  }
-
-  // Dragonfly
-  if (fs.existsSync(join(Paths.dragonfly, "config.toml"))) {
-    for (let index of fs.readdirSync(Paths.dragonfly).map(value => join(Paths.dragonfly, value))) {
-      if (fs.lstatSync(index).isDirectory()) zip.addLocalFolder(index, join("Servers", "dragonfly"));
-      else if (fs.lstatSync(index).isFile()) zip.addLocalFile(index, join("Servers", "dragonfly"));
+  const JavaPath = BdsSettings.GetPaths("java", true);
+  for (const JavaFiles of fs.readdirSync(JavaPath)) {
+    if (!/eula.txt|logs|.*.jar|usercache.json/.test(JavaFiles)) {
+      ZipFile.Add(path.join(JavaPath, JavaFiles), "Server/java/");
     }
   }
 
-  // The Bds Maneger Core Backup
-  for (let index of ["BdsConfig.yaml", "BdsToken.json"]) if (fs.existsSync(join(bds_dir, index))) zip.addLocalFile(join(bds_dir, index));
-  
-  for (let index of Object.getOwnPropertyNames(GetPaths("all")).filter(path => !/servers|backups/.test(path)).map(name => GetPaths(name))) {
-    if (fs.existsSync(index)) {
-      const _S = fs.statSync(resolve(index));
-      if (_S.isFile() || _S.isSymbolicLink()) zip.addLocalFile(index, "/BdsManegerCore"); else zip.addLocalFolder(index, join("/BdsManegerCore", index.replace(bds_dir, "")));
-    }
-  }
-
-  zip.addZipComment("Settings and World Backups, by The Bds Maneger Project©");
-
-  // Zip Buffer
-  const ZipBuffer = zip.toBuffer();
+  const CurrentDate = new Date();
+  const ZipName = `Bds_Maneger_Core_Backups_${CurrentDate.getDate()}-${CurrentDate.getMonth()}-${CurrentDate.getFullYear()}.zip`
+  const PathBackup = path.join(BdsSettings.GetPaths("Backup"), ZipName);
   return {
     file_path: PathBackup,
-    Buffer: ZipBuffer,
+    Buffer: ZipFile.WriteOrBuffer(),
     file_name: ZipName,
-    write_file: () => {
-      fs.writeFileSync(PathBackup, ZipBuffer, "binary");
-    }
+    write_file: () => ZipFile.WriteOrBuffer(PathBackup)
   }
 }
 

@@ -93,21 +93,12 @@ async function pocketmineJson(Data = "") {
 //   return JavaStyle;
 // }
 
-function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "connect", Platform: "", xuid: "", Date: ""},{Player: "", Action: "disconnect", Platform: "", xuid: "", Date: ""}]) => console.log(d), Current_platorm = BdsSettings.CurrentPlatorm()){
+
+async function promsiseCreatePlayerJson(data = "", Current_platorm = BdsSettings.CurrentPlatorm()) {
   // Bedrock
-  if (Current_platorm === "bedrock") {
-    BedrockJson(data).then(Data => {
-      if (Data.length === 0) return;
-      callback(Data);
-    }).catch(err => console.log("Error in parse bedrock json:", err.stack||String(err)));
-  }
+  if (Current_platorm === "bedrock") return await BedrockJson(data);
   // Pocketmine-MP
-  else if (Current_platorm === "pocketmine") {
-    pocketmineJson(data).then(Data => {
-      if (Data.length === 0) return;
-      callback(Data);
-    }).catch(err => console.log("Error in parse pocketmine json:", err.stack||String(err)));
-  }
+  else if (Current_platorm === "pocketmine") return await pocketmineJson(data);
   // Java
   // else if (Current_platorm === "java") {
   //   javaJson(data).then(Data => {
@@ -115,6 +106,12 @@ function CreatePlayerJson(data = "", callback = (d = [{Player: "", Action: "conn
   //     callback(Data);
   //   }).catch(err => console.log("Error in parse java json:", err.stack||String(err)));
   // }
+}
+function CreatePlayerJsonCallback(data = "", callback = (d = [{Player: "", Action: "connect", Platform: "", xuid: "", Date: ""},{Player: "", Action: "disconnect", Platform: "", xuid: "", Date: ""}]) => console.log(d), Current_platorm = BdsSettings.CurrentPlatorm()){
+  promsiseCreatePlayerJson(data, Current_platorm).then(Data => {
+    if (Data.length === 0) return;
+    return callback(Data);
+  }).catch(err => console.log("Error in parse json:", err.stack||String(err)));
 }
 
 function UpdateUserJSON(New_Object = []){
@@ -137,7 +134,8 @@ function Player_Search(player = "dontSteve") {
 }
 
 module.exports = {
-  CreatePlayerJson: CreatePlayerJson,
+  CreatePlayerJson: CreatePlayerJsonCallback,
+  promsiseCreatePlayerJson: promsiseCreatePlayerJson,
   UpdateUserJSON: UpdateUserJSON,
   Player_Search: Player_Search,
   createJsons: {

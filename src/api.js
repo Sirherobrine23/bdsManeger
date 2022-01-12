@@ -205,6 +205,12 @@ app.get(["/bds/log", "/log"], CheckToken, (req, res) => {
   }));
 });
 
+const PlayersRoute = require("./api/Players");
+app.use(["/bds/players", "/players"], CheckToken, PlayersRoute);
+
+const Plugins = require("./api/Plugins");
+app.use("/bds/plugins", CheckToken, Plugins);
+
 // Create Backup
 app.get("/bds/backup", CheckToken, ({res}) => {
   const BackupBuffer = BdsManegerCore.BdsBackup.CreateBackup();
@@ -324,9 +330,6 @@ app.get("/bds/Connect", async (req, res) => {
     port: ServerConfig.portv4,
   });
 });
-
-const PlayersRoute = require("./api/Players");
-app.use(["/bds/players", "/players"], CheckToken, PlayersRoute);
 
 // Export API Routes
 /**

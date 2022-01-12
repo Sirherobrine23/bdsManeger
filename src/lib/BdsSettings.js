@@ -7,6 +7,7 @@ const deepmerge = require("deepmerge");
 // Config/Base Paths
 const home = os.homedir(), bds_dir = path.join(home, "bds_core");
 if (!(fs.existsSync(bds_dir))) fs.mkdirSync(bds_dir, {recursive: true});
+module.exports.BdsDir = bds_dir;
 
 /**
  * Server Config Base
@@ -90,6 +91,10 @@ if (fs.existsSync(ConfigPath)) {
   BdsConfig = deepmerge(BdsConfig, UserConfig);
 } else fs.writeFileSync(ConfigPath, yaml.dump(BdsConfig));
 
+// Basics
+module.exports.GetBdsConfig = () => BdsConfig;
+module.exports.CurrentPlatorm = () => BdsConfig.server.platform;
+
 // Paths
 if (!(fs.existsSync(BdsConfig.paths["Backup"]))) fs.promises.mkdir(BdsConfig.paths["Backup"], {recursive: true}).catch(e => console.log(e));
 if (!(fs.existsSync(BdsConfig.paths["Log"]))) fs.promises.mkdir(BdsConfig.paths["Log"], {recursive: true}).catch(e => console.log(e));
@@ -117,6 +122,7 @@ function GetPaths(PlatformOrPath = "", IsServers = false){
   }
   return undefined;
 }
+module.exports.GetPaths = GetPaths;
 
 // Create Player JSON
 if (!(fs.existsSync(BdsConfig.paths.Player))) fs.writeFileSync(BdsConfig.paths.Player, JSON.stringify([], null, 2));
@@ -133,6 +139,7 @@ function UpdateServerVersion(version = "", platform = BdsConfig.server.platform)
   SaveConfig();
   return;
 }
+module.exports.UpdateServerVersion = UpdateServerVersion;
 
 // Update the entire Bds Manager Core platform
 function ChangePlatform(platform = ""){
@@ -152,6 +159,7 @@ function ChangePlatform(platform = ""){
   SaveConfig();
   return BdsConfig.server.platform;
 }
+module.exports.ChangePlatform = ChangePlatform;
 
 /**
  * Update and Get Telegram Bot Token
@@ -164,20 +172,6 @@ function telegramToken(Token = "") {
   return BdsConfig.telegram.token;
 }
 
-module.exports = {
-  BdsDir: bds_dir,
-  /**
-   * Return Latest Bds Maneger Config
-   */
-  GetBdsConfig: () => BdsConfig,
-  /**
-   * Get Current Bds Manager Platform
-   */
-  CurrentPlatorm: () => BdsConfig.server.platform,
-  GetPaths,
-  UpdateServerVersion,
-  ChangePlatform,
-  more: {
-    telegramToken
-  }
-}
+module.exports.more = {
+  telegramToken
+};

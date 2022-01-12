@@ -16,19 +16,20 @@ function getProcess(){
         let command = Line.slice(0, - Math.abs(pid.length)).trim().slice(0, - Math.abs(mem.length)).trim();
         pid = parseInt(pid);
         mem = parseInt(mem);
-        if (command && pid && mem) return {
+        command = command.replace(RegExp(`${pid}$`, "gi"), "").trim();
+        return {
           command,
           pid,
           mem,
-        }; else return false
+        };
       } catch (err) {
         console.log(err);
         return false
       }
-    }).filter(a => a);
+    }).filter(a => a !== false);
   } else {
     MountProcess = execSync("ps -aux").toString("utf8").split("\n").filter(d=>{return !(/USER\s+/.test(d) || d === "")}).map(_line => _line.split(/\s+/)).map(_line =>{
-      return {
+      const Data = {
         command: (function(){
           var command = _line[10];
           const argvLenght = (_line.length - 11);
@@ -39,8 +40,9 @@ function getProcess(){
         })(),
         pid: parseInt(_line[1]),
         mem: _line[3],
-      }
-    })
+      };
+      return Data;
+    });
   }
   return MountProcess;
 }

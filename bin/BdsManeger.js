@@ -24,11 +24,11 @@ Yargs.option("kill", {
   type: "boolean",
   default: true
 });
-Yargs.command("backup", "Backup Bds Server", {}, () => {
-  const Bc = BdsCore.BdsBackup.Backup();
-  Bc.write_file();
-  console.log(cli_color.greenBright(`Backup created save in: ${Bc.file_path}`));
-  process.exit(0);
+Yargs.option("backup", {
+  describe: "Backup Bds Server",
+  type: "boolean",
+  alias: "b",
+  default: false
 });
 Yargs.option("platform", {
   alias: "p",
@@ -187,6 +187,14 @@ async function Runner() {
   if (ProcessArgs.info || ProcessArgs.i) {
     await info();
     return;
+  }
+
+  // Backup
+  if (ProcessArgs.backup || ProcessArgs.b) {
+    const BackupEnd = BdsCore.BdsBackup.Backup(ProcessArgs.backup || ProcessArgs.b);
+    BackupEnd.write_file();
+    console.log(cli_color.greenBright(`Backup created and saved in ${BackupEnd.file_path}`));
+    process.exit(0);
   }
 
   // Download

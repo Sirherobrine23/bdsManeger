@@ -35,12 +35,13 @@ function PluginManegerPocketmine() {
     });
   }
   const Install = async (PluginName = "", PluginVersion = "latest") => {
+    if (!PluginName) throw new Error("Plugin name is empty");
     const PluginsList = (await Poggit_pmmp()).filter(Plugin => Plugin.name === PluginName)[0];
     if (!PluginsList) throw new Error(`Plugin ${PluginName} not found`);
     const Plugin = PluginsList.versions.filter(Version => Version.version === PluginVersion)[0];
     if (!Plugin) throw new Error(`Plugin ${PluginName} version ${PluginVersion} not found`);
     const PluginBufferfile = await request.buffer(Plugin.url);
-    const PluginFile = path.join(BdsSettings.GetServerPaths("pocketmine"), "plugins", `${Plugin.name}-${Plugin.version}.phar`);
+    const PluginFile = path.join(BdsSettings.GetPaths("pocketmine", true), "plugins", `${PluginName}.phar`);
     fs.writeFileSync(PluginFile, PluginBufferfile);
     return PluginFile;
   }
@@ -52,7 +53,7 @@ function PluginManegerPocketmine() {
 }
 
 module.exports = {
-  PluginManeger: (platform = BdsSettings.GetPlatform()) => {
+  PluginManeger: (platform = BdsSettings.CurrentPlatorm()) => {
     switch (platform) {
       case "pocketmine":
         return PluginManegerPocketmine();
