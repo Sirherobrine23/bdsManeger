@@ -3,10 +3,10 @@ volumes:
   BdsManegerData:
 services:
   bdscore:
+    container_name: bds_maneger_core
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bds_maneger_core
     volumes:
       - BdsManegerData:/root/bds_core
     environment:
@@ -19,5 +19,7 @@ services:
       BDS_VERSION: "latest"
       SERVER: "bedrock"
     ports:
-      - 1932:1932/tcp
+      - 1932:3000/tcp
+      - 3000:3000/tcp
       - 19132:19132/udp
+      - 19133:19133/udp

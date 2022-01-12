@@ -13,7 +13,6 @@ function CreateZipBuffer() {
   Functions.Add = (Path = "", Name = path.basename(Path)) => {
     const _S = fs.statSync(path.resolve(Path));
     if (_S.isFile()) Zip.addLocalFile(Path, Name);
-    else if (_S.isSymbolicLink()) Zip.addLocalFile(fs.readlinkSync(Path), Name);
     else Zip.addLocalFolder(Path, Name);
   }
 
@@ -21,7 +20,6 @@ function CreateZipBuffer() {
    * Get Buffer to File Zip, not parse arguments to Get Buffer.
    * 
    * Parse arguments to Write file in path argument.
-   * 
    */
   Functions.WriteOrBuffer = (Path = "") => {
     if (!Path) return Zip.toBuffer();
@@ -55,16 +53,12 @@ function CreateBackup() {
   const ZipName = `Bds_Maneger_Core_Backups_${CurrentDate.getDate()}-${CurrentDate.getMonth()}-${CurrentDate.getFullYear()}.zip`
   const PathBackup = path.join(BdsSettings.GetPaths("Backup"), ZipName);
   return {
+    FilePath: PathBackup,
+    FileName: ZipName,
     file_path: PathBackup,
-    Buffer: ZipFile.WriteOrBuffer(),
     file_name: ZipName,
+    Buffer: ZipFile.WriteOrBuffer(),
     write_file: () => ZipFile.WriteOrBuffer(PathBackup)
   }
 }
-
-module.exports = {
-  CreateBackup: CreateBackup,
-  Backup: CreateBackup,
-  World_BAckup: CreateBackup,
-  Cloud_backup: CreateBackup
-}
+module.exports.CreateBackup = CreateBackup;

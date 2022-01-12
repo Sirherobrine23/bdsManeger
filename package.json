@@ -4,7 +4,7 @@
     "access": "public"
   },
   "version": "1.15.0",
-  "description": "Scripts to manage minecraft server's",
+  "description": "A very simple way to manage Minecraft servers",
   "private": false,
   "main": "src/index.js",
   "exports": {
@@ -15,6 +15,7 @@
     "start": "node bin/BdsManeger.js -sk",
     "test": "mocha --exit .test/*.js",
     "esm_module": "cjs2esm",
+    "esm": "cjs2esm",
     "eslint": "eslint --debug --fix .",
     "Docker": "docker-compose up --build",
     "dev": "nodemon"
@@ -30,7 +31,7 @@
       "package.json",
       "package-lock.json"
     ],
-    "exec": "node --trace-warnings ./bin/BdsManeger.js"
+    "exec": "node --trace-warnings ./bin/BdsManeger.js start"
   },
   "bin": {
     "bds_maneger": "bin/BdsManeger.js"

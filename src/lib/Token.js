@@ -91,11 +91,38 @@ function CheckTelegramID(TelegramID = null) {
   else return false;
 }
 
+/**
+ * Express Middleware to Check Token
+ */
+function ExpressCheckToken (req, res, next) {
+  let TokenFinded = "";
+  if (req.headers["authorizationtoken"]) TokenFinded = req.headers["authorizationtoken"];
+  else if (req.query.token) TokenFinded = req.query.token;
+  else if (req.headers.token) TokenFinded = req.headers.token;
+  else if (req.query.Token) TokenFinded = req.query.Token;
+  else if (req.headers.Token) TokenFinded = req.headers.Token;
+  else if (req.body.token) TokenFinded = req.body.token;
+  else if (req.body.Token) TokenFinded = req.body.Token;
+  if (!TokenFinded) {
+    return res.status(401).json({
+      error: "Unauthorized",
+      message: "Required Token"
+    });
+  } else {
+    if (CheckToken(TokenFinded, "all")) return next();
+    else return res.status(401).json({
+      error: "Unauthorized",
+      message: "Token is not valid"
+    });
+  }
+}
+
 // Export module
 module.exports = {
   CreateToken,
   DeleteToken,
   CheckToken,
+  ExpressCheckToken,
   UpdateTelegramID,
   CheckTelegramID,
   TokenFile,

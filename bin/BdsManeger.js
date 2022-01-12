@@ -7,72 +7,6 @@ const readline = require("readline");
 const BdsCore = require("../src/index");
 const cli_color = require("cli-color");
 const inquirer = require("inquirer");
-const Yargs = require("yargs").usage("$0 [args]");
-Yargs.option("info", {
-  alias: "i",
-  describe: "Show info",
-  type: "boolean"
-});
-Yargs.option("download", {
-  describe: "Download Bds Server",
-  type: "string",
-  alias: "d",
-});
-Yargs.option("kill", {
-  alias: "k",
-  describe: "Kill Bds Servers",
-  type: "boolean",
-  default: true
-});
-Yargs.option("backup", {
-  describe: "Backup Bds Server",
-  type: "boolean",
-  alias: "b",
-  default: false
-});
-Yargs.option("platform", {
-  alias: "p",
-  describe: "Select BdsManeger Platform available to system and architecture",
-  type: "string"
-});
-Yargs.option("get_domain", {
-  describe: "Get Domain to connect to the Server",
-  type: "boolean",
-  default: false
-});
-Yargs.option("no-api", {
-  describe: "Desactivate BdsManeger API",
-  type: "boolean",
-  default: false
-});
-// World Options
-Yargs.option("world-name", {
-  describe: "World Name, (Some platforms do not accept spaces)",
-  type: "string"
-});
-Yargs.option("description", {
-  describe: "World Description",
-  type: "string"
-});
-Yargs.option("gamemode", {
-  describe: "Default Server Gamemode",
-  type: "string"
-});
-Yargs.option("difficulty", {
-  describe: "Default Server Difficulty",
-  type: "string"
-});
-Yargs.option("players", {
-  describe: "Max Players to Connect to the Server",
-  type: "number",
-  default: 15
-});
-// Debug
-Yargs.option("debug", {
-  describe: "Debug",
-  type: "boolean",
-  default: false
-});
 
 async function DownloadServer(waitUserSelectVersion = "") {
   const ora = (await import("ora")).default;
@@ -129,11 +63,8 @@ async function info() {
   // End
   return;
 }
-module.exports.StartServer = StartServer;
-module.exports.Yargs = Yargs;
 function StartServer(ExitSession = true) {
   const BdsManegerServer = BdsCore.BdsManegerServer.StartServer();
-  if (Yargs.parse()["debug"]) console.log(BdsManegerServer.setup_command.command, ...BdsManegerServer.setup_command.args);
   console.log(cli_color.greenBright(`Server started Session UUID: ${BdsManegerServer.uuid}`));
   BdsManegerServer.on("log", data => process.stdout.write(cli_color.blueBright(data)));
   const __readline = readline.createInterface({input: process.stdin, output: process.stdout});
@@ -145,28 +76,18 @@ function StartServer(ExitSession = true) {
     if (ExitSession) process.exit(code);
   });
 }
-// Load Bds Maneger CLI Plugins
-const Plugins = [];
-fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirname, "plugins", file)).filter(Mod => fs.lstatSync(Mod).isFile() && Mod.endsWith(".js")).forEach(Plugin => {
-  try {
-    require(Plugin);
-    Plugins.push(Plugin);
-  } catch (err) {
-    console.log(cli_color.redBright(`Error loading plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")}`));
-    console.log(cli_color.redBright(err));
-  }
-});
-const ProcessArgs = Yargs.help().version(false).parse();
+module.exports.StartServer = StartServer;
+
 // Async functiona
-async function Runner() {
+async function RenderMainProcess(ProcessArgs = {}, Plugins = []) {
   // ESM Modules
   const ora = (await import("ora")).default;
 
   // Update Bds Core Platform
-  if (ProcessArgs.platform || ProcessArgs.p) {
+  if (ProcessArgs.platform) {
     if (process.env.DOCKER_IMAGE === "true") {
       try {
-        BdsCore.BdsSettings.ChangePlatform(ProcessArgs.platform || ProcessArgs.p);
+        BdsCore.BdsSettings.ChangePlatform(ProcessArgs.platform);
       } catch (err) {
         console.log(cli_color.redBright(err));
         process.exit(1);
@@ -174,34 +95,34 @@ async function Runner() {
     } else {
       const UpdatePla = ora("Updating Bds Platform").start();
       try {
-        BdsCore.BdsSettings.ChangePlatform(ProcessArgs.platform || ProcessArgs.p);
-        UpdatePla.succeed(`Now the platform is the ${ProcessArgs.platform || ProcessArgs.p}`);
+        BdsCore.BdsSettings.ChangePlatform(ProcessArgs.platform);
+        UpdatePla.succeed(`Now the platform is the ${ProcessArgs.platform}`);
       } catch (error) {
-        UpdatePla.fail(`Unable to update platform to ${ProcessArgs.platform || ProcessArgs.p}`);
+        UpdatePla.fail(`Unable to update platform to ${ProcessArgs.platform}`);
         process.exit(1);
       }
     }
   }
 
   // Print Info about Bds Core and Platforms
-  if (ProcessArgs.info || ProcessArgs.i) {
+  if (ProcessArgs.info) {
     await info();
     return;
   }
 
   // Backup
-  if (ProcessArgs.backup || ProcessArgs.b) {
-    const BackupEnd = BdsCore.BdsBackup.Backup(ProcessArgs.backup || ProcessArgs.b);
+  if (ProcessArgs.backup) {
+    const BackupEnd = BdsCore.BdsBackup.Backup();
     BackupEnd.write_file();
     console.log(cli_color.greenBright(`Backup created and saved in ${BackupEnd.file_path}`));
     process.exit(0);
   }
 
   // Download
-  if (ProcessArgs.download || ProcessArgs.d) await DownloadServer(ProcessArgs.download || ProcessArgs.d);
+  if (ProcessArgs.download) await DownloadServer(ProcessArgs.download);
 
   // Kill
-  if (ProcessArgs.kill || ProcessArgs.k) BdsCore.BdsCkeckKill.Kill();
+  if (ProcessArgs.kill) BdsCore.BdsCkeckKill.Kill();
 
   // Server Proprieties
   // --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}
@@ -244,7 +165,94 @@ async function Runner() {
   return StartServer(true);
 }
 
-Runner().catch(err => {
-  console.log("Bds Core CLI Crash:", "\n\n", err);
-  process.exit(1);
+const Yargs = require("yargs").usage("$0 [args]");
+Yargs.command("info", "Show info", async () => {
+  await info();
+  process.exit(0);
 });
+Yargs.command("start", "Start Bds Core Server", (YargsOpt) => {
+  YargsOpt.option("platform", {
+    alias: "p",
+    describe: "Select BdsManeger Platform available to system and architecture",
+    type: "string"
+  });
+  YargsOpt.option("download", {
+    describe: "Download Bds Server",
+    type: "string",
+    alias: "d",
+  });
+  YargsOpt.option("kill", {
+    alias: "k",
+    describe: "Kill Bds Servers",
+    type: "boolean",
+    default: true
+  });
+  YargsOpt.option("backup", {
+    describe: "Backup Bds Server",
+    type: "boolean",
+    alias: "b",
+    default: false
+  });
+  YargsOpt.option("get_domain", {
+    describe: "Get Domain to connect to the Server",
+    type: "boolean",
+    default: false
+  });
+  YargsOpt.option("no-api", {
+    describe: "Desactivate BdsManeger API",
+    type: "boolean",
+    default: false
+  });
+  // World Options
+  YargsOpt.option("world-name", {
+    describe: "World Name, (Some platforms do not accept spaces)",
+    type: "string"
+  });
+  YargsOpt.option("description", {
+    describe: "World Description",
+    type: "string"
+  });
+  YargsOpt.option("gamemode", {
+    describe: "Default Server Gamemode",
+    type: "string"
+  });
+  YargsOpt.option("difficulty", {
+    describe: "Default Server Difficulty",
+    type: "string"
+  });
+  YargsOpt.option("players", {
+    describe: "Max Players to Connect to the Server",
+    type: "number",
+    default: 15
+  });
+  module.exports.Yargs = YargsOpt;
+  const Plugins = [];
+  fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirname, "plugins", file)).filter(Mod => fs.lstatSync(Mod).isFile() && Mod.endsWith(".js")).forEach(Plugin => {
+    try {
+      require(Plugin);
+      Plugins.push(Plugin);
+    } catch (err) {
+      console.log(cli_color.redBright(`Error loading plugin: ${path.basename(Plugin).replace(/\.js$/gi, "")}`));
+      console.log(cli_color.redBright(err));
+    }
+  });
+  const YargsOptArg = YargsOpt.help().version(false).parse();
+  const YargsArgOptions = Yargs.parse()
+  return RenderMainProcess({
+    download: YargsOptArg.download || YargsOptArg.d,
+    kill: YargsOptArg.kill || YargsOptArg.k,
+    backup: YargsOptArg.backup || YargsOptArg.b,
+    get_domain: YargsOptArg.get_domain,
+    no_api: YargsOptArg["no-api"],
+    platform: YargsArgOptions.platform || YargsArgOptions.p,
+    "world-name": YargsOptArg["world-name"],
+    description: YargsOptArg.description,
+    gamemode: YargsOptArg.gamemode,
+    difficulty: YargsOptArg.difficulty,
+    players: YargsOptArg.players
+  }, Plugins).catch(err => {
+    console.log(cli_color.redBright(String(err.stack || err)));
+    process.exit(1);
+  });
+});
+Yargs.version(false).help().parse();

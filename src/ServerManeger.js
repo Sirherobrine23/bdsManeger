@@ -109,7 +109,6 @@ function StartServer() {
 
   // Log file
   const LogFolderPath = BdsSettings.GetPaths("Log") || BdsSettings.GetPaths("log");
-  console.log(LogFolderPath);
   const LogFile = path.join(LogFolderPath, `${BdsSettings.CurrentPlatorm()}_${new Date().toString().replace(/:|\(|\)/g, "_")}_Bds_log.log`),
     LatestLog_Path = path.join(LogFolderPath, "latest.log"),
     LogSaveFunction = data => {
