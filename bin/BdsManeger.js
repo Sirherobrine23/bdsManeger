@@ -72,7 +72,7 @@ function StartServer(ExitSession = true) {
   if (process.env.DOCKER_IMAGE !== "true") __readline.on("close", BdsManegerServer.stop);
   BdsManegerServer.on("exit", code => {
     __readline.close();
-    console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.Uptime}`));
+    console.log(cli_color.redBright(`Bds Core Exit with code ${code}, Uptimed: ${BdsManegerServer.Uptime()}`));
     if (ExitSession) process.exit(code);
   });
 }
@@ -162,7 +162,44 @@ async function RenderMainProcess(ProcessArgs = {}, Plugins = []) {
       return;
     }
   }
-  return StartServer(true);
+  if (!ProcessArgs.auto_update) return StartServer(true);
+  else {
+    const BdsCoreUrlManeger = require("@the-bds-maneger/server_versions");
+    const BdsSettings = require("../src/lib/BdsSettings");
+    const BdsBackup = require("../src/BdsBackup");
+    const BdsManegerServer = require("../src/ServerManeger");
+    const BdsDownload = require("../src/BdsServersDownload");
+    const Sleep = async (Seconds = 1) => await new Promise(resolve => setTimeout(resolve, Seconds * 1000));
+    console.log("Auto Update Server Software Enabled");
+    const Platform = BdsSettings.CurrentPlatorm();
+    let TmpVersion = BdsSettings.GetBdsConfig().server.versions[Platform];
+    let IsFistStart = false;
+    StartServer(false);
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      try {
+        if (IsFistStart) {
+          const LatestVersions = (await BdsCoreUrlManeger.listAsync()).latest[Platform];
+          if (LatestVersions !== TmpVersion) {
+            console.log("New Version:", LatestVersions);
+            const Servers = BdsManegerServer.GetSessions()
+            for (let session of Servers) {
+              try {session.ServerAction.say("AutoUpdate Stop Server");} catch (err) {console.log(err);}
+              await session.stop();
+            }
+            (BdsBackup.Backup()).write_file();
+            await BdsDownload.DownloadServer("latest")
+            
+            StartServer(false);
+            TmpVersion = LatestVersions;
+          }
+        } else IsFistStart = true;
+        await Sleep(1000);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  }
 }
 
 const Yargs = require("yargs").usage("$0 [args]");
@@ -195,6 +232,12 @@ Yargs.command("start", "Start Bds Core Server", (YargsOpt) => {
   });
   YargsOpt.option("get_domain", {
     describe: "Get Domain to connect to the Server",
+    type: "boolean",
+    default: false
+  });
+  YargsOpt.option("auto_update", {
+    describe: "Enable Auto Update Server",
+    alias: "a",
     type: "boolean",
     default: false
   });
@@ -237,14 +280,14 @@ Yargs.command("start", "Start Bds Core Server", (YargsOpt) => {
     }
   });
   const YargsOptArg = YargsOpt.help().version(false).parse();
-  const YargsArgOptions = Yargs.parse()
   return RenderMainProcess({
     download: YargsOptArg.download || YargsOptArg.d,
     kill: YargsOptArg.kill || YargsOptArg.k,
+    auto_update: YargsOptArg.auto_update || YargsOptArg.a,
     backup: YargsOptArg.backup || YargsOptArg.b,
     get_domain: YargsOptArg.get_domain,
-    no_api: YargsOptArg["no-api"],
-    platform: YargsArgOptions.platform || YargsArgOptions.p,
+    "no-api": YargsOptArg["no-api"],
+    platform: YargsOptArg.platform || YargsOptArg.p,
     "world-name": YargsOptArg["world-name"],
     description: YargsOptArg.description,
     gamemode: YargsOptArg.gamemode,

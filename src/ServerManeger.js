@@ -1,15 +1,42 @@
 const child_process = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const { randomUUID } = require("crypto");
+const Crypto = require("crypto");
 const BdsSettings = require("./lib/BdsSettings");
+const Players_json = require("./ManegerServer/Players_json");
 
 const PlayersCallbacks = [];
-const PlayerJson = require("./ManegerServer/Players_json");
+module.exports.RegisterPlayerGlobalyCallbacks = (callback = () => {}) => PlayersCallbacks.push(callback);
+
 const BackendServerManeger = {
   ServerSessions: []
 };
+/**
+ * @returns {Array<{
+ *  uuid: string
+ *  LogPath: string
+ *  StartTime: Date
+ *  on: (Action: "log"|"exit", Callback: Function) => void
+ *  PlayerAction: (Action: "connect"|"disconect") => void
+ *  stop: Promise< () => number>
+ *  SendCommand: (Data: String) => void
+ *  Uptime: () => number
+ *  Players_in_Session: void
+ *  ServerAction: {
+ *    op: (player: String) => void
+ *    deop: (player: String) => void
+ *    ban: (player: String) => void
+ *    kick: (player: String) => void
+ *    tp: (player: string, cord: {x: number y: number z: number }) => void
+ *    say: (text: String) => void
+ *  }
+ * }>} 
+ */
+module.exports.GetSessions = () => BackendServerManeger.ServerSessions;
 
+/**
+ * Inicialize the server
+ */
 function StartServer() {
   const commandExists = require("./lib/commandExist").commdExistSync;
   const io = require("./api").SocketIO;
@@ -99,13 +126,10 @@ function StartServer() {
   else throw Error("Bds Config Error")
 
   // Setup commands
-  let __ServerExec = child_process.exec("exit 0"); // lgtm [js/useless-assignment-to-local]
-  if (SetupCommands.RunInCroot) throw new Error("RunInCroot is not supported yet");
-  else __ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
-  cwd: SetupCommands.cwd,
+  const ServerExec = child_process.execFile(SetupCommands.command, SetupCommands.args, {
+    cwd: SetupCommands.cwd,
     env: SetupCommands.env
   });
-  const ServerExec = __ServerExec;
 
   // Log file
   const LogFolderPath = BdsSettings.GetPaths("Log") || BdsSettings.GetPaths("log");
@@ -122,13 +146,22 @@ function StartServer() {
   ServerExec.stdout.on("data", LogSaveFunction);
   ServerExec.stderr.on("data", LogSaveFunction);
 
+  // Mount commands to Return
+  const SessionUUID = Crypto.randomUUID();
+  
+
+  // Uptime Server
+  let UptimeNumber = 0;
+  const UptimeCount = setInterval(() => UptimeNumber++, 1000);
+  
+
   /**
    * Emit command in to the server
    * 
    * @param {string} command
    * @param {Array} command
    */
-  const ServerCommand = function (Command = "list") {
+  function SendCommand(Command = "list") {
     if (!(typeof Command === "string" || typeof Command === "object" && typeof Command.map === "function")) throw new Error("Command must be a string or an array");
     if (typeof Command === "string") {
       ServerExec.stdin.write(`${Command}\n`);
@@ -136,41 +169,50 @@ function StartServer() {
       Command.filter(a => typeof a === "string").forEach(command => ServerExec.stdin.write(`${command}\n`));
     }
     return;
-  };
-  /**
-   * When a player connects or disconnects, the server will issue an event.
-   * 
-   * @param {string} Action - The event to listen for.
-   * @param {function} Callback - The callback to run when the event is triggered.
-   */
-  const PlayerAction = function(Action = "all", callback = (PlayerActions = [{Player: "", Action: "connect", Platform: "", xuid: "", Date: ""},{Player: "", Action: "disconnect", Platform: "", xuid: "", Date: ""}]) => console.log(PlayerActions)){
-    if (!(Action === "all" || Action === "connect" || Action === "disconnect")) throw new Error("Use some valid Action: all, connect, disconnect");
-    const { CreatePlayerJson } = PlayerJson;
-    const RunON = data => CreatePlayerJson(data, (PlayerActions) => {
-      if (Action !== "all") PlayerActions = PlayerActions.filter(On => On.Action === Action);
-      return callback(PlayerActions);
-    });
-    ServerExec.stdout.on("data", RunON);
-    ServerExec.stderr.on("data", RunON);
-    return;
-  };
+  }
+  
+
   /**
    * Register a function to run when the server issues a log or when it exits.
    * 
    * @param {string} FunctionAction - Action to Register to run callback
    * @callback
    */
-  const ServerOn = function (FunctionAction = "log", callback = (data = FunctionAction === "log" ? "" : 0) => console.log(data)) {
+  function OnCallbacks(FunctionAction = "log", callback = (data = FunctionAction === "log" ? "" : 0) => console.log(data)) {
     if (!(FunctionAction === "log" || FunctionAction === "exit")) throw new Error("Use some valid FunctionAction: log, exit");
     if (FunctionAction === "log") {
       ServerExec.stdout.on("data", data => callback(data));
       ServerExec.stderr.on("data", data => callback(data));
     } else if (FunctionAction === "exit") ServerExec.on("exit", code => callback(code));
     else throw new Error("Use some valid FunctionAction: log, exit");
-    return;
   }
+  
 
-  const stop = async function (){
+  /**
+   * Any type of event that can be logged on the server, this is not a log.
+   * 
+   * @param {string} Action - The event to listen for.
+   * @param {function} Callback - The callback to run when the event is triggered.
+   */
+  function SessionPlayerAction(Action = "all", Callback = (PlayerActions = Players_json.Example) => console.log(PlayerActions)){
+    if (typeof Callback !== "function") throw new Error("Callback must be a function");
+    if (!(Action === "all" || Action === "connect" || Action === "disconnect")) throw new Error("Use some valid Action: all, connect, disconnect");
+    OnCallbacks("log", async data => {
+      const PlayersActions = await Players_json.Promise_CreatePlayerJson(data, CurrentBdsPlatform);
+      if (PlayersActions.length === 0) return;
+      return Callback(PlayersActions.filter(PlayersActions => {
+        if (Action === "all") return true;
+        else if (Action === "connect" && PlayersActions.Action === "connect") return true;
+        else if (Action === "disconnect" && PlayersActions.Action === "disconnect") return true;
+        else return false;
+      }));
+    });
+  }
+  
+  /**
+   * Stop the server
+   */
+  async function SessionStop(){
     if (CurrentBdsPlatform === "bedrock") {
       ServerExec.stdin.write("stop\n");
     } else if (CurrentBdsPlatform === "dragonfly") {
@@ -182,10 +224,15 @@ function StartServer() {
     } else if (CurrentBdsPlatform === "spigot") {
       ServerExec.stdin.write("stop\n");
     } else throw new Error("Bds Core Bad Config Error");
-    const Code = await new Promise(resolve => ServerOn("exit", resolve));
+    const Code = await new Promise(resolve => OnCallbacks("exit", resolve));
     return Number(Code);
-  };
-  const op = function (player = "Steve") {
+  }
+  
+  
+  /**
+   * Op a player
+   */
+  function SessionOp(player = "Steve") {
     if (CurrentBdsPlatform === "bedrock") {
       ServerExec.stdin.write(`op "${player}"\n`);
       return "op";
@@ -201,8 +248,12 @@ function StartServer() {
       ServerExec.stdin.write(`op ${player}\n`);
       return "op";
     } else throw new Error("Bds Core Bad Config Error");
-  };
-  const deop = function (player = "Steve") {
+  }
+
+  /**
+   * Deop a player
+   */
+  function SessionDeop(player = "Steve") {
     if (CurrentBdsPlatform === "bedrock") {
       ServerExec.stdin.write(`deop "${player}"\n`);
       return "deop";
@@ -218,8 +269,12 @@ function StartServer() {
       ServerExec.stdin.write(`deop ${player}\n`);
       return "deop";
     } else throw new Error("Bds Core Bad Config Error");
-  };
-  const ban = function (player = "Steve") {
+  }
+
+  /**
+   * Ban a player
+   */
+  function SessionBan(player = "Steve") {
     if (CurrentBdsPlatform === "bedrock") {
       ServerExec.stdin.write(`kick "${player}"\n`);
       return "kick";
@@ -235,8 +290,12 @@ function StartServer() {
       ServerExec.stdin.write(`ban ${player}\n`);
       return "ban";
     } else throw new Error("Bds Core Bad Config Error");
-  };
-  const kick = function (player = "Steve", text = "you got kicked") {
+  }
+
+  /**
+   * Kick a player
+   */
+  function SessionKick(player = "Steve", text = "you got kicked") {
     if (CurrentBdsPlatform === "bedrock") {
       ServerExec.stdin.write(`kick "${player}" ${text}\n`);
       return "kick";
@@ -252,8 +311,12 @@ function StartServer() {
       ServerExec.stdin.write(`kick ${player} ${text}\n`);
       return "kick";
     } else throw new Error("Bds Core Bad Config Error");
-  };
-  const tp = function (player = "Steve", cord = {x: 0, y: 128, z: 0}) {
+  }
+
+  /**
+   * Teleport a player
+   */
+  function SessionTp(player = "Steve", cord = {x: 0, y: 128, z: 0}) {
     if (CurrentBdsPlatform === "bedrock") {
       ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
       return "tp";
@@ -269,8 +332,12 @@ function StartServer() {
       ServerExec.stdin.write(`tp ${player} ${cord.x} ${cord.y} ${cord.z}\n`);
       return "tp";
     } else throw new Error("Bds Core Bad Config Error");
-  };
-  function say(text = ""){
+  }
+
+  /**
+   * Send text to Server
+   */
+  function SessionSay(text = ""){
     if (CurrentBdsPlatform === "bedrock") {
       ServerExec.stdin.write(`say ${text}\n`);
       return "say";
@@ -288,26 +355,10 @@ function StartServer() {
     } else throw new Error("Bds Core Bad Config Error");
   }
 
-  // Mount commands to Return
-  const returnFuntion = {
-    uuid: randomUUID(),
-    setup_command: SetupCommands,
-    LogPath: LogFile,
-    PID: ServerExec.pid,
-    Uptime: 0,
-    StartTime: new Date(),
-    on: ServerOn,
-    PlayerAction: PlayerAction,
-    SendCommand: ServerCommand,
-    stop, op, deop, ban, kick, tp, say
-  }
-
-  // Uptime Server
-  const UptimeCount = setInterval(() => returnFuntion.Uptime++, 1000);
   ServerExec.on("exit", code => {
-    BackendServerManeger.ServerSessions = BackendServerManeger.ServerSessions.filter(Session => Session.uuid !== returnFuntion.uuid);
+    BackendServerManeger.ServerSessions = BackendServerManeger.ServerSessions.filter(Session => Session.uuid !== SessionUUID);
     io.emit("ServerExit", {
-      UUID: returnFuntion.uuid,
+      UUID: SessionUUID,
       exitCode: code
     });
     clearInterval(UptimeCount);
@@ -317,17 +368,17 @@ function StartServer() {
   io.on("connection", socket => {
     try {
       socket.emit("ServerLog", {
-        UUID: returnFuntion.uuid,
-        data: fs.readFileSync(returnFuntion.LogPath, "utf8")
+        UUID: SessionUUID,
+        data: fs.readFileSync(SessionReturn.LogPath, "utf8")
       });
     } catch (err) {
       console.log(err);
     }
     socket.on("ServerCommand", (data) => {
-      if (typeof data === "string") return returnFuntion.SendCommand(data);
+      if (typeof data === "string") return SessionReturn.SendCommand(data);
       else if (typeof data === "object") {
         if (typeof data.uuid === "string") {
-          if (data.uuid === returnFuntion.uuid) return returnFuntion.SendCommand(data.command);
+          if (data.uuid === SessionUUID) return SessionReturn.SendCommand(data.command);
         }
       }
       return;
@@ -338,15 +389,14 @@ function StartServer() {
    * Player Session
    */
   const PlayerSession = {};
-  returnFuntion.Players_in_Session = () => PlayerSession;
-  ServerOn("log", data => {
+  OnCallbacks("log", data => {
     io.emit("ServerLog", {
-      UUID: returnFuntion.uuid,
+      UUID: SessionUUID,
       data: data
     });
-    PlayerJson.CreatePlayerJson(data, async Actions => {
+    Players_json.Promise_CreatePlayerJson(data, CurrentBdsPlatform).then(async Actions => {
       if (Actions.length === 0) return;
-      PlayerJson.UpdateUserJSON(Actions);
+      Players_json.UpdateUserJSON(Actions);
       io.emit("PlayerAction", Actions);
       PlayersCallbacks.forEach(async callback => {
         if (typeof callback === "function") return callback(Actions);
@@ -372,15 +422,42 @@ function StartServer() {
           });
         }
       });
-    }, CurrentBdsPlatform);
+    });
   });
-  // Return
-  BackendServerManeger.ServerSessions.push(returnFuntion);
-  return returnFuntion;
-}
 
-module.exports = {
-  StartServer: StartServer,
-  GetSessions: () => BackendServerManeger.ServerSessions,
-  RegisterPlayerGlobalyCallbacks: (callback = () => {}) => PlayersCallbacks.push(callback)
+  /**
+   * Get Player connectes or not in the server.
+   * 
+   * @returns {Object<string,<{
+   *  connected: boolean,
+   *  history: Array<{
+   *   Action: string,
+   *   Date: string
+   *  }>
+   * }>}
+   */
+  const Players_in_Session = () => PlayerSession;
+  // Return
+  const SessionReturn = {
+    uuid: SessionUUID,
+    LogPath: LogFile,
+    StartTime: new Date(),
+    on: OnCallbacks,
+    PlayerAction: SessionPlayerAction,
+    stop: SessionStop,
+    SendCommand: SendCommand,
+    Uptime: () => UptimeNumber,
+    Players_in_Session: Players_in_Session,
+    ServerAction: {
+      op: SessionOp,
+      deop: SessionDeop,
+      ban: SessionBan,
+      kick: SessionKick,
+      tp: SessionTp,
+      say: SessionSay,
+    },
+  }
+  BackendServerManeger.ServerSessions.push(SessionReturn);
+  return SessionReturn;
 }
+module.exports.StartServer = StartServer;

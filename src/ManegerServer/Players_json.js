@@ -1,6 +1,22 @@
 const fs = require("fs");
 const BdsSettings = require("../lib/BdsSettings");
 
+module.exports.Example = [
+  {
+    Player: "",
+    Action: "",
+    Platform: "",
+    Date: "",
+  },
+  {
+    Player: "",
+    Action: "",
+    Platform: "",
+    xuid: "",
+    Date: "",
+  },
+];
+
 async function BedrockJson(Data = "") {
   const Bedrock_Json = [];
   /*
@@ -93,8 +109,12 @@ async function pocketmineJson(Data = "") {
 //   return JavaStyle;
 // }
 
+module.exports.createJsons = {
+  BedrockJson: BedrockJson,
+  pocketmineJson: pocketmineJson,
+};
 
-async function promsiseCreatePlayerJson(data = "", Current_platorm = BdsSettings.CurrentPlatorm()) {
+async function Promise_CreatePlayerJson(data = "", Current_platorm = BdsSettings.CurrentPlatorm()) {
   // Bedrock
   if (Current_platorm === "bedrock") return await BedrockJson(data);
   // Pocketmine-MP
@@ -107,12 +127,15 @@ async function promsiseCreatePlayerJson(data = "", Current_platorm = BdsSettings
   //   }).catch(err => console.log("Error in parse java json:", err.stack||String(err)));
   // }
 }
+module.exports.Promise_CreatePlayerJson = Promise_CreatePlayerJson;
+
 function CreatePlayerJsonCallback(data = "", callback = (d = [{Player: "", Action: "connect", Platform: "", xuid: "", Date: ""},{Player: "", Action: "disconnect", Platform: "", xuid: "", Date: ""}]) => console.log(d), Current_platorm = BdsSettings.CurrentPlatorm()){
-  promsiseCreatePlayerJson(data, Current_platorm).then(Data => {
+  Promise_CreatePlayerJson(data, Current_platorm).then(Data => {
     if (Data.length === 0) return;
     return callback(Data);
   }).catch(err => console.log("Error in parse json:", err.stack||String(err)));
 }
+module.exports.CreatePlayerJson = CreatePlayerJsonCallback;
 
 function UpdateUserJSON(New_Object = []){
   const Player_Json_path = BdsSettings.GetPaths("player");
@@ -122,6 +145,7 @@ function UpdateUserJSON(New_Object = []){
   fs.writeFileSync(Player_Json_path, JSON.stringify(Players_Json, null, 2));
   return Players_Json;
 }
+module.exports.UpdateUserJSON = UpdateUserJSON;
 
 // Search player in JSON
 function Player_Search(player = "dontSteve") {
@@ -132,14 +156,4 @@ function Player_Search(player = "dontSteve") {
   }
   return {};
 }
-
-module.exports = {
-  CreatePlayerJson: CreatePlayerJsonCallback,
-  promsiseCreatePlayerJson: promsiseCreatePlayerJson,
-  UpdateUserJSON: UpdateUserJSON,
-  Player_Search: Player_Search,
-  createJsons: {
-    BedrockJson: BedrockJson,
-    pocketmineJson: pocketmineJson,
-  }
-}
+module.exports.Player_Search = Player_Search;
