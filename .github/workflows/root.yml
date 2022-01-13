@@ -193,16 +193,18 @@ jobs:
         if: github.event_name == 'release'
         with:
           push: true
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           tags: |
             ghcr.io/the-bds-maneger/core:latest
             ghcr.io/the-bds-maneger/core:${{ env.CoreVersion }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
 
       - name: Build Bds Maneger Core (Main)
         uses: docker/build-push-action@v2
         if: github.event_name != 'release'
         with:
+          context: .
           push: true
-          pull: true
-          tags: ghcr.io/the-bds-maneger/core:nightly
+          cache-from: type=registry,ref=ghcr.io/the-bds-maneger/core:nightly
           platforms: linux/amd64,linux/arm64,linux/arm/v7
+          tags: ghcr.io/the-bds-maneger/core:nightly
