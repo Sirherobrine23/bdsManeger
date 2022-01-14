@@ -150,7 +150,7 @@ module.exports.UpdateUserJSON = UpdateUserJSON;
 // Search player in JSON
 function Player_Search(player = "dontSteve") {
   const Player_Json_path = BdsSettings.GetPaths("Player");
-  const Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"))
+  const Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"));
   for (let Player of Players_Json) {
     if (Player.Player === player.trim()) return Player;
   }
