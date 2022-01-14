@@ -138,7 +138,7 @@ function CreatePlayerJsonCallback(data = "", callback = (d = [{Player: "", Actio
 module.exports.CreatePlayerJson = CreatePlayerJsonCallback;
 
 function UpdateUserJSON(New_Object = []){
-  const Player_Json_path = BdsSettings.GetPaths("player");
+  const Player_Json_path = BdsSettings.GetPaths("Player");
   let Players_Json = [{Player: "", Action: "", Platform: "", Date: ""}];Players_Json = [];
   if (fs.existsSync(Player_Json_path)) Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"));
   Players_Json = Players_Json.concat(New_Object)
@@ -149,7 +149,7 @@ module.exports.UpdateUserJSON = UpdateUserJSON;
 
 // Search player in JSON
 function Player_Search(player = "dontSteve") {
-  const Player_Json_path = BdsSettings.GetPaths("player");
+  const Player_Json_path = BdsSettings.GetPaths("Player");
   const Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"))
   for (let Player of Players_Json) {
     if (Player.Player === player.trim()) return Player;

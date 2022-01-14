@@ -1,10 +1,11 @@
 var fs = require("fs");
 const path = require("path");
 const propertiesToJSON = require("properties-to-json");
-const BdsInfo = require("../src/lib/BdsSystemInfo");
-const { GetPaths, CurrentPlatorm } = require("../src/lib/BdsSettings");
+const BdsSettings = require("../src/lib/BdsSettings");
+const { GetPaths, CurrentPlatorm } = BdsSettings;
 const TOML = require("@iarna/toml");
 const nbt = require("prismarine-nbt");
+const crypto = require("crypto");
 
 const ConfigFilePath = {
   bedrock: path.join(GetPaths("bedrock", true), "server.properties"),
@@ -13,9 +14,133 @@ const ConfigFilePath = {
   dragonfly: path.join(GetPaths("dragonfly", true), "config.toml"),
 }
 
+function CreateConfigToBedrock(
+  WorldName = "Bedrock",
+  ServerMotd = "Hello, is my Minecraft Bedrock Sever",
+  DefaultGameMode = "creative",
+  ServerDifficulty = "normal",
+  LevelSeed = "",
+  AllowCheats = false,
+  ServerLimitPlayers = 20,
+  RequiredAccout = true,
+  EnableWhitelist = false,
+  ServerPort = 19132,
+  ServerPortV6 = 19132,
+  PlayerDefaultPermission = "member",
+  ) {
+  return ([
+    "# By The Bds Maneger project",
+    `# Date: ${(new Date()).toString()}`,
+    "",
+    // World Settings
+    `level-name=${WorldName}`,
+    `server-name=${ServerMotd}`,
+    `gamemode=${DefaultGameMode}`,
+    `difficulty=${ServerDifficulty}`,
+    `level-seed=${LevelSeed}`,
+    `allow-cheats=${AllowCheats}`,
+    `max-players=${ServerLimitPlayers}`,
+    `online-mode=${RequiredAccout}`,
+    `white-list=${EnableWhitelist}`,
+    `server-port=${ServerPort}`,
+    `server-portv6=${ServerPortV6}`,
+    `default-player-permission-level=${PlayerDefaultPermission}`,
+    // Backend Maneger
+    "tick-distance=32",
+    "max-threads=8",
+    "view-distance=32",
+    "player-idle-timeout=0",
+    "texturepack-required=true",
+    "content-log-file-enabled=false",
+    "compression-threshold=1",
+    "server-authoritative-movement=server-auth",
+    "player-movement-score-threshold=20",
+    "player-movement-distance-threshold=0.3",
+    "player-movement-duration-threshold-in-ms=500",
+    "correct-player-movement=false",
+    "server-authoritative-block-breaking=false",
+  ]).join("\n");
+}
+
+function CreateConfigToJava(
+  WorldName = "world",
+  ServerMotd = "Hello, is my Minecraft Java Sever",
+  DefaultGameMode = "creative",
+  ServerDifficulty = "normal",
+  LevelSeed = "",
+  AllowCheats = false,
+  ServerLimitPlayers = 20,
+  RequiredAccout = true,
+  EnableWhitelist = false,
+  ServerPort = 19132
+) {
+  let HeadCore = false;
+  if (DefaultGameMode === "headcore") {
+    DefaultGameMode = "survival";
+    HeadCore = true;
+  }
+  return ([
+    "# By The Bds Maneger project",
+      `# Date: ${Date.now()}`,
+      "",
+      // World Settings
+      `level-name=${WorldName}`,
+      `motd=${ServerMotd}`,
+      `gamemode=${DefaultGameMode}`,
+      `difficulty=${ServerDifficulty}`,
+      `level-seed=${LevelSeed}`,
+      `enable-command-block=${AllowCheats}`,
+      `max-players=${ServerLimitPlayers}`,
+      `online-mode=${RequiredAccout}`,
+      `white-list=${EnableWhitelist}`,
+      `server-port=${ServerPort}`,
+      `hardcore=${HeadCore}`,
+      "level-type=default",
+      "op-permission-level=4",
+      "pvp=true",
+      "allow-nether=true",
+      // Rcon
+      "enable-rcon=false",
+      `rcon.password=${crypto.randomBytes(6).toString("hex")}`,
+      "rcon.port=25575",
+      "broadcast-rcon-to-ops=true",
+      // Anothers
+      "query.port=65551",
+      "enable-jmx-monitoring=false",
+      "enable-query=true",
+      "generator-settings=",
+      "generate-structures=true",
+      "network-compression-threshold=256",
+      "max-tick-time=60000",
+      "use-native-transport=true",
+      "enable-status=true",
+      "allow-flight=false",
+      "view-distance=32",
+      "max-build-height=256",
+      "server-ip=",
+      "sync-chunk-writes=true",
+      "prevent-proxy-connections=false",
+      "resource-pack=",
+      "entity-broadcast-range-percentage=100",
+      "player-idle-timeout=0",
+      "force-gamemode=false",
+      "rate-limit=0",
+      "broadcast-console-to-ops=true",
+      "spawn-npcs=true",
+      "spawn-animals=true",
+      "snooper-enabled=true",
+      "function-permission-level=2",
+      "text-filtering-config=",
+      "spawn-monsters=true",
+      "enforce-whitelist=false",
+      "resource-pack-sha1=",
+      "spawn-protection=16",
+      "max-world-size=29999984",
+  ]).join("\n");
+}
+
 // Set Config
-async function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Maneger", gamemode: "creative", difficulty: "normal", players: 10, commands: true, account: true, whitelist: true, port: 19132, portv6: 19133, seed: ""}){
-  const BdsPlatform = CurrentPlatorm();
+async function bds_config(NewConfig = {world: "Bds Maneger", description: "The Bds Maneger", gamemode: "creative", difficulty: "normal", players: 10, commands: true, account: true, whitelist: true, port: 19132, portv6: 19133, seed: ""}, BdsPlatform = CurrentPlatorm()){
   const JsonConfig = {
     world: "Bds Maneger",
     description: "The Bds Maneger",
@@ -49,94 +174,15 @@ async function bds_config(NewConfig = {world: "Bds Maneger", description: "The B
   
   const Config = [];
   if (BdsPlatform === "bedrock") {
-    const bedrockCPUThread = BdsInfo.GetCpuCoreCount();
-    var tickDistance; if (!(bedrockCPUThread % 2)) tickDistance = bedrockCPUThread; else tickDistance = 1;
-    Config.push(
-      "# By The Bds Maneger project",
-      `# Date: ${Date.now()}`,
-      "",
-      `level-name=${JsonConfig.world}`,
-      `server-name=${JsonConfig.description}`,
-      `gamemode=${JsonConfig.gamemode}`,
-      `difficulty=${JsonConfig.difficulty}`,
-      `allow-cheats=${JsonConfig.commands}`,
-      `max-players=${JsonConfig.players}`,
-      `online-mode=${JsonConfig.account}`,
-      `white-list=${JsonConfig.whitelist}`,
-      `server-port=${JsonConfig.port}`,
-      `server-portv6=${JsonConfig.portv6}`,
-      `tick-distance=${tickDistance}`,
-      `max-threads=${bedrockCPUThread}`,
-      `level-seed=${JsonConfig.seed}`,
-      "default-player-permission-level=member",
-      "view-distance=32",
-      "player-idle-timeout=0",
-      "texturepack-required=true",
-      "content-log-file-enabled=false",
-      "compression-threshold=1",
-      "server-authoritative-movement=server-auth",
-      "player-movement-score-threshold=20",
-      "player-movement-distance-threshold=0.3",
-      "player-movement-duration-threshold-in-ms=500",
-      "correct-player-movement=false",
-      "server-authoritative-block-breaking=false",
-    );
+    const BedrockProperties = path.join(BdsSettings.GetPaths("bedrock", true), "server.properties");
+    const BedrockConfig = CreateConfigToBedrock(JsonConfig.world, JsonConfig.description, JsonConfig.gamemode, JsonConfig.difficulty, JsonConfig.seed, false, JsonConfig.players, JsonConfig.account, JsonConfig.whitelist, JsonConfig.port, JsonConfig.portv6);
+    fs.writeFileSync(BedrockProperties, BedrockConfig);
+    return BedrockConfig;
   } else if (BdsPlatform === "java") {
-    Config.push(
-      "# By The Bds Maneger project",
-      `# Date: ${Date.now()}`,
-      "",
-      `level-name=${JsonConfig.world}`,
-      `motd=${JsonConfig.description}`,
-      `gamemode=${JsonConfig.gamemode}`,
-      `enable-command-block=${JsonConfig.commands}`,
-      `difficulty=${JsonConfig.difficulty}`,
-      `max-players=${JsonConfig.players}`,
-      `online-mode=${JsonConfig.account}`,
-      `server-port=${JsonConfig.port}`,
-      `hardcore=${JsonConfig}`,
-      `white-list=${JsonConfig}`,
-      `level-seed=${JsonConfig.seed}`,
-      "enable-rcon=false",
-      "query.port=65551",
-      "enable-jmx-monitoring=false",
-      "rcon.port=25575",
-      "enable-query=true",
-      "generator-settings=",
-      "pvp=true",
-      "generate-structures=true",
-      "network-compression-threshold=256",
-      "max-tick-time=60000",
-      "use-native-transport=true",
-      "enable-status=true",
-      "allow-flight=false",
-      "broadcast-rcon-to-ops=true",
-      "view-distance=32",
-      "max-build-height=256",
-      "server-ip=",
-      "allow-nether=true",
-      "sync-chunk-writes=true",
-      "op-permission-level=4",
-      "prevent-proxy-connections=false",
-      "resource-pack=",
-      "entity-broadcast-range-percentage=100",
-      "rcon.password=25as65d3",
-      "player-idle-timeout=0",
-      "force-gamemode=false",
-      "rate-limit=0",
-      "broadcast-console-to-ops=true",
-      "spawn-npcs=true",
-      "spawn-animals=true",
-      "snooper-enabled=true",
-      "function-permission-level=2",
-      "level-type=default",
-      "text-filtering-config=",
-      "spawn-monsters=true",
-      "enforce-whitelist=false",
-      "resource-pack-sha1=",
-      "spawn-protection=16",
-      "max-world-size=29999984",
-    );
+    const JavaProperties = path.join(BdsSettings.GetPaths("java", true), "server.properties");
+    const JavaConfig = CreateConfigToJava(JsonConfig.world, JsonConfig.description, JsonConfig.gamemode, JsonConfig.difficulty, JsonConfig.seed, false, JsonConfig.players, JsonConfig.account, JsonConfig.whitelist, JsonConfig.port, JsonConfig.portv6);
+    fs.writeFileSync(JavaProperties, JavaConfig);
+    return JavaConfig;
   } else if (BdsPlatform === "dragonfly") {
     Config.push(
       "",
@@ -327,38 +373,11 @@ async function bds_get_config(){
 }
 
 // Get Withelist
-function bds_get_whitelist(){
-  const BdsPlatform = CurrentPlatorm();
-  const ToReturn = [];
-  
-  // Bedrock
-  if (BdsPlatform === "bedrock") {
-    if (fs.existsSync(path.join(GetPaths("bedrock", true), "whitelist.json"))) {
-      const LocalWhitelist = JSON.parse(fs.readFileSync(path.join(GetPaths("bedrock", true), "whitelist.json"), "utf8"));
-      for (let i = 0; i < LocalWhitelist.length; i++) {
-        const Player = LocalWhitelist[i];
-        ToReturn.push({
-          name: Player.name,
-          // permissons: Player.permission,
-        });
-      }
-    }
-  }
+async function bds_get_whitelist(BdsPlatform = CurrentPlatorm()){
+  const ReturnArrayWithPlayers = [];
+  if (BdsPlatform === "bedrock") {}
 
-  // Pocketmine
-  else if (BdsPlatform === "pocketmine") {
-    throw new Error("Not implemented yet");
-  }
-
-  // Java and Spigot
-  else if (BdsPlatform === "java" || BdsPlatform === "spigot") {
-    throw new Error("Not implemented yet");
-  }
-  
-  // If not exists Platform return throw
-  else throw new Error("Platform no exists, check config file");
-
-  return ToReturn;
+  return ReturnArrayWithPlayers;
 }
 
 // Export modules

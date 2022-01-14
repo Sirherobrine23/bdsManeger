@@ -12,6 +12,7 @@ const ServerSettings = require("../ServerSettings");
 const BdsBackup = require("../BdsBackup");
 const BdsDownload = require("../BdsServersDownload");
 const BdsVersionManeger = require("@the-bds-maneger/server_versions");
+const minecraft_server_util = require("minecraft-server-util");
 
 function ErroRes(res, erro) {
   return res.status(500).json({
@@ -121,7 +122,21 @@ app.post("/server", BdsToken.ExpressCheckToken, async (req, res) => {
   } catch (err) {return ErroRes(res, err);}
 });
 
-app.get("/settings", async ({res}) => res.json(await ServerSettings.get_config()));
+app.get("/settings", async (req, res) => {
+  const ConfigServer = await ServerSettings.get_config();
+  ConfigServer.MoreInfo = {};
+  if (BdsSettings.CurrentPlatorm() === "bedrock") {
+    try {
+      const Bac = await minecraft_server_util.statusBedrock("localhost", ConfigServer.portv4);
+      ConfigServer.MoreInfo.SeverID = Bac.serverID;
+      ConfigServer.MoreInfo.Motd = Bac.motd;
+      ConfigServer.MoreInfo.Players = Bac.players||{};
+      ConfigServer.MoreInfo.Version = Bac.version;
+      console.log(Bac);
+    } catch (err) {console.log(err)}
+  }
+  return res.json(ConfigServer);
+});
 app.post("/settings", BdsToken.ExpressCheckToken, async (req, res) => {
   const ServerConfig = await ServerSettings.get_config();
   if (req.body.world) ServerConfig.world = req.body.world;
