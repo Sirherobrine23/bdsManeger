@@ -12,6 +12,7 @@ const TestInstrucation = [
   },
   async function() {
     console.log("Get Basic system information");
+    console.log("Arch": BdsCore.BdsSystemInfo.arch);
     return await BdsCore.BdsSystemInfo.CheckSystemAsync();
   },
   async function() {
