@@ -12,3 +12,6 @@ ports:
     onOpen: open-browser
   - port: 19132
     visibility: public
+vscode:
+  extensions:
+    - "github.copilot"

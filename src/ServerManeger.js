@@ -141,7 +141,6 @@ function StartServer() {
 
   // Mount commands to Return
   const SessionUUID = Crypto.randomUUID();
-  
 
   // Uptime Server
   let UptimeNumber = 0;
@@ -202,6 +201,7 @@ function StartServer() {
     });
   }
   
+  let CodeExit = null;
   /**
    * Stop the server
    */
@@ -217,7 +217,16 @@ function StartServer() {
     } else if (CurrentBdsPlatform === "spigot") {
       ServerExec.stdin.write("stop\n");
     } else throw new Error("Bds Core Bad Config Error");
+    setTimeout(() => {
+      try {
+        CodeExit = "Timeout"
+        ServerExec.kill("SIGKILL");
+      } catch (error) {
+        console.log(error);
+      }
+    }, 30 * 1000);
     const Code = await new Promise(resolve => OnCallbacks("exit", resolve));
+    if (CodeExit === "Timeout") throw new Error("Timeout");
     return Number(Code);
   }
   
