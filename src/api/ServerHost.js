@@ -53,12 +53,14 @@ app.get("/", ({res}) => {
 app.get("/info_server", async ({res}) => {
   try {
     const ServerSessions = ServerManeger.GetSessions();
-    const ServerRunner = Object.keys(ServerSessions).map(session => ServerSessions[session]).map(a => ({
-      UUID: a.uuid || "",
-      PID: a.PID || 0,
-      Uptime: a.Uptime || 0,
-      StartTime: a.StartTime || NaN
-    }));
+    const ServerRunner = [];
+    for (const Session of ServerSessions) {
+      ServerRunner.push({
+        UUID: Session.uuid,
+        Uptime: Session.Uptime(),
+        Started: Session.StartTime.toString(),
+      });
+    }
     const BdsConfig = BdsSettings.GetBdsConfig();
     delete BdsConfig.telegram;
     const AsyncHostInfo = await BdsSystemInfo.CheckSystemAsync();
@@ -125,14 +127,20 @@ app.post("/server", BdsToken.ExpressCheckToken, async (req, res) => {
 app.get("/settings", async (req, res) => {
   const ConfigServer = await ServerSettings.get_config();
   ConfigServer.MoreInfo = {};
-  if (BdsSettings.CurrentPlatorm() === "bedrock") {
+  const CurrentPlatorm = BdsSettings.CurrentPlatorm();
+  if (CurrentPlatorm === "bedrock") {
     try {
-      const Bac = await minecraft_server_util.statusBedrock("localhost", ConfigServer.portv4);
-      ConfigServer.MoreInfo.SeverID = Bac.serverID;
-      ConfigServer.MoreInfo.Motd = Bac.motd;
-      ConfigServer.MoreInfo.Players = Bac.players||{};
-      ConfigServer.MoreInfo.Version = Bac.version;
-      console.log(Bac);
+      const BacBed = await minecraft_server_util.statusBedrock("localhost", ConfigServer.portv4);
+      ConfigServer.MoreInfo.Motd = BacBed.motd;
+      ConfigServer.MoreInfo.Players = BacBed.players||{};
+      ConfigServer.MoreInfo.Version = BacBed.version;
+    } catch (err) {console.log(err)}
+  } else if (CurrentPlatorm === "java") {
+    try {
+      const BacJava = await minecraft_server_util.status("localhost", ConfigServer.portv4);
+      ConfigServer.MoreInfo.Motd = BacJava.motd;
+      ConfigServer.MoreInfo.Players = BacJava.players||{};
+      ConfigServer.MoreInfo.Version = BacJava.version;
     } catch (err) {console.log(err)}
   }
   return res.json(ConfigServer);

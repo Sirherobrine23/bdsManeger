@@ -37,13 +37,11 @@ function Parse(RepositoryPath = "", BdsPlatform = "pocketmine", Config = {}) {
         version: version,
         minimum: 0,
         url: "",
-      }
-      
+      };
       // Server Minimum version (0 is any version)
       if (typeof minimum === "string") ObjVersion.minimum = minimum;
       else if (typeof minimum === "number") ObjVersion.minimum = minimum;
       else ObjVersion.minimum = 0;
-
       if (version !== undefined) {
         // Pocketmine from poggit
         if (from === "poggit_pmmp") {

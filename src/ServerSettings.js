@@ -7,13 +7,6 @@ const TOML = require("@iarna/toml");
 const nbt = require("prismarine-nbt");
 const crypto = require("crypto");
 
-const ConfigFilePath = {
-  bedrock: path.join(GetPaths("bedrock", true), "server.properties"),
-  java: path.join(GetPaths("java", true), "server.properties"),
-  pocketmine: path.join(GetPaths("pocketmine", true), "server.properties"),
-  dragonfly: path.join(GetPaths("dragonfly", true), "config.toml"),
-}
-
 function CreateConfigToBedrock(
   WorldName = "Bedrock",
   ServerMotd = "Hello, is my Minecraft Bedrock Sever",
@@ -136,7 +129,11 @@ function CreateConfigToJava(
       "resource-pack-sha1=",
       "spawn-protection=16",
       "max-world-size=29999984",
-  ]).join("\n");
+      "require-resource-pack=true",
+      "resource-pack-prompt=",
+      "hide-online-players=false",
+      "simulation-distance=10",
+    ]).join("\n");
 }
 
 // Set Config
@@ -256,7 +253,8 @@ async function bds_config(NewConfig = {world: "Bds Maneger", description: "The B
       "auto-save=on",
     );
   }
-  fs.writeFileSync(ConfigFilePath[BdsPlatform], Config.join("\n"))
+  throw new Error("Backend Reject Instruction");
+  // fs.writeFileSync(ConfigFilePath[BdsPlatform], Config.join("\n"))
   return Config.join("\n");
 }
 
@@ -277,8 +275,9 @@ async function bds_get_config(){
   };
   
   if (BdsPlatform === "bedrock") {
-    if (fs.existsSync(ConfigFilePath[BdsPlatform])) {
-      config = propertiesToJSON(fs.readFileSync(ConfigFilePath["bedrock"], "utf8"));
+    const BedrockProperties = path.join(BdsSettings.GetPaths("bedrock", true), "server.properties");
+    if (fs.existsSync(BedrockProperties)) {
+      config = propertiesToJSON(fs.readFileSync(BedrockProperties, "utf8"));
       
       // Players
       JsonConfig.world = config["level-name"];
@@ -300,8 +299,9 @@ async function bds_get_config(){
     }
   }
   else if (BdsPlatform === "java") {
-    if (fs.existsSync(ConfigFilePath[BdsPlatform])) {
-      config = propertiesToJSON(fs.readFileSync(path.join(ConfigFilePath["java"], "server.properties"), "utf8"));
+    const JavaProperties = path.join(BdsSettings.GetPaths("java", true), "server.properties");
+    if (fs.existsSync(JavaProperties)) {
+      config = propertiesToJSON(fs.readFileSync(JavaProperties, "utf8"));
       
       // Players
       JsonConfig.world = config["level-name"];
@@ -317,11 +317,13 @@ async function bds_get_config(){
       JsonConfig.portv6 = parseInt(config["server-port"]);
       JsonConfig.seed = config["level-seed"];
       JsonConfig.commands = (config["enable-command-block"] === "true");
-      // JsonConfig.worldtype = config["level-type"];
+      
+      const ParsedNBTJava = (await nbt.parse(fs.readFileSync(path.join(GetPaths("java", true), JsonConfig.world, "level.dat")))).parsed.value;
+      JsonConfig.nbt = ParsedNBTJava.Data.value||ParsedNBTJava.Data||ParsedNBTJava;
     }
   }
   else if (BdsPlatform === "pocketmine") {
-    const PocketMineProperties = ConfigFilePath["pocketmine"];
+    const PocketMineProperties = path.join(BdsSettings.GetPaths("pocketmine", true), "server.properties");
     if (fs.existsSync(PocketMineProperties)) {
       config = propertiesToJSON(fs.readFileSync(PocketMineProperties, "utf8"));
       
@@ -354,8 +356,9 @@ async function bds_get_config(){
       if (fs.existsSync(PocketmineLevelData)) JsonConfig.nbt = (await nbt.parse(fs.readFileSync(PocketmineLevelData))).parsed.value;
     }
   } else if (BdsPlatform === "dragonfly") {
-    if (fs.existsSync(ConfigFilePath[BdsPlatform])) {
-      const ConfigFile = TOML.parse(fs.readFileSync(ConfigFilePath[BdsPlatform], "utf8"));
+    const DragonflyProperties = path.join(BdsSettings.GetPaths("dragonfly", true), "server.properties");
+    if (fs.existsSync(DragonflyProperties)) {
+      const ConfigFile = TOML.parse(fs.readFileSync(DragonflyProperties, "utf8"));
       JsonConfig.world = ConfigFile.World.Name;
       JsonConfig.description = ConfigFile.Server.Name;
       JsonConfig.gamemode = "creative";
@@ -368,7 +371,7 @@ async function bds_get_config(){
       JsonConfig.seed = null;
       JsonConfig.commands = false;
     }
-  } else throw new Error("Platform no exists, check config file");
+  }
   return JsonConfig;
 }
 

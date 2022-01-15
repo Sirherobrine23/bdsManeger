@@ -29,11 +29,13 @@ const io = new SocketIo.Server(Server, {
 io.use(function (socket, next) {
   const { headers, query } = socket.handshake;
   const Token = headers["authorizationtoken"] || query["token"] || query["Token"];
-  if (Token) {
+  try {
     if (TokenManeger.CheckToken(Token, "all")) {
       socket.token = Token;
       return next();
     }
+  } catch (e) {
+    return next(e);
   }
   return next(new Error("Token is not valid"));
 });

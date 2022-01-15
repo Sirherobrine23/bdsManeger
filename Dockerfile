@@ -72,7 +72,8 @@ ENV SERVER_VERSION="true" \
   LEVEL_SEED="" \
   SERVER="bedrock" \
   SERVER_VERSION="latest" \
-  TelegramToken=""
+  TelegramToken="" \
+  NODE_ENV="production"
 
 
 # Bds Maneger Core required ports

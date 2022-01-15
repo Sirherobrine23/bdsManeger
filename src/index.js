@@ -9,7 +9,7 @@ const BdsManegerCoreJSONs = {
 // Bds Maneger Core Version
 module.exports.version = BdsManegerCoreJSONs.Package.version;
 const ExtraJSON = BdsManegerCoreJSONs;
-module.exports.ExtraJSON = ExtraJSON
+module.exports.ExtraJSON = ExtraJSON;
 
 if (process.env.ShowLoadTime) console.time("Bds Maneger Core: Settings");
 const BdsSettings = require("./lib/BdsSettings");

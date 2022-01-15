@@ -26,13 +26,17 @@ jobs:
       uses: github/codeql-action/analyze@v1
 
   test:
-    name: Test
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         node_version:
-          - 15.x
           - 16.x
+          - 17.x
+        os:
+          - linux-latest
+          - windows-latest
+          - macos-latest
+    name: "Test ${{ matrix.os }}"
+    runs-on: "${{ matrix.os }}"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2

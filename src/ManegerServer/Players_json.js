@@ -1,7 +1,7 @@
 const fs = require("fs");
 const BdsSettings = require("../lib/BdsSettings");
 
-module.exports.Example = [
+module.exports.PlayersJsonExample = module.exports.Example = [
   {
     Player: "",
     Action: "",
@@ -16,6 +16,7 @@ module.exports.Example = [
     Date: "",
   },
 ];
+
 
 async function BedrockJson(Data = "") {
   const Bedrock_Json = [];
@@ -41,7 +42,7 @@ async function BedrockJson(Data = "") {
         Platform: "bedrock",
         xuid: "",
         Date: (new Date()).toString()
-      }
+      };
       if (/disconnected|disconnected.*:/.test(line)) playerAction.Action = "disconnect"; else playerAction.Action = "connect";
       // Player
       line.replace(/\[.*\]\s+Player\s+.*connected:(.*),\s+xuid:[\s+]/gi, (a, b) => playerAction.Player = b.trim());
@@ -137,9 +138,19 @@ function CreatePlayerJsonCallback(data = "", callback = (d = [{Player: "", Actio
 }
 module.exports.CreatePlayerJson = CreatePlayerJsonCallback;
 
-function UpdateUserJSON(New_Object = []){
+/**
+ * Concat new Users Array to old Users Array and Save to file
+ * 
+ * @returns {Array<{
+ *  Player: string;
+ *  Action: string;
+ *  Platform: string;
+ *  Date: string;
+ * }>}
+ */
+function UpdateUserJSON(New_Object = [{Player: "", Action: "", Platform: "", Date: ""}]){
   const Player_Json_path = BdsSettings.GetPaths("Player");
-  let Players_Json = [{Player: "", Action: "", Platform: "", Date: ""}];Players_Json = [];
+  let Players_Json = [];
   if (fs.existsSync(Player_Json_path)) Players_Json = JSON.parse(fs.readFileSync(Player_Json_path, "utf8"));
   Players_Json = Players_Json.concat(New_Object)
   fs.writeFileSync(Player_Json_path, JSON.stringify(Players_Json, null, 2));

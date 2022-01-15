@@ -122,21 +122,21 @@ async function RenderMainProcess(ProcessArgs = {}, Plugins = []) {
   if (ProcessArgs.download) await DownloadServer(ProcessArgs.download);
 
   // Kill
-  if (ProcessArgs.kill) BdsCore.BdsCkeckKill.Kill();
+  if (ProcessArgs.kill) await BdsCore.BdsCkeckKill.Kill();
 
   // Server Proprieties
   // --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}
-  const ServerProprieties = BdsCore.BdsServerSettings.get_config();
-
-  if (ProcessArgs["world-name"]) ServerProprieties.world = ProcessArgs["world-name"];
-  if (ProcessArgs.description) ServerProprieties.description = ProcessArgs.description;
-  if (ProcessArgs.gamemode) ServerProprieties.gamemode = ProcessArgs.gamemode;
-  if (ProcessArgs.difficulty) ServerProprieties.difficulty = ProcessArgs.difficulty;
-  if (ProcessArgs.players) ServerProprieties.players = ProcessArgs.players;
-  // if (ProcessArgs.level_seed) ServerProprieties.level_seed = ProcessArgs.level_seed;
-
-  // Save
-  try {BdsCore.BdsServerSettings.config(ServerProprieties);} catch (error) {console.log(error);}
+  try {
+    const ServerProprieties = await BdsCore.BdsServerSettings.get_config();
+    if (ProcessArgs["world-name"]) ServerProprieties.world = ProcessArgs["world-name"];
+    if (ProcessArgs.description) ServerProprieties.description = ProcessArgs.description;
+    if (ProcessArgs.gamemode) ServerProprieties.gamemode = ProcessArgs.gamemode;
+    if (ProcessArgs.difficulty) ServerProprieties.difficulty = ProcessArgs.difficulty;
+    if (ProcessArgs.players) ServerProprieties.players = ProcessArgs.players;
+    await BdsCore.BdsServerSettings.config(ServerProprieties);
+  } catch (err) {
+    console.log("Cannot Save Config")
+  }
 
   // Do NOT Start API
   if (!(ProcessArgs["no-api"])) BdsCore.BdsManegerAPI.api();
@@ -154,6 +154,7 @@ async function RenderMainProcess(ProcessArgs = {}, Plugins = []) {
       console.log("Cannot get domain");
     }
   }
+  if (BdsCore.BdsToken.GetAllTokens().map(a => a.Token).length === 0) BdsCore.BdsToken.CreateToken();
   console.log("Token:", BdsCore.BdsToken.GetAllTokens().map(a => a.Token).join("\n"));
   for (let Plgun of Plugins) {
     const { externalStart, name } = require(Plgun);
@@ -182,13 +183,13 @@ async function RenderMainProcess(ProcessArgs = {}, Plugins = []) {
           const LatestVersions = (await BdsCoreUrlManeger.listAsync()).latest[Platform];
           if (LatestVersions !== TmpVersion) {
             console.log("New Version:", LatestVersions);
-            const Servers = BdsManegerServer.GetSessions()
+            const Servers = BdsManegerServer.GetSessions();
             for (let session of Servers) {
               try {session.ServerAction.say("AutoUpdate Stop Server");} catch (err) {console.log(err);}
               await session.stop();
             }
             (BdsBackup.Backup()).write_file();
-            await BdsDownload.DownloadServer("latest")
+            await BdsDownload.DownloadServer("latest");
             
             StartServer(false);
             TmpVersion = LatestVersions;
@@ -268,6 +269,11 @@ Yargs.command("start", "Start Bds Core Server", (YargsOpt) => {
     type: "number",
     default: 15
   });
+  YargsOpt.option("Develop", {
+    describe: "Develop Mode",
+    type: "boolean",
+    default: false
+  });
   module.exports.Yargs = YargsOpt;
   const Plugins = [];
   fs.readdirSync(path.join(__dirname, "plugins")).map(file => path.resolve(__dirname, "plugins", file)).filter(Mod => fs.lstatSync(Mod).isFile() && Mod.endsWith(".js")).forEach(Plugin => {
@@ -280,6 +286,10 @@ Yargs.command("start", "Start Bds Core Server", (YargsOpt) => {
     }
   });
   const YargsOptArg = YargsOpt.help().version(false).parse();
+  if (YargsOptArg.Develop) process.env.NODE_ENV = "development";
+  else {
+    process.env.NODE_ENV = process.env.NODE_ENV ? process.env.NODE_ENV : "production";
+  }
   return RenderMainProcess({
     download: YargsOptArg.download || YargsOptArg.d,
     kill: YargsOptArg.kill || YargsOptArg.k,
@@ -298,4 +308,4 @@ Yargs.command("start", "Start Bds Core Server", (YargsOpt) => {
     process.exit(1);
   });
 });
-Yargs.version(false).help().parse();
+Yargs.version(false).help(true).parse();

@@ -56,6 +56,7 @@ function DeleteToken(Token = "") {
  * Check for is valid Token
  */
 function CheckToken(Token = "", Scope = "admin") {
+  if (process.env.NODE_ENV !== "production") return true;
   if (!Token) throw new Error("Inform valid Token");
   if (!(Scope === "admin" || Scope === "user" || Scope === "all")) throw new Error("Invalid Scope, valid use admin and user");
   // Tmp Tokens
@@ -95,6 +96,7 @@ function CheckTelegramID(TelegramID = null) {
  * Express Middleware to Check Token
  */
 function ExpressCheckToken (req, res, next) {
+  if (process.env.NODE_ENV !== "production") return next();
   let TokenFinded = "";
   if (req.headers["authorizationtoken"]) TokenFinded = req.headers["authorizationtoken"];
   else if (req.query.token) TokenFinded = req.query.token;
@@ -127,4 +129,4 @@ module.exports = {
   CheckTelegramID,
   TokenFile,
   GetAllTokens: () => Tokens
-}
+};

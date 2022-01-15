@@ -12,13 +12,13 @@
     "import": "./esm/index.js"
   },
   "scripts": {
-    "start": "node bin/BdsManeger.js -sk",
+    "start": "node bin/BdsManeger.js start",
     "test": "mocha --exit .test/*.js",
-    "esm_module": "cjs2esm",
+    "dev": "nodemon",
     "esm": "cjs2esm",
+    "esm_module": "cjs2esm",
     "eslint": "eslint --debug --fix .",
-    "Docker": "docker-compose up --build",
-    "dev": "nodemon"
+    "Docker": "docker-compose up --build"
   },
   "nodemonConfig": {
     "ignore": [
@@ -31,7 +31,7 @@
       "package.json",
       "package-lock.json"
     ],
-    "exec": "node --trace-warnings ./bin/BdsManeger.js start"
+    "exec": "node --trace-warnings ./bin/BdsManeger.js start --Develop"
   },
   "bin": {
     "bds_maneger": "bin/BdsManeger.js"
@@ -89,6 +89,7 @@
     "properties-to-json": "^0.2.1",
     "request-ip": "^2.1.3",
     "socket.io": "^4.3.2",
+    "systeminformation": "^5.10.0",
     "telegraf": "^4.0.0",
     "yargs": "^17.3.1"
   },

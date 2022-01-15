@@ -4,6 +4,7 @@ const path = require("path");
 const Crypto = require("crypto");
 const BdsSettings = require("./lib/BdsSettings");
 const Players_json = require("./ManegerServer/Players_json");
+const { PlayersJsonExample } = Players_json
 
 const PlayersCallbacks = [];
 module.exports.RegisterPlayerGlobalyCallbacks = (callback = () => {}) => PlayersCallbacks.push(callback);
@@ -12,13 +13,15 @@ const BackendServerManeger = {
   ServerSessions: []
 };
 /**
+ * Get All sever Sessions
+ * 
  * @returns {Array<{
  *  uuid: string
  *  LogPath: string
  *  StartTime: Date
- *  on: (Action: "log"|"exit", Callback: Function) => void
- *  PlayerAction: (Action: "connect"|"disconect") => void
- *  stop: Promise< () => number>
+ *  on: (Action: "log"|"exit", Callback: (data: String|number)) => void
+ *  PlayerAction: (Action: "connect"|"disconect"|"all", Callback: (data: PlayersJsonExample) => {}) => void
+ *  stop: Promise<() => number>
  *  SendCommand: (Data: String) => void
  *  Uptime: () => number
  *  Players_in_Session: void
@@ -78,26 +81,16 @@ function StartServer() {
     } else throw new Error("your system does not support Minecraft Bedrock (yet)")
   }
 
-  // Minecraft Java Oficial
-  else if (CurrentBdsPlatform === "java") {
-    const JavaConfig = BdsSettings.GetServerSettings("java")
-
+  // Minecraft Java Oficial and Spigot
+  else if (CurrentBdsPlatform === "java" || CurrentBdsPlatform === "spigot") {
+    const JavaConfig = BdsSettings.GetBdsConfig("java").server.Settings.java;
     // Checking if java is installed on the device
     if (commandExists("java")) {
       SetupCommands.cwd = BdsSettings.GetPaths("java", true);
       SetupCommands.command = "java";
-      SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "MinecraftServerJava.jar", "nogui");
-    } else throw new Error("Install Java");
-  }
-
-  // Spigot
-  else if (CurrentBdsPlatform === "spigot") {
-    const JavaConfig = BdsSettings.GetServerSettings("java")
-    // Checking if java is installed on the device
-    if (commandExists("java")) {
-      SetupCommands.cwd = BdsSettings.GetPaths("spigot", true);
-      SetupCommands.command = "java";
-      SetupCommands.args.push("-jar", `-Xms${JavaConfig.ram_mb}M`, `-Xmx${JavaConfig.ram_mb}M`, "spigot.jar", "nogui");
+      SetupCommands.args.push("-jar");
+      if (CurrentBdsPlatform === "java") SetupCommands.args.push(`-Xms${JavaConfig.ram||1024}M`, `-Xmx${JavaConfig.ram||1024}M`, "MinecraftServerJava.jar", "nogui");
+      else SetupCommands.args.push("spigot.jar");
     } else throw new Error("Install Java");
   }
 
@@ -194,7 +187,7 @@ function StartServer() {
    * @param {string} Action - The event to listen for.
    * @param {function} Callback - The callback to run when the event is triggered.
    */
-  function SessionPlayerAction(Action = "all", Callback = (PlayerActions = Players_json.Example) => console.log(PlayerActions)){
+  function SessionPlayerAction(Action = "all", Callback = (PlayerActions = PlayersJsonExample) => console.log(PlayerActions)){
     if (typeof Callback !== "function") throw new Error("Callback must be a function");
     if (!(Action === "all" || Action === "connect" || Action === "disconnect")) throw new Error("Use some valid Action: all, connect, disconnect");
     OnCallbacks("log", async data => {
@@ -395,6 +388,7 @@ function StartServer() {
       data: data
     });
     Players_json.Promise_CreatePlayerJson(data, CurrentBdsPlatform).then(async Actions => {
+      if (typeof Actions !== "object") return;
       if (Actions.length === 0) return;
       Players_json.UpdateUserJSON(Actions);
       io.emit("PlayerAction", Actions);
@@ -428,7 +422,7 @@ function StartServer() {
   /**
    * Get Player connectes or not in the server.
    * 
-   * @returns {Object<string,<{
+   * @returns {Object<string,{
    *  connected: boolean,
    *  history: Array<{
    *   Action: string,
