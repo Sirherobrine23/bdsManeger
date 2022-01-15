@@ -8,6 +8,7 @@ const commadExist = require("./commandExist");
 // System Architect (x64, aarch64 and others)
 let arch = process.arch;
 if (process.arch === "arm64") arch = "aarch64";
+module.exports.arch = arch;
 
 // Get System Basic Info
 async function CheckSystemAsync() {
@@ -55,6 +56,9 @@ async function CheckSystemAsync() {
 
   return BasicConfigJSON;
 }
+module.exports = CheckSystemAsync;
+module.exports.SystemInfo = CheckSystemAsync;
+module.exports.CheckSystemAsync = CheckSystemAsync;
 
 /**
  * Platforms valid from deferents systems
@@ -95,6 +99,7 @@ function GetKernel() {
     else return UnameRV.replace(/\n|\t|\r/gi, "");
   } else return "Not identified";
 }
+module.exports.GetKernel = GetKernel;
 
 /**
  * Get CPU Cores number
@@ -103,10 +108,154 @@ function GetCpuCoreCount() {
   if (process.platform === "android") return fs.readdirSync("/sys/devices/system/cpu/").filter(data => /cpu[0-9]/.test(data)).length;
   else return os.cpus().length;
 }
-
-module.exports = CheckSystemAsync;
-module.exports.SystemInfo = CheckSystemAsync;
-module.exports.GetKernel = GetKernel;
-module.exports.CheckSystemAsync = CheckSystemAsync;
 module.exports.GetCpuCoreCount = GetCpuCoreCount;
-module.exports.arch = arch;
+
+/**
+ * Advanced System And Server Infomaion
+ * 
+ * @return {{
+ *  platform: NodeJS.Platform;
+ *  arch: string;
+ *  kernel: string;
+ *  cpu_cores: number;
+ *  RequiredQemu: boolean;
+ *  RunningOn: "native"|"emulated"|"unknown";
+ *  AvaibleServers: {
+ *     bedrock: {
+ *       avaible: boolean;
+ *       RequiredQemu: boolean;
+ *       RunningOn: "native"|"emulated";
+ *     };
+ *     spigot: {
+ *       avaible: boolean;
+ *       RequiredQemu: boolean;
+ *       RunningOn: "native"|"emulated";
+ *     };
+ *     dragonfly: {
+ *       avaible: boolean;
+ *       RequiredQemu: boolean;
+ *       RunningOn: "native"|"emulated";
+ *     };
+ *     pocketmine: {
+ *       avaible: boolean;
+ *       RequiredQemu: boolean;
+ *       RunningOn: "native"|"emulated";
+ *     };
+ *   };
+ * }}
+ */
+async function AdvancedInfo() {
+  const Info = {
+    platform: process.platform,
+    arch: arch,
+    kernel: GetKernel(),
+    cpu_cores: GetCpuCoreCount(),
+    AvaibleQemu: false,
+    AvaibleServers: {
+      bedrock: {
+        avaible: false,
+        RequiredQemu: false,
+        RunningOn: "native",
+        arch: arch
+      },
+      spigot: {
+        avaible: false,
+        RequiredQemu: false,
+        RunningOn: "native",
+        arch: arch
+      },
+      java: {
+        avaible: false,
+        RequiredQemu: false,
+        RunningOn: "native",
+        arch: arch
+      },
+      dragonfly: {
+        avaible: false,
+        RequiredQemu: false,
+        RunningOn: "native",
+        arch: arch
+      },
+      pocketmine: {
+        avaible: false,
+        RequiredQemu: false,
+        RunningOn: "native",
+        arch: arch
+      },
+    }
+  }
+
+  if (process.platform === "linux") Info.AvaibleQemu = await commadExist.commdExistAsync("qemu-x86_64-static");
+  else if (process.platform === "android") Info.AvaibleQemu = await commadExist.commdExistAsync("qemu-x86_64");
+
+  // PHP Static bins
+  const PhpBinFiles = await Request.GetLatestReleaseFromGithub("The-Bds-Maneger/PocketMinePHPAutoBinBuilds");
+  if (PhpBinFiles.assets.find(data => {
+    let Status = true;
+    if (process.platform === "win32") Status = data.name.includes("Windows");
+    else if (process.platform === "linux") Status = data.name.includes("Linux");
+    else if (process.platform === "darwin") Status = data.name.includes("MacOS");
+    else if (process.platform === "android") Status = data.name.includes("Android");
+    if (arch === "x64") Status = data.name.includes("x64");
+    else if (arch === "x32") Status = data.name.includes("x32");
+    else if (arch === "arm64") Status = data.name.includes("aarch64");
+    return Status;
+  })) Info.AvaibleServers.pocketmine.avaible = true;
+
+  const Versions = await BdsCoreUrlManeger.listAsync();
+  const Bedrock = Versions.platform.filter(Data => Data.name === "bedrock");
+  const Dragonfly = Versions.platform.filter(Data => Data.name === "dragonfly");
+  
+  // Bedrock
+  if (Bedrock.find(Data => Data.version === Versions.latest.bedrock).data[process.platform][arch]) Info.AvaibleServers.bedrock.avaible = true;
+  else {
+    if (Info.AvaibleQemu) {
+      Info.AvaibleServers.bedrock.RequiredQemu = true;
+      Info.AvaibleServers.bedrock.RunningOn = "emulated";
+      Info.AvaibleServers.bedrock.arch = "x64";
+    }
+  }
+
+  // Dragonfly
+  if (Dragonfly.find(Data => Data.version === Versions.latest.dragonfly).data[process.platform][arch]) Info.AvaibleServers.dragonfly.avaible = true;
+  else {
+    if (Info.AvaibleQemu) {
+      Info.AvaibleServers.dragonfly.RequiredQemu = true;
+      Info.AvaibleServers.dragonfly.RunningOn = "emulated";
+      Info.AvaibleServers.dragonfly.arch = "x64";
+    }
+  }
+
+  // Java
+  if (await commadExist.commdExistAsync("java")) {
+    let JavaVersion = "";
+    // OpenJDK
+    try {
+      const Javave = child_process.execFileSync("java", ["-version"]).toString();
+      if (Javave.includes("openjdk")) {
+        JavaVersion = Javave.match(/openjdk version "(.*)"/)[0];
+      } else {
+        JavaVersion = Javave.match(/java version "(.*)"/)[0];
+      }
+    } catch (err) {
+      JavaVersion = "Not found";
+    }
+    // Java
+    try {
+      const Javave = child_process.execFileSync("java", ["--version"]).toString();
+      JavaVersion = Javave.match(/java version "(.*)"/)[0];
+    } catch (err) {
+      JavaVersion = "Not found";
+    }
+    console.log(JavaVersion)
+    if (!(JavaVersion === "" || JavaVersion === "Not found")) {
+      if (parseFloat(JavaVersion) >= 16.0) {
+        Info.AvaibleServers.spigot.avaible = true;
+        Info.AvaibleServers.java.avaible = true;
+      }
+    }
+  }
+
+  return Info;
+}
+module.exports.AdvancedInfo = AdvancedInfo;
