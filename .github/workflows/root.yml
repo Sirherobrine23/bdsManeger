@@ -35,7 +35,7 @@ jobs:
           - linux-latest
           - windows-latest
           # - macos-latest
-    name: "Test ${{ matrix.os }}"
+    name: "Test System: ${{ matrix.os }}, Node Version: ${{ matrix.node_version }}"
     runs-on: "${{ matrix.os }}"
     steps:
       - name: Checkout Code
