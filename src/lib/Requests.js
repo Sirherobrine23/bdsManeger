@@ -13,7 +13,8 @@ async function BufferHTTP(url = "", args = {}) {
   if (res.ok) return Buffer.from(await res.arrayBuffer());
   else throw {
     Error: await res.text(),
-    status: res.status
+    status: res.status,
+    urlRequest: url,
   }
 }
 module.exports.BUFFER = BufferHTTP;
