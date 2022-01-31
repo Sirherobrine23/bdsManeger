@@ -54,7 +54,7 @@ const TestInstrucation = [
       console.log("Data:", OldReturn);
       console.log("Result: Success\n");
     } catch (err) {
-      console.error(err);
+      console.error(err.stack||err);
       console.log("Result: Failed\n");
       process.exit(1);
     }

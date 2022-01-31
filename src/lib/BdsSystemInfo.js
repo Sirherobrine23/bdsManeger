@@ -12,7 +12,6 @@ module.exports.arch = arch;
 
 // Get System Basic Info
 async function CheckSystemAsync() {
-  const PHPBin = await Request.JSON("https://raw.githubusercontent.com/The-Bds-Maneger/Php_Static_Binary/main/binarys.json");
   const ServerVersions = await BdsCoreUrlManeger.listAsync();
   const Servers = {
     bedrock: ServerVersions.platform.filter(data => data.name === "bedrock")[0].data,
@@ -23,14 +22,25 @@ async function CheckSystemAsync() {
     require_qemu: false,
     valid_platform: {
       bedrock: true,
-      pocketmine: true,
+      pocketmine: false,
       java: await commadExist.commdExistAsync("java"),
       dragonfly: true
     }
   }
 
   // check php bin
-  if (!((PHPBin[process.platform] || {})[arch])) BasicConfigJSON.valid_platform["pocketmine"] = false;
+  const PhpBinFiles = await Request.GetLatestReleaseFromGithub("The-Bds-Maneger/PocketMinePHPAutoBinBuilds");
+  if (PhpBinFiles.assets.find(data => {
+    let Status = true;
+    if (process.platform === "win32") Status = data.name.startsWith("win32");
+    else if (process.platform === "linux") Status = data.name.startsWith("linux");
+    else if (process.platform === "darwin") Status = data.name.startsWith("darwin");
+    else if (process.platform === "android") Status = data.name.startsWith("android");
+    if (arch === "x64") Status = data.name.includes("x64");
+    else if (arch === "x32") Status = data.name.includes("x32");
+    else if (arch === "arm64") Status = data.name.includes("aarch64");
+    return Status;
+  })) BasicConfigJSON.valid_platform["pocketmine"] = true;
 
   // Check for Dragonfly
   if (!(Servers.dragonfly[process.platform][arch])) BasicConfigJSON.valid_platform["dragonfly"] = false;
@@ -192,10 +202,10 @@ async function AdvancedInfo() {
   const PhpBinFiles = await Request.GetLatestReleaseFromGithub("The-Bds-Maneger/PocketMinePHPAutoBinBuilds");
   if (PhpBinFiles.assets.find(data => {
     let Status = true;
-    if (process.platform === "win32") Status = data.name.includes("Windows");
-    else if (process.platform === "linux") Status = data.name.includes("Linux");
-    else if (process.platform === "darwin") Status = data.name.includes("MacOS");
-    else if (process.platform === "android") Status = data.name.includes("Android");
+    if (process.platform === "win32") Status = data.name.startsWith("win32");
+    else if (process.platform === "linux") Status = data.name.startsWith("linux");
+    else if (process.platform === "darwin") Status = data.name.startsWith("darwin");
+    else if (process.platform === "android") Status = data.name.startsWith("android");
     if (arch === "x64") Status = data.name.includes("x64");
     else if (arch === "x32") Status = data.name.includes("x32");
     else if (arch === "arm64") Status = data.name.includes("aarch64");
@@ -205,7 +215,7 @@ async function AdvancedInfo() {
   const Versions = await BdsCoreUrlManeger.listAsync();
   const Bedrock = Versions.platform.filter(Data => Data.name === "bedrock");
   const Dragonfly = Versions.platform.filter(Data => Data.name === "dragonfly");
-  
+
   // Bedrock
   if (Bedrock.find(Data => Data.version === Versions.latest.bedrock).data[process.platform][arch]) Info.AvaibleServers.bedrock.avaible = true;
   else {
