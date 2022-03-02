@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
@@ -39,7 +39,7 @@ jobs:
     runs-on: "${{ matrix.os }}"
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Node.JS and NPM
         uses: actions/setup-node@v3.0.0
@@ -64,7 +64,7 @@ jobs:
     name: Npm Publish (${{ matrix.npm_registry }})
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Node.js (NPM Packages)
         if: matrix.npm_registry == 'NPM'
@@ -169,7 +169,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
 
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Edit Version to next release
         if: github.event_name != 'release'
