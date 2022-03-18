@@ -1,24 +1,20 @@
-FROM debian:latest AS core
-ENV DEBIAN_FRONTEND="noninteractive" DOCKER_IMAGE="true"
-
+FROM debian:latest
 LABEL name="Bds Maneger Docker"
 LABEL org.opencontainers.image.title="Bds Maneger Docker"
 LABEL org.opencontainers.image.description="Start Minecraft Server with Docker containers and Auto Control Server wirh Bds Maneger Core."
 LABEL org.opencontainers.image.vendor="Sirherobrine23"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/The-Bds-Maneger/Bds-Maneger-Core.git"
+ENV DEBIAN_FRONTEND="noninteractive"
 
 # Install Core Packages
-RUN apt update && \
-  apt install -y curl wget unzip zip xz-utils tar procps
+RUN apt update && apt install -y curl wget unzip zip xz-utils tar procps
 
 # Install external Libries to another architecture
-ARG LibrieZip="https://github.com/The-Bds-Maneger/external_files/raw/main/Linux/libs_amd64.zip"
-RUN \
-if [ "$(uname -m)" != "x86_64" ];then \
+RUN if [ "$(uname -m)" != "x86_64" ];then \
   mkdir -p /lib64; \
   apt install -y qemu-user-static; \
-  wget -q "${LibrieZip}" -O /tmp/libries.zip; \
+  wget -q "https://github.com/The-Bds-Maneger/external_files/raw/main/Linux/libs_amd64.zip" -O /tmp/libries.zip; \
   unzip -o /tmp/libries.zip -d /; \
   rm -rfv /tmp/libries.zip; \
 fi
@@ -27,8 +23,7 @@ fi
 RUN apt install -y ca-certificates make build-essential procps lsb-release xdg-utils g++ libatomic1 libnss3 libatk-bridge2.0-0 gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxrandr2 libxrender1 libxss1 libxtst6 fonts-liberation libnss3 libgbm-dev
 
 # Install Node.js
-RUN \
-  NODEVERSION=$(curl -sL https://api.github.com/repos/nodejs/node/releases | grep tag_name | cut -d '"' -f 4 | sort -V | tail -n 1) && \
+RUN NODEVERSION=$(curl -sL https://api.github.com/repos/nodejs/node/releases | grep tag_name | cut -d '"' -f 4 | sort -V | tail -n 1) && \
   case $(uname -m) in \
     x86_64 ) wget -q "https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-x64.tar.xz" -O /tmp/node.tar.xz;; \
     aarch64 ) wget -q "https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-arm64.tar.xz" -O /tmp/node.tar.xz;; \
@@ -46,11 +41,11 @@ RUN \
 
 # Install openjdk
 RUN apt update && \
-  case $(apt search openjdk) in \
-    *openjdk-15* ) apt install -y openjdk-15*;; \
-    *openjdk-16* ) apt install -y openjdk-16*;; \
+  JAVAVERSIONS="$(apt search openjdk|grep '/'|grep "openjdk-"|sed 's|/| |g'|awk '{print $1}'|grep 'jre'|sed -e 's|-jre.*||g'|uniq)";\
+  case $JAVAVERSIONS in \
     *openjdk-17* ) apt install -y openjdk-17*;; \
-    *) echo "Unsupported Java Version"; exit 1;; \
+    *openjdk-16* ) apt install -y openjdk-16*;; \
+    *) echo "Unsupported Java Version, avaibles"; echo "$JAVAVERSIONS";exit 0;; \
   esac
 
 # Create Volume to Storage Server And Config
@@ -58,7 +53,7 @@ VOLUME [ "/root/bds_core" ]
 
 # Node packages
 COPY package*.json ./
-RUN npm install
+RUN npm install && npm run build
 
 # Set default ENVs to Bds Core
 ENV SERVER_VERSION="true" \
@@ -72,16 +67,8 @@ ENV SERVER_VERSION="true" \
   LEVEL_SEED="" \
   SERVER="bedrock" \
   SERVER_VERSION="latest" \
-  TelegramToken="" \
   NODE_ENV="production"
-
-
-# Bds Maneger Core required ports
 EXPOSE 19132/udp 19133/udp 1932/tcp
-
-# Copy Bds Maneger Core
 WORKDIR /opt/backend_core_scripts/
-
-# Install Core dependencies
 ENTRYPOINT [ "sh", "-c", "node bin/BdsManeger.js start -ak -d ${SERVER_VERSION} -p ${SERVER} --players ${PLAYERS} --world-name ${WORLD_NAME} --description ${DESCRIPTION} --gamemode ${GAMEMODE} --difficulty ${DIFFICULTY} --level-seed ${LEVEL_SEED}" ]
 COPY ./ ./

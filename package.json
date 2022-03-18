@@ -1,24 +1,18 @@
 {
   "name": "@the-bds-maneger/core",
+  "private": false,
   "publishConfig": {
     "access": "public"
   },
-  "version": "1.15.0",
+  "version": "2.0.0",
   "description": "A very simple way to manage Minecraft servers",
-  "private": false,
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "exports": {
-    "require": "./src/index.js",
-    "import": "./esm/index.js"
+    "require": "./dist/src/index.js",
+    "import": "./dist/esm/index.js"
   },
   "scripts": {
-    "start": "node bin/BdsManeger.js start",
-    "test": "node .test/core.js",
-    "dev": "nodemon",
-    "esm": "cjs2esm",
-    "esm_module": "cjs2esm",
-    "eslint": "eslint --debug --fix .",
-    "Docker": "docker-compose up --build"
+    "build": "tsc"
   },
   "nodemonConfig": {
     "ignore": [
@@ -66,37 +60,10 @@
     "android"
   ],
   "dependencies": {
-    "@iarna/toml": "^2.2.5",
     "@the-bds-maneger/server_versions": "^1.1.0",
-    "adm-zip": "^0.5.1",
-    "body-parser": "^1.19.0",
-    "cli-color": "^2.0.0",
+    "axios": "^0.26.1",
     "cors": "^2.8.5",
-    "cron": "^1.8.2",
-    "deepmerge": "^4.2.2",
-    "express": "^4.17.1",
-    "express-fileupload": "^1.2.1",
-    "express-prettify": "^0.1.1",
-    "express-rate-limit": "^6.0.1",
-    "inquirer": "^8.1.5",
-    "js-yaml": "^4.1.0",
-    "minecraft-server-util": "^5.2.8",
-    "node-cron": "^3.0.0",
-    "node-fetch": "^3.0.0",
-    "ora": "^6.0.1",
-    "prismarine-nbt": "^2.0.0",
-    "properties-to-json": "^0.2.1",
-    "request-ip": "^2.1.3",
-    "socket.io": "^4.3.2",
-    "systeminformation": "^5.10.0",
-    "telegraf": "^4.0.0",
-    "yargs": "^17.3.1"
-  },
-  "devDependencies": {
-    "@actions/core": "^1.5.0",
-    "cjs2esm": "^2.0.2",
-    "eslint": "^8.0.0",
-    "json-schema": ">=0.4.0",
-    "nodemon": "^2.0.12"
+    "express": "^4.17.3",
+    "typescript": "^4.6.2"
   }
 }
