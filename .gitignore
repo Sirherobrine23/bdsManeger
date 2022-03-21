@@ -1,14 +1,5 @@
-# Log
 *.log
-
-# Node
 node_modules/
-.dccache
-docs/
-the-bds-maneger-core-*.tgz
-
-# **
-.husky
-Servers
-.Build/Releases.json
-esm/
+dist/
+src/**/*.d.ts
+src/**/*.d.js
