@@ -1,0 +1,1 @@
+export type Platform = "bedrock"|"java"|"pocketmine"|"spigot"|"dragonfly";
