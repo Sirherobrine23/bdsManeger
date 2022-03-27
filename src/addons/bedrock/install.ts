@@ -9,7 +9,9 @@ import os from "os";
 import path from "path";
 import admZip from "adm-zip";
 import fs from "fs";
-import stripJsonComments from "strip-json-comments";
+// import stripJsonComments from "strip-json-comments";
+
+const stripJsonComments = (data) => data.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => g ? "" : m);
 
 function ensureFileSync(pathFile: string){
   if (!fs.existsSync(pathFile)){
@@ -116,7 +118,7 @@ export function addonInstaller() {
     
     // Gather pack details from the manifest.json file
     let manifest = await extractPackManifest(packPath);
-    let name = manifest.header.name.replace(/\W/g, "");
+    // let name = manifest.header.name.replace(/\W/g, "");
     let uuid = manifest.header.uuid;
     let version = manifest.header.version;
     if (!version) version = manifest.header.modules[0].version;
@@ -129,7 +131,7 @@ export function addonInstaller() {
       throw new Error("Unable to install pack. Unknown pack manifest format.\n" + packPath);
     }
 
-    console.log("BDSAddonInstaller - Installing " + name + "...");
+    // console.log("BDSAddonInstaller - Installing " + name + "...");
 
     // Check if already installed
     let installedWorldPack, installedServerPack = null;
@@ -147,11 +149,11 @@ export function addonInstaller() {
       if (installedWorldPack && installedWorldPack.version.toString() != version.toString()) upToDate = false;
       if (installedServerPack && installedServerPack.version.toString() != version.toString()) upToDate = false;
       if (upToDate) {
-        console.log(`BDSAddonInstaller - The ${name} pack is already installed and up to date.`);
+        // console.log(`BDSAddonInstaller - The ${name} pack is already installed and up to date.`);
         return;
       }else{
         // uninstall pack if not up to date
-        console.log("BDSAddonInstaller - Uninstalling old version of pack");
+        // console.log("BDSAddonInstaller - Uninstalling old version of pack");
         if (installedServerPack) await uninstallServerPack(uuid, installedServerPack.location);
         if (installedWorldPack && type == "resources") await uninstallWorldResource(uuid, installedWorldPack.location);
         if (installedWorldPack && type == "data") await uninstallWorldBehavior(uuid, installedWorldPack.location);
@@ -159,7 +161,7 @@ export function addonInstaller() {
     }
 
     await installPack(packPath, manifest);
-    console.log("BDSAddonInstaller - Successfully installed the " + name + " pack.");
+    // console.log("BDSAddonInstaller - Successfully installed the " + name + " pack.");
 
   }
 
@@ -180,7 +182,7 @@ export function addonInstaller() {
         let location = path.join(addonPath, pack);
         await this.installAddon(location);
       }catch(err) {
-        console.error("BDSAddonInstaller - " + err);
+        // console.error("BDSAddonInstaller - " + err);
       }
     }
   }
@@ -254,7 +256,7 @@ async function installPack(packPath, manifest) {
  * NOTE: This is why only packs found installed to the world will be removed from the server.  
  */
 async function uninstallAllWorldPacks() {
-  console.log("BDSAddonInstaller - Uninstalling all packs found saved to world.");
+  // console.log("BDSAddonInstaller - Uninstalling all packs found saved to world.");
   
   // Uninstall all cached world resource packs.
   for (let pack of installedWorldResources.values()) {
@@ -295,13 +297,13 @@ async function uninstallWorldResource(uuid, location) {
   if (packIndex != -1) {
     worldResourcesJSON.splice(packIndex, 1);
     fs.writeFileSync(worldResourcesJsonPath, JSON.stringify(worldResourcesJSON, undefined, 2));
-    console.log(`BDSAddonInstaller - Removed ${uuid} from world resource packs JSON.`);
+    // console.log(`BDSAddonInstaller - Removed ${uuid} from world resource packs JSON.`);
   }
 
   // Delete the provided pack path.
   if (fs.existsSync(location)) {
     await fs.promises.rm(location, {recursive: true});
-    console.log(`BDSAddonInstaller - Removed ${location}`);
+    // console.log(`BDSAddonInstaller - Removed ${location}`);
   }
 }
 
@@ -319,13 +321,13 @@ async function uninstallWorldBehavior(uuid, location) {
   if (packIndex != -1) {
     worldBehaviorsJSON.splice(packIndex, 1);
     fs.writeFileSync(worldBehaviorsJsonPath, JSON.stringify(worldBehaviorsJSON, undefined, 2));
-    console.log(`BDSAddonInstaller - Removed ${uuid} from world behavior packs JSON.`);
+    // console.log(`BDSAddonInstaller - Removed ${uuid} from world behavior packs JSON.`);
   }
 
   // Delete the provided pack path.
   if (fs.existsSync(location)) {
     fs.promises.rm(location);
-    console.log(`BDSAddonInstaller - Removed ${location}`);
+    // console.log(`BDSAddonInstaller - Removed ${location}`);
   }
 }
 
@@ -343,13 +345,13 @@ async function uninstallServerPack (uuid, location) {
   if (packIndex != -1) {
     serverPacksJSON.splice(packIndex, 1);
     fs.writeFileSync(serverPacksJsonPath, JSON.stringify(serverPacksJSON, undefined, 2));
-    console.log(`BDSAddonInstaller - Removed ${uuid} from server packs JSON.`);
+    // console.log(`BDSAddonInstaller - Removed ${uuid} from server packs JSON.`);
   }
 
   // Delete the provided pack path. 
   if (fs.existsSync(location)) {
     fs.promises.rm(location);
-    console.log(`BDSAddonInstaller - Removed ${location}`);
+    // console.log(`BDSAddonInstaller - Removed ${location}`);
   }
 }
 
@@ -365,7 +367,7 @@ async function extractAddonPacks(addonPath) {
   // Validate the provided path is to an addon.
   if (!fs.existsSync(addonPath)) throw new Error("Unable to extract packs from addon. Invalid file path provided: " + addonPath);
   if (!addonPath.endsWith('.mcaddon')) throw new Error('Unable to extract packs from addon. The provided file is not an addon. ' + addonPath);
-  console.log("BDSAddonInstaller - Extracting packs from " + addonPath);
+  // console.log("BDSAddonInstaller - Extracting packs from " + addonPath);
 
   // Extract file path and name info for saving the extracted packs. 
   let addonName = path.basename(addonPath).replace(".mcaddon", "");
@@ -379,7 +381,7 @@ async function extractAddonPacks(addonPath) {
 
   // Move addon packs from temporary location to BDS-Addon directory.
   for (let pack of packs) {
-    console.log(`BDSAddonInstaller - Extracting ${pack} from ${addonName}.`);
+    // console.log(`BDSAddonInstaller - Extracting ${pack} from ${addonName}.`);
 
     // If the mcpack is already packaged, move the file. 
     if (pack.endsWith(".mcpack")) {
@@ -388,7 +390,7 @@ async function extractAddonPacks(addonPath) {
       let packDestination = path.join(dirPath, packName);
       await fs.promises.rename(packFile, packDestination);
       results.push(packDestination);
-      console.log("BDSAddonInstaller - Extracted " + packDestination);
+      // console.log("BDSAddonInstaller - Extracted " + packDestination);
     }else {
       // The pack still needs to be zipped and then moved.
       let packName = addonName + "_" + pack + ".mcpack";
@@ -396,7 +398,7 @@ async function extractAddonPacks(addonPath) {
       let packDestination = path.join(dirPath, packName);
       await promiseZip(packFolder, packDestination);
       results.push(packDestination);
-      console.log("BDSAddonInstaller - Extracted " + packDestination);
+      // console.log("BDSAddonInstaller - Extracted " + packDestination);
     }
   }
 
@@ -417,7 +419,7 @@ function extractPackManifest(packPath) {
   // Validate the provided pack (path exists and file is correct type)
   if (!fs.existsSync(packPath)) throw new Error("Unable to extract manifest file. Invalid file path provided: " + packPath);
   if (!packPath.endsWith(".mcpack")) throw new Error("Unable to extract manifest file. The provided file is not a pack. " + packPath);
-  console.log("BDSAddonInstaller - Reading manifest data from " + packPath);
+  // console.log("BDSAddonInstaller - Reading manifest data from " + packPath);
 
   // Locate the manifest file in the zipped pack.
   let archive = new admZip(packPath);
@@ -436,7 +438,7 @@ function extractPackManifest(packPath) {
  */
 function readWorldName() {
   let propertyFile = path.join(serverPath, "server.properties");
-  console.log("BDSAddonInstaller - Reading world name from " + propertyFile);
+  // console.log("BDSAddonInstaller - Reading world name from " + propertyFile);
   if (!fs.existsSync(propertyFile)) throw new Error("Unable to locate server properties @ " + propertyFile);
   let properties = fs.readFileSync(propertyFile);
   let levelName = properties.toString().match(/level-name=.*/);
@@ -467,14 +469,14 @@ function mapInstalledPacks(directory) {
   let subdirectories = fs.readdirSync(directory);
   subdirectories.forEach(subdirectory => {
     let location = path.join(directory, subdirectory);
-    console.log("BDSAddonInstaller - Reading manifest data from " + location);
+    // console.log("BDSAddonInstaller - Reading manifest data from " + location);
 
     // Locate the directory containing the pack manifest.
     let manifestLocation = findFilesSync(["manifest.json", "pack_manifest.json"], location);
     if (!manifestLocation) {
-      console.error(manifestLocation);
-      console.warn("BDSAddonInstaller - Unable to locate manifest file of installed pack.");
-      console.warn("BDSAddonInstaller - Installed location: " + location);
+      // console.error(manifestLocation);
+      // console.warn("BDSAddonInstaller - Unable to locate manifest file of installed pack.");
+      // console.warn("BDSAddonInstaller - Installed location: " + location);
       return;
     }
 

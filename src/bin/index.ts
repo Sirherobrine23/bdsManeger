@@ -21,8 +21,8 @@ const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Ins
     console.log("Sucess to download server");
     console.info("Release date: %s", `${res.Date.getDate()}/${res.Date.getMonth()+1}/${res.Date.getFullYear()}`);
   });
-}).command("start", "Start Server", yargs => {
-  const options = yargs.option("platform", {
+}).command("start", "Start Server", async yargs => {
+  const options = await yargs.option("platform", {
     alias: "p",
     describe: "Bds Core Platform",
     choices: ["bedrock", "java", "pocketmine", "spigot", "dragonfly"],
@@ -32,10 +32,10 @@ const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Ins
     describe: "Bds Core API port listen",
     default: "3000",
     type: "number"
-  }).parseSync();
+  }).parseAsync();
   const Platform = options.platform as bdsTypes.Platform;
   BdsCore.API.listen(options.api);
-  const Server = BdsCore.Server.Start(Platform);
+  const Server = await BdsCore.Server.Start(Platform);
   console.log("Session ID: %s", Server.id);
   Server.on("all", data => process.stdout.write(data));
   const Input = readline.createInterface({input: process.stdin,output: process.stdout})
@@ -48,4 +48,4 @@ const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Ins
     Yargs.showHelp();
   }
 }).help().version(false);
-Yargs.parseSync();
+Yargs.parseAsync();

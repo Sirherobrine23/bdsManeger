@@ -20,9 +20,6 @@ jobs:
   latestDeploy:
     runs-on: ubuntu-latest
     name: Publish latest
-    environment:
-      name: PublishImage
-      url: "ghcr.io/ofvp-project/deamonmaneger"
     steps:
       - uses: actions/checkout@v2.4.0
         with:

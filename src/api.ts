@@ -8,9 +8,7 @@ app.use(express.urlencoded({extended: true}));
 app.use(express.json());
 app.use((req, res, next) => {
   res.json = (body) => {
-    if (!res.get("Content-Type")) {
-      res.set("Content-Type", "application/json");
-    }
+    res.set("Content-Type", "application/json");
     res.send(JSON.stringify(body, (key, value) => {
       if (typeof value === "bigint") value = value.toString();
       else if (isDate(value)) value = value.toString();
@@ -33,6 +31,17 @@ app.all("/", ({res}) => res.json((() => {
   });
   return data;
 })()));
+
+// Session info
+app.get("/:SessionID", (req, res) => {
+  const SessionID: string = req.params.SessionID;
+  const Sessions = ServerManeger.getSessions();
+  if (!Sessions[SessionID]) return res.status(404).send({message: "Session not found"});
+  const filter = Object.keys(Sessions[SessionID]).filter(a => !(a === "addonManeger" || a ==="commands"));
+  const data = {};
+  filter.forEach(key => data[key] = Sessions[SessionID][key]);
+  return res.json(data);
+});
 
 // Get Players
 app.get("/:SessionID/player", (req, res) => {
