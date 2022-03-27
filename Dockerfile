@@ -23,7 +23,7 @@ fi
 RUN apt install -y ca-certificates make build-essential procps lsb-release xdg-utils g++ libatomic1 libnss3 libatk-bridge2.0-0 gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxrandr2 libxrender1 libxss1 libxtst6 fonts-liberation libnss3 libgbm-dev
 
 # Install Node.js
-RUN NODEVERSION=$(curl -sL https://api.github.com/repos/nodejs/node/releases | grep tag_name | cut -d '"' -f 4 | sort -V | tail -n 1) && \
+RUN NODEVERSION=$(wget -qO- https://api.github.com/repos/nodejs/node/releases | grep tag_name | cut -d '"' -f 4 | sort -V | tail -n 1) && \
   case $(uname -m) in \
     x86_64 ) wget -q "https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-x64.tar.xz" -O /tmp/node.tar.xz;; \
     aarch64 ) wget -q "https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-arm64.tar.xz" -O /tmp/node.tar.xz;; \
