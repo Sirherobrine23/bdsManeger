@@ -1,4 +1,4 @@
-name: Publish dev/next module release
+name: Test module
 on:
   pull_request:
 
