@@ -1,0 +1,73 @@
+name: Publish dev/next module release
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docker-compose.yml"
+      - "package*.json"
+      - "Dockerfile"
+      - "README.md"
+      - "src/**/*"
+      - ".github/**/*"
+
+env:
+  # DOCKERPLATFORM: "linux/amd64,linux/arm64"
+  DOCKERPLATFORM: "linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le,linux/s390x"
+  DOCKERIMAGE: "ghcr.io/the-bds-maneger/core"
+
+jobs:
+  latestDeploy:
+    runs-on: ubuntu-latest
+    name: Publish npm module
+    strategy:
+      matrix:
+        npm_registry:
+          - "Github"
+          - "NPM"
+    steps:
+      - uses: actions/checkout@v2.4.0
+        with:
+          submodules: true
+
+      - name: Setup Node.js (NPM Packages)
+        if: matrix.npm_registry == 'NPM'
+        uses: actions/setup-node@v3.0.0
+        with:
+          node-version: 16.x
+          registry-url: https://registry.npmjs.org/
+
+      - name: Setup Node.js (Github Packages)
+        if: matrix.npm_registry == 'Github'
+        uses: actions/setup-node@v3.0.0
+        with:
+          node-version: 16.x
+          registry-url: https://npm.pkg.github.com/
+
+      - name: Edit Version to next release
+        shell: node {0}
+        run: |
+          const fs = require("fs");
+          const JsonPackage = JSON.parse(fs.readFileSync(process.cwd()+"/package.json", "utf8"));
+          const run_ID = "${{ github.run_id }}";
+          JsonPackage.version = `${run_ID.slice(0, 2)}.${run_ID.slice(3, 6)}.${run_ID.slice(7, 11)}`;
+          fs.writeFileSync(process.cwd()+"/package.json", JSON.stringify(JsonPackage, null, 2));
+          console.log("New Version to Package:", JsonPackage.version);
+
+      - name: Install node depencies
+        run: npm install -d
+
+      - name: Build typescript to CJS and ESM
+        run: npm run build
+
+      - name: Publish Package
+        run: |
+          set -x
+          if [[ "${{ matrix.npm_registry }}" == "Github" ]];then
+            echo "Publish to Github Packages"
+            export NODE_AUTH_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          else
+            echo "Publish to NPM Registry"
+            export NODE_AUTH_TOKEN="${{ secrets.NPM_ORG_TOKEN }}"
+          fi
+          npm publish --tag next
