@@ -3,11 +3,16 @@ import fs from "fs";
 import os from "os";
 import crypto from "crypto";
 import child_process from "child_process";
+import addon from "./addons/index";
 import * as bdsTypes from "./globalType";
 
 type BdsSession = {
   id: string;
   startDate: Date;
+  addonManeger: {
+    installAddon: (packPath: string) => Promise<void>;
+    installAllAddons: (removeOldPacks: boolean) => Promise<void>;
+  };
   on: (from: "all"|"stdout"|"stderr", callback: (data: string) => void) => void;
   exit: (callback: (code: number, signal: string) => void) => void;
   getPlayer: () => {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
@@ -139,6 +144,10 @@ export function Start(Platform: bdsTypes.Platform): BdsSession {
   const Seesion = {
     id: crypto.randomUUID(),
     startDate: StartDate,
+    addonManeger: {
+      installAddon: async function (packPath: string) {console.log(packPath); return;},
+      installAllAddons: async function (removeOldPacks: boolean) {console.log(removeOldPacks); return;}
+    },
     on: onLog,
     exit: onExit,
     ports: () => ports,
@@ -148,6 +157,7 @@ export function Start(Platform: bdsTypes.Platform): BdsSession {
       tpPlayer: tpPlayer,
     }
   };
+  if (Platform === "bedrock") Seesion.addonManeger = addon.bedrock.addonInstaller();
   const logFile = path.resolve(ServerPath, `../log/${Seesion.id}.log`);
   if(!(fs.existsSync(path.parse(logFile).dir))) fs.mkdirSync(path.parse(logFile).dir, {recursive: true});
   const logStream = fs.createWriteStream(logFile, {flags: "w+"});
