@@ -93,6 +93,6 @@ ENV VERSION="latest"
 ENV PLATFORM="bedrock"
 
 COPY package*.json ./
-RUN npm install --production --no-save
+RUN npm install --no-save
 COPY ./ ./
 RUN npm run build:cjs
