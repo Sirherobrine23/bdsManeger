@@ -25,7 +25,7 @@ function ensureFileSync(pathFile: string){
 let serverPath = null;
 let worldName = null;
 
-const providedServerPath = path.resolve(process.env.SERVERPATH||path.join(os.homedir(), "bds_core/servers"), "bedrock");
+const providedServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), "bedrock");
 const addonPath = path.resolve(providedServerPath, "../BDS-Addons/");
 if (!(fs.existsSync(addonPath))) fs.mkdirSync(addonPath, {recursive: true});
 
@@ -55,7 +55,7 @@ const requiredFiles = ["behavior_packs", "resource_packs", "valid_known_packs.js
  * Prepares to install addons for the provided Bedrock Dedicated Server.
  */
 export function addonInstaller() {
-  // const providedServerPath = path.resolve(process.env.SERVERPATH||path.join(os.homedir(), "bds_core/servers"), "bedrock");
+  // const providedServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), "bedrock");
   // Validate server path (path is provided, path is valid, path contains required files)
   if (!providedServerPath) throw new Error("You must provide a server path for BDSAddonInstaller");
   if (!fs.existsSync(providedServerPath)) throw new Error("The provided server path does not exist.\n" + providedServerPath);

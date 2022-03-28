@@ -34,7 +34,7 @@ export function getSessions() {return Sessions;}
 
 // Start Server
 export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
-  const ServerPath = path.resolve(process.env.SERVERPATH||path.join(os.homedir(), "bds_core/servers"), Platform);
+  const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
   if (!(fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   const Process: {command: string; args: Array<string>; env: {[env: string]: string}; cwd: string;} = {
     command: "",
@@ -156,7 +156,12 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
     },
     creteBackup: (crontime: string|Date) => {
       const cronJob = new node_cron.CronJob(crontime, async () => {
-        bdsBackup.CreateBackup(Platform);
+        if (Platform === "bedrock") {
+          execCommand("save hold");
+          execCommand("save query");
+        }
+        await bdsBackup.CreateBackup(Platform);
+        if (Platform === "bedrock") execCommand("save resume");
       });
       cronJob.start();
       return;
@@ -175,9 +180,10 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
     const bedrockConfig = await serverConfig.parseConfig(Platform);
     Seesion.seed = bedrockConfig.nbt.parsed.value.RandomSeed.value.toString();
   }
-  const logFile = path.resolve(ServerPath, `../log/${Seesion.id}.log`);
+  const logFile = path.resolve(process.env.LOG_PATH||path.resolve(ServerPath, "../log"), `${Platform}_${Seesion.id}.log`);
   if(!(fs.existsSync(path.parse(logFile).dir))) fs.mkdirSync(path.parse(logFile).dir, {recursive: true});
   const logStream = fs.createWriteStream(logFile, {flags: "w+"});
+  logStream.write(`[${StartDate.toISOString()}] Server started\n\n`);
   onLog("all", data => logStream.write(data));
   Sessions[Seesion.id] = Seesion;
   return Seesion;

@@ -43,7 +43,7 @@ jobs:
         with:
           context: .
           push: true
-          target: server
+          target: bdscore
           tags: ${{ env.DOCKERIMAGE }}:latest
           platforms: ${{ env.DOCKERPLATFORM }}
           cache-from: type=gha,scope=${{ github.ref }}_${{ hashFiles('**/package-lock.json') }}

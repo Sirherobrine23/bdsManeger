@@ -31,7 +31,7 @@ async function InstallPHP(PathToInstall: string) {
 }
 
 export async function DownloadServer(Platform: bdsTypes.Platform, Version: string|boolean) {
-  const ServerPath = path.resolve(process.env.SERVERPATH||path.join(os.homedir(), "bds_core/servers"), Platform);
+  const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
   const versions = await getVersions()
   const info = versions.platform.filter(v => v.name === Platform).find(v => v.version === (typeof Version === "boolean"?versions.latest[Platform]:Version));
   if (Platform === "bedrock") {
@@ -43,6 +43,7 @@ export async function DownloadServer(Platform: bdsTypes.Platform, Version: strin
     const JavaPath = path.resolve(ServerPath);
     if (!(await fs.existsSync(JavaPath))) fs.mkdirSync(JavaPath, {recursive: true});
     await fs.promises.writeFile(path.resolve(JavaPath, "Server.jar"), await getBuffer(String(info.data)));
+    await fs.promises.writeFile(path.resolve(JavaPath, "eula.txt"), "eula=true");
   } else if (Platform === "spigot") {
     const SpigotPath = path.resolve(ServerPath);
     if (!(await fs.existsSync(SpigotPath))) fs.mkdirSync(SpigotPath, {recursive: true});
