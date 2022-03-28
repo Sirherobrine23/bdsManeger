@@ -46,21 +46,28 @@ export async function parseConfig(Platform: bdsType.Platform): Promise<BdsConfig
 
 export type BdsConfigSet = {
   world: string;
-  seed?: string;
   description: string;
   gamemode: "survival"|"creative"|"adventure"|"hardcore";
   difficulty: "peaceful"|"easy"|"normal"|"hard";
-  players: number;
-  whitelist: true|false;
-  require_login: true|false;
-  cheats_command: true|false;
-  portv4: number;
-  portv6: number;
+  seed?: string;
+  players?: number;
+  whitelist?: true|false;
+  require_login?: true|false;
+  cheats_command?: true|false;
+  portv4?: number;
+  portv6?: number;
 }
 
 export async function createConfig(Platform: bdsType.Platform, config: BdsConfigSet): Promise<void> {
   const serverPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
   if (Platform === "bedrock") {
+    if (!(config.seed && typeof config.seed === "string")) config.seed = "";
+    if (!(config.players && typeof config.players === "number")) config.players = 20;
+    if (!(config.whitelist && typeof config.whitelist === "boolean")) config.whitelist = false;
+    if (!(config.require_login && typeof config.require_login === "boolean")) config.require_login = false;
+    if (!(config.cheats_command && typeof config.cheats_command === "boolean")) config.cheats_command = false;
+    if (!(config.portv4 && typeof config.portv4 === "number")) config.portv4 = 19132;
+    if (!(config.portv6 && typeof config.portv6 === "number")) config.portv6 = 19133;
     const bedrockConfigArray = [
       "view-distance=32",
       "tick-distance=4",
@@ -95,6 +102,13 @@ export async function createConfig(Platform: bdsType.Platform, config: BdsConfig
     fs.writeFileSync(path.join(serverPath, "server.properties"), bedrockConfig);
     return;
   } else if (Platform === "java") {
+    if (!(config.seed && typeof config.seed === "string")) config.seed = "";
+    if (!(config.players && typeof config.players === "number")) config.players = 20;
+    if (!(config.whitelist && typeof config.whitelist === "boolean")) config.whitelist = false;
+    if (!(config.require_login && typeof config.require_login === "boolean")) config.require_login = false;
+    if (!(config.cheats_command && typeof config.cheats_command === "boolean")) config.cheats_command = false;
+    if (!(config.portv4 && typeof config.portv4 === "number")) config.portv4 = 25565;
+    if (!(config.portv6 && typeof config.portv6 === "number")) config.portv6 = 255656;
     const javaConfigArray = [
       "query.port=65551",
       "enable-jmx-monitoring=false",

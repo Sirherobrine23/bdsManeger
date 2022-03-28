@@ -25,6 +25,7 @@ type BdsSession = {
   commands: {
     tpPlayer: (username: string, x: number, y: number, z: number) => void;
     execCommand: (command: string) => void;
+    stop: () => Promise<number|null>
   }
 };
 
@@ -145,6 +146,15 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
     return;
   }
 
+  // Stop Server
+  const stopServer: () => Promise<number|null> = () => {
+    execCommand("stop");
+    return new Promise((accept, reject) => {
+      ServerProcess.on("exit", code => code === 0 ? accept(code) : reject(code));
+      setTimeout(() => accept(null), 1000);
+    })
+  }
+
   // Return Session
   const Seesion: BdsSession = {
     id: crypto.randomUUID(),
@@ -163,6 +173,7 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
         await bdsBackup.CreateBackup(Platform);
         if (Platform === "bedrock") execCommand("save resume");
       });
+      ServerProcess.on("exit", () => cronJob.stop());
       cronJob.start();
       return;
     },
@@ -173,6 +184,7 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
     commands: {
       execCommand: execCommand,
       tpPlayer: tpPlayer,
+      stop: stopServer
     }
   };
   if (Platform === "bedrock") {
@@ -186,5 +198,6 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
   logStream.write(`[${StartDate.toISOString()}] Server started\n\n`);
   onLog("all", data => logStream.write(data));
   Sessions[Seesion.id] = Seesion;
+  ServerProcess.on("exit", () => {delete Sessions[Seesion.id];});
   return Seesion;
 }

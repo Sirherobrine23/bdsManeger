@@ -1,8 +1,5 @@
 {
-  "include": [
-    "src/",
-    "src/download_server.ts"
-  ],
+  "include": ["src/"],
   "exclude": ["node_modules/"],
   "compilerOptions": {
     "outDir": "./dist/cjs",
