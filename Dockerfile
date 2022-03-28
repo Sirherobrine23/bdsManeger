@@ -95,4 +95,4 @@ ENV PLATFORM="bedrock"
 COPY package*.json ./
 RUN npm install --no-save
 COPY ./ ./
-RUN npm run build
+RUN PATH=$(pwd)/node_modules/.bin/:$PATH; tsc --module commonjs --outDir dist/cjs
