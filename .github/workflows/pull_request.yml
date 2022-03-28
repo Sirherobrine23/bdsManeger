@@ -1,0 +1,34 @@
+name: Test module
+on:
+  pull_request:
+
+env:
+  # DOCKERPLATFORM: "linux/amd64,linux/arm64"
+  DOCKERPLATFORM: "linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le,linux/s390x"
+  DOCKERIMAGE: "ghcr.io/the-bds-maneger/core"
+
+jobs:
+  latestDeploy:
+    runs-on: ubuntu-latest
+    name: Publish npm module
+    strategy:
+      matrix:
+        node_version:
+          - "15"
+          - "16"
+          - "17"
+    steps:
+      - uses: actions/checkout@v2.4.0
+        with:
+          submodules: true
+
+      - name: Setup Node.js (Github Packages)
+        uses: actions/setup-node@v3.0.0
+        with:
+          node-version: "${{ matrix.node_version }}.x"
+
+      - name: Install node depencies
+        run: npm install -d
+
+      - name: Build typescript to CJS and ESM
+        run: npm run build

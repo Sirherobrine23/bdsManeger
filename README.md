@@ -1,110 +1,100 @@
 # Bds Maneger Core
 
-Bds Maneger Core is a javascript core in Nodejs that manages several types of server seftware for Minecraft Bedrock and Java. Bds Maneger Core has integrated with a REST API with full integration with Bds Maneger Core in addition to CLI and One bot versions for the telegram.
+This is a small hub to manage various servers for Minecraft Bedrock and for Minecraft Java, such as installing, starting and keeping up to date with the latest version available.
 
-Any contribution is welcome, but before a look at [CONTRIBUTING.md](CONTRIBUTING.md), [Bds Manager Core code of conduct](CODE_OF_CONDUCT.md)
+This module is fully compatible with ESM, CJS and Typescript.
 
-## Requirements for Bds Maneger Core
+## Requirements
 
-### All
+This module requires some requirements to work:
 
-* [Nodejs 15.6.0+](https://nodejs.org/en/download/current/)
-* [OpenJDK 16+](https://www.oracle.com/java/technologies/javase-jdk16-downloads.html)
+* NodeJS: `^15.x`.
+* Java: `^8.0` or OpenJDK: `^16`.
 
-### Windows 10+
+### For Windows Users
 
-* [Microsoft Visual Studio C++ (The Bds Maneger Documentation)](<https://docs.bdsmaneger.com/docs/Bds Maneger core/WindowsFixDll/#windows-server>)
+Minecraft Bedrock needs Visual studio C++ if you are using Windows Server ([More information you can find on the Wiki](<https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha>)).
 
-## Documentation
+## CLI
 
-We have a separate repository for all Bds Maneger Project documentation, [link here from the main page](<https://docs.bdsmaneger.com/Bds Maneger core>), [Repository link](https://github.com/The-Bds-Maneger/Bds-Manager-Project-Documentation)
+This module also includes a simple CLI for managing servers. how:
 
-## Badges
+1. Download compatible server versions.
+2. Update the server.
+3. Start the server.
+4. Backup Server.
 
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/alerts/)
-[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Bds-Maneger/bds_maneger_api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Bds-Maneger/bds_maneger_api/context:javascript)
-[![DeepScan grade](https://deepscan.io/api/teams/13683/projects/16691/branches/363172/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=13683&pid=16691&bid=363172)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/d357bef9c4ba4198ab16be64a5adf051)](https://www.codacy.com/gh/The-Bds-Maneger/Bds-Maneger-Core/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=The-Bds-Maneger/Bds-Maneger-Core&amp;utm_campaign=Badge_Grade)
+## Install
 
-## Start Bds Maneger Core with npx
+To install CLI: `npm install -g @the-bds-maneger/core` (`Linux user Use sudo or root`).
 
-### CLI
+To Install module: `npm install @the-bds-maneger/core`.
 
-All options can be found in the bds maneger core documentation.
+Run withou install: `npx @the-bds-maneger/core`.
 
-`npx @the-bds-maneger/core@latest -sk`
-
-## Install Bds Maneger Core globally
-
-The commands available after installation:
-
-* bds_maneger
-
-`npm i -g @the-bds-maneger/core@latest`
-
-## Launch Bds Maneger Core with a docker image
+## Docker and Docker Compose
 
 ### Docker Compose
 
-[Docker Compose Install guide](https://docs.docker.com/compose/install/)
+[Docker Compose releases](<https://github.com/docker/compose/releases/latest>).
 
-```yaml
-version: "2.1"
+* MacOS and Windows docker users is already installed by default in Docker Desktop.
+
+```yml
+version: "3.9"
+volumes:
+  server_storage:
 services:
-  BdsCore:
+  bdscore:
     image: ghcr.io/the-bds-maneger/core:latest
-    container_name: BdsCore
-    restart: always
-    network_mode: host
-    environment:
-      DESCRIPTION: running Minecraft Bedrock Server on the docker by Bds Manager
-      WORLD_NAME: Bds Maneger Docker
-      GAMEMODE: survival
-      DIFFICULTY: normal
-      ACCOUNT: "false"
-      PLAYERS: 13
-      SERVER: bedrock
-      ENABLE_COMMANDS: "false"
     volumes:
-      - ./BdsCore:/home/bds/bds_core
+      - server_storage:/data
+    environment:
+      # Server Settings
+      DESCRIPTION: "My Sample Server"
+      WORLD_NAME: "My Map"
+      GAMEMODE: "survival"
+      DIFFICULTY: "normal"
+      MAXPLAYERS: "5"
+      REQUIRED_LOGIN: "false"
+      # Bds Core Settings
+      VERSION: "latest"
+      PLATFORM: "bedrock"
+    ports:
+      # Port to API
+      - 3000:3000/tcp
+      # Server Port to bedrock
+      - 19132:19132/udp
+      - 19133:19133/udp
+      # Server Port to java
+      - 25565:25565/tcp
+      - 25565:25565/udp
 ```
 
-### Windows
+### Docker
 
-```cmd
-docker run --rm -d --name BdsManegerCore -v BdsCore:/home/bds/bds_core ^
-    --restart=always -p 19132:19132/udp -p 19133:19133/udp -p 1932:1932/tcp ^
-    -e DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" ^
-    -e WORLD_NAME="Bds Maneger Docker" ^
-    -e GAMEMODE="survival" ^
-    -e DIFFICULTY="normal" ^
-    -e ACCOUNT="false" ^
-    -e PLAYERS="13" ^
-    -e SERVER="bedrock" ^
-    -e ENABLE_COMMANDS="false" ^
-ghcr.io/the-bds-maneger/core:latest
-```
+create Docker volume: `docker volume create --driver local --name bds_server_storage`.
 
-### Linux/MacOS
+run image:
 
 ```bash
-docker run --rm -d --name BdsManegerCore -v BdsCore/:/home/bds/bds_core \
-    --restart=always -p 19132:19132/udp -p 19133:19133/udp -p 1932:1932/tcp \
-    -e DESCRIPTION="running Minecraft Bedrock Server on the docker by Bds Manager" \
-    -e WORLD_NAME="Bds Maneger Docker" \
-    -e GAMEMODE="survival" \
-    -e DIFFICULTY="normal" \
-    -e ACCOUNT="false" \
-    -e PLAYERS="13" \
-    -e SERVER="bedrock" \
-    -e ENABLE_COMMANDS="false" \
+docker run --rm -d \
+--name=bdscore \
+-v bds_server_storage:/data \
+-p 25565:25565/udp \
+-p 25565:25565/tcp \
+-p 19132:19132/udp \
+-p 19133:19133/udp \
+-p 3000:3000/tcp \
+-e DESCRIPTION="My Sample Server" \
+-e WORLD_NAME="My Map" \
+-e GAMEMODE="survival" \
+-e DIFFICULTY="normal" \
+-e MAXPLAYERS="5" \
+-e REQUIRED_LOGIN="false" \
+-e VERSION="latest" \
+-e PLATFORM="bedrock" \
 ghcr.io/the-bds-maneger/core:latest
 ```
 
-## Azure Container and Azure VM
-
-We've separate the repository for azure deploy templates, [go here](https://github.com/The-Bds-Maneger/Azure#azure-deploys) if you want to deploy to azure.
-
-## Oracle Cloud
-
-soon!
+Get log: `docker logs bdscore`.

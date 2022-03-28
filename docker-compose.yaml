@@ -19,7 +19,6 @@ services:
       BDS_VERSION: "latest"
       SERVER: "bedrock"
     ports:
-      - 1932:3000/tcp
       - 3000:3000/tcp
       - 19132:19132/udp
       - 19133:19133/udp
