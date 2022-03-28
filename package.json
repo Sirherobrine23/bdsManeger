@@ -72,6 +72,7 @@
     "express": "^4.17.3",
     "prismarine-nbt": "^2.2.1",
     "properties-to-json": "^0.2.1",
+    "typescript": "^4.6.3",
     "yargs": "^17.4.0"
   },
   "devDependencies": {
@@ -80,7 +81,6 @@
     "@types/express": "^4.17.13",
     "@types/node": "^17.0.22",
     "@types/yargs": "^17.0.10",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^4.6.3"
+    "npm-run-all": "^4.1.5"
   }
 }
