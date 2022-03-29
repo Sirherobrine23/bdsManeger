@@ -3,9 +3,6 @@
 /.github/
 /.vscode/
 /.devcontainer/
-/*.md
-.*ignore
-.gitpod.y*ml
 dist/
 Dockerfile
 docker-compose.y*ml

@@ -62,8 +62,7 @@ RUN apt update && \
 VOLUME [ "/data" ]
 
 # App Workspace
-WORKDIR /app
-ENTRYPOINT [ "node", "--trace-warnings", "/app/dist/cjs/bin/docker.js" ]
+ENTRYPOINT [ "node", "--trace-warnings", "dist/cjs/bin/docker.js" ]
 
 # Ports
 EXPOSE 3000/tcp
@@ -73,7 +72,6 @@ EXPOSE 25565/tcp
 EXPOSE 25566/tcp
 
 # Default ENVs
-ENV NODE_ENV="production"
 ENV SERVER_PATH="/data/server"
 ENV BACKUP_PATH="/data/backups"
 ENV LOG_PATH="/data/logs"
@@ -92,7 +90,8 @@ ENV ALLOW_COMMADS="false"
 ENV VERSION="latest"
 ENV PLATFORM="bedrock"
 
+WORKDIR /var/app_storage
 COPY package*.json ./
-RUN ls -lah && npm install -d
+RUN npm install
 COPY ./ ./
-RUN PATH=$(pwd)/node_modules/.bin/:$PATH; tsc --module commonjs --outDir dist/cjs
+RUN npm run build:cjs
