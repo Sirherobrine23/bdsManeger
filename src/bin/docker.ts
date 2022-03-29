@@ -44,6 +44,7 @@ if (!BdsTypes.PlatformArray.find(p => p === PLATFORM)) {
   const start = async () => {
     const Server = await BdsCore.Server.Start(PLATFORM as BdsTypes.Platform);
     Server.on("all", data => process.stdout.write(data));
+    process.on("SIGTERM", () => Server.commands.stop());
     Server.exit(code => {
       if (lockExit) return;
       process.exit(code);
@@ -51,6 +52,7 @@ if (!BdsTypes.PlatformArray.find(p => p === PLATFORM)) {
     return Server;
   };
   if (VERSION === "latest") {
+    console.log("Auto Update enabled");
     let sessionStart = await start();
     const cronUpdate = new CronJob("0 */1 * * * *", async () => {
       const DownloadInfo = await BdsCore.DownloadServer.getVersions();

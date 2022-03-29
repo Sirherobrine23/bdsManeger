@@ -34,13 +34,7 @@ LABEL org.opencontainers.image.vendor="Sirherobrine23"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/The-Bds-Maneger/Bds-Maneger-Core.git"
 
-# Install external Libries to another architecture
-COPY --from=libries /libries/ /
-# Install NodeJS and latest NPM
-COPY --from=nodedowload /tmp/nodebin/ /usr
-RUN npm -g install npm@latest
-
-# Install Core Packages
+# Install Minimal packages
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN apt update && \
   apt install -y procps ca-certificates procps lsb-release xdg-utils g++ libatomic1 libnss3 \
@@ -48,6 +42,14 @@ RUN apt update && \
   libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 \
   libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 \
   libxcursor1 libxdamage1 libxext6 libxfixes3 libxrandr2 libxrender1 libxss1 libxtst6 fonts-liberation libnss3 libgbm-dev
+
+# Install external Libries to another architecture
+COPY --from=libries /libries/ /
+# Install NodeJS and latest NPM
+COPY --from=nodedowload /tmp/nodebin/ /usr
+
+# Install Core Packages
+RUN npm -g install npm@latest
 
 # Install openjdk
 RUN apt update && \
@@ -90,6 +92,7 @@ ENV ALLOW_COMMADS="false"
 ENV VERSION="latest"
 ENV PLATFORM="bedrock"
 
+STOPSIGNAL SIGTERM
 WORKDIR /var/app_storage
 COPY package*.json ./
 RUN npm install
