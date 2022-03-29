@@ -13,7 +13,7 @@ on:
 
 env:
   # DOCKERPLATFORM: "linux/amd64,linux/arm64"
-  DOCKERPLATFORM: "linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le,linux/s390x"
+  DOCKERPLATFORM: "linux/amd64,linux/arm64,linux/arm/v7"
   DOCKERIMAGE: "ghcr.io/the-bds-maneger/core"
 
 jobs:
