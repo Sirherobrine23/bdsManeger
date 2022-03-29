@@ -37,11 +37,10 @@ export function getSessions() {return Sessions;}
 export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
   const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
   if (!(fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
-  const Process: {command: string; args: Array<string>; env: {[env: string]: string}; cwd: string;} = {
+  const Process: {command: string; args: Array<string>; env: {[env: string]: string};} = {
     command: "",
     args: [],
-    env: {...process.env},
-    cwd: process.cwd()
+    env: {...process.env}
   };
   if (Platform === "bedrock") {
     if (process.platform === "darwin") throw new Error("Run Docker image");
@@ -68,7 +67,7 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
 
   // Start Server
   console.log(Process.command, ...Process.args);
-  const ServerProcess = child_process.execFile(Process.command, Process.args, {env: Process.env, cwd: Process.cwd, maxBuffer: Infinity});
+  const ServerProcess = child_process.execFile(Process.command, Process.args, {env: Process.env, cwd: ServerPath, maxBuffer: Infinity});
   const StartDate = new Date();
 
   // Log callback
@@ -190,7 +189,7 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
   if (Platform === "bedrock") {
     Seesion.addonManeger = addon.bedrock.addonInstaller();
     const bedrockConfig = await serverConfig.parseConfig(Platform);
-    Seesion.seed = bedrockConfig.nbt.parsed.value.RandomSeed.value.toString();
+    if (bedrockConfig.nbt) Seesion.seed = bedrockConfig.nbt.parsed.value.RandomSeed.value.toString();
   }
   const logFile = path.resolve(process.env.LOG_PATH||path.resolve(ServerPath, "../log"), `${Platform}_${Seesion.id}.log`);
   if(!(fs.existsSync(path.parse(logFile).dir))) fs.mkdirSync(path.parse(logFile).dir, {recursive: true});
