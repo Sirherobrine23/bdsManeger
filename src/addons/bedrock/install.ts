@@ -517,7 +517,7 @@ function findIndexOf(objectArray: Array<{[d: string]: any}>, key: string, value:
 function promiseExtract(file: string, destination: string) {
   return new Promise(function(resolve, reject) {
     let archive = new admZip(file);
-    archive.extractAllToAsync(destination, true, err => {
+    archive.extractAllToAsync(destination, true, true, err => {
       if (err) return reject(err);
       resolve("");
     });

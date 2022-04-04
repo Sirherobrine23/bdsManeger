@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import crypto from "crypto";
-import child_process from "child_process";
+import * as child_process from "./childProcess";
 import node_cron from "cron";
 import addon from "./addons/index";
 import * as bdsBackup from "./backup";
@@ -10,9 +10,8 @@ import { parseConfig as serverConfigParse } from "./serverConfig";
 import * as bdsTypes from "./globalType";
 
 type bdsSessionCommands = {
-  tpPlayer: (username: string, x: number, y: number, z: number) => void|bdsSessionCommands;
-  execCommand: (command: string) => void|bdsSessionCommands;
-  stop: () => Promise<number|null|bdsSessionCommands>
+  tpPlayer: (username: string, x: number, y: number, z: number) => bdsSessionCommands;
+  execCommand: (...command: Array<string|number>) => bdsSessionCommands;
 };
 
 type BdsSession = {
@@ -24,7 +23,8 @@ type BdsSession = {
     installAllAddons: (removeOldPacks: boolean) => Promise<void>;
   };
   creteBackup: (crontime: string|Date) => void;
-  on: (from: "all"|"stdout"|"stderr", callback: (data: string) => void) => void;
+  stop: () => Promise<number|null|bdsSessionCommands>
+  on: (from: "all"|"stdout"|"stderr", callback: (data: string) => void) => string;
   exit: (callback: (code: number, signal: string) => void) => void;
   getPlayer: () => {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
   ports: () => Array<{port: number; protocol: "TCP"|"UDP"; version?: "IPv4"|"IPv6"}>;
@@ -35,28 +35,20 @@ type BdsSession = {
 const Sessions: {[Session: string]: BdsSession} = {};
 export function getSessions() {return Sessions;}
 
-type basicServerConfig = {
-  runOn?: "chroot"|"docker"|"host";
-  pathServer?: string;
-  dockerVolumeName?: string;
-  chrootStorage?: string;
-  logOn: (callback: (data: string) => void) => void;
-};
-
 // Start Server
-export async function Start(Platform: bdsTypes.Platform, serverConfig?: basicServerConfig): Promise<BdsSession> {
+export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
   const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
   if (!(fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   const Process: {command: string; args: Array<string>; env: {[env: string]: string};} = {
     command: "",
     args: [],
-    env: {...process.env}
+    env: {}
   };
   if (Platform === "bedrock") {
     if (process.platform === "darwin") throw new Error("Run Docker image");
     Process.command = path.resolve(ServerPath, "bedrock_server"+(process.platform === "win32"?".exe":""));
     if (process.platform !== "win32") {
-      child_process.execFileSync("chmod", ["a+x", Process.command]);
+      await child_process.runAsync("chmod", ["a+x", Process.command]);
       Process.env.LD_LIBRARY_PATH = path.resolve(ServerPath, "bedrock");
       if (process.arch !== "x64") {
         console.warn("Minecraft bedrock start with emulated x64 architecture");
@@ -76,20 +68,37 @@ export async function Start(Platform: bdsTypes.Platform, serverConfig?: basicSer
   }
 
   // Start Server
-  console.log(Process.command, ...Process.args);
-  const ServerProcess = child_process.execFile(Process.command, Process.args, {env: Process.env, cwd: ServerPath, maxBuffer: Infinity});
+  const ServerProcess = await child_process.execServer({runOn: "host"}, Process.command, Process.args, {env: Process.env, cwd: ServerPath});
   const StartDate = new Date();
 
   // Log callback
+  const logCallbaks: {[id: string]: {callback: (data: string) => void, to: "all"|"stdout"|"stderr"}} = {};
   const onLog = (from: "all"|"stdout"|"stderr", callback: (data: string) => void) => {
-    if (from === "all") {
-      ServerProcess.stdout.on("data", callback);
-      ServerProcess.stderr.on("data", callback);
-    } else if (from === "stderr") ServerProcess.stderr.on("data", callback);
-    else if (from === "stdout") ServerProcess.stdout.on("data", callback);
+    const CallbackUUID = crypto.randomUUID();
+    if (from === "all") logCallbaks[CallbackUUID] = {callback: callback, to: "all"};
+    else if (from === "stderr") logCallbaks[CallbackUUID] = {callback: callback, to: "stderr"};
+    else if (from === "stdout") logCallbaks[CallbackUUID] = {callback: callback, to: "stdout"};
     else throw new Error("Unknown log from");
+    return CallbackUUID;
+  };
+  
+  // out line
+  const tempLog = {
+    out: "",
+    err: ""
+  };
+  const parseLog = (to: "out"|"err", data: string) => {
+    tempLog[to] += data;
+    if (/\n$/gi.test(tempLog[to])) {
+      const localCall = tempLog[to];
+      tempLog[to] = "";
+      const filtedLog = localCall.replace(/\r\n/gi, "\n").replace(/\n$/gi, "").split(/\n/gi).filter(a => a !== undefined);
+      Object.keys(logCallbaks).map(a => logCallbaks[a]).filter(a => a.to === "all"||a.to === "stdout").forEach(a => filtedLog.forEach(data => a.callback(data)));
+    }
     return;
   }
+  ServerProcess.stdout.on("data", data => parseLog("out", String(data)));
+  ServerProcess.stderr.on("data", data => parseLog("err", String(data)));
 
   const playersConnections: {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}} = {};
   const ports: Array<{port: number; protocol: "TCP"|"UDP"; version?: "IPv4"|"IPv6"}> = [];
@@ -144,23 +153,27 @@ export async function Start(Platform: bdsTypes.Platform, serverConfig?: basicSer
   }
 
   // Run Command
-  const execCommand = (...command) => {
-    ServerProcess.stdin.write(command.join(" ")+"\n");
-    return;
-  };
-
-  // Teleport player
-  const tpPlayer = (username: string, x: number, y: number, z: number) => {
-    execCommand("tp", username, x, y, z);
-    return;
+  const serverCommands: bdsSessionCommands = {
+    execCommand: (...command) => {
+      ServerProcess.stdin.write(command.map(a => String(a)).join(" ")+"\n");
+      return serverCommands;
+    },
+    tpPlayer: (username: string, x: number, y: number, z: number) => {
+      serverCommands.execCommand("tp", username, x, y, z);
+      return serverCommands;
+    }
   }
 
   // Stop Server
   const stopServer: () => Promise<number|null> = () => {
-    execCommand("stop");
+    if (ServerProcess.exitCode !== null||ServerProcess.killed) return Promise.resolve(ServerProcess.exitCode);
+    if (Platform === "bedrock") serverCommands.execCommand("stop");
+    else if (Platform === "java"||Platform === "spigot") serverCommands.execCommand("stop");
+    else if (Platform === "pocketmine") serverCommands.execCommand("stop");
+    else ServerProcess.kill();
     return new Promise((accept, reject) => {
-      ServerProcess.on("exit", code => code === 0 ? accept(code) : reject(code));
-      setTimeout(() => accept(null), 1000);
+      ServerProcess.on("exit", code => (code === 0||code === null) ? accept(code) : reject(code));
+      setTimeout(() => accept(null), 2000);
     })
   }
 
@@ -176,11 +189,11 @@ export async function Start(Platform: bdsTypes.Platform, serverConfig?: basicSer
     creteBackup: (crontime: string|Date) => {
       const cronJob = new node_cron.CronJob(crontime, async () => {
         if (Platform === "bedrock") {
-          execCommand("save hold");
-          execCommand("save query");
+          serverCommands.execCommand("save hold");
+          serverCommands.execCommand("save query");
         }
         await bdsBackup.CreateBackup(Platform);
-        if (Platform === "bedrock") execCommand("save resume");
+        if (Platform === "bedrock") serverCommands.execCommand("save resume");
       });
       ServerProcess.on("exit", () => cronJob.stop());
       cronJob.start();
@@ -190,11 +203,8 @@ export async function Start(Platform: bdsTypes.Platform, serverConfig?: basicSer
     exit: onExit,
     ports: () => ports,
     getPlayer: () => playersConnections,
-    commands: {
-      execCommand: execCommand,
-      tpPlayer: tpPlayer,
-      stop: stopServer
-    }
+    stop: stopServer,
+    commands: serverCommands
   };
   if (Platform === "bedrock") {
     Seesion.addonManeger = addon.bedrock.addonInstaller();
@@ -205,7 +215,8 @@ export async function Start(Platform: bdsTypes.Platform, serverConfig?: basicSer
   if(!(fs.existsSync(path.parse(logFile).dir))) fs.mkdirSync(path.parse(logFile).dir, {recursive: true});
   const logStream = fs.createWriteStream(logFile, {flags: "w+"});
   logStream.write(`[${StartDate.toISOString()}] Server started\n\n`);
-  onLog("all", data => logStream.write(data));
+  ServerProcess.stdout.pipe(logStream);
+  ServerProcess.stderr.pipe(logStream);
   Sessions[Seesion.id] = Seesion;
   ServerProcess.on("exit", () => {delete Sessions[Seesion.id];});
   return Seesion;

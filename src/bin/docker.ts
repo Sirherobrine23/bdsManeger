@@ -2,9 +2,9 @@ import * as BdsCore from "../index";
 import * as BdsTypes from "../globalType";
 import { CronJob } from "cron";
 
+const PLATFORM = (process.env.PLATFORM||"bedrock") as BdsTypes.Platform;
 const {
   VERSION = "latest",
-  PLATFORM = "bedrock",
   DESCRIPTION = "My Sample Server",
   WORLD_NAME = "My Map",
   GAMEMODE = "survival",
@@ -22,15 +22,15 @@ if (!BdsTypes.PlatformArray.find(p => p === PLATFORM)) {
 (async () => {
   let versionDownloaded = "";
   if (VERSION === "latest") {
-    const DownloadRes = await BdsCore.DownloadServer.DownloadServer(PLATFORM as BdsTypes.Platform, true);
+    const DownloadRes = await BdsCore.DownloadServer.DownloadServer(PLATFORM, true);
     versionDownloaded = DownloadRes.Version;
   } else if (VERSION !== "latest") {
-    await BdsCore.DownloadServer.DownloadServer(PLATFORM as BdsTypes.Platform, VERSION);
+    await BdsCore.DownloadServer.DownloadServer(PLATFORM, VERSION);
   } else {
     console.log("Invalid Version");
   }
 
-  BdsCore.serverConfig.createConfig(PLATFORM as BdsTypes.Platform, {
+  BdsCore.serverConfig.createConfig(PLATFORM, {
     description: DESCRIPTION,
     world: WORLD_NAME,
     gamemode: GAMEMODE as any,
@@ -42,9 +42,9 @@ if (!BdsTypes.PlatformArray.find(p => p === PLATFORM)) {
 
   let lockExit = false;
   const start = async () => {
-    const Server = await BdsCore.Server.Start(PLATFORM as BdsTypes.Platform);
-    Server.on("all", data => process.stdout.write(data));
-    process.on("SIGTERM", () => Server.commands.stop());
+    const Server = await BdsCore.Server.Start(PLATFORM);
+    Server.on("all", data => console.log(data));
+    process.on("SIGTERM", () => Server.stop());
     Server.exit(code => {
       if (lockExit) return;
       process.exit(code);
@@ -56,10 +56,10 @@ if (!BdsTypes.PlatformArray.find(p => p === PLATFORM)) {
     let sessionStart = await start();
     const cronUpdate = new CronJob("0 */1 * * * *", async () => {
       const DownloadInfo = await BdsCore.DownloadServer.getVersions();
-      if (DownloadInfo.latest[PLATFORM as BdsTypes.Platform] === versionDownloaded) return;
+      if (DownloadInfo.latest[PLATFORM] === versionDownloaded) return;
       lockExit = true;
-      await sessionStart.commands.stop();
-      await BdsCore.DownloadServer.DownloadServer(PLATFORM as BdsTypes.Platform, true);
+      await sessionStart.stop();
+      await BdsCore.DownloadServer.DownloadServer(PLATFORM, true);
       sessionStart = await start();
     });
     cronUpdate.start();
