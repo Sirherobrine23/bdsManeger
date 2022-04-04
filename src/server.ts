@@ -6,8 +6,14 @@ import child_process from "child_process";
 import node_cron from "cron";
 import addon from "./addons/index";
 import * as bdsBackup from "./backup";
-import * as serverConfig from "./serverConfig";
+import { parseConfig as serverConfigParse } from "./serverConfig";
 import * as bdsTypes from "./globalType";
+
+type bdsSessionCommands = {
+  tpPlayer: (username: string, x: number, y: number, z: number) => void|bdsSessionCommands;
+  execCommand: (command: string) => void|bdsSessionCommands;
+  stop: () => Promise<number|null|bdsSessionCommands>
+};
 
 type BdsSession = {
   id: string;
@@ -22,19 +28,23 @@ type BdsSession = {
   exit: (callback: (code: number, signal: string) => void) => void;
   getPlayer: () => {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
   ports: () => Array<{port: number; protocol: "TCP"|"UDP"; version?: "IPv4"|"IPv6"}>;
-  commands: {
-    tpPlayer: (username: string, x: number, y: number, z: number) => void;
-    execCommand: (command: string) => void;
-    stop: () => Promise<number|null>
-  }
+  commands: bdsSessionCommands;
 };
 
 // Server Sessions
 const Sessions: {[Session: string]: BdsSession} = {};
 export function getSessions() {return Sessions;}
 
+type basicServerConfig = {
+  runOn?: "chroot"|"docker"|"host";
+  pathServer?: string;
+  dockerVolumeName?: string;
+  chrootStorage?: string;
+  logOn: (callback: (data: string) => void) => void;
+};
+
 // Start Server
-export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
+export async function Start(Platform: bdsTypes.Platform, serverConfig?: basicServerConfig): Promise<BdsSession> {
   const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
   if (!(fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   const Process: {command: string; args: Array<string>; env: {[env: string]: string};} = {
@@ -188,7 +198,7 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
   };
   if (Platform === "bedrock") {
     Seesion.addonManeger = addon.bedrock.addonInstaller();
-    const bedrockConfig = await serverConfig.parseConfig(Platform);
+    const bedrockConfig = await serverConfigParse(Platform);
     if (bedrockConfig.nbt) Seesion.seed = bedrockConfig.nbt.parsed.value.RandomSeed.value.toString();
   }
   const logFile = path.resolve(process.env.LOG_PATH||path.resolve(ServerPath, "../log"), `${Platform}_${Seesion.id}.log`);
