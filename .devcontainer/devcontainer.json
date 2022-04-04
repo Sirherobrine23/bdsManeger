@@ -1,47 +1,35 @@
 {
-	"name": "Bds Maneger Docker Base",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {}
-	},
+	"name": "devContainerBdsCore",
+	"dockerFile": "Dockerfile",
+	"remoteUser": "gitpod",
+	"containerUser": "gitpod",
+	"updateRemoteUserUID": false,
+	"postCreateCommand": "screen -L -Logfile /tmp/dockerd.log -dmS dockerd sudo dockerd",
+	"postStartCommand": "npm install",
+	"runArgs": [
+		"--init",
+		"--privileged"
+	],
+	"mounts": [
+		"source=dind-var-lib-docker,target=/var/lib/docker,type=volume"
+	],
 	"extensions": [
-		"dbaeumer.vscode-eslint",
-		"ms-vscode-remote.remote-containers",
 		"benshabatnoam.google-translate-ext",
+		"github.copilot",
+		"eamodio.gitlens",
+		"github.vscode-pull-request-github",
+		"visualstudioexptteam.vscodeintellicode",
+		"redhat.vscode-yaml",
+		"ms-vscode-remote.remote-containers",
 		"wix.vscode-import-cost",
 		"eg2.vscode-npm-script",
 		"christian-kohler.npm-intellisense",
 		"christian-kohler.path-intellisense",
-		"kodetech.electron-debug",
-		"coenraads.bracket-pair-colorizer",
 		"aaron-bond.better-comments",
-		"msjsdiag.debugger-for-chrome",
-		"smcpeak.default-keys-windows",
 		"vscode-icons-team.vscode-icons",
 		"me-dutour-mathieu.vscode-github-actions",
 		"cschleiden.vscode-github-actions",
-		"github.copilot",
-		"eamodio.gitlens",
-		"github.vscode-pull-request-github",
 		"oderwat.indent-rainbow",
-		"visualstudioexptteam.vscodeintellicode",
-		"redhat.vscode-yaml"
-	],
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	
-	"forwardPorts": [
-		19132,
-		1932
-	],
-	"hostRequirements": {
-		"cpus": 2,
-		"memory": "2gb",
-		"storage": "128gb"
-	},
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "npm install --no-save",
-
-	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "vscode"
+		"ms-azuretools.vscode-docker"
+	]
 }
