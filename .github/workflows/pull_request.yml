@@ -23,7 +23,7 @@ jobs:
           submodules: true
 
       - name: Setup Node.js (Github Packages)
-        uses: actions/setup-node@v3.0.0
+        uses: actions/setup-node@v3.1.0
         with:
           node-version: "${{ matrix.node_version }}.x"
 
