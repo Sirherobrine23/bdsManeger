@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import readline from "readline"
 import yargs from "yargs";
 import { isValidCron } from "cron-validator";

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as BdsCore from "../index";
 import * as BdsTypes from "../globalType";
 import { CronJob } from "cron";
