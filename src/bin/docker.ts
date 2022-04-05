@@ -39,13 +39,13 @@ if (!BdsTypes.PlatformArray.find(p => p === PLATFORM)) {
     require_login: REQUIRED_LOGIN === "true",
     cheats_command: ALLOW_COMMADS === "true"
   });
-
+  BdsCore.API.listen(3000);
   let lockExit = false;
   const start = async () => {
     const Server = await BdsCore.Server.Start(PLATFORM);
-    Server.on("all", data => console.log(data));
+    Server.logRegister("all", data => console.log(data));
     process.on("SIGTERM", () => Server.stop());
-    Server.exit(code => {
+    Server.onExit(code => {
       if (lockExit) return;
       process.exit(code);
     });

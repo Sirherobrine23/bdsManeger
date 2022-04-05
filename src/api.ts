@@ -19,27 +19,43 @@ app.use((req, res, next) => {
   return next();
 });
 
-export function listen(port: number|string) {app.listen(port, () => console.log("API Listening on port %s", port));}
+export function listen(port: number|string, auth?: {password: string; username: string;}) {
+  const listening = app.listen(port, () => console.log("API Listening on port %s", port));
+  if (!!auth) {
+    app.use((req, res, next) => {
+      const user = req.headers["x-username"];
+      const pass = req.headers["x-password"];
+      if (user === auth.username && pass === auth.password) return next();
+      return res.status(401).json({error: "Unauthorized"});
+    });
+  }
+  return listening;
+}
+
+function getSessionStrings() {
+  const sessions = ServerManeger.getSessions();
+  return Object.keys(sessions).map(key => {
+    return {
+      id: key,
+      started: sessions[key].startDate.toISOString(),
+      seed: sessions[key].seed,
+      players: sessions[key].getPlayer(),
+      ports: sessions[key].ports()
+    };
+  });
+}
 
 // Get Sessions
-app.all("/", ({res}) => res.json((() => {
-  const sessions = ServerManeger.getSessions();
-  const data = {};
-  Object.keys(sessions).map(key => data[key] = {
-    players: sessions[key].getPlayer(),
-    ports: sessions[key].ports()
-  });
-  return data;
-})()));
+app.all("/", ({res}) => res.json(getSessionStrings()));
 
 // Session info
 app.get("/:SessionID", (req, res) => {
   const SessionID: string = req.params.SessionID;
-  const Sessions = ServerManeger.getSessions();
-  if (!Sessions[SessionID]) return res.status(404).send({message: "Session not found"});
-  const filter = Object.keys(Sessions[SessionID]).filter(a => !(a === "addonManeger" || a ==="commands"));
+  const Sessions = getSessionStrings().find(a => a.id === SessionID);
+  if (!Sessions) return res.status(404).send({message: "Session not found"});
+  const filter = Object.keys(Sessions).filter(a => !(a === "addonManeger" || a ==="commands"));
   const data = {};
-  filter.forEach(key => data[key] = Sessions[SessionID][key]);
+  filter.forEach(key => data[key] = Sessions[key]);
   return res.json(data);
 });
 

@@ -42,10 +42,13 @@ const Yargs = yargs(process.argv.slice(2)).option("platform", {
       process.exit(1);
     }
   }
-  if(!!options.api) BdsCore.API.listen(options.api);
   const Server = await BdsCore.Server.Start(Platform);
+  if(!!options.api) {
+    const listening = BdsCore.API.listen(options.api);
+    Server.onExit(() => listening.close());
+  }
   console.log("Session ID: %s", Server.id);
-  Server.on("all", data => console.log(cli_color.blueBright(data.replace("true", cli_color.greenBright("true"))).replace("false", cli_color.redBright("false"))));
+  Server.logRegister("all", data => console.log(cli_color.blueBright(data.replace("true", cli_color.greenBright("true"))).replace("false", cli_color.redBright("false"))));
   const Input = readline.createInterface({input: process.stdin,output: process.stdout})
   Input.on("line", line => Server.commands.execCommand(line));
   let closed = false;
@@ -54,14 +57,15 @@ const Yargs = yargs(process.argv.slice(2)).option("platform", {
     Server.stop();
     closed = true;
   });
-  Server.exit(() => {
+  Server.onExit(() => {
     if (closed) return;
     Input.close();
     closed = true;
   });
   if (!!options.cronBackup) {
     console.log("Backup Maps enabled");
-    Server.creteBackup(options.cronBackup);
+    const backupCron = Server.creteBackup(options.cronBackup);
+    Server.onExit(() => backupCron.stop());
   }
 }).command({
   command: "*",

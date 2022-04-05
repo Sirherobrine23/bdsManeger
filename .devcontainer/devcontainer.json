@@ -1,35 +1,36 @@
 {
-	"name": "devContainerBdsCore",
-	"dockerFile": "Dockerfile",
-	"remoteUser": "gitpod",
-	"containerUser": "gitpod",
-	"updateRemoteUserUID": false,
-	"postCreateCommand": "screen -L -Logfile /tmp/dockerd.log -dmS dockerd sudo dockerd",
-	"postStartCommand": "npm install",
-	"runArgs": [
-		"--init",
-		"--privileged"
-	],
-	"mounts": [
-		"source=dind-var-lib-docker,target=/var/lib/docker,type=volume"
-	],
-	"extensions": [
-		"benshabatnoam.google-translate-ext",
-		"github.copilot",
-		"eamodio.gitlens",
-		"github.vscode-pull-request-github",
-		"visualstudioexptteam.vscodeintellicode",
-		"redhat.vscode-yaml",
-		"ms-vscode-remote.remote-containers",
-		"wix.vscode-import-cost",
-		"eg2.vscode-npm-script",
-		"christian-kohler.npm-intellisense",
-		"christian-kohler.path-intellisense",
-		"aaron-bond.better-comments",
-		"vscode-icons-team.vscode-icons",
-		"me-dutour-mathieu.vscode-github-actions",
-		"cschleiden.vscode-github-actions",
-		"oderwat.indent-rainbow",
-		"ms-azuretools.vscode-docker"
-	]
+  "name": "devContainerBdsCore",
+  "dockerFile": "Dockerfile",
+  "remoteUser": "gitpod",
+  "containerUser": "gitpod",
+  "updateRemoteUserUID": false,
+  "postCreateCommand": "screen -L -Logfile /tmp/dockerd.log -dmS dockerd sudo dockerd --ipv6 --fixed-cidr-v6 \"2001:db8:1::/64\"",
+  "postStartCommand": "npm install",
+  "runArgs": [
+    "--init",
+    "--privileged"
+  ],
+  "mounts": [
+    "source=dind-var-lib-docker,target=/var/lib/docker,type=volume"
+  ],
+  "extensions": [
+    "GitHub.copilot-nightly",
+    "GitHub.copilot-labs",
+    "benshabatnoam.google-translate-ext",
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    "visualstudioexptteam.vscodeintellicode",
+    "redhat.vscode-yaml",
+    "ms-vscode-remote.remote-containers",
+    "wix.vscode-import-cost",
+    "eg2.vscode-npm-script",
+    "christian-kohler.npm-intellisense",
+    "christian-kohler.path-intellisense",
+    "aaron-bond.better-comments",
+    "vscode-icons-team.vscode-icons",
+    "me-dutour-mathieu.vscode-github-actions",
+    "cschleiden.vscode-github-actions",
+    "oderwat.indent-rainbow",
+    "ms-azuretools.vscode-docker"
+  ]
 }
