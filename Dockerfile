@@ -75,6 +75,7 @@ EXPOSE 25566/tcp
 
 # Default ENVs
 ENV SERVER_PATH="/data/server"
+ENV WORLD_STORAGE="/data/worlds"
 ENV BACKUP_PATH="/data/backups"
 ENV LOG_PATH="/data/logs"
 ENV EXTRA_PATH="/data/extra"

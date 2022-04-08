@@ -7,6 +7,7 @@ import node_cron from "cron";
 import addon from "./addons/index";
 import * as bdsBackup from "./backup";
 import { parseConfig as serverConfigParse } from "./serverConfig";
+import { storageWorld as linkWoldPath } from "./worldManeger";
 import * as bdsTypes from "./globalType";
 
 type bdsSessionCommands = {
@@ -14,7 +15,9 @@ type bdsSessionCommands = {
   execCommand: (...command: Array<string|number>) => bdsSessionCommands;
   /** Teleport player to Destination */
   tpPlayer: (player: string, x: number, y: number, z: number) => bdsSessionCommands;
+  /** Change world gamemode */
   worldGamemode: (gamemode: "survival"|"creative"|"hardcore") => bdsSessionCommands;
+  /** Change gamemode to specified player */
   userGamemode: (player: string, gamemode: "survival"|"creative"|"hardcore") => bdsSessionCommands;
 };
 
@@ -121,8 +124,13 @@ async function parserServerActions(Platform: bdsTypes.Platform, data: string, ca
   }
 }
 
+type startServerOptions = {
+  /** Save only worlds/maps without server software - (Beta) */
+  storageOnlyWorlds?: boolean;
+};
+
 // Start Server
-export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
+export async function Start(Platform: bdsTypes.Platform, options?: startServerOptions): Promise<BdsSession> {
   const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
   if (!(fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   const Process: {command: string; args: Array<string>; env: {[env: string]: string};} = {
@@ -149,8 +157,17 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
     else Process.args.push(path.resolve(ServerPath, "Spigot.jar"));
   } else if (Platform === "pocketmine") {
     if (process.platform === "win32") Process.command = path.resolve(ServerPath, "php/php");
-    else Process.command = path.resolve(ServerPath, "php7/bin/php");
+    else {
+      Process.command = path.resolve(ServerPath, "php7/bin/php");
+      await child_process.runAsync("chmod", ["a+x", Process.command]);
+    }
     Process.args.push(path.resolve(ServerPath, "PocketMine-MP.phar"));
+  }
+
+  if (options) {
+    if (options.storageOnlyWorlds) {
+      await linkWoldPath(Platform, ServerPath, (await serverConfigParse(Platform)).world);
+    }
   }
 
   // Start Server
@@ -257,7 +274,7 @@ export async function Start(Platform: bdsTypes.Platform): Promise<BdsSession> {
       return serverCommands;
     },
     userGamemode: (player: string, gamemode: "survival"|"creative"|"hardcore") => {
-      if (Platform === "bedrock"||Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode);
+      if (Platform === "bedrock"||Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode, player);
       return serverCommands;
     }
   }

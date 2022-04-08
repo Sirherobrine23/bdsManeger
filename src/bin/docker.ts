@@ -43,7 +43,9 @@ if (!BdsTypes.PlatformArray.find(p => p === PLATFORM)) {
   BdsCore.API.listen(3000);
   let lockExit = false;
   const start = async () => {
-    const Server = await BdsCore.Server.Start(PLATFORM);
+    const Server = await BdsCore.Server.Start(PLATFORM, {
+      storageOnlyWorlds: true
+    });
     Server.logRegister("all", data => console.log(data));
     process.on("SIGTERM", () => Server.stop());
     Server.onExit(code => {

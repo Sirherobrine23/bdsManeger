@@ -58,7 +58,8 @@ const Yargs = yargs(process.argv.slice(2)).option("platform", {
     Server.stop();
     closed = true;
   });
-  Server.onExit(() => {
+  Server.onExit(code => {
+    console.log("Server exit with code: %s", code);
     if (closed) return;
     Input.close();
     closed = true;
