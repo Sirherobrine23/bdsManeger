@@ -9,7 +9,6 @@ on:
       - "Dockerfile"
       - "README.md"
       - "src/**/*"
-      - ".github/**/*"
 
 env:
   # DOCKERPLATFORM: "linux/amd64,linux/arm64"
