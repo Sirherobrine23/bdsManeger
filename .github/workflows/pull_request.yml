@@ -10,7 +10,7 @@ env:
 jobs:
   latestDeploy:
     runs-on: ubuntu-latest
-    name: Publish npm module
+    name: Test Module
     strategy:
       matrix:
         node_version:
