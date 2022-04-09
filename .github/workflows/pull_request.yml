@@ -2,11 +2,6 @@ name: Test module
 on:
   pull_request:
 
-env:
-  # DOCKERPLATFORM: "linux/amd64,linux/arm64"
-  DOCKERPLATFORM: "linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le,linux/s390x"
-  DOCKERIMAGE: "ghcr.io/the-bds-maneger/core"
-
 jobs:
   latestDeploy:
     runs-on: ubuntu-latest
@@ -14,7 +9,6 @@ jobs:
     strategy:
       matrix:
         node_version:
-          - "15"
           - "16"
           - "17"
     steps:
@@ -30,5 +24,5 @@ jobs:
       - name: Install node depencies
         run: npm install -d
 
-      - name: Build typescript to CJS and ESM
+      - name: Build typescript
         run: npm run build
