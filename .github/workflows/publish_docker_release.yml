@@ -1,18 +1,17 @@
-name: Publish release image
+name: Publish image (Release)
 on:
   release:
     types:
       - created
 
 env:
-  # DOCKERPLATFORM: "linux/amd64,linux/arm64"
   DOCKERPLATFORM: "linux/amd64,linux/arm64,linux/arm/v7"
   DOCKERIMAGE: "ghcr.io/the-bds-maneger/core"
 
 jobs:
-  latestDeploy:
+  publishRelease:
     runs-on: ubuntu-latest
-    name: Publish latest
+    name: Publish image
     steps:
       - uses: actions/checkout@v2.4.0
         with:

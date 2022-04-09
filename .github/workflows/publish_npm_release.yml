@@ -4,15 +4,10 @@ on:
     types:
       - created
 
-env:
-  # DOCKERPLATFORM: "linux/amd64,linux/arm64"
-  DOCKERPLATFORM: "linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le,linux/s390x"
-  DOCKERIMAGE: "ghcr.io/the-bds-maneger/core"
-
 jobs:
-  latestDeploy:
+  publishreleasemodule:
     runs-on: ubuntu-latest
-    name: Publish npm module
+    name: Publish npm module (release)
     strategy:
       matrix:
         npm_registry:
