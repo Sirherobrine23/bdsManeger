@@ -4,10 +4,11 @@ LABEL org.opencontainers.image.description="Start Minecraft Server with Docker c
 LABEL org.opencontainers.image.vendor="Sirherobrine23"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/The-Bds-Maneger/Bds-Maneger-Core.git"
+CMD [ "/bin/bash", "-c" ]
 ENV DEBIAN_FRONTEND="noninteractive"
 RUN \
   apt update && \
-  apt install -y git curl wget sudo procps zsh tar screen ca-certificates procps lsb-release qemu-user-static && \
+  apt install -y git curl wget sudo procps zsh tar screen ca-certificates procps lsb-release && \
   apt install -y xdg-utils g++ \
   libatomic1 libnss3 libatk-bridge2.0-0 gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 \
   libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 \
@@ -27,13 +28,11 @@ RUN \
 # Install latest node
 RUN VERSION=$(wget -qO- https://api.github.com/repos/Sirherobrine23/DebianNodejsFiles/releases/latest |grep 'name' | grep "nodejs"|grep "$(dpkg --print-architecture)"|cut -d '"' -f 4 | sed 's|nodejs_||g' | sed -e 's|_.*.deb||g'|sort | uniq|tail -n 1); wget -q "https://github.com/Sirherobrine23/DebianNodejsFiles/releases/download/debs/nodejs_${VERSION}_$(dpkg --print-architecture).deb" -O /tmp/nodejs.deb && dpkg -i /tmp/nodejs.deb && rm -rfv /tmp/nodejs.deb && npm install -g npm@latest
 
-RUN mkdir /lib64; \
-if [ "$(uname -m)" != "x86_64" ];then \
-  apt install -y qemu-user-static; \
-  wget -q "https://github.com/The-Bds-Maneger/external_files/raw/main/Linux/libs_amd64.zip" -O /tmp/tmp.zip; \
-  unzip -o /tmp/tmp.zip -d /; \
-  rm -rfv /tmp/tmp.zip; \
-fi
+RUN \
+case $(uname -m) in \
+  x86_64 ) echo "Dont Install libries";exit 0;; \
+  * ) apt update; apt install -y qemu-user-static unzip; wget -q "https://github.com/The-Bds-Maneger/external_files/raw/main/Linux/libs_amd64.zip" -O /tmp/tmp.zip; unzip -o /tmp/tmp.zip -d /; rm -rfv /tmp/tmp.zip; apt remove -y --purge unzip;; \
+esac
 
 # Create Volume to Storage Server
 VOLUME [ "/data" ]
