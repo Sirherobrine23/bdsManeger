@@ -1,0 +1,27 @@
+[2022-04-10T08:35:12.132Z] Server started
+
+[08:35:12.412] [Server thread/INFO]: Loading server configuration
+[08:35:12.487] [Server thread/INFO]: Selected English (eng) as the base language
+[08:35:12.493] [Server thread/INFO]: Starting Minecraft: Bedrock Edition server version v1.18.10
+[08:35:12.503] [Server thread/INFO]: Online mode is enabled. The server will verify that players are authenticated to Xbox Live.
+[08:35:12.538] [Server thread/INFO]: This server is running PocketMine-MP version 4.2.6
+[08:35:12.539] [Server thread/INFO]: PocketMine-MP is distributed under the LGPL License
+[08:35:12.977] [Server thread/INFO]: Loading resource packs...
+[08:35:13.418] [Server thread/INFO]: Preparing world "world"
+[08:35:13.574] [Server thread/INFO]: Minecraft network interface running on 0.0.0.0:19132
+[08:35:13.575] [Server thread/INFO]: GS4 Query listener running on 0.0.0.0:19132
+[08:35:13.678] [Server thread/INFO]: Minecraft network interface running on [::]:19133
+[08:35:13.678] [Server thread/INFO]: GS4 Query listener running on [::]:19133
+[08:35:13.683] [Server thread/INFO]: Default game type: Survival Mode
+[08:35:13.684] [Server thread/INFO]: If you find this project useful, please consider donating to support development: https://patreon.com/pocketminemp
+[08:35:13.684] [Server thread/INFO]: Done (1.274s)! For help, type "help" or "?"
+[08:36:07.242] [Server thread/INFO]: [NetworkSession: 192.168.1.102 38337] Session opened
+[08:36:07.420] [Server thread/INFO]: [NetworkSession: 192.168.1.102 38337] Player: Sirherobrine
+[08:36:08.704] [Server thread/INFO]: Sirherobrine[/192.168.1.102:38337] logged in with entity id 1 at (world, 130.1385, 65, 311.3988)
+[08:36:22.282] [Server thread/INFO]: Sirherobrine joined the game
+[08:38:08.563] [Server thread/INFO]: Sirherobrine left the game
+[08:38:08.694] [Server thread/INFO]: [NetworkSession: Sirherobrine] Session closed due to client disconnect
+[08:38:42.133] [Server thread/INFO]: [CONSOLE: Stopping the server]
+[08:38:42.156] [Server thread/INFO]: Unloading world "world"
+[08:38:42.568] [Server thread/INFO]: Stopping other threads
+
