@@ -25,6 +25,18 @@ export async function storageWorld(Platform: bdsTypes.Platform, serverPath: stri
     }
     await fs.promises.symlink(onStorage, bedrockServerWorld, "dir");
     return;
+  } else if (Platform === "pocketmine") {
+    // pocketmine Path
+    const pocketmineWorld = path.join(serverPath, "worlds");
+    if (fs.existsSync(pocketmineWorld)) {
+      if (fs.lstatSync(pocketmineWorld).isSymbolicLink()) return;
+      for (const folder of fs.readdirSync(pocketmineWorld)) {
+        await fs.promises.rename(path.join(pocketmineWorld, folder), path.join(onStorage, folder))
+      }
+      await fs.promises.rmdir(pocketmineWorld);
+    }
+    await fs.promises.symlink(onStorage, pocketmineWorld, "dir");
+    return;
   } else if (Platform === "java") {
     if (!world) throw new Error("No world name provided");
     // Java Path to map
@@ -36,4 +48,42 @@ export async function storageWorld(Platform: bdsTypes.Platform, serverPath: stri
     await fs.promises.symlink(path.join(onStorage, world), javaServerWorld, "dir");
   }
   throw new Error("Platform not supported");
+}
+
+export async function changeServerSettings(Platform: bdsTypes.Platform, serverPath: string) {
+  if (process.platform === "win32") throw new Error("Windows is not supported");
+  // On storage path
+  const onStorage = path.join(storage, Platform);
+  if (!fs.existsSync(onStorage)) fs.mkdirSync(onStorage);
+
+  // Bedrock
+  if (Platform === "bedrock") {
+    const bedrockSettings = path.join(serverPath, "server.properties");
+    if (fs.existsSync(bedrockSettings)) {
+      if (fs.lstatSync(bedrockSettings).isSymbolicLink()) return;
+      if (!fs.existsSync(path.join(onStorage, "server.properties"))) await fs.promises.rename(bedrockSettings, path.join(onStorage, "server.properties"));
+    }
+    await fs.promises.symlink(path.join(onStorage, "bedrock_server.properties"), bedrockSettings, "file");
+  } else if (Platform === "java") {
+    const javaSettings = path.join(serverPath, "server.properties");
+    if (fs.existsSync(javaSettings)) {
+      if (fs.lstatSync(javaSettings).isSymbolicLink()) return;
+      if (!fs.existsSync(path.join(onStorage, "server.properties"))) await fs.promises.rename(javaSettings, path.join(onStorage, "server.properties"));
+    }
+    await fs.promises.symlink(path.join(onStorage, "java_server.properties"), javaSettings, "file");
+  } else if (Platform === "pocketmine") {
+    const pocketmineSettings = path.join(serverPath, "server.properties");
+    if (fs.existsSync(pocketmineSettings)) {
+      if (fs.lstatSync(pocketmineSettings).isSymbolicLink()) return;
+      if (!fs.existsSync(path.join(onStorage, "server.properties"))) await fs.promises.rename(pocketmineSettings, path.join(onStorage, "server.properties"));
+    }
+    await fs.promises.symlink(path.join(onStorage, "pocketmine_server.properties"), pocketmineSettings, "file");
+  } else if (Platform === "spigot") {
+    const spigotSettings = path.join(serverPath, "server.properties");
+    if (fs.existsSync(spigotSettings)) {
+      if (fs.lstatSync(spigotSettings).isSymbolicLink()) return;
+      if (!fs.existsSync(path.join(onStorage, "server.properties"))) await fs.promises.rename(spigotSettings, path.join(onStorage, "server.properties"));
+    }
+    await fs.promises.symlink(path.join(onStorage, "spigot_server.yml"), spigotSettings, "file");
+  }
 }
