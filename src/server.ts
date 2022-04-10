@@ -162,7 +162,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
       Process.command = path.resolve(ServerPath, "bin/bin/php");
       await child_process.runAsync("chmod", ["a+x", Process.command]);
     }
-    Process.args.push(path.resolve(ServerPath, "PocketMine-MP.phar"));
+    Process.args.push(path.join(ServerPath, "PocketMine.phar"));
   }
 
   if (options) {
