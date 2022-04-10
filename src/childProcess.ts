@@ -10,6 +10,16 @@ export async function runAsync(command: string, args: Array<string|number>, opti
   });
 }
 
+export async function runCommandAsync(command: string, options?: {env?: {[key: string]: string}, cwd?: string}): Promise<{stdout: string; stderr: string}> {
+  if (!options) options = {};
+  return await new Promise((resolve, reject) => {
+    child_process.exec(command, {env: {...process.env, ...(options.env||{})}, cwd: options.cwd||process.cwd(), maxBuffer: Infinity}, (err, stdout, stderr) => {
+      if (err) return reject(err);
+      resolve({stdout, stderr});
+    });
+  });
+}
+
 type execOptions = {
   runOn: "docker";
   dockerVolumeName: string;

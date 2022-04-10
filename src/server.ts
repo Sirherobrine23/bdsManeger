@@ -145,7 +145,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
       await child_process.runAsync("chmod", ["a+x", Process.command]);
       Process.env.LD_LIBRARY_PATH = path.resolve(ServerPath, "bedrock");
       if (process.platform === "linux" && process.arch !== "x64") {
-        const existQemu = await child_process.runAsync("command", ["-v", "qemu-x86_64-static"]).then(() => true).catch(() => false);
+        const existQemu = await child_process.runCommandAsync("command -v qemu-x86_64-static").then(() => true).catch(() => false);
         if (existQemu) {
           console.warn("Minecraft bedrock start with emulated x64 architecture");
           Process.args.push(Process.command);
