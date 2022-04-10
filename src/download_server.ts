@@ -5,6 +5,7 @@ import adm_zip from "adm-zip";
 import tar from "tar";
 import * as httpRequests from "./HttpRequests";
 import * as bdsTypes from "./globalType";
+import * as bdschildProcess from "./childProcess";
 
 type getVersionsType = {
   latest: {
@@ -56,11 +57,16 @@ async function InstallPHP(serverPath: string) {
 
 export async function DownloadServer(Platform: bdsTypes.Platform, Version: string|boolean) {
   const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
-  const versions = await getVersions()
+  const versions = await getVersions();
   const info = versions.platform.filter(v => v.name === Platform).find(v => v.version === (typeof Version === "boolean"?versions.latest[Platform]:Version));
   if (Platform === "bedrock") {
     if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
-    const BedrockZip = new adm_zip(await httpRequests.getBuffer(info.data[process.platform][process.arch]));
+    let arch = process.arch;
+    if (process.platform === "linux" && process.arch !== "x64") {
+      const existQemu = await bdschildProcess.runAsync("command", ["-v", "qemu-x86_64-static"]).then(() => true).catch(() => false);
+      if (existQemu) arch = "x64";
+    }
+    const BedrockZip = new adm_zip(await httpRequests.getBuffer(info.data[process.platform][arch]));
     let realPathWorldBedrock = "";
     if (fs.existsSync(path.resolve(ServerPath, "worlds"))) {
       if (fs.lstatSync(path.resolve(ServerPath, "worlds")).isSymbolicLink()) {
