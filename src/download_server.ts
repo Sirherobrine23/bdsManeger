@@ -66,7 +66,6 @@ export async function DownloadServer(Platform: bdsTypes.Platform, Version: strin
       const existQemu = await bdschildProcess.runCommandAsync("command -v qemu-x86_64-static").then(() => true).catch(() => false);
       if (existQemu) arch = "x64";
     }
-    console.log(info.data[process.platform], arch, info.data[process.platform][arch]);
     const BedrockZip = new adm_zip(await httpRequests.getBuffer(info.data[process.platform][arch]));
     let realPathWorldBedrock = "";
     if (fs.existsSync(path.resolve(ServerPath, "worlds"))) {
