@@ -15,25 +15,7 @@ RUN \
   esac
 
 # Install latest node
-RUN \
-  mkdir /tmp/Node && NODEURL=""; NODEVERSION=$(wget -qO- https://api.github.com/repos/nodejs/node/releases | grep tag_name | cut -d '"' -f 4 | sort -V | tail -n 1) && \
-  case $(uname -m) in \
-    x86_64 ) NODEURL="https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-x64.tar.gz";; \
-    aarch64 ) NODEURL="https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-arm64.tar.gz";; \
-    armv7l ) NODEURL="https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-armv7l.tar.gz";; \
-    ppc64le ) NODEURL="https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-ppc64le.tar.gz";; \
-    s390x ) NODEURL="https://nodejs.org/download/release/$NODEVERSION/node-$NODEVERSION-linux-s390x.tar.gz";; \
-    *) echo "Unsupported architecture ($(uname -m))"; exit 1;; \
-  esac && \
-  echo "Node bin Url: ${NODEURL}"; wget -q "${NODEURL}" -O /tmp/node.tar.gz && \
-  tar xfz /tmp/node.tar.gz -C /tmp/Node && \
-  rm -rf /tmp/node.tar.gz && \
-  mkdir /tmp/nodebin && \
-  cp -rp /tmp/Node/*/* /tmp/nodebin && \
-  rm -rf /tmp/nodebin/LICENSE /tmp/nodebin/*.md && \
-  ls -lha /tmp/nodebin && \
-  cp -rf /tmp/nodebin/* /usr/ && \
-  npm -g install npm@latest
+RUN RUN VERSION=$(wget -qO- https://api.github.com/repos/Sirherobrine23/DebianNodejsFiles/releases/latest |grep 'name' | grep "nodejs"|grep "$(dpkg --print-architecture)"|cut -d '"' -f 4 | sed 's|nodejs_||g' | sed -e 's|_.*.deb||g'|sort | uniq|tail -n 1); wget -q "https://github.com/Sirherobrine23/DebianNodejsFiles/releases/download/debs/nodejs_${VERSION}_$(dpkg --print-architecture).deb" -O /tmp/nodejs.deb && dpkg -i /tmp/nodejs.deb && rm -rfv /tmp/nodejs.deb && npm install -g npm@latest
 
 # Install Docker and Docker Compose
 RUN curl https://get.docker.com | sh && \

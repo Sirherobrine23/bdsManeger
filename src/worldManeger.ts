@@ -7,34 +7,33 @@ export const storage = path.resolve(process.env.WORLD_STORAGE||path.join(os.home
 if (!fs.existsSync(storage)) fs.mkdirSync(storage);
 
 export async function storageWorld(Platform: bdsTypes.Platform, serverPath: string, world?: string) {
+  if (process.platform === "win32") throw new Error("Windows is not supported");
+  // On storage path
+  const onStorage = path.join(storage, Platform);
+  if (!fs.existsSync(onStorage)) fs.mkdirSync(onStorage);
+
+  // Prepare to platforms
   if (Platform === "bedrock") {
-    const onStorageBedrock = path.join(storage, "bedrock");
-    if (!fs.existsSync(onStorageBedrock)) fs.mkdirSync(onStorageBedrock);
+    // Bedrock Path
     const bedrockServerWorld = path.join(serverPath, "worlds");
-    if (!fs.existsSync(bedrockServerWorld)) fs.mkdirSync(bedrockServerWorld);
-    else {
-      if (!fs.statSync(bedrockServerWorld).isSymbolicLink()) {
-        for (const folder of fs.readdirSync(bedrockServerWorld)) {
-          await fs.promises.rename(path.join(bedrockServerWorld, folder), path.join(onStorageBedrock, folder))
-        }
-        await fs.promises.rmdir(bedrockServerWorld);
-      } else return
+    if (fs.existsSync(bedrockServerWorld)) {
+      if (fs.lstatSync(bedrockServerWorld).isSymbolicLink()) return;
+      for (const folder of fs.readdirSync(bedrockServerWorld)) {
+        await fs.promises.rename(path.join(bedrockServerWorld, folder), path.join(onStorage, folder))
+      }
+      await fs.promises.rmdir(bedrockServerWorld);
     }
-    fs.symlinkSync(bedrockServerWorld, path.join(onStorageBedrock), "dir");
+    await fs.promises.symlink(onStorage, bedrockServerWorld, "dir");
     return;
   } else if (Platform === "java") {
     if (!world) throw new Error("No world name provided");
-    const onStorageJava = path.join(storage, "java");
-    if (!fs.existsSync(onStorageJava)) fs.mkdirSync(onStorageJava);
+    // Java Path to map
     const javaServerWorld = path.join(serverPath, world);
-    if (!fs.existsSync(javaServerWorld)) fs.mkdirSync(javaServerWorld);
-    else {
-      if (!fs.statSync(javaServerWorld).isSymbolicLink()) {
-        await fs.promises.rename(javaServerWorld, path.join(onStorageJava, world));
-      } else return
+    if (fs.existsSync(javaServerWorld)) {
+      if (fs.lstatSync(javaServerWorld).isSymbolicLink()) return;
+      await fs.promises.rename(javaServerWorld, path.join(onStorage, world));
     }
-    fs.symlinkSync(javaServerWorld, path.join(onStorageJava, world), "dir");
-    return;
+    await fs.promises.symlink(path.join(onStorage, world), javaServerWorld, "dir");
   }
   throw new Error("Platform not supported");
 }

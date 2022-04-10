@@ -156,8 +156,8 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     if (Platform === "java") Process.args.push(path.resolve(ServerPath, "Server.jar"));
     else Process.args.push(path.resolve(ServerPath, "Spigot.jar"));
   } else if (Platform === "pocketmine") {
-    if (process.platform === "win32") Process.command = path.resolve(ServerPath, "php/php");
-    else {
+    Process.command = path.resolve(ServerPath, "bin/bin/php");
+    if (process.platform !== "win32") {
       Process.command = path.resolve(ServerPath, "php7/bin/php");
       await child_process.runAsync("chmod", ["a+x", Process.command]);
     }

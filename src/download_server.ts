@@ -2,7 +2,8 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import adm_zip from "adm-zip";
-import { getBuffer, getGithubRelease } from "./HttpRequests";
+import tar from "tar";
+import * as httpRequests from "./HttpRequests";
 import * as bdsTypes from "./globalType";
 
 type getVersionsType = {
@@ -18,16 +19,39 @@ type getVersionsType = {
 };
 
 export async function getVersions(): Promise<getVersionsType> {
-  return JSON.parse((await getBuffer("https://raw.githubusercontent.com/The-Bds-Maneger/ServerVersions/main/src/Versions.json")).toString("utf8"));
+  return JSON.parse((await httpRequests.getBuffer("https://raw.githubusercontent.com/The-Bds-Maneger/ServerVersions/main/src/Versions.json")).toString("utf8"));
 }
 
-async function InstallPHP(PathToInstall: string) {
-  const Release = (await getGithubRelease("The-Bds-Maneger", "PocketMinePHPAutoBinBuilds"))[0].assets.find(asset => RegExp(process.platform).test(asset.name) && RegExp(os.arch()).test(asset.name));
-  if (!Release) throw new Error("No file found for this Platform and Arch");
-  const PHPZip = new adm_zip(await getBuffer(Release.browser_download_url));
-  if (fs.existsSync(path.resolve(PathToInstall, "bin"))) await fs.promises.rmdir(path.resolve(PathToInstall, "bin"), {recursive: true});
-  PHPZip.extractAllTo(PathToInstall, true);
-  return Release;
+async function InstallPHP(serverPath: string) {
+  const nameTest = (name: string) => (process.platform === "win32" ? /\.zip/:/\.tar\.gz/).test(name) && RegExp(process.platform).test(name) && RegExp(process.arch).test(name);
+  const Release = (await httpRequests.getGithubRelease("The-Bds-Maneger", "PocketMinePHPAutoBinBuilds")).map(release => {
+    release.assets = release.assets.filter(asset => nameTest(asset.name));
+    return release;
+  }).filter(res => res.assets.length > 0);
+  if (Release.length === 0) throw new Error("No file found for this Platform and Arch");
+  const urlBin = Release[0].assets[0].browser_download_url;
+  if (!urlBin) throw new Error("No file found for this Platform and Arch");
+  if (/\.tar\.gz/.test(urlBin)) {
+    const tmpFileTar = path.join(os.tmpdir(), Buffer.from(Math.random().toString()).toString("hex")+"bdscore.tar.gz");
+    await fs.promises.writeFile(tmpFileTar, await httpRequests.getBuffer(urlBin));
+    if (fs.existsSync(path.join(serverPath, "bin"))) {
+      await fs.promises.rmdir(path.join(serverPath, "bin"), {recursive: true});
+      await fs.promises.mkdir(path.join(serverPath, "bin"));
+    } else await fs.promises.mkdir(path.join(serverPath, "bin"));
+    await tar.x({
+      file: tmpFileTar,
+      C: path.join(serverPath, "bin"),
+      keep: true,
+      p: true,
+      noChmod: false
+    });
+    await fs.promises.rm(tmpFileTar, {force: true});
+  } else {
+    const PHPZip = new adm_zip(await httpRequests.getBuffer(urlBin));
+    if (fs.existsSync(path.resolve(serverPath, "bin"))) await fs.promises.rm(path.resolve(serverPath, "bin"), {recursive: true});
+    await new Promise((res,rej) => PHPZip.extractAllToAsync(serverPath, false, true, err => err?rej(err):res("")));
+  }
+  return urlBin;
 }
 
 export async function DownloadServer(Platform: bdsTypes.Platform, Version: string|boolean) {
@@ -35,28 +59,31 @@ export async function DownloadServer(Platform: bdsTypes.Platform, Version: strin
   const versions = await getVersions()
   const info = versions.platform.filter(v => v.name === Platform).find(v => v.version === (typeof Version === "boolean"?versions.latest[Platform]:Version));
   if (Platform === "bedrock") {
-    const BedrockPath = path.resolve(ServerPath);
-    if (!(await fs.existsSync(BedrockPath))) fs.mkdirSync(BedrockPath, {recursive: true});
-    const BedrockZip = new adm_zip(await getBuffer(info.data[process.platform][process.arch]));
-    BedrockZip.extractAllTo(BedrockPath, true);
+    if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
+    const BedrockZip = new adm_zip(await httpRequests.getBuffer(info.data[process.platform][process.arch]));
+    let realPathWorldBedrock = "";
+    if (fs.existsSync(path.resolve(ServerPath, "worlds"))) {
+      if (fs.lstatSync(path.resolve(ServerPath, "worlds")).isSymbolicLink()) {
+        realPathWorldBedrock = await fs.promises.realpath(path.resolve(ServerPath, "worlds"));
+        await fs.promises.unlink(path.resolve(ServerPath, "worlds"));
+      }
+    }
+    BedrockZip.extractAllTo(ServerPath, true);
+    if (!!realPathWorldBedrock) await fs.promises.symlink(realPathWorldBedrock, path.resolve(ServerPath, "worlds"), "dir");
   } else if (Platform === "java") {
-    const JavaPath = path.resolve(ServerPath);
-    if (!(await fs.existsSync(JavaPath))) fs.mkdirSync(JavaPath, {recursive: true});
-    await fs.promises.writeFile(path.resolve(JavaPath, "Server.jar"), await getBuffer(String(info.data)));
-    await fs.promises.writeFile(path.resolve(JavaPath, "eula.txt"), "eula=true");
+    if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
+    await fs.promises.writeFile(path.resolve(ServerPath, "Server.jar"), await httpRequests.getBuffer(String(info.data)));
+    await fs.promises.writeFile(path.resolve(ServerPath, "eula.txt"), "eula=true");
   } else if (Platform === "spigot") {
-    const SpigotPath = path.resolve(ServerPath);
-    if (!(await fs.existsSync(SpigotPath))) fs.mkdirSync(SpigotPath, {recursive: true});
-    await fs.promises.writeFile(path.resolve(SpigotPath, "Spigot.jar"), await getBuffer(String(info.data)));
+    if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
+    await fs.promises.writeFile(path.resolve(ServerPath, "Spigot.jar"), await httpRequests.getBuffer(String(info.data)));
   } else if (Platform === "pocketmine") {
-    const PocketminePath = path.resolve(ServerPath);
-    if (!(await fs.existsSync(PocketminePath))) fs.mkdirSync(PocketminePath, {recursive: true});
-    await InstallPHP(PocketminePath);
-    await fs.promises.writeFile(path.resolve(PocketminePath, "PocketMine.phar"), await getBuffer(String(info.data)));
+    if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
+    await InstallPHP(ServerPath);
+    await fs.promises.writeFile(path.resolve(ServerPath, "PocketMine.phar"), await httpRequests.getBuffer(String(info.data)));
   } else if (Platform === "dragonfly") {
-    const DragonflyPath = path.resolve(ServerPath);
-    if (!(await fs.existsSync(DragonflyPath))) fs.mkdirSync(DragonflyPath, {recursive: true});
-    await fs.promises.writeFile(path.resolve(DragonflyPath, "Dragonfly"+(process.platform === "win32"?".exe":"")), await getBuffer(String(info.data)));
+    if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
+    await fs.promises.writeFile(path.resolve(ServerPath, "Dragonfly"+(process.platform === "win32"?".exe":"")), await httpRequests.getBuffer(String(info.data)));
   }
   return {
     Version: info.version,
