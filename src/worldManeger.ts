@@ -57,33 +57,15 @@ export async function changeServerSettings(Platform: bdsTypes.Platform, serverPa
   if (!fs.existsSync(onStorage)) fs.mkdirSync(onStorage);
 
   // Bedrock
-  if (Platform === "bedrock") {
+  if (Platform === "bedrock"||Platform === "java"||Platform === "pocketmine"||Platform === "spigot") {
     const bedrockSettings = path.join(serverPath, "server.properties");
     if (fs.existsSync(bedrockSettings)) {
       if (fs.lstatSync(bedrockSettings).isSymbolicLink()) return;
-      if (!fs.existsSync(path.join(onStorage, "server.properties"))) await fs.promises.rename(bedrockSettings, path.join(onStorage, "server.properties"));
+      if (fs.existsSync(bedrockSettings)) {
+        await fs.promises.writeFile(path.join(onStorage, "server.properties"), await fs.promises.readFile(bedrockSettings, "utf8"));
+        await fs.promises.rm(bedrockSettings);
+      }
     }
-    await fs.promises.symlink(path.join(onStorage, "bedrock_server.properties"), bedrockSettings, "file");
-  } else if (Platform === "java") {
-    const javaSettings = path.join(serverPath, "server.properties");
-    if (fs.existsSync(javaSettings)) {
-      if (fs.lstatSync(javaSettings).isSymbolicLink()) return;
-      if (!fs.existsSync(path.join(onStorage, "server.properties"))) await fs.promises.rename(javaSettings, path.join(onStorage, "server.properties"));
-    }
-    await fs.promises.symlink(path.join(onStorage, "java_server.properties"), javaSettings, "file");
-  } else if (Platform === "pocketmine") {
-    const pocketmineSettings = path.join(serverPath, "server.properties");
-    if (fs.existsSync(pocketmineSettings)) {
-      if (fs.lstatSync(pocketmineSettings).isSymbolicLink()) return;
-      if (!fs.existsSync(path.join(onStorage, "server.properties"))) await fs.promises.rename(pocketmineSettings, path.join(onStorage, "server.properties"));
-    }
-    await fs.promises.symlink(path.join(onStorage, "pocketmine_server.properties"), pocketmineSettings, "file");
-  } else if (Platform === "spigot") {
-    const spigotSettings = path.join(serverPath, "server.properties");
-    if (fs.existsSync(spigotSettings)) {
-      if (fs.lstatSync(spigotSettings).isSymbolicLink()) return;
-      if (!fs.existsSync(path.join(onStorage, "server.properties"))) await fs.promises.rename(spigotSettings, path.join(onStorage, "server.properties"));
-    }
-    await fs.promises.symlink(path.join(onStorage, "spigot_server.yml"), spigotSettings, "file");
+    await fs.promises.symlink(path.join(onStorage, "server.properties"), bedrockSettings, "file");
   }
 }
