@@ -61,8 +61,8 @@ export async function changeServerSettings(Platform: bdsTypes.Platform, serverPa
     const bedrockSettings = path.join(serverPath, "server.properties");
     if (fs.existsSync(bedrockSettings)) {
       if (fs.lstatSync(bedrockSettings).isSymbolicLink()) return;
-      if (fs.existsSync(path.join(onStorage, "server.properties"))) {
-        await fs.promises.copyFile(bedrockSettings, path.join(onStorage, "server.properties"));
+      if (fs.existsSync(bedrockSettings)) {
+        await fs.promises.writeFile(path.join(onStorage, "server.properties"), await fs.promises.readFile(bedrockSettings, "utf8"));
         await fs.promises.rm(bedrockSettings);
       }
     }
