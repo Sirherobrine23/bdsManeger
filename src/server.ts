@@ -34,7 +34,7 @@ type BdsSession = {
     installAllAddons: (removeOldPacks: boolean) => Promise<void>;
   };
   /** register cron job to create backups */
-  creteBackup: (crontime: string|Date) => node_cron.CronJob;
+  creteBackup: (crontime: string|Date, option?: {type: "git"; config: bdsBackup.gitBackupOption}|{type: "zip"}) => node_cron.CronJob;
   /** Stop Server */
   stop: () => Promise<number|null>
   /** callback to log event */
@@ -174,6 +174,7 @@ async function parserServerActions(Platform: bdsTypes.Platform, data: string, ca
 type startServerOptions = {
   /** Save only worlds/maps without server software - (Beta) */
   storageOnlyWorlds?: boolean;
+  gitBackup?: bdsBackup.gitBackupOption;
 };
 
 // Start Server
@@ -349,18 +350,46 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     startDate: StartDate,
     seed: undefined,
     addonManeger: undefined,
-    creteBackup: (crontime: string|Date) => {
-      const cronJob = new node_cron.CronJob(crontime, async () => {
+    creteBackup: (crontime: string|Date, option?: {type: "git"; config: bdsBackup.gitBackupOption}|{type: "zip"}) => {
+      function lockServerBackup() {
         if (Platform === "bedrock") {
           serverCommands.execCommand("save hold");
           serverCommands.execCommand("save query");
         }
-        await bdsBackup.CreateBackup(Platform);
+      }
+      function unLockServerBackup() {
         if (Platform === "bedrock") serverCommands.execCommand("save resume");
-      });
-      ServerProcess.on("exit", () => cronJob.stop());
-      cronJob.start();
-      return cronJob;
+      }
+      if (!!option) {
+        if (option.type === "git") {
+          if (!option.config) throw new Error("Config is required");
+          const cronGit = new node_cron.CronJob(crontime, () => {
+            lockServerBackup();
+            bdsBackup.gitBackup(Platform, option.config).catch(() => undefined).then(() => unLockServerBackup());
+          });
+          cronGit.start();
+          ServerProcess.on("exit", () => cronGit.stop());
+          return cronGit;
+        } else if (option.type === "zip") {
+          const zipCron = new node_cron.CronJob(crontime, () => {
+            lockServerBackup();
+            bdsBackup.CreateBackup(Platform).catch(() => undefined).then(() => unLockServerBackup());
+          });
+          zipCron.start();
+          ServerProcess.on("exit", () => zipCron.stop());
+          return zipCron;
+        }
+      } else {
+        const cronJob = new node_cron.CronJob(crontime, async () => {
+          lockServerBackup();
+          await bdsBackup.CreateBackup(Platform);
+          unLockServerBackup();
+        });
+        ServerProcess.on("exit", () => cronJob.stop());
+        cronJob.start();
+        return cronJob;
+      }
+      throw new Error("Invalid option");
     },
     logRegister: onLog,
     onExit: onExit,
