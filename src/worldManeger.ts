@@ -66,6 +66,6 @@ export async function changeServerSettings(Platform: bdsTypes.Platform, serverPa
         await fs.promises.rm(bedrockSettings);
       }
     }
-    await fs.promises.symlink(bedrockSettings, path.join(onStorage, "server.properties"), "file");
+    await fs.promises.symlink(path.join(onStorage, "server.properties"), bedrockSettings, "file");
   }
 }
