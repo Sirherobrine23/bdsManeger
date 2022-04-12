@@ -2,6 +2,7 @@
 import * as BdsCore from "../index";
 import * as BdsTypes from "../globalType";
 import { CronJob } from "cron";
+import * as bdscoreVersion from "@the-bds-maneger/server_versions";
 
 const PLATFORM = (process.env.PLATFORM||"bedrock") as BdsTypes.Platform;
 const {
@@ -58,8 +59,8 @@ if (!BdsTypes.PlatformArray.find(p => p === PLATFORM)) {
     console.log("Auto Update enabled");
     let sessionStart = await start();
     const cronUpdate = new CronJob("0 */1 * * * *", async () => {
-      const DownloadInfo = await BdsCore.DownloadServer.getVersions();
-      if (DownloadInfo.latest[PLATFORM] === versionDownloaded) return;
+      const DownloadInfo = await bdscoreVersion.findUrlVersion(PLATFORM, true);
+      if (DownloadInfo["version"] === versionDownloaded) return;
       lockExit = true;
       await sessionStart.stop();
       await BdsCore.DownloadServer.DownloadServer(PLATFORM, true);

@@ -6,23 +6,7 @@ import tar from "tar";
 import * as httpRequests from "./HttpRequests";
 import * as bdsTypes from "./globalType";
 import * as bdschildProcess from "./childProcess";
-//import * as bdscoreVersion from "@the-bds-maneger/server_versions";
-
-type getVersionsType = {
-  latest: {
-    [d: string]: string|undefined
-  };
-  platform: Array<{
-    name: bdsTypes.Platform;
-    version: string;
-    Date: string;
-    data: string | {[platform: string]: {[arch: string]: string;};};
-  }>;
-};
-
-export async function getVersions(): Promise<getVersionsType> {
-  return JSON.parse((await httpRequests.getBuffer("https://raw.githubusercontent.com/The-Bds-Maneger/ServerVersions/main/src/Versions.json")).toString("utf8"));
-}
+import * as the_bds_maneger_server_versions from "@the-bds-maneger/server_versions";
 
 async function InstallPHP(serverPath: string) {
   const nameTest = (name: string) => (process.platform === "win32" ? /\.zip/:/\.tar\.gz/).test(name) && RegExp(process.platform).test(name) && RegExp(process.arch).test(name);
@@ -56,10 +40,8 @@ async function InstallPHP(serverPath: string) {
   return urlBin;
 }
 
-export async function DownloadServer(Platform: bdsTypes.Platform, Version: string|boolean) {
+export async function DownloadServer(Platform: bdsTypes.Platform, Version: string|boolean): Promise<{Version: string, Date: Date; url: string;}> {
   const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
-  const versions = await getVersions();
-  const info = versions.platform.filter(v => v.name === Platform).find(v => v.version === (typeof Version === "boolean"?versions.latest[Platform]:Version));
   if (Platform === "bedrock") {
     if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
     let arch = process.arch;
@@ -67,7 +49,8 @@ export async function DownloadServer(Platform: bdsTypes.Platform, Version: strin
       const existQemu = await bdschildProcess.runCommandAsync("command -v qemu-x86_64-static").then(() => true).catch(() => false);
       if (existQemu) arch = "x64";
     }
-    const BedrockZip = new adm_zip(await httpRequests.getBuffer(info.data[process.platform][arch]));
+    const bedrockInfo = await the_bds_maneger_server_versions.findUrlVersion(Platform as the_bds_maneger_server_versions.BdsCorePlatforms, Version, arch as the_bds_maneger_server_versions.arch);
+    const BedrockZip = new adm_zip(await httpRequests.getBuffer(bedrockInfo.url));
     let realPathWorldBedrock = "";
     if (fs.existsSync(path.resolve(ServerPath, "worlds"))) {
       if (fs.lstatSync(path.resolve(ServerPath, "worlds")).isSymbolicLink()) {
@@ -77,24 +60,41 @@ export async function DownloadServer(Platform: bdsTypes.Platform, Version: strin
     }
     BedrockZip.extractAllTo(ServerPath, true);
     if (!!realPathWorldBedrock) await fs.promises.symlink(realPathWorldBedrock, path.resolve(ServerPath, "worlds"), "dir");
+    return {
+      Version: bedrockInfo["version"],
+      Date: bedrockInfo.datePublish,
+      url: bedrockInfo.url
+    };
   } else if (Platform === "java") {
     if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
-    await fs.promises.writeFile(path.resolve(ServerPath, "Server.jar"), await httpRequests.getBuffer(String(info.data)));
+    const javaInfo = await the_bds_maneger_server_versions.findUrlVersion(Platform as the_bds_maneger_server_versions.BdsCorePlatforms, Version);
+    await fs.promises.writeFile(path.resolve(ServerPath, "Server.jar"), await httpRequests.getBuffer(String(javaInfo.url)));
     await fs.promises.writeFile(path.resolve(ServerPath, "eula.txt"), "eula=true");
+    return {
+      Version: javaInfo["version"],
+      Date: javaInfo.datePublish,
+      url: javaInfo.url
+    };
   } else if (Platform === "spigot") {
     if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
-    await fs.promises.writeFile(path.resolve(ServerPath, "Spigot.jar"), await httpRequests.getBuffer(String(info.data)));
+    const spigotInfo = await the_bds_maneger_server_versions.findUrlVersion(Platform as the_bds_maneger_server_versions.BdsCorePlatforms, Version);
+    await fs.promises.writeFile(path.resolve(ServerPath, "Spigot.jar"), await httpRequests.getBuffer(String(spigotInfo.url)));
+    await fs.promises.writeFile(path.resolve(ServerPath, "eula.txt"), "eula=true");
+    return {
+      Version: spigotInfo["version"],
+      Date: spigotInfo.datePublish,
+      url: spigotInfo.url
+    };
   } else if (Platform === "pocketmine") {
     if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
     await InstallPHP(ServerPath);
-    await fs.promises.writeFile(path.resolve(ServerPath, "PocketMine.phar"), await httpRequests.getBuffer(String(info.data)));
-  } else if (Platform === "dragonfly") {
-    if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
-    await fs.promises.writeFile(path.resolve(ServerPath, "Dragonfly"+(process.platform === "win32"?".exe":"")), await httpRequests.getBuffer(String(info.data)));
+    const pocketmineInfo = await the_bds_maneger_server_versions.findUrlVersion(Platform as the_bds_maneger_server_versions.BdsCorePlatforms, Version);
+    await fs.promises.writeFile(path.resolve(ServerPath, "PocketMine.phar"), await httpRequests.getBuffer(String(pocketmineInfo.url)));
+    return {
+      Version: pocketmineInfo["version"],
+      Date: pocketmineInfo.datePublish,
+      url: pocketmineInfo.url
+    };
   }
-  return {
-    Version: info.version,
-    Date: new Date(info.Date),
-    url: (typeof info.data === "string"? info.data : info.data[process.platform][process.arch])
-  };
+  throw new Error("No file found for this Platform and Arch");
 }
