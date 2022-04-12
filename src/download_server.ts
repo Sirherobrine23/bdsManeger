@@ -6,6 +6,7 @@ import tar from "tar";
 import * as httpRequests from "./HttpRequests";
 import * as bdsTypes from "./globalType";
 import * as bdschildProcess from "./childProcess";
+//import * as bdscoreVersion from "@the-bds-maneger/server_versions";
 
 type getVersionsType = {
   latest: {

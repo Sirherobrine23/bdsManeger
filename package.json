@@ -66,6 +66,7 @@
     "android"
   ],
   "dependencies": {
+    "@the-bds-maneger/server_versions": "^2.0.1",
     "adm-zip": "^0.5.9",
     "axios": "^0.26.1",
     "cli-color": "^2.0.2",
