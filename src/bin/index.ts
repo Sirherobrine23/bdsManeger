@@ -27,11 +27,7 @@ const Yargs = yargs(process.argv.slice(2)).option("platform", {
     console.info("Release date: %s", `${res.Date.getDate()}/${res.Date.getMonth()+1}/${res.Date.getFullYear()}`);
   });
 }).command("start", "Start Server", async yargs => {
-  const options = await yargs.option("api", {
-    alias: "a",
-    describe: "port listen to listen to api",
-    type: "number"
-  }).option("cronBackup", {
+  const options = await yargs.option("cronBackup", {
     alias: "b",
     describe: "cron job to backup server maps",
     type: "string"
@@ -44,10 +40,6 @@ const Yargs = yargs(process.argv.slice(2)).option("platform", {
     }
   }
   const Server = await BdsCore.Server.Start(Platform);
-  if(!!options.api) {
-    const listening = BdsCore.API.listen(options.api);
-    Server.onExit(() => listening.close());
-  }
   console.log("Session ID: %s", Server.id);
   Server.logRegister("all", data => console.log(cli_color.blueBright(data.replace("true", cli_color.greenBright("true"))).replace("false", cli_color.redBright("false"))));
   const Input = readline.createInterface({input: process.stdin,output: process.stdout})

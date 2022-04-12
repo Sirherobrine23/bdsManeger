@@ -38,6 +38,7 @@ esac
 VOLUME [ "/data" ]
 
 # App Workspace
+STOPSIGNAL SIGTERM
 ENTRYPOINT [ "node", "--trace-warnings", "dist/cjs/bin/docker.js" ]
 
 # Ports
@@ -65,6 +66,8 @@ ENV ALLOW_COMMADS="false"
 # Bds Core Settings
 ENV VERSION="latest"
 ENV PLATFORM="bedrock"
+ENV AUTH_USER="admin"
+ENV AUTH_PASSWORD="admin"
 
 STOPSIGNAL SIGTERM
 WORKDIR /var/app_storage

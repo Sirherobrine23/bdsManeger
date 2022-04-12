@@ -2,16 +2,19 @@
   "include": ["src/"],
   "exclude": ["node_modules/"],
   "compilerOptions": {
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "module": "commonjs",
     "outDir": "./dist/cjs",
     "declaration": true,
     "strict": false,
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "module": "commonjs",
     "allowJs": true,
-    "target": "ES6"
+    "target": "ES6",
+    "paths": {
+      "@/*": ["./node_modules/@*"]
+    }
   }
 }

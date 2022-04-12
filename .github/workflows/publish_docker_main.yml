@@ -44,5 +44,5 @@ jobs:
           target: bdscore
           tags: ${{ env.DOCKERIMAGE }}:latest
           platforms: ${{ env.DOCKERPLATFORM }}
-          cache-from: type=gha,scope=${{ github.ref }}_${{ hashFiles('**/package-lock.json') }}
-          cache-to: type=gha,mode=max,scope=${{ github.ref }}_${{ hashFiles('**/package-lock.json') }}
+          cache-from: type=gha,scope=${{ github.ref }}_${{ github.repo }}
+          cache-to: type=gha,mode=max,scope=${{ github.ref }}_${{ github.repo }}
