@@ -11,6 +11,7 @@
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
     "allowJs": true,
     "target": "ES6",
     "paths": {
