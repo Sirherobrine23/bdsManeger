@@ -178,6 +178,7 @@ type startServerOptions = {
 };
 
 // Start Server
+export default Start;
 export async function Start(Platform: bdsTypes.Platform, options?: startServerOptions): Promise<BdsSession> {
   const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
   if (!(fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});

@@ -40,6 +40,7 @@ async function InstallPHP(serverPath: string) {
   return urlBin;
 }
 
+export default DownloadServer;
 export async function DownloadServer(Platform: bdsTypes.Platform, Version: string|boolean): Promise<{Version: string, Date: Date; url: string;}> {
   const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
   if (Platform === "bedrock") {
