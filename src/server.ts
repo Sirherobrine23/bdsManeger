@@ -21,7 +21,7 @@ type bdsSessionCommands = {
   userGamemode: (player: string, gamemode: "survival"|"creative"|"hardcore") => bdsSessionCommands;
 };
 
-type BdsSession = {
+export type BdsSession = {
   /** Server Session ID */
   id: string;
   /** Server Started date */
