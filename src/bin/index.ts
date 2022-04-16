@@ -22,7 +22,7 @@ const Yargs = yargs(process.argv.slice(2)).option("platform", {
   }).parseSync();
   const Platform = options.platform as bdsTypes.Platform;
   console.log("Starting Download...");
-  BdsCore.DownloadServer.DownloadServer(Platform, options.version === "latest"?true:options.version).then(res => {
+  BdsCore.downloadServer.DownloadServer(Platform, options.version === "latest"?true:options.version).then(res => {
     console.log("Sucess to download server");
     console.info("Release date: %s", `${res.Date.getDate()}/${res.Date.getMonth()+1}/${res.Date.getFullYear()}`);
   });
