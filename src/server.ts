@@ -373,7 +373,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
         } else if (option.type === "zip") {
           const zipCron = new node_cron.CronJob(crontime, () => {
             lockServerBackup();
-            bdsBackup.CreateBackup(Platform).catch(() => undefined).then(() => unLockServerBackup());
+            bdsBackup.CreateBackup(true).catch(() => undefined).then(() => unLockServerBackup());
           });
           zipCron.start();
           ServerProcess.on("exit", () => zipCron.stop());
@@ -382,7 +382,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
       } else {
         const cronJob = new node_cron.CronJob(crontime, async () => {
           lockServerBackup();
-          await bdsBackup.CreateBackup(Platform);
+          await bdsBackup.CreateBackup(true);
           unLockServerBackup();
         });
         ServerProcess.on("exit", () => cronJob.stop());

@@ -10,21 +10,38 @@ const ServerPathRoot = path.resolve(process.env.SERVER_PATH||path.join(os.homedi
 const backupFolderPath = path.resolve(process.env.BACKUP_PATH||path.join(os.homedir(), "bds_core/backups"));
 
 export default CreateBackup;
-export async function CreateBackup(Platform: bdsCoretypes.Platform) {
+export async function CreateBackup(WriteFile: {path: string}|true|false = false) {
   if (!(fs.existsSync(backupFolderPath))) await fsPromise.mkdir(backupFolderPath, {recursive: true});
-  const ServerPath = path.join(ServerPathRoot, Platform);
-  if (!(fs.existsSync(ServerPath))) throw new Error("Server no Installed or path not found");
-  const Backup = new AdmZip();
-  if (Platform === "bedrock") {
-    if (fs.existsSync(path.join(ServerPath, "worlds"))) Backup.addLocalFolder(path.join(ServerPath, "worlds"));
-    if (fs.existsSync(path.join(ServerPath, "server.properties"))) Backup.addLocalFile(path.join(ServerPath, "server.properties"));
-    if (fs.existsSync(path.join(ServerPath, "permissions.json"))) Backup.addLocalFile(path.join(ServerPath, "permissions.json"));
-  }
+  // Create empty zip Buffer
+  const BackupZip = new AdmZip();
   
-  const BackupFile = path.resolve(backupFolderPath, `${Platform}_${new Date().toString().replace(/[-\(\)\:\s+]/gi, "_")}.zip`);
-  const zipBuffer = Backup.toBuffer();
-  fs.writeFileSync(BackupFile, zipBuffer);
-  return {zipBuffer, BackupFile};
+  // List all Servers
+  for (const __Server_Path of fs.readdirSync(ServerPathRoot).filter(Server => !!bdsCoretypes.PlatformArray.find(Platform => Platform === Server))) {
+    const Platform = __Server_Path as bdsCoretypes.Platform;
+    const ServerPath = path.join(ServerPathRoot, __Server_Path);
+    if (fs.existsSync(ServerPath)) {
+      if (fs.existsSync(path.join(ServerPath, "worlds"))) BackupZip.addLocalFolder(await fsPromise.realpath(path.join(ServerPath, "worlds")), Platform+"/worlds");
+      if (fs.existsSync(path.join(ServerPath, "server.properties"))) BackupZip.addLocalFile(await fsPromise.realpath(path.join(ServerPath, "server.properties")), Platform+"/server.properties");
+      if (fs.existsSync(path.join(ServerPath, "permissions.json"))) BackupZip.addLocalFile(path.join(ServerPath, "permissions.json"), Platform+"/permissions.json");
+      if (Platform === "java") {
+        if (fs.existsSync(path.join(ServerPath, "banned-ips.json"))) BackupZip.addLocalFile(path.join(ServerPath, "banned-ips.json"), Platform+"/banned-ips.json");
+        if (fs.existsSync(path.join(ServerPath, "banned-players.json"))) BackupZip.addLocalFile(path.join(ServerPath, "banned-players.json"), Platform+"/banned-players.json");
+        if (fs.existsSync(path.join(ServerPath, "whitelist.json"))) BackupZip.addLocalFile(path.join(ServerPath, "whitelist.json"), Platform+"/whitelist.json");
+        // Filter folders
+        const Folders = fs.readdirSync(ServerPath).filter(Folder => fs.lstatSync(path.join(ServerPath, Folder)).isDirectory()).filter(a => !(a === "libraries"||a === "logs"||a === "versions"));
+        for (const world of Folders) BackupZip.addLocalFolder(path.join(ServerPath, world), Platform+"/"+world);
+      }
+    }
+  }
+
+  // Get Zip Buffer
+  const zipBuffer = BackupZip.toBuffer();
+  if (typeof WriteFile === "object") {
+    let BackupFile = path.resolve(backupFolderPath, `${new Date().toString().replace(/[-\(\)\:\s+]/gi, "_")}.zip`);
+    if (!!WriteFile.path) BackupFile = path.resolve(WriteFile.path);
+    fs.writeFileSync(BackupFile, zipBuffer);
+  }
+  return zipBuffer;
 }
 
 export type gitBackupOption = {
