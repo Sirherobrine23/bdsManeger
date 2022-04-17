@@ -9,6 +9,44 @@ import simpleGit from "simple-git";
 const ServerPathRoot = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"));
 const backupFolderPath = path.resolve(process.env.BACKUP_PATH||path.join(os.homedir(), "bds_core/backups"));
 
+async function createTempFolder() {
+  const tempFolderPath = path.join(os.tmpdir(), Buffer.from(Math.random().toString()).toString("hex")+"tmpFolder");
+  if (fs.existsSync(tempFolderPath)) await fse.rm(tempFolderPath, {recursive: true});
+  fsPromise.mkdir(tempFolderPath, { recursive: true });
+  const addFile = (filePath: string, onStorage: string = path.basename(filePath)) => fsPromise.copyFile(filePath, path.join(tempFolderPath, onStorage));
+  const addFolder = (folderPath: string, onStorage: string = path.basename(folderPath)) => {
+    if (!(fs.existsSync(folderPath) && fs.lstatSync(folderPath).isDirectory())) throw new Error(`${folderPath} is not a folder`);
+    return fse.copy(folderPath, path.join(tempFolderPath, onStorage), {recursive: true});
+  }
+
+  const listFiles = async () => {
+    let files = await fsPromise.readdir(tempFolderPath);
+    const listFolder = async (folderPath: string) => {
+      const folderFiles = await fsPromise.readdir(folderPath);
+      for (const file of folderFiles) {
+        const filePath = path.join(folderPath, file);
+        if (fs.lstatSync(filePath).isDirectory()) {
+          folderFiles.push(...(await listFolder(filePath)).map(f => path.join(folderPath, f)));
+        }
+      }
+      return folderFiles;
+    }
+    for (const folder of files) {
+      const folderPath = path.join(tempFolderPath, folder);
+      if (fs.lstatSync(folderPath).isDirectory()) {
+        files = files.concat((await listFolder(folderPath)));
+      }
+    }
+    return files.map(PathF => PathF.replace(tempFolderPath+path.sep, ""));
+  }
+
+  return {
+    addFile,
+    addFolder,
+    listFiles
+  };
+}
+
 export default CreateBackup;
 export async function CreateBackup(WriteFile: {path: string}|true|false = false) {
   if (!(fs.existsSync(backupFolderPath))) await fsPromise.mkdir(backupFolderPath, {recursive: true});
