@@ -16,20 +16,24 @@ async function createTempFolder() {
   await fsPromise.mkdir(tempFolderPath, { recursive: true });
   
   /**
+   * Add file to temp Folder
    * 
    * @param filePath - Original file path
    * @param onStorage - on Storage temp file path, example: serverName/fileName
    * @returns
    */
-  const addFile = async (filePath: string, onStorage: string = path.basename(filePath)) => {
+  const addFile = async (filePath: string, onStorage?: string) => {
     if (cleaned) throw new Error("Cannot add file after cleaning");
-    const baseName = path.join(tempFolderPath, path.basename(onStorage));
-    if (!(fs.existsSync(baseName))) await fsPromise.mkdir(baseName, { recursive: true });
-    await fsPromise.copyFile(filePath, path.join(tempFolderPath, onStorage));
+    if (onStorage === undefined) onStorage = path.parse(filePath).name;
+    const onTempStorage = path.join(tempFolderPath, onStorage);
+    const basenameFolder = path.parse(onTempStorage).dir;
+    await fsPromise.mkdir(basenameFolder, { recursive: true }).catch(() => undefined);
+    await fsPromise.copyFile(filePath, onTempStorage);
     return;
   }
 
   /**
+   * Add folder to temp Folder (include subfolders)
    * 
    * @param folderPath - Original folder path
    * @param onStorage - on Storage temp folder path, example: serverName/folderName
@@ -42,6 +46,11 @@ async function createTempFolder() {
     return;
   }
 
+  /**
+   * Get only files from temp folder recursively
+   * 
+   * @returns list files
+   */
   const listFiles = async () => {
     if (cleaned) throw new Error("Cannot list files after cleaning");
     const listFolder = async (folderPath: string) => {
@@ -58,6 +67,11 @@ async function createTempFolder() {
     return FilesMaped;
   }
 
+  /**
+   * Remove temp folder and lock to add new files and folders
+   * 
+   * @returns 
+   */
   const cleanFolder = async () => {
     if (cleaned) throw new Error("Cannot clean folder after cleaning");
     await fse.rm(tempFolderPath, {recursive: true, force: true});
@@ -73,9 +87,7 @@ async function createTempFolder() {
   };
 }
 
-export default CreateBackup;
-export async function CreateBackup(WriteFile: {path: string}|true|false = false) {
-  if (!(fs.existsSync(backupFolderPath))) await fsPromise.mkdir(backupFolderPath, {recursive: true});
+async function genericAddFiles() {
   // Create empty zip Buffer
   const TempFolder = await createTempFolder()
   
@@ -97,10 +109,19 @@ export async function CreateBackup(WriteFile: {path: string}|true|false = false)
       }
     }
   }
+  return TempFolder;
+}
 
-  // Get Zip Buffer
+export default CreateBackup;
+export async function CreateBackup(WriteFile: {path: string}|true|false = false) {
+  if (!(fs.existsSync(backupFolderPath))) await fsPromise.mkdir(backupFolderPath, {recursive: true});
+  // Add Folders and files
+  const TempFolder = await genericAddFiles()
+  // Create empty zip Buffer
   const zip = new AdmZip();
-  for (const file of await TempFolder.listFiles()) zip.addLocalFile(path.join(TempFolder.tempFolderPath, file), file);
+  for (const file of await TempFolder.listFiles()) zip.addLocalFile(path.join(TempFolder.tempFolderPath, file), (path.sep+path.parse(file).dir));
+  await TempFolder.cleanFolder();
+  // Get Zip Buffer
   const zipBuffer = zip.toBuffer();
   if (typeof WriteFile === "object") {
     let BackupFile = path.resolve(backupFolderPath, `${new Date().toString().replace(/[-\(\)\:\s+]/gi, "_")}.zip`);
