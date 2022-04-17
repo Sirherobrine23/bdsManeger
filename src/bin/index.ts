@@ -5,20 +5,22 @@ import { isValidCron } from "cron-validator";
 import * as BdsCore from "../index";
 import * as bdsTypes from "../globalType";
 import cli_color from "cli-color";
+import path from "path";
+import { promises as fsPromise } from "fs";
 
-const Yargs = yargs(process.argv.slice(2)).option("platform", {
-  alias: "p",
-  describe: "Bds Core Platform",
-  demandOption: true,
-  type: "string",
-  choices: ["bedrock", "java", "pocketmine", "spigot", "dragonfly"],
-  default: "bedrock"
-}).command("download", "Download and Install server", yargs => {
+const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Install server", yargs => {
   const options = yargs.option("version", {
     alias: "v",
     describe: "Server Version",
     demandOption: true,
     type: "string"
+  }).option("platform", {
+    alias: "p",
+    describe: "Bds Core Platform",
+    demandOption: true,
+    type: "string",
+    choices: ["bedrock", "java", "pocketmine", "spigot", "dragonfly"],
+    default: "bedrock"
   }).parseSync();
   const Platform = options.platform as bdsTypes.Platform;
   console.log("Starting Download...");
@@ -26,8 +28,25 @@ const Yargs = yargs(process.argv.slice(2)).option("platform", {
     console.log("Sucess to download server");
     console.info("Release date: %s", `${res.Date.getDate()}/${res.Date.getMonth()+1}/${res.Date.getFullYear()}`);
   });
+}).command("backup", "Create Backups", async yargs => {
+  const {storage} = yargs.option("storage", {
+    alias: "s",
+    describe: "Storage Path",
+    demandOption: false,
+    type: "string",
+    default: path.join(process.cwd(), "backup_"+new Date().toString().replace(/[-\(\)\:\s+]/gi, "_"))+".zip"
+  }).parseSync();
+  const zipBuffer = await BdsCore.Backup.CreateBackup(false);
+  await fsPromise.writeFile(storage, zipBuffer);
 }).command("start", "Start Server", async yargs => {
-  const options = await yargs.option("cronBackup", {
+  const options = await yargs.option("platform", {
+    alias: "p",
+    describe: "Bds Core Platform",
+    demandOption: true,
+    type: "string",
+    choices: ["bedrock", "java", "pocketmine", "spigot", "dragonfly"],
+    default: "bedrock"
+  }).option("cronBackup", {
     alias: "b",
     describe: "cron job to backup server maps",
     type: "string"
