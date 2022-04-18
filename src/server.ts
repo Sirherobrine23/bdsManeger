@@ -366,7 +366,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
           if (!option.config) throw new Error("Config is required");
           const cronGit = new node_cron.CronJob(crontime, () => {
             lockServerBackup();
-            bdsBackup.gitBackup(Platform, option.config).catch(() => undefined).then(() => unLockServerBackup());
+            bdsBackup.gitBackup(option.config).catch(() => undefined).then(() => unLockServerBackup());
           });
           cronGit.start();
           ServerProcess.on("exit", () => cronGit.stop());

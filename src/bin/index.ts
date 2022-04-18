@@ -29,15 +29,34 @@ const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Ins
     console.info("Release date: %s", `${res.Date.getDate()}/${res.Date.getMonth()+1}/${res.Date.getFullYear()}`);
   });
 }).command("backup", "Create Backups", async yargs => {
-  const {storage} = yargs.option("storage", {
+  const {storage, git} = await yargs.option("storage", {
     alias: "s",
     describe: "Storage Path",
     demandOption: false,
     type: "string",
     default: path.join(process.cwd(), "backup_"+new Date().toString().replace(/[-\(\)\:\s+]/gi, "_"))+".zip"
-  }).parseSync();
+  }).option("git", {
+    alias: "g",
+    describe: "Git Repository, example to remote: -g \"<user>,<pass>,<Url>\", or local: -g \"local\"",
+    demandOption: false,
+    type: "string",
+    default: ""
+  }).parseAsync();
+  if (!!git) {
+    if (git.toLocaleLowerCase() === "local") return BdsCore.Backup.gitBackup();
+    else {
+      const [user, pass, url] = git.split(",");
+      return BdsCore.Backup.gitBackup({
+        repoUrl: url,
+        Auth: {
+          Username: user,
+          PasswordToken: pass
+        }
+      });
+    }
+  }
   const zipBuffer = await BdsCore.Backup.CreateBackup(false);
-  await fsPromise.writeFile(storage, zipBuffer);
+  return fsPromise.writeFile(storage, zipBuffer);
 }).command("start", "Start Server", async yargs => {
   const options = await yargs.option("platform", {
     alias: "p",
@@ -63,27 +82,34 @@ const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Ins
   Server.logRegister("all", data => console.log(cli_color.blueBright(data.replace("true", cli_color.greenBright("true"))).replace("false", cli_color.redBright("false"))));
   const Input = readline.createInterface({input: process.stdin,output: process.stdout})
   Input.on("line", line => Server.commands.execCommand(line));
-  let closed = false;
-  Input.on("close", () => {
-    if (closed) return;
-    Server.stop();
-    closed = true;
-  });
-  Server.onExit(code => {
-    console.log("Server exit with code: %s", code);
-    if (closed) return;
-    Input.close();
-    closed = true;
-  });
   if (!!options.cronBackup) {
     console.log("Backup Maps enabled");
     const backupCron = Server.creteBackup(options.cronBackup);
     Server.onExit(() => backupCron.stop());
   }
+  return new Promise(resolve => {
+    let closed = false;
+    Input.on("close", () => {
+      if (closed) return;
+      Server.stop();
+      closed = true;
+      resolve();
+    });
+    Server.onExit(code => {
+      console.log("Server exit with code: %s", code);
+      if (closed) return;
+      Input.close();
+      closed = true;
+      resolve();
+    });
+  });
 }).command({
   command: "*",
   handler: () => {
     Yargs.showHelp();
   }
 }).help().version(false);
-Yargs.parseAsync();
+Yargs.parseAsync().then(() => {
+  console.log("Exiting...");
+  process.exit(0);
+});

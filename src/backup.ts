@@ -132,76 +132,69 @@ export async function CreateBackup(WriteFile: {path: string}|true|false = false)
 }
 
 export type gitBackupOption = {
-  /** repository url, it can be https, http or git */
-  gitUrl?: string;
-  /** push */
-  pushCommits?: true|false;
-  /** if the repository works with several branches let us know because if not we will use the default. */
-  gitBranch?: string;
-  /** if the repository needs authentication, you will have to inform it here */
-  auth?: {
-    /** if the repository is on gitHub provide a token, the username and password will not work on github! */
-    githubToken?: string;
-    username?: string;
-    password?: string;
-  };
+  repoUrl: string;
+  Auth?: {
+    Username?: string;
+    PasswordToken: string
+  }
 };
 
-export async function gitBackup(Platform: bdsCoretypes.Platform, options?: gitBackupOption){
-  const platformGitPath = path.join(backupFolderPath, "git_"+Platform);
-  if (!(fs.existsSync(platformGitPath))) {
-    if (!!options) {
-      const gitLocal = await simpleGit(platformGitPath);
-      if (!!options.gitUrl) {
-        if (!/http:\/\/|https:\/\/|git:\/\//.test(options.gitUrl)) throw new Error("Invalid git url");
-        if (!!options.gitBranch) {
-          if (!!options.auth) {
-            if (!!options.auth.githubToken) {
-              await gitLocal.addRemote("origin", options.gitUrl, {
-                fetch: "+refs/heads/*:refs/remotes/origin/*",
-                token: options.auth.githubToken
-              });
-            } else {
-              await gitLocal.addRemote("origin", options.gitUrl, {
-                fetch: "+refs/heads/*:refs/remotes/origin/*",
-                username: options.auth.username,
-                password: options.auth.password
-              });
-            }
-          } else await gitLocal.clone(options.gitUrl, platformGitPath).checkout(options.gitBranch);
-        } else await gitLocal.clone(options.gitUrl, platformGitPath);
-      } else {
-        if (!!options.gitBranch) await gitLocal.init([`--initial-branch=${options.gitBranch}`]);
-        else await gitLocal.init(["--initial-branch=main"]);
-      }
-    }
+
+async function initGitRepo(RepoPath: string, options?: gitBackupOption): Promise<void> {
+  if (fs.existsSync(RepoPath)) {
+    if (fs.existsSync(path.join(RepoPath, ".git"))) return;
+    await fsPromise.rmdir(RepoPath, {recursive: true});
   }
-  const gitLocal = await simpleGit(platformGitPath);
-  const serverPath = path.join(ServerPathRoot, Platform);
-  const onStorage = path.join(serverPath, Platform);
-  if (!(fs.existsSync(onStorage))) await fsPromise.mkdir(onStorage, {recursive: true});
-  let commit = false;
-  if (Platform === "bedrock"||Platform === "pocketmine") {
-    if (fs.existsSync(path.join(serverPath, "worlds"))) {
-      if (fs.existsSync(path.join(onStorage, "worlds"))) await fsPromise.rmdir(path.join(onStorage, "worlds"), {recursive: true});
-      await fse.copy(path.join(serverPath, "worlds"), path.join(onStorage, "worlds"), {recursive: true});
-      await gitLocal.add(["worlds"]);
-      commit = true;
+  await fsPromise.mkdir(RepoPath, {recursive: true});
+  if (!!options) {
+    if (!options.repoUrl) throw new Error("RepoUrl is required");
+    let gitUrl = options.repoUrl;
+    const { host, pathname, protocol } = new URL(options.repoUrl);
+    if (!!options.Auth) {
+      if (!!options.Auth.Username) gitUrl = `${protocol}//${options.Auth.Username}:${options.Auth.PasswordToken}@${host}${pathname}`;
+      else gitUrl = `${protocol}//${options.Auth.PasswordToken}@${host}${pathname}`;
     }
-    if (fs.existsSync(path.join(serverPath, "server.properties"))) {
-      if (fs.existsSync(path.join(onStorage, "server.properties"))) await fsPromise.unlink(path.join(onStorage, "server.properties"));
-      await fse.copy(path.join(serverPath, "server.properties"), path.join(onStorage, "server.properties"));
-      await gitLocal.add(["server.properties"]);
-      commit = true;
-    }
-    if (fs.existsSync(path.join(serverPath, "permissions.json"))) {
-      if (fs.existsSync(path.join(onStorage, "permissions.json"))) await fsPromise.unlink(path.join(onStorage, "permissions.json"));
-      await fse.copy(path.join(serverPath, "permissions.json"), path.join(onStorage, "permissions.json"));
-      await gitLocal.add(["permissions.json"]);
-      commit = true;
-    }
+    const gitClone = simpleGit(RepoPath);
+    await gitClone.clone(gitUrl, RepoPath);
+    if (!!(await gitClone.getConfig("user.name").catch(() => {}))) await gitClone.addConfig("user.name", "BDS-Backup");
+    if (!!(await gitClone.getConfig("user.email").catch(() => {}))) await gitClone.addConfig("user.email", "support_bds@sirherobrine23.org");
+    return;
   }
-  if (commit) await gitLocal.commit(`${Platform} backup - ${(new Date()).toISOString()}`);
-  if (!!options&&!!options.pushCommits) await gitLocal.push();
+  // Create empty git repo and create main branch
+  const gitInit = simpleGit(RepoPath);
+  await gitInit.init()
+  if (!!(await gitInit.getConfig("user.name").catch(() => {}))) await gitInit.addConfig("user.name", "BDS-Backup");
+  if (!!(await gitInit.getConfig("user.email").catch(() => {}))) await gitInit.addConfig("user.email", "support_bds@sirherobrine23.org");
+  await gitInit.checkout("main", ["-b", "main"]);
+  return;
+}
+
+/**
+ * Create a backup in the git repository and push it to the remote if is authenticated (in each commit all existing files will be deleted).
+ * 
+ * @param options - Config git repository
+ */
+export async function gitBackup(options?: gitBackupOption): Promise<void>{
+  const gitFolder = path.join(backupFolderPath, "gitBackup");
+  await initGitRepo(gitFolder, options);
+  const Files = await genericAddFiles();
+  const filesGit = (await fsPromise.readdir(gitFolder)).filter(a => a !== ".git");
+  for (const file of filesGit) await fsPromise.rm(path.join(gitFolder, file), {recursive: true, force: true}).catch(() => {});
+  for (const file of await Files.listFiles()) {
+    await fsPromise.mkdir(path.join(gitFolder, path.parse(file).dir), {recursive: true}).catch(() => {});
+    await fsPromise.copyFile(path.join(Files.tempFolderPath, file), path.join(gitFolder, file));
+  }
+  await Files.cleanFolder();
+  const git = simpleGit(gitFolder);
+  await git.stash().pull().catch(() => {});
+  if ((await (await git.status()).files.length > 0)) {
+    await simpleGit(gitFolder).add(".");
+    await simpleGit(gitFolder).commit(`BDS Backup - ${new Date().toString()}`);
+  }
+  if (!!((options||{}).Auth||{}).Username) await git.push([
+    "--force",
+    "--set-upstream",
+    "--progress"
+  ]);
   return;
 }
