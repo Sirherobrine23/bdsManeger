@@ -179,7 +179,7 @@ export async function gitBackup(options?: gitBackupOption): Promise<void>{
   await initGitRepo(gitFolder, options);
   const Files = await genericAddFiles();
   const filesGit = (await fsPromise.readdir(gitFolder)).filter(a => a !== ".git");
-  for (const file of filesGit) await fsPromise.rm(path.join(gitFolder, file), {recursive: true, force: true}).catch(() => {});
+  for (const file of filesGit) await fsPromise.rm(path.join(gitFolder, file), {recursive: true, force: true}).catch(err => console.log(err));
   for (const file of await Files.listFiles()) {
     await fsPromise.mkdir(path.join(gitFolder, path.parse(file).dir), {recursive: true}).catch(() => {});
     await fsPromise.copyFile(path.join(Files.tempFolderPath, file), path.join(gitFolder, file));
