@@ -3,7 +3,7 @@ import path from "path";
 import os from "os";
 import fs from "fs";
 import * as prismarineNbt from "prismarine-nbt";
-import properties_to_json from "properties-to-json";
+import properties_to_json from "./lib/Proprieties";
 import * as bdsType from "./globalType";
 
 export type BdsConfigGet = {
@@ -28,16 +28,16 @@ export async function parseConfig(Platform: bdsType.Platform): Promise<BdsConfig
     const bedrockConfigPath = path.join(serverPath, "server.properties");
     if (!(fs.existsSync(bedrockConfigPath))) throw new Error("Bedrock server config not found");
     const bedrockConfig = properties_to_json(fs.readFileSync(bedrockConfigPath, "utf8"));
-    const bedrockConfigNbtPath = path.join(serverPath, "worlds", bedrockConfig["level-name"], "level.dat");
+    const bedrockConfigNbtPath = path.join(serverPath, "worlds", String(bedrockConfig["level-name"]), "level.dat");
     return {
-      world: bedrockConfig["level-name"],
-      description: bedrockConfig["server-name"],
-      difficulty: bedrockConfig["difficulty"],
-      gamemode: bedrockConfig["gamemode"],
-      players: parseInt(bedrockConfig["max-players"]),
+      world: String(bedrockConfig["level-name"]),
+      description: String(bedrockConfig["server-name"]),
+      difficulty: String(bedrockConfig["difficulty"]) as "peaceful"|"easy"|"normal"|"hard",
+      gamemode: String(bedrockConfig["gamemode"]) as "survival"|"creative"|"adventure"|"spectator",
+      players: parseInt(String(bedrockConfig["max-players"])),
       whitelist: bedrockConfig["white-list"] === "true",
-      portv4: parseInt(bedrockConfig["server-port"]),
-      portv6: parseInt(bedrockConfig["server-portv6"]),
+      portv4: parseInt(String(bedrockConfig["server-port"])),
+      portv6: parseInt(String(bedrockConfig["server-portv6"])),
       nbt: (fs.existsSync(bedrockConfigNbtPath)) ? await prismarineNbt.parse(fs.readFileSync(bedrockConfigNbtPath)) : undefined
     };
   }

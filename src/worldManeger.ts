@@ -49,23 +49,3 @@ export async function storageWorld(Platform: bdsTypes.Platform, serverPath: stri
   }
   throw new Error("Platform not supported");
 }
-
-export async function changeServerSettings(Platform: bdsTypes.Platform, serverPath: string) {
-  if (process.platform === "win32") throw new Error("Windows is not supported");
-  // On storage path
-  const onStorage = path.join(storage, Platform);
-  if (!fs.existsSync(onStorage)) fs.mkdirSync(onStorage);
-
-  // Bedrock
-  if (Platform === "bedrock"||Platform === "java"||Platform === "pocketmine"||Platform === "spigot") {
-    const bedrockSettings = path.join(serverPath, "server.properties");
-    if (fs.existsSync(bedrockSettings)) {
-      if (fs.lstatSync(bedrockSettings).isSymbolicLink()) return;
-      if (fs.existsSync(bedrockSettings)) {
-        await fs.promises.writeFile(path.join(onStorage, "server.properties"), await fs.promises.readFile(bedrockSettings, "utf8"));
-        await fs.promises.rm(bedrockSettings);
-      }
-    }
-    await fs.promises.symlink(path.join(onStorage, "server.properties"), bedrockSettings, "file");
-  }
-}

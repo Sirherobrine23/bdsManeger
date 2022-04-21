@@ -218,7 +218,6 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
 
   if (options) {
     if (options.storageOnlyWorlds) {
-      await worldManeger.changeServerSettings(Platform, ServerPath);
       await worldManeger.storageWorld(Platform, ServerPath, (await serverConfigParse(Platform)).world);
     }
   }

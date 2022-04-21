@@ -8,7 +8,7 @@ import * as bdsTypes from "./globalType";
 import * as bdschildProcess from "./childProcess";
 import * as the_bds_maneger_server_versions from "@the-bds-maneger/server_versions";
 
-async function InstallPHP(serverPath: string) {
+async function InstallPrebuildPHP(serverPath: string) {
   const nameTest = (name: string) => (process.platform === "win32" ? /\.zip/:/\.tar\.gz/).test(name) && RegExp(process.platform).test(name) && RegExp(process.arch).test(name);
   const Release = (await httpRequests.getGithubRelease("The-Bds-Maneger", "PocketMinePHPAutoBinBuilds")).map(release => {
     release.assets = release.assets.filter(asset => nameTest(asset.name));
@@ -17,11 +17,12 @@ async function InstallPHP(serverPath: string) {
   if (Release.length === 0) throw new Error("No file found for this Platform and Arch");
   const urlBin = Release[0].assets[0].browser_download_url;
   if (!urlBin) throw new Error("No file found for this Platform and Arch");
+  console.log("PHP File download url: %s", urlBin);
   if (/\.tar\.gz/.test(urlBin)) {
     const tmpFileTar = path.join(os.tmpdir(), Buffer.from(Math.random().toString()).toString("hex")+"bdscore.tar.gz");
     await fs.promises.writeFile(tmpFileTar, await httpRequests.getBuffer(urlBin));
     if (fs.existsSync(path.join(serverPath, "bin"))) {
-      await fs.promises.rmdir(path.join(serverPath, "bin"), {recursive: true});
+      await fs.promises.rm(path.join(serverPath, "bin"), {recursive: true});
       await fs.promises.mkdir(path.join(serverPath, "bin"));
     } else await fs.promises.mkdir(path.join(serverPath, "bin"));
     await tar.x({
@@ -59,8 +60,14 @@ export async function DownloadServer(Platform: bdsTypes.Platform, Version: strin
         await fs.promises.unlink(path.resolve(ServerPath, "worlds"));
       }
     }
+    let ServerProperties = "";
+    if (fs.existsSync(path.resolve(ServerPath, "server.properties"))) {
+      ServerProperties = await fs.promises.readFile(path.resolve(ServerPath, "server.properties"), "utf8");
+      await fs.promises.rm(path.resolve(ServerPath, "server.properties"));
+    }
     BedrockZip.extractAllTo(ServerPath, true);
     if (!!realPathWorldBedrock) await fs.promises.symlink(realPathWorldBedrock, path.resolve(ServerPath, "worlds"), "dir");
+    if (!!ServerProperties) await fs.promises.writeFile(path.resolve(ServerPath, "server.properties"), ServerProperties, "utf8");
     return {
       Version: bedrockInfo["version"],
       Date: bedrockInfo.datePublish,
@@ -88,7 +95,7 @@ export async function DownloadServer(Platform: bdsTypes.Platform, Version: strin
     };
   } else if (Platform === "pocketmine") {
     if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
-    await InstallPHP(ServerPath);
+    await InstallPrebuildPHP(ServerPath);
     const pocketmineInfo = await the_bds_maneger_server_versions.findUrlVersion(Platform as the_bds_maneger_server_versions.BdsCorePlatforms, Version);
     await fs.promises.writeFile(path.resolve(ServerPath, "PocketMine.phar"), await httpRequests.getBuffer(String(pocketmineInfo.url)));
     return {

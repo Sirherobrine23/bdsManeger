@@ -8,7 +8,7 @@ import cli_color from "cli-color";
 import path from "path";
 import { promises as fsPromise } from "fs";
 
-const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Install server", yargs => {
+const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Install server", async yargs => {
   const options = yargs.option("version", {
     alias: "v",
     describe: "Server Version",
@@ -24,7 +24,7 @@ const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Ins
   }).parseSync();
   const Platform = options.platform as bdsTypes.Platform;
   console.log("Starting Download...");
-  BdsCore.downloadServer.DownloadServer(Platform, options.version === "latest"?true:options.version).then(res => {
+  return BdsCore.downloadServer.DownloadServer(Platform, options.version === "latest"?true:options.version).then(res => {
     console.log("Sucess to download server");
     console.info("Release date: %s", `${res.Date.getDate()}/${res.Date.getMonth()+1}/${res.Date.getFullYear()}`);
   });
