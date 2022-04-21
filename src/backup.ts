@@ -142,7 +142,7 @@ export type gitBackupOption = {
 
 async function initGitRepo(RepoPath: string, options?: gitBackupOption): Promise<void> {
   if (fs.existsSync(RepoPath)) {
-    if (fs.existsSync(path.join(RepoPath, ".git"))) await fsPromise.rmdir(RepoPath, {recursive: true});
+    if (fs.existsSync(path.join(RepoPath, ".git"))) await fsPromise.rm(RepoPath, {recursive: true});
   }
   await fsPromise.mkdir(RepoPath, {recursive: true});
   if (!!options) {
