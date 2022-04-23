@@ -5,9 +5,10 @@ import fs, { promises as fsPromise } from "fs";
 import fse from "fs-extra";
 import AdmZip from "adm-zip";
 import simpleGit from "simple-git";
+import { compare as compareDir } from "dir-compare";
 
 const ServerPathRoot = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"));
-const backupFolderPath = path.resolve(process.env.BACKUP_PATH||path.join(os.homedir(), "bds_core/backups"));
+export const backupFolderPath = path.resolve(process.env.BACKUP_PATH||path.join(os.homedir(), "bds_core/backups"));
 
 async function createTempFolder() {
   let cleaned = false;
@@ -123,16 +124,18 @@ export async function CreateBackup(WriteFile: {path: string}|true|false = false)
   await TempFolder.cleanFolder();
   // Get Zip Buffer
   const zipBuffer = zip.toBuffer();
-  if (typeof WriteFile === "object") {
-    let BackupFile = path.resolve(backupFolderPath, `${new Date().toString().replace(/[-\(\)\:\s+]/gi, "_")}.zip`);
+  let BackupFile = path.resolve(backupFolderPath, `${new Date().toString().replace(/[-\(\)\:\s+]/gi, "_")}.zip`);
+  if (WriteFile === true) await fsPromise.writeFile(BackupFile, zipBuffer);
+  else if (typeof WriteFile === "object") {
     if (!!WriteFile.path) BackupFile = path.resolve(WriteFile.path);
-    fs.writeFileSync(BackupFile, zipBuffer);
+    await fsPromise.writeFile(BackupFile, zipBuffer);
   }
   return zipBuffer;
 }
 
 export type gitBackupOption = {
   repoUrl: string;
+  branch?: string;
   Auth?: {
     Username?: string;
     PasswordToken: string
@@ -142,29 +145,36 @@ export type gitBackupOption = {
 
 async function initGitRepo(RepoPath: string, options?: gitBackupOption): Promise<void> {
   if (fs.existsSync(RepoPath)) {
-    if (fs.existsSync(path.join(RepoPath, ".git"))) await fsPromise.rm(RepoPath, {recursive: true});
+    if (fs.existsSync(path.join(RepoPath, ".git"))) {
+      if (options?.Auth?.Username || options?.Auth?.PasswordToken) {
+        await fsPromise.rm(RepoPath, {recursive: true});
+      } else return;
+    }
   }
   await fsPromise.mkdir(RepoPath, {recursive: true});
-  if (!!options) {
-    if (!options.repoUrl) throw new Error("RepoUrl is required");
-    let gitUrl = options.repoUrl;
-    const { host, pathname, protocol } = new URL(options.repoUrl);
-    if (!!options.Auth) {
-      if (!!options.Auth.Username) gitUrl = `${protocol}//${options.Auth.Username}:${options.Auth.PasswordToken}@${host}${pathname}`;
-      else gitUrl = `${protocol}//${options.Auth.PasswordToken}@${host}${pathname}`;
+  if (options) {
+    if (options.repoUrl) {
+      let gitUrl = options.repoUrl;
+      const gitClone = simpleGit(RepoPath);
+      await gitClone.clone(gitUrl, RepoPath);
+      if (options.branch) await gitClone.checkout(options.branch);
+    } else {
+      console.log("No Repo Url, creating empty repo");
+      await initGitRepo(RepoPath);
+      return;
     }
-    const gitClone = simpleGit(RepoPath);
-    await gitClone.clone(gitUrl, RepoPath);
-    if (!!(await gitClone.getConfig("user.name").catch(() => {}))) await gitClone.addConfig("user.name", "BDS-Backup");
-    if (!!(await gitClone.getConfig("user.email").catch(() => {}))) await gitClone.addConfig("user.email", "support_bds@sirherobrine23.org");
-    return;
+  } else {
+    // Create empty git repo and create main branch
+    const gitInit = simpleGit(RepoPath);
+    await gitInit.init()
+    // Create main branch
+    await gitInit.checkoutBranch("main", "master");
   }
-  // Create empty git repo and create main branch
-  const gitInit = simpleGit(RepoPath);
-  await gitInit.init()
-  if (!!(await gitInit.getConfig("user.name").catch(() => {}))) await gitInit.addConfig("user.name", "BDS-Backup");
-  if (!!(await gitInit.getConfig("user.email").catch(() => {}))) await gitInit.addConfig("user.email", "support_bds@sirherobrine23.org");
-  await gitInit.checkout("main", ["-b", "main"]);
+  const git = simpleGit(RepoPath);
+  if (!!(await git.getConfig("user.email"))) await git.addConfig("user.email", "support_bds@sirherobrine23.org");
+  if (!!(await git.getConfig("user.name"))) await git.addConfig("user.name", "BDS-Backup");
+  // if (options?.Auth?.Username) await git.addConfig("user.name", options.Auth.Username);
+  if (options?.Auth?.PasswordToken) await git.addConfig("user.password", options.Auth.PasswordToken);
   return;
 }
 
@@ -176,24 +186,30 @@ async function initGitRepo(RepoPath: string, options?: gitBackupOption): Promise
 export async function gitBackup(options?: gitBackupOption): Promise<void>{
   const gitFolder = path.join(backupFolderPath, "gitBackup");
   await initGitRepo(gitFolder, options);
-  const Files = await genericAddFiles();
-  const filesGit = (await fsPromise.readdir(gitFolder)).filter(a => a !== ".git");
-  for (const file of filesGit) await fsPromise.rm(path.join(gitFolder, file), {recursive: true, force: true}).catch(err => console.log(err));
-  for (const file of await Files.listFiles()) {
-    await fsPromise.mkdir(path.join(gitFolder, path.parse(file).dir), {recursive: true}).catch(() => {});
-    await fsPromise.copyFile(path.join(Files.tempFolderPath, file), path.join(gitFolder, file));
+  const TempFiles = await genericAddFiles();
+  const git = simpleGit(gitFolder, {baseDir: gitFolder});
+  await git.stash();
+  await git.pull();
+  const Difff = (await compareDir(TempFiles.tempFolderPath, gitFolder, {excludeFilter: ".git"})).diffSet.filter(a => a.type1 === "missing"||a.type2 === "missing").filter(a => a.type1 === "file"||a.type2 === "file");
+  await Promise.all(Difff.map(async file => {
+    // Delete files
+    const FileDelete = path.join(file.path2, file.name2);
+    await fsPromise.rm(FileDelete, {force: true});
+  }));
+  await Promise.all((await TempFiles.listFiles()).map(async file => {
+    const gitPath = path.join(gitFolder, file);
+    const tempFolderPath = path.join(TempFiles.tempFolderPath, file);
+    if (!(fs.existsSync(path.join(gitFolder, path.parse(file).dir)))) await fsPromise.mkdir(path.join(gitFolder, path.parse(file).dir), {recursive: true}).catch(() => {});
+    await fsPromise.copyFile(tempFolderPath, gitPath);
+  }))
+  await TempFiles.cleanFolder();
+  await git.add(gitFolder).then(() => git.commit(`BDS Backup - ${new Date()}`).catch(console.error));
+  if (!!((options||{}).Auth||{}).Username) {
+    console.log("Pushing to remote");
+    await git.push([
+      "--force",
+      "--set-upstream"
+    ]);
   }
-  await Files.cleanFolder();
-  const git = simpleGit(gitFolder);
-  await git.stash().pull().catch(() => {});
-  if ((await (await git.status()).files.length > 0)) {
-    await simpleGit(gitFolder).add(".");
-    await simpleGit(gitFolder).commit(`BDS Backup - ${new Date().toString()}`);
-  }
-  if (!!((options||{}).Auth||{}).Username) await git.push([
-    "--force",
-    "--set-upstream",
-    "--progress"
-  ]);
   return;
 }
