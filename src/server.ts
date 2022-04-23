@@ -28,6 +28,8 @@ export type BdsSession = {
   startDate: Date;
   /** if exists server map get world seed, fist map not get seed */
   seed?: string;
+  /** Server Started */
+  started: boolean;
   /** Some platforms may have a plugin manager. */
   addonManeger?: {
     installAddon: (packPath: string) => Promise<void>;
@@ -349,6 +351,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     id: crypto.randomUUID(),
     startDate: StartDate,
     seed: undefined,
+    started: false,
     addonManeger: undefined,
     creteBackup: (crontime: string|Date, option?: {type: "git"; config: bdsBackup.gitBackupOption}|{type: "zip", pathZip?: string}): node_cron.CronJob => {
       // Validate Config
@@ -400,6 +403,9 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     Seesion.addonManeger = addon.bedrock.addonInstaller();
     const bedrockConfig = await serverConfigParse(Platform);
     if (bedrockConfig.nbt) Seesion.seed = bedrockConfig.nbt.parsed.value.RandomSeed.value.toString();
+    onLog("all", lineData => {
+      if (/\[.*\]\s+Server\s+started\./.test(lineData)) Seesion.started = true;
+    });
   }
   const logFile = path.resolve(process.env.LOG_PATH||path.resolve(ServerPath, "../log"), `${Platform}_${Seesion.id}.log`);
   if(!(fs.existsSync(path.parse(logFile).dir))) fs.mkdirSync(path.parse(logFile).dir, {recursive: true});

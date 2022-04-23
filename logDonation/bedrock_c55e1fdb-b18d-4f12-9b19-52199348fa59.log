@@ -1,0 +1,49 @@
+[2022-04-22T23:27:14.878Z] Server started
+
+NO LOG FILE! - setting up server logging...
+[2022-04-22 23:27:14:329 INFO] Starting Server
+[2022-04-22 23:27:14:329 INFO] Version 1.18.30.04
+[2022-04-22 23:27:14:329 INFO] Session ID 9877b365-8cfe-4aae-9a1c-7e0be15ffc02
+[2022-04-22 23:27:14:329 INFO] Level Name: Bedrock level
+[2022-04-22 23:27:14:330 INFO] Game mode: 0 Survival
+[2022-04-22 23:27:14:330 INFO] Difficulty: 1 EASY
+[2022-04-22 23:27:14:381 INFO] opening worlds/Bedrock level/db
+[2022-04-22 23:27:15:923 INFO] IPv4 supported, port: 19132
+[2022-04-22 23:27:15:923 INFO] IPv6 not supported
+[2022-04-22 23:27:15:181 INFO] Server started.
+Saving...
+The command is already running
+A previous save has not been completed.
+[2022-04-22 23:27:16:135 INFO] IPv4 supported, port: 35483
+[2022-04-22 23:27:16:135 INFO] IPv6 not supported
+The command is already running
+Data saved. Files are now ready to be copied.
+Bedrock level/db/CURRENT:16, Bedrock level/db/000024.log:0, Bedrock level/db/000023.ldb:353, Bedrock level/db/000020.ldb:228, Bedrock level/db/000018.ldb:353, Bedrock level/db/MANIFEST-000022:218, Bedrock level/level.dat:2544, Bedrock level/level.dat_old:2544, Bedrock level/levelname.txt:13
+Changes to the world are resumed.
+Saving...
+Data saved. Files are now ready to be copied.
+Bedrock level/db/CURRENT:16, Bedrock level/db/000024.log:0, Bedrock level/db/000023.ldb:353, Bedrock level/db/000020.ldb:228, Bedrock level/db/000018.ldb:353, Bedrock level/db/MANIFEST-000022:218, Bedrock level/level.dat:2544, Bedrock level/level.dat_old:2544, Bedrock level/levelname.txt:13
+Changes to the world are resumed.
+Saving...
+Data saved. Files are now ready to be copied.
+Bedrock level/db/CURRENT:16, Bedrock level/db/000024.log:0, Bedrock level/db/000023.ldb:353, Bedrock level/db/000020.ldb:228, Bedrock level/db/000018.ldb:353, Bedrock level/db/MANIFEST-000022:218, Bedrock level/level.dat:2544, Bedrock level/level.dat_old:2544, Bedrock level/levelname.txt:13
+Changes to the world are resumed.
+Saving...
+Data saved. Files are now ready to be copied.
+Bedrock level/db/CURRENT:16, Bedrock level/db/000024.log:324, Bedrock level/db/000023.ldb:353, Bedrock level/db/000020.ldb:228, Bedrock level/db/000018.ldb:353, Bedrock level/db/MANIFEST-000022:218, Bedrock level/level.dat:2544, Bedrock level/level.dat_old:2544, Bedrock level/levelname.txt:13
+Changes to the world are resumed.
+Saving...
+Data saved. Files are now ready to be copied.
+Bedrock level/db/CURRENT:16, Bedrock level/db/000024.log:324, Bedrock level/db/000023.ldb:353, Bedrock level/db/000020.ldb:228, Bedrock level/db/000018.ldb:353, Bedrock level/db/MANIFEST-000022:218, Bedrock level/level.dat:2544, Bedrock level/level.dat_old:2544, Bedrock level/levelname.txt:13
+Changes to the world are resumed.
+Saving...
+Data saved. Files are now ready to be copied.
+Bedrock level/db/CURRENT:16, Bedrock level/db/000024.log:324, Bedrock level/db/000023.ldb:353, Bedrock level/db/000020.ldb:228, Bedrock level/db/000018.ldb:353, Bedrock level/db/MANIFEST-000022:218, Bedrock level/level.dat:2544, Bedrock level/level.dat_old:2544, Bedrock level/levelname.txt:13
+Changes to the world are resumed.
+Saving...
+Data saved. Files are now ready to be copied.
+Bedrock level/db/CURRENT:16, Bedrock level/db/000024.log:324, Bedrock level/db/000023.ldb:353, Bedrock level/db/000020.ldb:228, Bedrock level/db/000018.ldb:353, Bedrock level/db/MANIFEST-000022:218, Bedrock level/level.dat:2544, Bedrock level/level.dat_old:2544, Bedrock level/levelname.txt:13
+Changes to the world are resumed.
+[2022-04-22 23:27:23:601 INFO] Server stop requested.
+[2022-04-22 23:27:23:646 INFO] Stopping server...
+Quit correctly

@@ -1,16 +1,22 @@
-name: Test module
+name: Test Bds Core
 on:
   pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
 jobs:
-  latestDeploy:
+  buildTest:
     runs-on: ubuntu-latest
-    name: Test Module
+    name: Build Test (${{ matrix.node_version }})
     strategy:
       matrix:
         node_version:
           - "16"
           - "17"
+          - "18"
     steps:
       - uses: actions/checkout@v2.4.0
         with:
@@ -26,3 +32,6 @@ jobs:
 
       - name: Build typescript
         run: npm run build
+
+      - name: Test
+        run: npm run test

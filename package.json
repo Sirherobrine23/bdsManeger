@@ -15,6 +15,7 @@
   "scripts": {
     "dev": "nodemon",
     "build": "run-s build:*",
+    "test": "ts-node test/index.ts",
     "build:cjs": "tsc --module commonjs --outDir dist/cjs",
     "build:esm": "tsc --module es2020 --outDir dist/esm"
   },
@@ -31,9 +32,6 @@
       "package-lock.json"
     ],
     "exec": "npm run build:cjs && node --trace-warnings ./dist/cjs/bin/index.js start"
-  },
-  "bin": {
-    "bds_maneger": "dist/cjs/bin/index.js"
   },
   "repository": {
     "type": "git",
@@ -77,8 +75,7 @@
     "prismarine-nbt": "^2.2.1",
     "simple-git": "^3.6.0",
     "tar": "^6.1.11",
-    "typescript": "^4.6.3",
-    "yargs": "^17.4.0"
+    "typescript": "^4.6.3"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.0",
@@ -87,8 +84,9 @@
     "@types/fs-extra": "^9.0.13",
     "@types/node": "^17.0.22",
     "@types/tar": "^6.1.1",
-    "@types/yargs": "^17.0.10",
     "nodemon": "^2.0.15",
-    "npm-run-all": "^4.1.5"
+    "npm-run-all": "^4.1.5",
+    "standard-version": "^9.3.2",
+    "ts-node": "^10.7.0"
   }
 }

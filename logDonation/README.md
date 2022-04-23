@@ -9,3 +9,7 @@ This folder can help test regex and other stuff handled from logs for the projec
 just get the log file in the Bds Core logs folder, and then rename it like this:
 
 `[Bds Core Platform]-[Architecture]-[Os platform]-[GitHub username].log`
+
+or 
+
+`[Bds Core Platform]_[UUID].log`

@@ -32,6 +32,7 @@
 	"cschleiden.vscode-github-actions",
 	"oderwat.indent-rainbow",
 	"ms-azuretools.vscode-docker",
-	"formulahendry.code-runner"
+	"formulahendry.code-runner",
+	"chrmarti.regex"
 ]
 }

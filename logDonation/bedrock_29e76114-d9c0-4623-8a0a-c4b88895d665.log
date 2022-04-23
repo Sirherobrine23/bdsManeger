@@ -1,0 +1,20 @@
+[2022-04-22T23:23:52.432Z] Server started
+
+NO LOG FILE! - setting up server logging...
+[2022-04-22 23:23:52:881 INFO] Starting Server
+[2022-04-22 23:23:52:881 INFO] Version 1.18.30.04
+[2022-04-22 23:23:52:881 INFO] Session ID dce57423-d1da-4c8c-80bc-0b600e58a63d
+[2022-04-22 23:23:52:882 INFO] Level Name: Bedrock level
+[2022-04-22 23:23:52:883 INFO] Game mode: 0 Survival
+[2022-04-22 23:23:52:883 INFO] Difficulty: 1 EASY
+[2022-04-22 23:23:52:934 INFO] opening worlds/Bedrock level/db
+[2022-04-22 23:23:53:472 INFO] IPv4 supported, port: 19132
+[2022-04-22 23:23:53:472 INFO] IPv6 not supported
+[2022-04-22 23:23:53:729 INFO] Server started.
+[2022-04-22 23:23:53:746 INFO] IPv4 supported, port: 50604
+[2022-04-22 23:23:53:746 INFO] IPv6 not supported
+There are 0/10 players online:
+
+[2022-04-22 23:24:02:901 INFO] Server stop requested.
+[2022-04-22 23:24:02:947 INFO] Stopping server...
+Quit correctly

@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "github.copilot",
-    "formulahendry.code-runner"
+    "formulahendry.code-runner",
+    "chrmarti.regex"
   ]
 }
