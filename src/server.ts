@@ -350,46 +350,43 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     startDate: StartDate,
     seed: undefined,
     addonManeger: undefined,
-    creteBackup: (crontime: string|Date, option?: {type: "git"; config: bdsBackup.gitBackupOption}|{type: "zip"}) => {
-      function lockServerBackup() {
-        if (Platform === "bedrock") {
-          serverCommands.execCommand("save hold");
-          serverCommands.execCommand("save query");
-        }
-      }
-      function unLockServerBackup() {
-        if (Platform === "bedrock") serverCommands.execCommand("save resume");
-      }
-      if (!!option) {
+    creteBackup: (crontime: string|Date, option?: {type: "git"; config: bdsBackup.gitBackupOption}|{type: "zip", pathZip?: string}): node_cron.CronJob => {
+      // Validate Config
+      if (option) {
         if (option.type === "git") {
           if (!option.config) throw new Error("Config is required");
-          const cronGit = new node_cron.CronJob(crontime, () => {
-            lockServerBackup();
-            bdsBackup.gitBackup(option.config).catch(() => undefined).then(() => unLockServerBackup());
-          });
-          cronGit.start();
-          ServerProcess.on("exit", () => cronGit.stop());
-          return cronGit;
-        } else if (option.type === "zip") {
-          const zipCron = new node_cron.CronJob(crontime, () => {
-            lockServerBackup();
-            bdsBackup.CreateBackup(true).catch(() => undefined).then(() => unLockServerBackup());
-          });
-          zipCron.start();
-          ServerProcess.on("exit", () => zipCron.stop());
-          return zipCron;
-        }
-      } else {
-        const cronJob = new node_cron.CronJob(crontime, async () => {
-          lockServerBackup();
-          await bdsBackup.CreateBackup(true);
-          unLockServerBackup();
-        });
-        ServerProcess.on("exit", () => cronJob.stop());
-        cronJob.start();
-        return cronJob;
+        } else if (option.type === "zip") {}
+        else option = {type: "zip", pathZip: undefined};
       }
-      throw new Error("Invalid option");
+      async function lockServerBackup() {
+        if (Platform === "bedrock") {
+          serverCommands.execCommand("save hold");
+          await new Promise(accept => setTimeout(accept, 1000));
+          serverCommands.execCommand("save query");
+          await new Promise(accept => setTimeout(accept, 1000));
+        }
+      }
+      async function unLockServerBackup() {
+        if (Platform === "bedrock") {
+          serverCommands.execCommand("save resume");
+          await new Promise(accept => setTimeout(accept, 1000));
+        }
+      }
+      if (!option) option = {type: "zip", pathZip: undefined};
+      const CrontimeBackup = new node_cron.CronJob(crontime, async () => {
+        if (option.type === "git") {
+          await lockServerBackup();
+          await bdsBackup.gitBackup(option.config).catch(() => undefined).then(() => unLockServerBackup());
+        } else if (option.type === "zip") {
+          await lockServerBackup();
+          if (!!(option||{}).pathZip) await bdsBackup.CreateBackup({path: path.resolve(bdsBackup.backupFolderPath, option.pathZip)}).catch(() => undefined);
+          else await bdsBackup.CreateBackup(true).catch(() => undefined);
+          await unLockServerBackup();
+        }
+      });
+      CrontimeBackup.start();
+      onExit(() => CrontimeBackup.stop());
+      return CrontimeBackup;
     },
     logRegister: onLog,
     onExit: onExit,

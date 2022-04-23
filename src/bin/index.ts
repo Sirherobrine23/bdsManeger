@@ -8,18 +8,20 @@ import cli_color from "cli-color";
 import path from "path";
 import { promises as fsPromise } from "fs";
 
+console.info("In the future, this cli well move to another separate package, more info: \"https://github.com/The-Bds-Maneger/bds-cli/wiki/Move-from-core-package-to-separated-package\"");
 const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Install server", async yargs => {
   const options = yargs.option("version", {
     alias: "v",
     describe: "Server Version",
-    demandOption: true,
-    type: "string"
+    demandOption: false,
+    type: "string",
+    default: "latest"
   }).option("platform", {
     alias: "p",
     describe: "Bds Core Platform",
     demandOption: true,
     type: "string",
-    choices: ["bedrock", "java", "pocketmine", "spigot", "dragonfly"],
+    choices: bdsTypes.PlatformArray,
     default: "bedrock"
   }).parseSync();
   const Platform = options.platform as bdsTypes.Platform;
@@ -63,18 +65,33 @@ const Yargs = yargs(process.argv.slice(2)).command("download", "Download and Ins
     describe: "Bds Core Platform",
     demandOption: true,
     type: "string",
-    choices: ["bedrock", "java", "pocketmine", "spigot", "dragonfly"],
+    choices: bdsTypes.PlatformArray,
     default: "bedrock"
   }).option("cronBackup", {
-    alias: "b",
+    alias: "c",
     describe: "cron job to backup server maps",
-    type: "string"
+    type: "string",
+    default: ""
+  }).option("gitBackup", {
+    alias: "g",
+    describe: "git config to backup, equal 'backup -g \"<user>,<pass>,<Url>\" or backup -g \"local\"', required if cronBackup is set",
+    type: "string",
+    default: ""
   }).parseAsync();
   const Platform = options.platform as bdsTypes.Platform;
   if (!!options.cronBackup) {
-    if (!(isValidCron(options.cronBackup, {seconds: true}))) {
+    if (!(isValidCron(options.cronBackup, {seconds: options.cronBackup.split(/\s+/g).length >= 6}))) {
       console.error("Invalid cron job");
       process.exit(1);
+    }
+    if (!!options.gitBackup) {
+      if (options.gitBackup !== "local") {
+        const [user, pass, url] = options.gitBackup.split(",");
+        if (!(user && pass && url)) {
+          console.error("Invalid git config, disable git backup");
+          options.gitBackup = "";
+        }
+      }
     }
   }
   const Server = await BdsCore.Server.Start(Platform);
