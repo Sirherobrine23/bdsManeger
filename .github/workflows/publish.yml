@@ -88,18 +88,15 @@ jobs:
         run: npm install -no-save
 
       - name: Create Changelog
-        run: |
-          set -ex
-          npm run release -- --version "${{ github.event.inputs.version }}"
-          if git diff --name-only --exit-code; then
-            echo "No changes to commit"
-          else
-            git config user.email "${{ github.actor }}@users.noreply.github.com"
-            git config user.name "${{ github.actor }}"
-            git add .
-            git commit -m 'Release ${{ github.event.inputs.version }}'
-            git push
-          fi
+        run: npm run release -- --version "${{ github.event.inputs.version }}"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          commit-message: Update version v${{ github.event.inputs.version }}
+          title: Update package version v${{ github.event.inputs.version }}
+          body: Auto update package version, created with GitHub Actions
+          branch: update-version
 
       - name: Create release
         uses: softprops/action-gh-release@v1
