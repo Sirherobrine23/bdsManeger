@@ -67,7 +67,7 @@
   "dependencies": {
     "@the-bds-maneger/server_versions": "^22.486.913",
     "adm-zip": "^0.5.9",
-    "axios": "^0.26.1",
+    "axios": "^0.27.0",
     "cli-color": "^2.0.2",
     "cron": "^1.8.2",
     "cron-validator": "^1.3.1",
