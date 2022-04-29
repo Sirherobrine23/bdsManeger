@@ -13,5 +13,6 @@ const functionToRun: Array<(done: (done?: Error) => any) => Promise<void>> = [do
   }
 })().then(() => process.exit(0)).catch((error) => {
   console.error("Error: %s", String(error));
+  console.trace(error);
   process.exit(1);
 });

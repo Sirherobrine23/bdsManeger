@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 import os from "os";
-import { EventEmitter } from "events";
+import event from "events";
 import crypto from "crypto";
 import node_cron from "cron";
 import * as platformManeger from "./platform";
@@ -34,19 +34,15 @@ type startServerOptions = {
   gitBackup?: bdsBackup.gitBackupOption;
 };
 
-class logListen {
-  private _logListen: EventEmitter = new EventEmitter();
-  public on(type: "err"|"out"|"all", call: (data: string) => void) {
-    this._logListen.on(type, call);
-    this._logListen.on("all", call);
+function logListen() {
+  const EventListen = new event();
+  const on = (type: "err"|"out"|"all", call: (data: string) => void) => EventListen.on(type, call);
+  const once = (type: "all"|"err"|"out", call: (data: string) => void) => EventListen.once(type, call);
+  const emit = (type: "err"|"out", data: string) => {
+    EventListen.emit(type, data);
+    EventListen.emit("all", data);
   }
-  public once(type: "all"|"err"|"out", call: (data: string) => void) {
-    this._logListen.once(type, call);
-  }
-  public emit(type: "err"|"out", data: string) {
-    this._logListen.emit(type, data);
-    this._logListen.emit("all", data);
-  }
+  return {on, once, emit};
 }
 
 export type BdsSession = {
@@ -130,7 +126,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
   const StartDate = new Date();
 
   // Log events
-  const logsEvent = new logListen();
+  const logsEvent = logListen();
   const onLog = {on: logsEvent.on, once: logsEvent.once};
 
   // Storage tmp lines
@@ -142,9 +138,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
       const localCall = tempLog[to];
       tempLog[to] = "";
       const filtedLog = localCall.replace(/\r\n/gi, "\n").replace(/\n$/gi, "").split(/\n/gi).filter(a => a !== undefined);
-      filtedLog.forEach(data => {
-        logsEvent.emit(to, data);
-      });
+      filtedLog.forEach(data => logsEvent.emit(to, data));
     }
     return;
   }
@@ -339,6 +333,9 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
 
   if (Platform === "bedrock") {
     Seesion.seed = (await platformManeger.bedrock.config.getConfig()).worldSeed;
+    onLog.on("all", lineData => {
+      if (/\[.*\]\s+Server\s+started\./.test(lineData)) Seesion.started = true;
+    });
   }
 
   // Return Session
