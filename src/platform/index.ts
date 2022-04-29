@@ -1,3 +1,4 @@
 import * as bedrock from "./bedrock/index";
 import * as pocketmine from "./pocketmine/index";
-export {bedrock, pocketmine}
+import * as java from "./java/index";
+export {bedrock, pocketmine, java}

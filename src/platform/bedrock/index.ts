@@ -1,2 +1,3 @@
 import * as config from "./config";
-export {config};
+import * as server from "./server";
+export {config, server};

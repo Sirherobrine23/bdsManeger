@@ -1,3 +1,4 @@
 import * as addons from "./addons";
 import * as config from "./config";
-export {addons, config};
+import * as server from "./server";
+export {addons, config, server};

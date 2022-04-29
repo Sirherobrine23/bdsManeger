@@ -220,7 +220,7 @@ type bedrockParsedConfig = {
   /** World NBT */
   nbtParsed: {parsed: NBT, type: NBTFormat, metadata: nbtData}
 };
-export async function getConfig(world: string): Promise<bedrockParsedConfig> {
+export async function getConfig(): Promise<bedrockParsedConfig> {
   const config: bedrockParsedConfig = {
     serverName: "Bedrock Server",
     worldName: "Bedrock level",
@@ -230,15 +230,15 @@ export async function getConfig(world: string): Promise<bedrockParsedConfig> {
     worldSeed: "",
     nbtParsed: undefined
   };
-  if (fs.existsSync(path.join(world, "server.properties"))) {
-    const worldDatePath = path.join(serverPath, "worlds", world, "level.dat");
-    if (fs.existsSync(worldDatePath)) config.nbtParsed = await nbtParse(await fsPromise.readFile(worldDatePath));
-    const ProPri = Proprieties.parse(await fsPromise.readFile(path.join(world, "server.properties"), {encoding: "utf8"}));
+  if (fs.existsSync(path.join(serverPath, "server.properties"))) {
+    const ProPri = Proprieties.parse(await fsPromise.readFile(path.join(serverPath, "server.properties"), {encoding: "utf8"}));
     if (ProPri["server-name"] !== undefined) config.serverName = String(ProPri["server-name"]);
     if (ProPri["level-name"] !== undefined) config.worldName = String(ProPri["level-name"]);
     if (ProPri["gamemode"] !== undefined) config.gamemode = String(ProPri["gamemode"]) as "survival"|"creative"|"adventure";
     if (ProPri["max-players"] !== undefined) config.maxPlayers = Number(ProPri["max-players"]);
     if (ProPri["difficulty"] !== undefined) config.difficulty = String(ProPri["difficulty"]) as "peaceful"|"easy"|"normal"|"hard";
+    const worldDatePath = path.join(serverPath, "worlds", config.worldName, "level.dat");
+    if (fs.existsSync(worldDatePath)) config.nbtParsed = await nbtParse(await fsPromise.readFile(worldDatePath));
     if (ProPri["level-seed"] !== undefined) config.worldSeed = String(ProPri["level-seed"]);
     else {
       if (config.nbtParsed !== undefined) {

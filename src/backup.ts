@@ -113,8 +113,9 @@ async function genericAddFiles() {
   return TempFolder;
 }
 
+export type zipOptions = true|false|{path: string};
 export default CreateBackup;
-export async function CreateBackup(WriteFile: {path: string}|true|false = false) {
+export async function CreateBackup(WriteFile: zipOptions = false) {
   if (!(fs.existsSync(backupFolderPath))) await fsPromise.mkdir(backupFolderPath, {recursive: true});
   // Add Folders and files
   const TempFolder = await genericAddFiles()
@@ -146,15 +147,38 @@ export type gitBackupOption = {
 async function initGitRepo(RepoPath: string, options?: gitBackupOption): Promise<void> {
   if (fs.existsSync(RepoPath)) {
     if (fs.existsSync(path.join(RepoPath, ".git"))) {
+      if (!(!!options?.Auth?.Username || !!options?.Auth?.PasswordToken)) return;
+      // remove old origin
+      const gitRe = simpleGit(RepoPath);
+      const urlParsed = new URL(options?.repoUrl);
+      const remotes = await gitRe.getRemotes(true);
+      let gitUrl = options.repoUrl;
       if (options?.Auth?.Username || options?.Auth?.PasswordToken) {
-        await fsPromise.rm(RepoPath, {recursive: true, force: true});
-      } else return;
+        if (options.Auth?.Username && options.Auth?.PasswordToken) {
+          if (options.Auth?.PasswordToken.startsWith("ghp_")) options.Auth.Username = "oauth2";
+          const urlParse = new URL(gitUrl);
+          gitUrl = `${urlParse.protocol}//${options.Auth.Username}:${options.Auth.PasswordToken}@${urlParse.host}${urlParse.pathname}`;
+        }
+      }
+      for (const remote of remotes) {
+        if (remote.refs.fetch.includes(urlParsed.hostname) && remote.refs.push.includes(urlParsed.hostname)) {
+          await gitRe.removeRemote(remote.name);
+          await gitRe.addRemote(remote.name, gitUrl);
+        }
+      }
     }
   }
   await fsPromise.mkdir(RepoPath, {recursive: true});
   if (options) {
     if (options.repoUrl) {
       let gitUrl = options.repoUrl;
+      if (options?.Auth?.Username || options?.Auth?.PasswordToken) {
+        if (options.Auth?.Username && options.Auth?.PasswordToken) {
+          if (options.Auth?.PasswordToken.startsWith("ghp_")) options.Auth.Username = "oauth2";
+          const urlParse = new URL(gitUrl);
+          gitUrl = `${urlParse.protocol}//${options.Auth.Username}:${options.Auth.PasswordToken}@${urlParse.host}${urlParse.pathname}`;
+        }
+      }
       const gitClone = simpleGit(RepoPath);
       await gitClone.clone(gitUrl, RepoPath);
       if (options.branch) await gitClone.checkout(options.branch);
@@ -173,15 +197,6 @@ async function initGitRepo(RepoPath: string, options?: gitBackupOption): Promise
   const git = simpleGit(RepoPath);
   if (!!(await git.getConfig("user.email"))) await git.addConfig("user.email", "support_bds@sirherobrine23.org");
   if (!!(await git.getConfig("user.name"))) await git.addConfig("user.name", "BDS-Backup");
-  // sample custom helper auth
-  if (options?.Auth?.Username || options?.Auth?.PasswordToken) {
-    if (options.Auth?.Username && options.Auth?.PasswordToken) {
-      if (options.Auth?.PasswordToken.startsWith("ghp_")) options.Auth.Username = "oauth2";
-      await git.addConfig("credential.helper", `store --file=${path.join(RepoPath, ".git", "credentials")}`);
-      const urlParse = new URL(options.repoUrl);
-      await fsPromise.writeFile(path.join(RepoPath, ".git", "credentials"), `${urlParse.protocol}//${urlParse.username||options.Auth.Username}:${urlParse.password||options.Auth.PasswordToken}@${urlParse.hostname}`);
-    }
-  }
   return;
 }
 
