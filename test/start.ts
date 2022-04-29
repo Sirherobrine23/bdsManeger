@@ -2,7 +2,9 @@ import bdscore from "../src/index";
 
 export default async function start(done: (error?: Error) => void) {
   console.log("Starting...");
-  const Server = await bdscore.Server.Start("bedrock");
+  const Server = await bdscore.Server.Start("bedrock", {
+    storageOnlyWorlds: process.platform !== "win32"
+  });
   Server.log.on("all", console.log);
   Server.onExit(code => {
     if (code !== 0) {
