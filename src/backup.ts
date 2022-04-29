@@ -147,7 +147,7 @@ async function initGitRepo(RepoPath: string, options?: gitBackupOption): Promise
   if (fs.existsSync(RepoPath)) {
     if (fs.existsSync(path.join(RepoPath, ".git"))) {
       if (options?.Auth?.Username || options?.Auth?.PasswordToken) {
-        await fsPromise.rm(RepoPath, {recursive: true});
+        await fsPromise.rm(RepoPath, {recursive: true, force: true});
       } else return;
     }
   }
@@ -173,8 +173,15 @@ async function initGitRepo(RepoPath: string, options?: gitBackupOption): Promise
   const git = simpleGit(RepoPath);
   if (!!(await git.getConfig("user.email"))) await git.addConfig("user.email", "support_bds@sirherobrine23.org");
   if (!!(await git.getConfig("user.name"))) await git.addConfig("user.name", "BDS-Backup");
-  // if (options?.Auth?.Username) await git.addConfig("user.name", options.Auth.Username);
-  if (options?.Auth?.PasswordToken) await git.addConfig("user.password", options.Auth.PasswordToken);
+  // sample custom helper auth
+  if (options?.Auth?.Username || options?.Auth?.PasswordToken) {
+    if (options.Auth?.Username && options.Auth?.PasswordToken) {
+      if (options.Auth?.PasswordToken.startsWith("ghp_")) options.Auth.Username = "oauth2";
+      await git.addConfig("credential.helper", `store --file=${path.join(RepoPath, ".git", "credentials")}`);
+      const urlParse = new URL(options.repoUrl);
+      await fsPromise.writeFile(path.join(RepoPath, ".git", "credentials"), `${urlParse.protocol}//${urlParse.username||options.Auth.Username}:${urlParse.password||options.Auth.PasswordToken}@${urlParse.hostname}`);
+    }
+  }
   return;
 }
 
