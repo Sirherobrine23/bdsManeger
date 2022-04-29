@@ -8,7 +8,7 @@ const functionToRun: Array<(done: (done?: Error) => any) => Promise<void>> = [do
         if (error) return reject(error);
         resolve("");
       });
-      return Run.then(resolve).catch(reject);
+      return Run.catch(reject);
     });
   }
 })().then(() => process.exit(0)).catch((error) => {
