@@ -13,7 +13,7 @@ async function InstallPrebuildPHP(serverPath: string) {
   const Release = (await httpRequests.getGithubRelease("The-Bds-Maneger", "PocketMinePHPAutoBinBuilds")).map(release => {
     release.assets = release.assets.filter(asset => nameTest(asset.name));
     return release;
-  }).filter(res => res.assets.length > 0);
+  }).filter(res => res.assets.length > -1);
   if (Release.length === 0) throw new Error("No file found for this Platform and Arch");
   const urlBin = Release[0].assets[0].browser_download_url;
   if (!urlBin) throw new Error("No file found for this Platform and Arch");
@@ -51,7 +51,7 @@ export async function DownloadServer(Platform: bdsTypes.Platform, Version: strin
       const existQemu = await bdschildProcess.runCommandAsync("command -v qemu-x86_64-static").then(() => true).catch(() => false);
       if (existQemu) arch = "x64";
     }
-    const bedrockInfo = await the_bds_maneger_server_versions.findUrlVersion(Platform as the_bds_maneger_server_versions.BdsCorePlatforms, Version, arch as the_bds_maneger_server_versions.arch);
+    const bedrockInfo = await the_bds_maneger_server_versions.findUrlVersion(Platform as any, "latest", arch);
     const BedrockZip = new adm_zip(await httpRequests.getBuffer(bedrockInfo.url));
     let realPathWorldBedrock = "";
     if (fs.existsSync(path.resolve(ServerPath, "worlds"))) {
