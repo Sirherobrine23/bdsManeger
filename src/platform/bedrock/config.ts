@@ -1,8 +1,10 @@
 import os from "os";
 import path from "path";
 import fs, { promises as fsPromise } from "fs";
+import AdmZip from "adm-zip";
 import * as Proprieties from "../../lib/Proprieties"
 import { parse as nbtParse, NBT, Metadata as nbtData, NBTFormat } from "prismarine-nbt";
+import { getBuffer } from "../../HttpRequests";
 const serverPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), "bedrock");
 
 export type bedrockConfig = {
@@ -257,4 +259,41 @@ export async function Permission(): Promise<Array<{ignoresPlayerLimit: false|tru
     return permission;
   }
   return [];
+}
+
+export async function resourcePack(WorldName: string) {
+  const mapPath = path.join(serverPath, "worlds", WorldName);
+  if (!(fs.existsSync(mapPath))) throw new Error("Map not found");
+  const remotePack = async () => {
+    const { tree } = await getBuffer("https://api.github.com/repos/The-Bds-Maneger/BedrockAddonTextureManeger/git/trees/main?recursive=true").then(res => JSON.parse(res.toString()) as {sha: string, url: string, truncated: true|false, tree: Array<{path: string, mode: string, type: "tree"|"blob", sha: string, size: number, url: string}>});
+    const pack = tree.filter(item => item.path.includes(".mcpack") && item.type === "blob");
+    return await Promise.all(pack.map(BlobFile => getBuffer(BlobFile.url).then(res => JSON.parse(res.toString())).then(res => {
+      const fileBuffer = Buffer.from(res.content, "base64");
+      const fileName = BlobFile.path.split("/").pop().replace(/\.mcpack.*/, "");
+      const zip = new AdmZip(fileBuffer);
+      const manifest = JSON.parse(zip.getEntry("manifest.json").getData().toString()) as {format_version: number, header: {name: string, description: string, uuid: string, version: Array<number>, min_engine_version?: Array<number>}, modules: Array<{type: string, uuid: string, version: Array<number>}>, metadata?: {authors?: Array<string>, url?: string}};
+      return {fileName, fileBuffer, manifest};
+    })));
+  };
+  // const localPack = async () => {};
+  const installPack = async (zipBuffer: Buffer) => {
+    const worldResourcePacksPath = path.join(mapPath, "world_resource_packs.json");
+    let worldResourcePacks: Array<{pack_id: string, version: Array<number>}> = [];
+    if (fs.existsSync(worldResourcePacksPath)) worldResourcePacks = JSON.parse(await fsPromise.readFile(worldResourcePacksPath, {encoding: "utf8"}));
+    const zip = new AdmZip(zipBuffer);
+    const manifest = JSON.parse(zip.getEntry("manifest.json").getData().toString()) as {format_version: number, header: {name: string, description: string, uuid: string, version: Array<number>, min_engine_version?: Array<number>}, modules: Array<{type: string, uuid: string, version: Array<number>}>, metadata?: {authors?: Array<string>, url?: string}};
+    const pack_id = manifest.header.uuid;
+    if (worldResourcePacks.find(item => item.pack_id === pack_id)) throw new Error("Pack already installed");
+    worldResourcePacks.push({pack_id, version: manifest.header.version});
+    await fsPromise.writeFile(worldResourcePacksPath, JSON.stringify(worldResourcePacks, null, 2));
+    return {pack_id, version: manifest.header.version.join(".")};
+  };
+  const removePack = async () => {};
+
+  return {
+    remotePack,
+    //localPack,
+    installPack,
+    removePack
+  };
 }

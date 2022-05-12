@@ -87,20 +87,10 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     env: {}
   };
   if (Platform === "bedrock") {
-    if (process.platform === "darwin") throw new Error("Run Docker image");
-    Process.command = path.resolve(ServerPath, "bedrock_server"+(process.platform === "win32"?".exe":""));
-    if (process.platform !== "win32") {
-      await child_process.runAsync("chmod", ["a+x", Process.command]);
-      Process.env.LD_LIBRARY_PATH = path.resolve(ServerPath, "bedrock");
-      if (process.platform === "linux" && process.arch !== "x64") {
-        const existQemu = await child_process.runCommandAsync("command -v qemu-x86_64-static").then(() => true).catch(() => false);
-        if (existQemu) {
-          console.warn("Minecraft bedrock start with emulated x64 architecture");
-          Process.args.push(Process.command);
-          Process.command = "qemu-x86_64-static";
-        }
-      }
-    }
+    const BedrockPro = await platformManeger.bedrock.server.startServer();
+    Process.command = BedrockPro.command;
+    Process.args = BedrockPro.args;
+    Process.env = BedrockPro.env;
   } else if (Platform === "java"||Platform === "spigot") {
     Process.command = "java";
     Process.args.push("-jar");
@@ -131,7 +121,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
 
   // Storage tmp lines
   const tempLog = {out: "", err: ""};
-  
+
   const parseLog = (to: "out"|"err", data: string) => {
     tempLog[to] += data;
     if (/\n$/gi.test(tempLog[to])) {
@@ -163,7 +153,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     }
   } = {};
   const ports: Array<{port: number; protocol?: "TCP"|"UDP"; version?: "IPv4"|"IPv6"|"IPv4/IPv6";}> = [];
-  
+
   if (Platform === "bedrock") {
     // Port
     onLog.on("all", data => {
@@ -314,7 +304,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
   logStream.write(`[${StartDate.toString()}] Server started\n\n`);
   ServerProcess.stdout.pipe(logStream);
   ServerProcess.stderr.pipe(logStream);
-  
+
   // Session Object
   const Seesion: BdsSession = {
     id: SessionID,

@@ -58,7 +58,10 @@ echo "  while (ps -ef | grep -v grep | grep -q dockerd); do sleep 8s; done";\
 echo "  echo Dockerd stopped";\
 echo "  exit 2";\
 echo "else";\
-echo "  sudo dockerd";\
+echo "  (sudo dockerd $DOCKERD_ARGS) &";\
+echo "  while (ps -ef | grep -v grep | grep -q dockerd); do sleep 8s; done";\
+echo "  echo Dockerd stopped";\
+echo "  exit 2";\
 echo "fi";\
 )|sudo tee /usr/local/bin/start.sh && sudo chmod +x /usr/local/bin/start.sh
 
