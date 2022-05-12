@@ -45,3 +45,22 @@ RUN yes | sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-
   git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions && \
   sed -e 's|ZSH_THEME=".*"|ZSH_THEME="strug"|g' -i ~/.zshrc && \
   sed -e 's|plugins=(.*)|plugins=(git docker zsh-syntax-highlighting zsh-autosuggestions)|g' -i ~/.zshrc
+
+# Create Start Script
+ARG DOCKERD_ARGS=""
+RUN (\
+echo "#""!/bin/bash";\
+echo "set -e";\
+echo "if ! [[ -z \"\$@\" ]]; then";\
+echo "  (sudo dockerd $DOCKERD_ARGS) &";\
+echo "  sh -c \"\$@\"";\
+echo "  while (ps -ef | grep -v grep | grep -q dockerd); do sleep 8s; done";\
+echo "  echo Dockerd stopped";\
+echo "  exit 2";\
+echo "else";\
+echo "  sudo dockerd";\
+echo "fi";\
+)|sudo tee /usr/local/bin/start.sh && sudo chmod +x /usr/local/bin/start.sh
+
+# Start Docker Engine
+ENTRYPOINT [ "/usr/local/bin/start.sh" ]
