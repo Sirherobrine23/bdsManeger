@@ -15,10 +15,10 @@ async function createTempFolder() {
   const tempFolderPath = path.join(os.tmpdir(), Buffer.from(Math.random().toString()).toString("hex")+"tmpFolder");
   if (fs.existsSync(tempFolderPath)) await fse.rm(tempFolderPath, {recursive: true});
   await fsPromise.mkdir(tempFolderPath, { recursive: true });
-  
+
   /**
    * Add file to temp Folder
-   * 
+   *
    * @param filePath - Original file path
    * @param onStorage - on Storage temp file path, example: serverName/fileName
    * @returns
@@ -35,7 +35,7 @@ async function createTempFolder() {
 
   /**
    * Add folder to temp Folder (include subfolders)
-   * 
+   *
    * @param folderPath - Original folder path
    * @param onStorage - on Storage temp folder path, example: serverName/folderName
    * @returns
@@ -49,7 +49,7 @@ async function createTempFolder() {
 
   /**
    * Get only files from temp folder recursively
-   * 
+   *
    * @returns list files
    */
   const listFiles = async () => {
@@ -70,8 +70,8 @@ async function createTempFolder() {
 
   /**
    * Remove temp folder and lock to add new files and folders
-   * 
-   * @returns 
+   *
+   * @returns
    */
   const cleanFolder = async () => {
     if (cleaned) throw new Error("Cannot clean folder after cleaning");
@@ -89,9 +89,10 @@ async function createTempFolder() {
 }
 
 async function genericAddFiles() {
+  if (!(fs.existsSync(ServerPathRoot))) throw new Error("Install server first");
   // Create empty zip Buffer
   const TempFolder = await createTempFolder()
-  
+
   // List all Servers
   for (const __Server_Path of fs.readdirSync(ServerPathRoot).filter(Server => !!bdsCoretypes.PlatformArray.find(Platform => Platform === Server))) {
     const Platform = __Server_Path as bdsCoretypes.Platform;
@@ -135,7 +136,7 @@ export async function CreateBackup(WriteFile: zipOptions = false) {
 }
 
 export type gitBackupOption = {
-  repoUrl: string;
+  repoUrl?: string;
   branch?: string;
   Auth?: {
     Username?: string;
@@ -202,7 +203,7 @@ async function initGitRepo(RepoPath: string, options?: gitBackupOption): Promise
 
 /**
  * Create a backup in the git repository and push it to the remote if is authenticated (in each commit all existing files will be deleted).
- * 
+ *
  * @param options - Config git repository
  */
 export async function gitBackup(options?: gitBackupOption): Promise<void>{

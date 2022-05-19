@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
 import os from "os";
+import events from "events";
 import crypto from "crypto";
 import node_cron from "cron";
 import * as platformManeger from "./platform";
@@ -53,6 +54,13 @@ export type BdsSession = {
   };
   /** If the server crashes or crashes, the callbacks will be called. */
   onExit: (callback: (code: number) => void) => void;
+  /** Server actions, example on avaible to connect or banned¹ */
+  server: {
+    /** Server actions, example on avaible to connect or banned¹ */
+    on: (act: "started"|"ban", call: (...any) => void) => void;
+    /** Server actions, example on avaible to connect or banned¹ */
+    once: (act: "started"|"ban", call: (...any) => void) => void;
+  };
   /** Get server players historic connections */
   getPlayer: () => {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
   /** This is a callback that call a function, for some player functions */
@@ -98,6 +106,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
   }
 
   // Start Server
+  const serverEvents = new events();
   const StartDate = new Date();
   const ServerProcess = await child_process.execServer({runOn: "host"}, Process.command, Process.args, {env: Process.env, cwd: ServerPath});
   const { onExit } = ServerProcess;
@@ -266,15 +275,22 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
   ServerProcess.Exec.stdout.pipe(logStream);
   ServerProcess.Exec.stderr.pipe(logStream);
 
+  const serverOn = (act: "started" | "ban", call: (...any: any[]) => void) => serverEvents.on(act, call);
+  const serverOnce = (act: "started" | "ban", call: (...any: any[]) => void) => serverEvents.once(act, call);
+
   // Session Object
   const Seesion: BdsSession = {
     id: SessionID,
     startDate: StartDate,
     creteBackup: backupCron,
     onExit: onExit,
+    onPlayer: onPlayer,
     ports: () => ports,
     getPlayer: () => playersConnections,
-    onPlayer: onPlayer,
+    server: {
+      on: serverOn,
+      once: serverOnce
+    },
     seed: undefined,
     started: false,
     addonManeger: undefined,
@@ -282,11 +298,29 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     commands: serverCommands,
   };
 
+  onLog.on("all", lineData => {
+    if (Platform === "bedrock") {
+      // [2022-05-19 22:35:09:315 INFO] Server started.
+      if (/\[.*\]\s+Server\s+started\./.test(lineData)) {
+        Seesion.started = true;
+        serverEvents.emit("started", new Date());
+      }
+    } else if (Platform === "java") {
+      // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
+      if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) {
+        Seesion.started = true;
+        serverEvents.emit("started", new Date());
+      }
+    } else if (Platform === "pocketmine") {
+      // [22:52:05.580] [Server thread/INFO]: Done (0.583s)! For help, type "help" or "?"
+      if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) {
+        Seesion.started = true;
+        serverEvents.emit("started", new Date());
+      }
+    }
+  });
   if (Platform === "bedrock") {
     Seesion.seed = (await platformManeger.bedrock.config.getConfig()).worldSeed;
-    onLog.on("all", lineData => {
-      if (/\[.*\]\s+Server\s+started\./.test(lineData)) Seesion.started = true;
-    });
   }
 
   // Return Session

@@ -17,7 +17,8 @@
     "dev": "nodemon",
     "release": "standard-version",
     "build": "run-s build:*",
-    "test": "ts-node test/index.ts",
+    "test:host": "node testProject.js",
+    "test": "docker build . -f test.Dockerfile",
     "build:cjs": "tsc --outDir dist/cjs --module commonjs",
     "build:esm": "tsc --outDir dist/esm --module es6 && node -e 'const fs = require(\"fs\");const path = require(\"path\");const read = (pathRe) => {for (const fileFolde of fs.readdirSync(pathRe)) {const filePath = path.join(pathRe, fileFolde);if (fs.statSync(filePath).isDirectory()) read(filePath);else {console.log(filePath, \"-->\", filePath.replace(/\\.js$/, \".mjs\"));fs.renameSync(filePath, filePath.replace(/\\.js$/, \".mjs\"));}}};read(\"dist/esm\");'"
   },

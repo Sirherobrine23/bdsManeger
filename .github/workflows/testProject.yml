@@ -1,0 +1,41 @@
+name: Test Bds Core
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: "Test (Node version: ${{ matrix.node_version }})"
+    strategy:
+      matrix:
+        node_version:
+          - "18"
+          - "17"
+          - "16"
+    steps:
+      - uses: actions/checkout@v2.4.0
+      - name: Setup Node.js (Github Packages)
+        uses: actions/setup-node@v3.2.0
+        with:
+          node-version: "${{ matrix.node_version }}.x"
+
+      - name: Install latest java
+        env:
+          DEBIAN_FRONTEND: "noninteractive"
+        run: |
+          sudo apt update
+          JAVAVERSIONS="$(sudo apt search openjdk|grep '/'|grep 'openjdk-'|sed 's|/| |g'|awk '{print $1}'|grep 'jre'|sed -e 's|-jre.*||g'|uniq)"
+          case $JAVAVERSIONS in
+            *17* ) sudo apt install -y openjdk-17-*headless;;
+            *16* ) sudo apt install -y openjdk-16-*headless;;
+            *) echo "Unsupported Java Version, avaibles"; echo "$JAVAVERSIONS";exit 0;;
+          esac
+
+      - name: Install node depencies
+        run: npm ci
+
+      - name: Test
+        run: npm run test:host -- --exit-on-error --show-return
