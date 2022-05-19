@@ -1,4 +1,5 @@
 import child_process, { ChildProcess } from "child_process";
+import EventEmitter from "events";
 
 export async function runAsync(command: string, args: Array<string|number>, options?: {env?: {[key: string]: string}, cwd?: string}): Promise<{stdout: string; stderr: string}> {
   if (!options) options = {};
@@ -29,7 +30,8 @@ type execOptions = {
   runOn: "host";
 };
 
-export async function execServer(options: execOptions, command: string, args: Array<string|number>, execOption: {env?: {[key: string]: string}, cwd?: string}): Promise<ChildProcess> {
+export async function execServer(options: execOptions, command: string, args: Array<string|number>, execOption: {env?: {[key: string]: string}, cwd?: string}) {
+  let Exec: ChildProcess;
   if (options.runOn === "docker") {
     const { dockerVolumeName, dockerImage, dockerContainerName } = options;
     if (!dockerVolumeName) throw new Error("Docker volume name is not defined");
@@ -42,18 +44,60 @@ export async function execServer(options: execOptions, command: string, args: Ar
     }
     dockerArgs.push(dockerImage);
     dockerArgs.push(command, ...args.map(a => String(a)));
-    const dockerExec = child_process.execFile("docker", dockerArgs, {
+    Exec = child_process.execFile("docker", dockerArgs, {
       env: {...process.env, ...(execOption.env||{}), volumeMount: "/data"},
       maxBuffer: Infinity
     });
-    return dockerExec;
   } else if (options.runOn === "host") {
-    const serverExec = child_process.execFile(command, args.map(a => String(a)), {
+    Exec = child_process.execFile(command, args.map(a => String(a)), {
       env: {...process.env, ...(execOption.env||{})},
       cwd: execOption.cwd||process.cwd(),
       maxBuffer: Infinity
     });
-    return serverExec;
+  } else throw new Error("Unknown runOn");
+  // server exec functions
+  const execEvent = new EventEmitter();
+  /** log data event */
+  const on = (eventName: "out"|"err"|"all", call: (data: string) => void) => execEvent.on(eventName, call);
+  /** log data event */
+  const once = (eventName: "out"|"err"|"all", call: (data: string) => void) => execEvent.once(eventName, call);
+  /** on server exit is event activate */
+  const onExit = (call: (code: number) => void) => {
+    if (Exec.killed) {
+      call(Exec.exitCode);
+      return;
+    }
+    Exec.on("exit", code => call(code));
   }
-  throw new Error("Unknown runOn");
+
+  // Storage tmp lines
+  const tempLog = {out: "", err: ""};
+  const parseLog = (to: "out"|"err", data: string) => {
+    // Detect new line and get all line with storage line for run callback else storage line
+    let lines = data.split(/\r?\n/);
+    // if (lines[lines.length - 1] === "") lines.pop();
+    if (lines.length === 1) tempLog[to] += lines[0];
+    else {
+      for (const line of lines.slice(0, -1)) {
+        if (!!tempLog[to]) {
+          execEvent.emit(to, tempLog[to]+line);
+          execEvent.emit("all", tempLog[to]+line);
+          tempLog[to] = "";
+        } else {
+          execEvent.emit(to, line);
+          execEvent.emit("all", line);
+        }
+      }
+    }
+  }
+  Exec.stdout.on("data", data => parseLog("out", data));
+  Exec.stderr.on("data", data => parseLog("err", data));
+
+  // Return
+  return {
+    on,
+    once,
+    onExit,
+    Exec
+  };
 }

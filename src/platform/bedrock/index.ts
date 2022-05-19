@@ -1,3 +1,4 @@
 import * as config from "./config";
 import * as server from "./server";
-export {config, server};
+import DownloadServer from "./download";
+export {config, server, DownloadServer};

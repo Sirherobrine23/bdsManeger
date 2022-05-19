@@ -1,2 +1,3 @@
 import * as server from "./server";
-export {server};
+import DownloadServer from "./download";
+export {server, DownloadServer};

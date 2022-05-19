@@ -1,7 +1,6 @@
 import path from "path";
 import fs from "fs";
 import os from "os";
-import event from "events";
 import crypto from "crypto";
 import node_cron from "cron";
 import * as platformManeger from "./platform";
@@ -33,17 +32,6 @@ type startServerOptions = {
   storageOnlyWorlds?: boolean;
   gitBackup?: bdsBackup.gitBackupOption;
 };
-
-function logListen() {
-  const EventListen = new event();
-  const on = (type: "err"|"out"|"all", call: (data: string) => void) => EventListen.on(type, call);
-  const once = (type: "all"|"err"|"out", call: (data: string) => void) => EventListen.once(type, call);
-  const emit = (type: "err"|"out", data: string) => {
-    EventListen.emit(type, data);
-    EventListen.emit("all", data);
-  }
-  return {on, once, emit};
-}
 
 export type BdsSession = {
   /** Server Session ID */
@@ -91,11 +79,6 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     Process.command = BedrockPro.command;
     Process.args = BedrockPro.args;
     Process.env = BedrockPro.env;
-  } else if (Platform === "java"||Platform === "spigot") {
-    Process.command = "java";
-    Process.args.push("-jar");
-    if (Platform === "java") Process.args.push(path.resolve(ServerPath, "Server.jar"));
-    else Process.args.push(path.resolve(ServerPath, "Spigot.jar"));
   } else if (Platform === "pocketmine") {
     if (process.platform === "win32") Process.command = path.resolve(ServerPath, "bin/php/php.exe");
     else {
@@ -103,38 +86,22 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
       await child_process.runAsync("chmod", ["a+x", Process.command]);
     }
     Process.args.push(path.join(ServerPath, "PocketMine.phar"));
+  } else if (Platform === "java"||Platform === "spigot") {
+    Process.command = "java";
+    Process.args.push("-jar");
+    if (Platform === "java") Process.args.push(path.resolve(ServerPath, "Server.jar"));
+    else Process.args.push(path.resolve(ServerPath, "Spigot.jar"));
   }
 
-  if (options) {
-    if (options.storageOnlyWorlds) {
-      await worldManeger.storageWorld(Platform, ServerPath, (await serverConfigParse(Platform)).world);
-    }
+  if (options?.storageOnlyWorlds) {
+    await worldManeger.storageWorld(Platform, ServerPath, (await serverConfigParse(Platform)).world);
   }
 
   // Start Server
-  const ServerProcess = await child_process.execServer({runOn: "host"}, Process.command, Process.args, {env: Process.env, cwd: ServerPath});
   const StartDate = new Date();
-
-  // Log events
-  const logsEvent = logListen();
-  const onLog = {on: logsEvent.on, once: logsEvent.once};
-
-  // Storage tmp lines
-  const tempLog = {out: "", err: ""};
-
-  const parseLog = (to: "out"|"err", data: string) => {
-    tempLog[to] += data;
-    if (/\n$/gi.test(tempLog[to])) {
-      const localCall = tempLog[to];
-      tempLog[to] = "";
-      const filtedLog = localCall.replace(/\r\n/gi, "\n").replace(/\n$/gi, "").split(/\n/gi).filter(a => a !== undefined);
-      filtedLog.forEach(data => logsEvent.emit(to, data));
-    }
-    return;
-  }
-  ServerProcess.stdout.on("data", data => parseLog("out", String(data)));
-  ServerProcess.stderr.on("data", data => parseLog("err", String(data)));
-
+  const ServerProcess = await child_process.execServer({runOn: "host"}, Process.command, Process.args, {env: Process.env, cwd: ServerPath});
+  const { onExit } = ServerProcess;
+  const onLog = {on: ServerProcess.on, once: ServerProcess.once};
   const playerCallbacks: {[id: string]: {callback: (data: {player: string; action: "connect"|"disconnect"|"unknown"; date: Date;}) => void}} = {};
   const onPlayer = (callback: (data: {player: string; action: "connect"|"disconnect"|"unknown"; date: Date;}) => void) => {
     const uid = crypto.randomUUID();
@@ -214,20 +181,14 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     });
   }
 
-  // Exit callback
-  const onExit = (callback: (code: number) => void): void => {
-    if (ServerProcess.killed) return callback(ServerProcess.exitCode);
-    ServerProcess.on("exit", code => callback(code));
-  }
-
   // Stop Server
   const stopServer: () => Promise<number|null> = () => {
-    if (ServerProcess.exitCode !== null||ServerProcess.killed) return Promise.resolve(ServerProcess.exitCode);
+    if (ServerProcess.Exec.exitCode !== null||ServerProcess.Exec.killed) return Promise.resolve(ServerProcess.Exec.exitCode);
     if (Platform === "bedrock"||Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("stop");
-    else ServerProcess.kill();
-    if (ServerProcess.killed) return Promise.resolve(ServerProcess.exitCode);
+    else ServerProcess.Exec.kill();
+    if (ServerProcess.Exec.killed) return Promise.resolve(ServerProcess.Exec.exitCode);
     return new Promise((accept, reject) => {
-      ServerProcess.on("exit", code => (code === 0||code === null) ? accept(code) : reject(code));
+      ServerProcess.onExit(code => (code === 0||code === null) ? accept(code) : reject(code));
       setTimeout(() => accept(null), 2000);
     })
   }
@@ -240,7 +201,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
      * @returns - Server commands
      */
     execCommand: (...command) => {
-      ServerProcess.stdin.write(command.map(a => String(a)).join(" ")+"\n");
+      ServerProcess.Exec.stdin.write(command.map(a => String(a)).join(" ")+"\n");
       return serverCommands;
     },
     tpPlayer: (player: string, x: number, y: number, z: number) => {
@@ -302,8 +263,8 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
   if(!(fs.existsSync(path.parse(logFile).dir))) fs.mkdirSync(path.parse(logFile).dir, {recursive: true});
   const logStream = fs.createWriteStream(logFile, {flags: "w+"});
   logStream.write(`[${StartDate.toString()}] Server started\n\n`);
-  ServerProcess.stdout.pipe(logStream);
-  ServerProcess.stderr.pipe(logStream);
+  ServerProcess.Exec.stdout.pipe(logStream);
+  ServerProcess.Exec.stderr.pipe(logStream);
 
   // Session Object
   const Seesion: BdsSession = {
