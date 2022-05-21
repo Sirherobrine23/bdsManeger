@@ -62,12 +62,15 @@ export async function execServer(options: execOptions, command: string, args: Ar
   /** log data event */
   const once = (eventName: "out"|"err"|"all", call: (data: string) => void) => execEvent.once(eventName, call);
   /** on server exit is event activate */
-  const onExit = (call: (code: number) => void) => {
+  const onExit = (): Promise<number> => {
     if (Exec.killed) {
-      call(Exec.exitCode);
-      return;
+      if (Exec.exitCode === 0) return Promise.resolve(0);
+      return Promise.reject(Exec.exitCode === null ? 137:Exec.exitCode);
     }
-    Exec.on("exit", code => call(code));
+    return new Promise<number>((res, rej) => Exec.on("exit", code => {
+      if (code === 0) return res(0);
+      return rej(code === null ? 137 : code);
+    }));
   }
 
   // Storage tmp lines

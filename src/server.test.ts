@@ -3,33 +3,35 @@ export const name = "startServer";
 export const depends = "installServer";
 
 export async function bedrock() {
-  console.log("\nStarting bedrock server...");
+  console.log("Starting bedrock server...");
   const session = await server.Start("bedrock");
   session.log.on("all", console.log);
-  return new Promise<number>((res, rej) => {
+  await new Promise(res => {
     session.server.once("started", (date: Date) => {
       console.log("bedrock started at", date);
       console.log("Stoping bedrock");
-      session.commands.stop().then(code => (code === null||code !== 0 ? rej(code) : res(code)));
+      res("");
     });
   })
+  return session.commands.stop();
 }
 
 export async function java() {
-  console.log("\n\nStarting java server...");
+  console.log("Starting java server...");
   const session = await server.Start("java");
   session.log.on("all", console.log);
-  return new Promise<number>((res, rej) => {
+  await new Promise(res => {
     session.server.once("started", (date: Date) => {
       console.log("java started at", date);
       console.log("Stoping java");
-      session.commands.stop().then(code => (code === null||code !== 0 ? rej(code) : res(code)));
+      res("");
     });
   });
+  return session.commands.stop();
 }
 
 export async function pocketmine() {
-  console.log("\n\nStarting pocketmine server...");
+  console.log("Starting pocketmine server...");
   const session = await server.Start("pocketmine");
   session.log.on("all", console.log);
   session.log.on("all", data => {
@@ -39,11 +41,12 @@ export async function pocketmine() {
       session.commands.execCommand("eng").execCommand("y").execCommand("y");
     }
   });
-  return new Promise<number>((res, rej) => {
+  await new Promise(res => {
     session.server.once("started", (date: Date) => {
       console.log("pocketmine started at", date);
       console.log("Stoping pocketmine");
-      session.commands.stop().then(code => (code === null||code !== 0 ? rej(code) : res(code)));
+      res("")
     });
   });
+  return session.commands.stop();
 }

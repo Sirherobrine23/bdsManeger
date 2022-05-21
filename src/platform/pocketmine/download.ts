@@ -6,6 +6,7 @@ import tar from "tar";
 import * as versionManeger from "@the-bds-maneger/server_versions";
 import * as httpRequests from "../../HttpRequests";
 import * as childProcess from "../../childProcess";
+import Readdirrec from "../../lib/listRecursive";
 
 export async function buildPHPBinWithDocker() {
   const dockerFileUrl = "https://raw.githubusercontent.com/The-Bds-Maneger/Build-PHP-Bins/main/Dockerfile";
@@ -22,13 +23,12 @@ async function InstallPrebuildPHP(serverPath: string) {
   const Release = (await httpRequests.getGithubRelease("The-Bds-Maneger", "PocketMinePHPAutoBinBuilds")).map(release => {
     release.assets = release.assets.filter(asset => nameTest(asset.name));
     return release;
-  }).filter(res => res.assets.length > -1);
+  }).filter(res => res.assets.length >= 1);
   if (Release.length === 0) throw new Error("No file found for this Platform and Arch");
   const urlBin = Release[0].assets[0].browser_download_url;
   if (!urlBin) throw new Error("No file found for this Platform and Arch");
-  console.log("PHP File download url: %s", urlBin);
   if (/\.tar\.gz/.test(urlBin)) {
-    const tmpFileTar = path.join(os.tmpdir(), Buffer.from(Math.random().toString()).toString("hex")+"bdscore.tar.gz");
+    const tmpFileTar = path.join(os.tmpdir(), Buffer.from(Math.random().toString()).toString("hex")+"bdscore_php.tar.gz");
     await fs.promises.writeFile(tmpFileTar, await httpRequests.getBuffer(urlBin));
     if (fs.existsSync(path.join(serverPath, "bin"))) {
       await fs.promises.rm(path.join(serverPath, "bin"), {recursive: true});
@@ -46,6 +46,14 @@ async function InstallPrebuildPHP(serverPath: string) {
     const PHPZip = new adm_zip(await httpRequests.getBuffer(urlBin));
     if (fs.existsSync(path.resolve(serverPath, "bin"))) await fs.promises.rm(path.resolve(serverPath, "bin"), {recursive: true});
     await new Promise((res,rej) => PHPZip.extractAllToAsync(serverPath, false, true, err => err?rej(err):res("")));
+  }
+  if (process.platform === "linux"||process.platform === "android"||process.platform === "darwin") {
+    const ztsFind = await Readdirrec(path.resolve(serverPath, "bin"), [/.*debug-zts.*/]);
+    if (ztsFind.length === 0) return urlBin;
+    const phpIniPath = (await Readdirrec(path.resolve(serverPath, "bin"), [/php\.ini$/]))[0].path;
+    if ((await fs.promises.readFile(phpIniPath, "utf8")).includes("extension_dir")) return urlBin;
+    console.log("Updating php.ini");
+    fs.promises.appendFile(phpIniPath, `\nextension_dir="${ztsFind[0].path}"`);
   }
   return urlBin;
 }

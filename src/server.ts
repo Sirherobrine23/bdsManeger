@@ -196,10 +196,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     if (Platform === "bedrock"||Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("stop");
     else ServerProcess.Exec.kill();
     if (ServerProcess.Exec.killed) return Promise.resolve(ServerProcess.Exec.exitCode);
-    return new Promise((accept, reject) => {
-      ServerProcess.onExit(code => (code === 0||code === null) ? accept(code) : reject(code));
-      setTimeout(() => accept(null), 2000);
-    })
+    return ServerProcess.onExit();
   }
 
   // Run Command
@@ -263,7 +260,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
       }
     });
     CrontimeBackup.start();
-    onExit(() => CrontimeBackup.stop());
+    onExit().catch(() => null).then(() => CrontimeBackup.stop());
     return CrontimeBackup;
   }
 
@@ -325,6 +322,6 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
 
   // Return Session
   Sessions[SessionID] = Seesion;
-  onExit(() => delete Sessions[SessionID]);
+  onExit().catch(() => null).then(() => delete Sessions[SessionID]);
   return Seesion;
 }
