@@ -101,6 +101,14 @@ export async function execServer(options: execOptions, command: string, args: Ar
     on,
     once,
     onExit,
+    writelf: (data: string|number|Array<string|number>) => {
+      if (typeof data === "string") Exec.stdin.write(data+"\n");
+      else if (Array.isArray(data)) {
+        if (data.length === 0) return;
+        else if (data.length === 1) Exec.stdin.write(data[0]+"\n");
+        else data.forEach(d => Exec.stdin.write(d+"\n"));
+      }
+    },
     Exec
   };
 }

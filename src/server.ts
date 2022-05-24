@@ -5,13 +5,14 @@ import crypto from "crypto";
 import node_cron from "cron";
 import * as platformManeger from "./platform";
 import * as child_process from "./childProcess";
-import * as bdsBackup from "./backup";
 import { parseConfig as serverConfigParse } from "./serverConfig";
 import * as worldManeger from "./worldManeger";
 import * as bdsTypes from "./globalType";
 import { backupRoot, serverRoot } from "./pathControl";
+import { gitBackup, gitBackupOption } from "./backup/git";
+import { createZipBackup } from "./backup/zip";
 
-type bdsSessionCommands = {
+export type bdsSessionCommands = {
   /** Exec any commands in server */
   execCommand: (...command: Array<string|number>) => bdsSessionCommands;
   /** Teleport player to Destination */
@@ -24,14 +25,10 @@ type bdsSessionCommands = {
   stop: () => Promise<number|null>;
 };
 
-// Server Sessions
-const Sessions: {[Session: string]: BdsSession} = {};
-export function getSessions() {return Sessions;}
-
 type startServerOptions = {
   /** Save only worlds/maps without server software - (Beta) */
   storageOnlyWorlds?: boolean;
-  gitBackup?: bdsBackup.gitBackupOption;
+  gitBackup?: gitBackupOption;
 };
 
 export type BdsSession = {
@@ -46,7 +43,7 @@ export type BdsSession = {
   /** Some platforms may have a plugin manager. */
   addonManeger?: any;
   /** register cron job to create backups */
-  creteBackup: (crontime: string|Date, option?: {type: "git"; config: bdsBackup.gitBackupOption}|{type: "zip"}) => node_cron.CronJob;
+  creteBackup: (crontime: string|Date, option?: {type: "git"; config: gitBackupOption}|{type: "zip"}) => node_cron.CronJob;
   /** callback to log event */
   log: {
     on: (eventName: "all"|"err"|"out", listener: (data: string) => void) => void;
@@ -71,6 +68,13 @@ export type BdsSession = {
   commands: bdsSessionCommands;
 };
 
+// Server Sessions
+const Sessions: {[Session: string]: BdsSession} = {};
+export function getSessions(): {[SessionID: string]: BdsSession} {return {
+  ...Sessions,
+  ...(platformManeger.bedrock.server.getSessions())
+};}
+
 // Start Server
 export default Start;
 export async function Start(Platform: bdsTypes.Platform, options?: startServerOptions): Promise<BdsSession> {
@@ -83,10 +87,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     env: {}
   };
   if (Platform === "bedrock") {
-    const BedrockPro = await platformManeger.bedrock.server.startServer();
-    Process.command = BedrockPro.command;
-    Process.args = BedrockPro.args;
-    Process.env = BedrockPro.env;
+    return platformManeger.bedrock.server.startServer();
   } else if (Platform === "pocketmine") {
     if (process.platform === "win32") Process.command = path.resolve(ServerPath, "bin/php/php.exe");
     else {
@@ -130,34 +131,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
   } = {};
   const ports: Array<{port: number; protocol?: "TCP"|"UDP"; version?: "IPv4"|"IPv6"|"IPv4/IPv6";}> = [];
 
-  if (Platform === "bedrock") {
-    // Port
-    onLog.on("all", data => {
-      const port = platformManeger.bedrock.server.parsePorts(data);
-      if (!!port) ports.push({...port, protocol: "UDP"});
-    });
-    // Player
-    onLog.on("all", data => {
-      const player = platformManeger.bedrock.server.parseUserAction(data);
-      if (!!player) {
-        if (!playersConnections[player.player]) playersConnections[player.player] = {
-          action: player.action,
-          date: player.date,
-          history: [{
-            action: player.action,
-            date: player.date
-          }]
-        }; else {
-          playersConnections[player.player].action = player.action;
-          playersConnections[player.player].date = player.date;
-          playersConnections[player.player].history.push({
-            action: player.action,
-            date: player.date
-          });
-        }
-      }
-    })
-  } else if (Platform === "pocketmine") {
+  if (Platform === "pocketmine") {
     onLog.on("all", data => {
       const port = platformManeger.pocketmine.server.parsePorts(data);
       if (!!port) ports.push({...port, protocol: "UDP"});
@@ -190,15 +164,6 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     });
   }
 
-  // Stop Server
-  const stopServer: () => Promise<number|null> = () => {
-    if (ServerProcess.Exec.exitCode !== null||ServerProcess.Exec.killed) return Promise.resolve(ServerProcess.Exec.exitCode);
-    if (Platform === "bedrock"||Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("stop");
-    else ServerProcess.Exec.kill();
-    if (ServerProcess.Exec.killed) return Promise.resolve(ServerProcess.Exec.exitCode);
-    return ServerProcess.onExit();
-  }
-
   // Run Command
   const serverCommands: bdsSessionCommands = {
     /**
@@ -215,17 +180,23 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
       return serverCommands;
     },
     worldGamemode: (gamemode: "survival"|"creative"|"hardcore") => {
-      if (Platform === "bedrock"||Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode);
+      if (Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode);
       return serverCommands;
     },
     userGamemode: (player: string, gamemode: "survival"|"creative"|"hardcore") => {
-      if (Platform === "bedrock"||Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode, player);
+      if (Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode, player);
       return serverCommands;
     },
-    stop: stopServer
+    stop: (): Promise<number|null> => {
+      if (ServerProcess.Exec.exitCode !== null||ServerProcess.Exec.killed) return Promise.resolve(ServerProcess.Exec.exitCode);
+      if (Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("stop");
+      else ServerProcess.Exec.kill();
+      if (ServerProcess.Exec.killed) return Promise.resolve(ServerProcess.Exec.exitCode);
+      return ServerProcess.onExit();
+    }
   }
 
-  const backupCron = (crontime: string|Date, option?: {type: "git"; config: bdsBackup.gitBackupOption}|{type: "zip", config?: {pathZip?: string}}): node_cron.CronJob => {
+  const backupCron = (crontime: string|Date, option?: {type: "git"; config: gitBackupOption}|{type: "zip", config?: {pathZip?: string}}): node_cron.CronJob => {
     // Validate Config
     if (option) {
       if (option.type === "git") {
@@ -251,11 +222,11 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     const CrontimeBackup = new node_cron.CronJob(crontime, async () => {
       if (option.type === "git") {
         await lockServerBackup();
-        await bdsBackup.gitBackup(option.config).catch(() => undefined).then(() => unLockServerBackup());
+        await gitBackup(option.config).catch(() => undefined).then(() => unLockServerBackup());
       } else if (option.type === "zip") {
         await lockServerBackup();
-        if (!!option?.config?.pathZip) await bdsBackup.CreateBackup({path: path.resolve(backupRoot, option?.config?.pathZip)}).catch(() => undefined);
-        else await bdsBackup.CreateBackup(true).catch(() => undefined);
+        if (!!option?.config?.pathZip) await createZipBackup({path: path.resolve(backupRoot, option?.config?.pathZip)}).catch(() => undefined);
+        else await createZipBackup(true).catch(() => undefined);
         await unLockServerBackup();
       }
     });
@@ -296,13 +267,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
   };
 
   onLog.on("all", lineData => {
-    if (Platform === "bedrock") {
-      // [2022-05-19 22:35:09:315 INFO] Server started.
-      if (/\[.*\]\s+Server\s+started\./.test(lineData)) {
-        Seesion.started = true;
-        serverEvents.emit("started", new Date());
-      }
-    } else if (Platform === "java") {
+    if (Platform === "java") {
       // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
       if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) {
         Seesion.started = true;
@@ -316,9 +281,6 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
       }
     }
   });
-  if (Platform === "bedrock") {
-    Seesion.seed = (await platformManeger.bedrock.config.getConfig()).worldSeed;
-  }
 
   // Return Session
   Sessions[SessionID] = Seesion;

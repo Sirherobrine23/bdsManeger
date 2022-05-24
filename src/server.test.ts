@@ -2,20 +2,6 @@ import * as server from "./server";
 export const name = "startServer";
 export const depends = "installServer";
 
-export async function bedrock() {
-  console.log("Starting bedrock server...");
-  const session = await server.Start("bedrock");
-  session.log.on("all", console.log);
-  await new Promise(res => {
-    session.server.once("started", (date: Date) => {
-      console.log("bedrock started at", date);
-      console.log("Stoping bedrock");
-      res("");
-    });
-  })
-  return session.commands.stop();
-}
-
 export async function java() {
   console.log("Starting java server...");
   const session = await server.Start("java");
