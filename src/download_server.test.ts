@@ -21,3 +21,10 @@ export async function java() {
   console.log(data);
   return data;
 }
+
+export async function spigot() {
+  console.log("Installing spigot server");
+  const data = await downloadServer("spigot", "latest");
+  console.log(data);
+  return data;
+}

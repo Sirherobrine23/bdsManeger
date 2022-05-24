@@ -1,10 +1,10 @@
 import crypto from "crypto";
-import path from "path";
-import os from "os";
-import fs from "fs";
+import path from "node:path";
+import fs from "node:fs";
 import * as prismarineNbt from "prismarine-nbt";
 import properties_to_json from "./lib/Proprieties";
 import * as bdsType from "./globalType";
+import { serverRoot } from "./pathControl";
 
 export type BdsConfigGet = {
   world: string;
@@ -23,7 +23,7 @@ export type BdsConfigGet = {
 }
 
 export async function parseConfig(Platform: bdsType.Platform): Promise<BdsConfigGet> {
-  const serverPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
+  const serverPath = path.join(serverRoot, Platform);
   if (Platform === "bedrock") {
     const bedrockConfigPath = path.join(serverPath, "server.properties");
     if (!(fs.existsSync(bedrockConfigPath))) throw new Error("Bedrock server config not found");
@@ -59,7 +59,7 @@ export type BdsConfigSet = {
 }
 
 export async function createConfig(Platform: bdsType.Platform, config: BdsConfigSet): Promise<void> {
-  const serverPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
+  const serverPath = path.join(serverRoot, Platform);
   if (Platform === "bedrock") {
     if (!(config.seed && typeof config.seed === "string")) config.seed = "";
     if (!(config.players && typeof config.players === "number")) config.players = 20;

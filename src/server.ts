@@ -1,6 +1,5 @@
-import path from "path";
-import fs from "fs";
-import os from "os";
+import path from "node:path";
+import fs from "node:fs";
 import events from "events";
 import crypto from "crypto";
 import node_cron from "cron";
@@ -10,6 +9,7 @@ import * as bdsBackup from "./backup";
 import { parseConfig as serverConfigParse } from "./serverConfig";
 import * as worldManeger from "./worldManeger";
 import * as bdsTypes from "./globalType";
+import { backupRoot, serverRoot } from "./pathControl";
 
 type bdsSessionCommands = {
   /** Exec any commands in server */
@@ -75,7 +75,7 @@ export type BdsSession = {
 export default Start;
 export async function Start(Platform: bdsTypes.Platform, options?: startServerOptions): Promise<BdsSession> {
   const SessionID = crypto.randomUUID();
-  const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), Platform);
+  const ServerPath = path.join(serverRoot, Platform);
   if (!(fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   const Process: {command: string; args: Array<string>; env: {[env: string]: string};} = {
     command: "",
@@ -254,7 +254,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
         await bdsBackup.gitBackup(option.config).catch(() => undefined).then(() => unLockServerBackup());
       } else if (option.type === "zip") {
         await lockServerBackup();
-        if (!!option?.config?.pathZip) await bdsBackup.CreateBackup({path: path.resolve(bdsBackup.backupFolderPath, option?.config?.pathZip)}).catch(() => undefined);
+        if (!!option?.config?.pathZip) await bdsBackup.CreateBackup({path: path.resolve(backupRoot, option?.config?.pathZip)}).catch(() => undefined);
         else await bdsBackup.CreateBackup(true).catch(() => undefined);
         await unLockServerBackup();
       }

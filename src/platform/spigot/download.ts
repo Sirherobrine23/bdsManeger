@@ -5,17 +5,17 @@ import * as httpRequests from "../../HttpRequests";
 import { serverRoot } from "../../pathControl";
 
 export default async function download(version: string|boolean) {
-  const ServerPath = path.join(serverRoot, "java");
+  const ServerPath = path.join(serverRoot, "spigot");
   if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
-    const javaInfo = await versionManeger.findUrlVersion("java", version);
-    await fs.promises.writeFile(path.resolve(ServerPath, "Server.jar"), await httpRequests.getBuffer(String(javaInfo.url)));
-    await fs.promises.writeFile(path.resolve(ServerPath, "eula.txt"), "eula=true");
+  const spigotSearch = await versionManeger.findUrlVersion("spigot", version);
+  await fs.promises.writeFile(path.resolve(ServerPath, "Server.jar"), await httpRequests.getBuffer(String(spigotSearch.url)));
+  await fs.promises.writeFile(path.resolve(ServerPath, "eula.txt"), "eula=true");
 
   // Return info
   return {
-    version: javaInfo.version,
-    publishDate: javaInfo.datePublish,
-    url: javaInfo.url,
+    version: spigotSearch.version,
+    publishDate: spigotSearch.datePublish,
+    url: spigotSearch.url,
   };
 }

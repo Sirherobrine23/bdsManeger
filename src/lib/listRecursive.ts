@@ -1,5 +1,5 @@
-import { promises as fsPromise } from "fs";
-import path from "path";
+import { promises as fsPromise } from "node:fs";
+import path from "node:path";
 
 export default async function Readdir(pathRead: string, filter: Array<RegExp>|RegExp) {
   if (!(Array.isArray(filter))) filter = [filter];

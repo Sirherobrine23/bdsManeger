@@ -1,7 +1,7 @@
 name: Publish
 on:
   workflow_dispatch:
-    inputs:  
+    inputs:
       version:
         description: "Package version, dont includes 'v' or any other label"
         required: true
@@ -86,9 +86,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install -no-save
-
-      - name: Create Changelog
-        run: npm run release -- --version "${{ github.event.inputs.version }}"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4

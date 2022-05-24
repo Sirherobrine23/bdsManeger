@@ -1,7 +1,7 @@
-import path from "path";
-import { promises as fsPromise } from "fs";
-import os from "os";
-const serverPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), "bedrock");
+import path from "node:path";
+import { promises as fsPromise } from "node:fs";
+import { serverRoot } from "../../pathControl";
+const serverPath = path.join(serverRoot, "pocketmine");
 /*
 #Properties Config file
 #Wed Apr 20 23:32:32 UTC 2022

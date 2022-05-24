@@ -1,13 +1,13 @@
-import path from "path";
-import fs from "fs";
-import os from "os";
+import path from "node:path";
+import fs from "node:fs";
 import adm_zip from "adm-zip";
 import * as versionManeger from "@the-bds-maneger/server_versions";
 import * as httpRequests from "../../HttpRequests";
 import { runCommandAsync } from "../../childProcess"
+import { serverRoot } from "../../pathControl";
 
 export default async function download(version: string|boolean) {
-  const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), "bedrock");
+  const ServerPath = path.join(serverRoot, "bedrock");
   if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   let arch = process.arch;
   if (process.platform === "linux" && process.arch !== "x64") {

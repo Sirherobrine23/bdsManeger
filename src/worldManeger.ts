@@ -1,9 +1,9 @@
-import path from "path";
-import fs, {promises as fsPromise} from "fs";
-import os from "os";
+import path from "node:path";
+import fs, {promises as fsPromise} from "node:fs";
 import * as bdsTypes from "./globalType";
+import { worldStorageRoot } from "./pathControl";
 
-export const storage = path.resolve(process.env.WORLD_STORAGE||path.join(os.homedir(), "bds_core/worlds"));
+export const storage = worldStorageRoot;
 export async function storageWorld(Platform: bdsTypes.Platform, serverPath: string, world?: string) {
   if (process.platform === "win32") throw new Error("Windows is not supported");
   if (!fs.existsSync(storage)) await fsPromise.mkdir(storage, {recursive: true});

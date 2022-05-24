@@ -1,5 +1,5 @@
-import path from "path";
-import fs from "fs";
+import path from "node:path";
+import fs from "node:fs";
 import os from "os";
 import adm_zip from "adm-zip";
 import tar from "tar";
@@ -7,6 +7,7 @@ import * as versionManeger from "@the-bds-maneger/server_versions";
 import * as httpRequests from "../../HttpRequests";
 import * as childProcess from "../../childProcess";
 import Readdirrec from "../../lib/listRecursive";
+import { serverRoot } from "../../pathControl";
 
 export async function buildPHPBinWithDocker() {
   const dockerFileUrl = "https://raw.githubusercontent.com/The-Bds-Maneger/Build-PHP-Bins/main/Dockerfile";
@@ -59,7 +60,7 @@ async function InstallPrebuildPHP(serverPath: string) {
 }
 
 export default async function download(version: string|boolean) {
-  const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), "pocketmine");
+  const ServerPath = path.join(serverRoot, "pocketmine");
   if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   const pocketmineInfo = await versionManeger.findUrlVersion("pocketmine", version);
   await fs.promises.writeFile(path.resolve(ServerPath, "PocketMine.phar"), await httpRequests.getBuffer(String(pocketmineInfo.url)));

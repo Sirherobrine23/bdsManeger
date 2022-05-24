@@ -1,14 +1,12 @@
 import * as bdsCoretypes from "./globalType";
 import os from "os";
-import path from "path";
-import fs, { promises as fsPromise } from "fs";
+import path from "node:path";
+import fs, { promises as fsPromise } from "node:fs";
 import fse from "fs-extra";
 import AdmZip from "adm-zip";
 import simpleGit from "simple-git";
 import { compare as compareDir } from "dir-compare";
-
-const ServerPathRoot = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"));
-export const backupFolderPath = path.resolve(process.env.BACKUP_PATH||path.join(os.homedir(), "bds_core/backups"));
+import { backupRoot as backupFolderPath, serverRoot as ServerPathRoot } from "./pathControl";
 
 async function createTempFolder() {
   let cleaned = false;

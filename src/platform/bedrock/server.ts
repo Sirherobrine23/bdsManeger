@@ -1,9 +1,9 @@
-import path from "path";
-import os from "os";
+import path from "node:path";
 import { runAsync, runCommandAsync } from "../../childProcess";
+import { serverRoot } from "../../pathControl";
 
+const ServerPath = path.join(serverRoot, "bedrock");
 export async function startServer() {
-  const ServerPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), "bedrock");
   const Process: {command: string; args: Array<string>; env: {[env: string]: string};} = {
     command: "",
     args: [],

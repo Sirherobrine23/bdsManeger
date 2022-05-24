@@ -47,23 +47,28 @@ RUN yes | sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-
   sed -e 's|plugins=(.*)|plugins=(git docker zsh-syntax-highlighting zsh-autosuggestions)|g' -i ~/.zshrc
 
 # Create Start Script
-ARG DOCKERD_ARGS=""
+ENV DOCKERD_ARGS=""
 RUN (\
-echo "#""!/bin/bash";\
+echo '#''!/bin/bash';\
 echo "set -e";\
-echo "if ! [[ -z \"\$@\" ]]; then";\
-echo "  (sudo dockerd $DOCKERD_ARGS) &";\
-echo "  sh -c \"\$@\"";\
-echo "  while (ps -ef | grep -v grep | grep -q dockerd); do sleep 8s; done";\
-echo "  echo Dockerd stopped";\
-echo "  exit 2";\
-echo "else";\
-echo "  (sudo dockerd $DOCKERD_ARGS) &";\
-echo "  while (ps -ef | grep -v grep | grep -q dockerd); do sleep 8s; done";\
-echo "  echo Dockerd stopped";\
-echo "  exit 2";\
+echo 'if ! [[ -f "/var/run/docker.sock" ]];then';\
+echo "  (sudo dockerd ${DOCKERD_ARGS}) &";\
 echo "fi";\
-)|sudo tee /usr/local/bin/start.sh && sudo chmod +x /usr/local/bin/start.sh
-
-# Start Docker Engine
+echo 'if ! [[ -z "$@" ]]; then';\
+echo '  sh -c "$@"';\
+echo "fi";\
+echo "";\
+echo "while true; do";\
+echo "  if ps -ef | grep -v grep | grep -q dockerd; then";\
+echo '    echo "Docker daemon is running"';\
+echo "  elif docker info &> /dev/null; then";\
+echo '    echo "Docker daemon is running"';\
+echo "  else";\
+echo "    break";\
+echo "  fi";\
+echo "  sleep 4s";\
+echo "done";\
+echo "";\
+echo "echo Dockerd stopped";\
+echo "exit 2")|sudo tee /usr/local/bin/start.sh && sudo chmod +x /usr/local/bin/start.sh
 ENTRYPOINT [ "/usr/local/bin/start.sh" ]

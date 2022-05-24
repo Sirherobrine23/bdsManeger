@@ -1,11 +1,12 @@
 import os from "os";
-import path from "path";
-import fs, { promises as fsPromise } from "fs";
+import path from "node:path";
+import fs, { promises as fsPromise } from "node:fs";
 import AdmZip from "adm-zip";
 import * as Proprieties from "../../lib/Proprieties"
 import { parse as nbtParse, NBT, Metadata as nbtData, NBTFormat } from "prismarine-nbt";
 import { getBuffer } from "../../HttpRequests";
-const serverPath = path.resolve(process.env.SERVER_PATH||path.join(os.homedir(), "bds_core/servers"), "bedrock");
+import { serverRoot } from "../../pathControl";
+const serverPath = path.join(serverRoot, "bedrock");
 
 export type bedrockConfig = {
   /** This is the server name shown in the in-game server list. */
