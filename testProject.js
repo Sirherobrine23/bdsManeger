@@ -39,26 +39,27 @@ if (fs.existsSync(path.join(__dirname, "dist"))) fs.rmSync(path.join(__dirname, 
 console.log("Building project");
 execSync("npm run build:cjs", { stdio: "inherit" });
 
-const __ShowReturn = process.argv.includes("--show-return");
 (async function() {
-  const Files = await readdirRecursive(path.join(__dirname, "dist/cjs"), [/\.test\.js$/]).then(res => {
-    /** @type {Array<{filePath: string, funcs: {name?: string, depends?: string}}>} */
-    let __Sortted = res.map(x => ({filePath: x, funcs: require(x)})).sort((a, b) => {
-      if (!a.funcs.name) return -1;
-      if (!b.funcs.depends) return -1;
-      if (a.funcs.name === b.funcs.depends) return 1;
-      else return 0;
-    }).reverse();
-    return __Sortted;
-  });
-  // return console.log(Files);
-  for (const {filePath: file, funcs: main} of Files) {
+  /** @type {Array<{filePath: string, funcs: {name?: string, depends?: string}}>} */
+  const Files = await readdirRecursive(path.join(__dirname, "dist/cjs"), [/\.test\.js$/]).then(res => res.map(x => ({filePath: x, funcs: require(x)})));
+  const Sort = [];
+  while (Files.length > 0) {
+    const File = Files.shift();
+    if (!File.funcs.depends||!File.funcs.name) Sort.push(File);
+    else {
+      const depends = File.funcs.depends;
+      if (Sort.some(f => f.funcs.name === depends)) Sort.push(File);
+      else Files.push(File);
+    }
+  }
+  // return console.log(Sort);
+  for (const {filePath: file, funcs: main} of Sort) {
     const logFile = path.join(testDir, file.replace(path.join(__dirname, "dist/cjs"), "").replace(/\/|\\/gi, "_").replace(/\.test\.[tj]s$/, "").replace(/^_/, ""), "");
     const log = [];
-    await Promise.all(Object.keys(main).filter(key => typeof main[key] === "function").map(async func => {
+    for (const func of Object.keys(main).filter(key => typeof main[key] === "function")) {
       const Data = await main[func]();
       console.log(`${file}#${func}: %o`, Data);
-    }));
+    }
     fs.writeFileSync(logFile+".json", JSON.stringify(log, null, 2));
   }
 })();
