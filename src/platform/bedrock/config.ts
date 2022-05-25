@@ -171,15 +171,16 @@ export async function CreateServerConfig(config: bedrockConfig): Promise<bedrock
     `level-seed=${worldSeed}`,
     `default-player-permission-level=${PlayerDefaultPermissionLevel}`,
     `texturepack-required=${texturepackRequired}`,
-    `content-log-file-enabled=false`,
-    `compression-threshold=1`,
-    `server-authoritative-movement=server-auth`,
-    `player-movement-score-threshold=20`,
-    `player-movement-action-direction-threshold=0.85`,
-    `player-movement-distance-threshold=0.3`,
-    `player-movement-duration-threshold-in-ms=500`,
-    `correct-player-movement=false`,
-    `server-authoritative-block-breaking=false`
+    "emit-server-telemetry=true",
+    "content-log-file-enabled=false",
+    "compression-threshold=1",
+    "server-authoritative-movement=server-auth",
+    "player-movement-score-threshold=20",
+    "player-movement-action-direction-threshold=0.85",
+    "player-movement-distance-threshold=0.3",
+    "player-movement-duration-threshold-in-ms=500",
+    "correct-player-movement=false",
+    "server-authoritative-block-breaking=false"
   ];
 
   // Write config file
@@ -250,6 +251,7 @@ export async function getConfig(): Promise<bedrockParsedConfig> {
       }
     }
   }
+  if (config.worldSeed === "null") delete config.worldSeed;
   return config;
 }
 

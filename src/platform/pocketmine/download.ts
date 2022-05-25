@@ -52,9 +52,13 @@ async function InstallPrebuildPHP(serverPath: string) {
     const ztsFind = await Readdirrec(path.resolve(serverPath, "bin"), [/.*debug-zts.*/]);
     if (ztsFind.length === 0) return urlBin;
     const phpIniPath = (await Readdirrec(path.resolve(serverPath, "bin"), [/php\.ini$/]))[0].path;
-    if ((await fs.promises.readFile(phpIniPath, "utf8")).includes("extension_dir")) return urlBin;
     console.log("Updating php.ini");
-    fs.promises.appendFile(phpIniPath, `\nextension_dir="${ztsFind[0].path}"`);
+    let phpIni = await fs.promises.readFile(phpIniPath, "utf8");
+    if (phpIni.includes("extension_dir")) {
+      await fs.promises.writeFile(phpIniPath, phpIni.replace(/extension_dir=.*/g, ""));
+    }
+    phpIni = phpIni+`\nextension_dir=${ztsFind[0].path}`
+    await fs.promises.writeFile(phpIniPath, phpIni);
   }
   return urlBin;
 }

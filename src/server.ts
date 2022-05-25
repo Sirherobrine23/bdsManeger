@@ -12,72 +12,17 @@ import { backupRoot, serverRoot } from "./pathControl";
 import { gitBackup, gitBackupOption } from "./backup/git";
 import { createZipBackup } from "./backup/zip";
 
-export type bdsSessionCommands = {
-  /** Exec any commands in server */
-  execCommand: (...command: Array<string|number>) => bdsSessionCommands;
-  /** Teleport player to Destination */
-  tpPlayer: (player: string, x: number, y: number, z: number) => bdsSessionCommands;
-  /** Change world gamemode */
-  worldGamemode: (gamemode: "survival"|"creative"|"hardcore") => bdsSessionCommands;
-  /** Change gamemode to specified player */
-  userGamemode: (player: string, gamemode: "survival"|"creative"|"hardcore") => bdsSessionCommands;
-  /** Stop Server */
-  stop: () => Promise<number|null>;
-};
-
-type startServerOptions = {
-  /** Save only worlds/maps without server software - (Beta) */
-  storageOnlyWorlds?: boolean;
-  gitBackup?: gitBackupOption;
-};
-
-export type BdsSession = {
-  /** Server Session ID */
-  id: string;
-  /** Server Started date */
-  startDate: Date;
-  /** if exists server map get world seed, fist map not get seed */
-  seed?: string|number;
-  /** Server Started */
-  started: boolean;
-  /** Some platforms may have a plugin manager. */
-  addonManeger?: any;
-  /** register cron job to create backups */
-  creteBackup: (crontime: string|Date, option?: {type: "git"; config: gitBackupOption}|{type: "zip"}) => node_cron.CronJob;
-  /** callback to log event */
-  log: {
-    on: (eventName: "all"|"err"|"out", listener: (data: string) => void) => void;
-    once: (eventName: "all"|"err"|"out", listener: (data: string) => void) => void;
-  };
-  /** If the server crashes or crashes, the callbacks will be called. */
-  onExit: (callback: (code: number) => void) => void;
-  /** Server actions, example on avaible to connect or banned¹ */
-  server: {
-    /** Server actions, example on avaible to connect or banned¹ */
-    on: (act: "started"|"ban", call: (...any) => void) => void;
-    /** Server actions, example on avaible to connect or banned¹ */
-    once: (act: "started"|"ban", call: (...any) => void) => void;
-  };
-  /** Get server players historic connections */
-  getPlayer: () => {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
-  /** This is a callback that call a function, for some player functions */
-  onPlayer: (callback: (data: {player: string; action?: "connect"|"disconnect"|"unknown"; date: Date;}) => string) => void;
-  /** Get Server ports. listening. */
-  ports: () => Array<{port: number; protocol?: "TCP"|"UDP"; version?: "IPv4"|"IPv6"|"IPv4/IPv6"}>;
-  /** Basic server functions. */
-  commands: bdsSessionCommands;
-};
-
 // Server Sessions
-const Sessions: {[Session: string]: BdsSession} = {};
-export function getSessions(): {[SessionID: string]: BdsSession} {return {
+const Sessions: {[Session: string]: bdsTypes.BdsSession} = {};
+export function getSessions(): {[SessionID: string]: bdsTypes.BdsSession} {return {
   ...Sessions,
-  ...(platformManeger.bedrock.server.getSessions())
+  ...(platformManeger.bedrock.server.getSessions()),
+  ...(platformManeger.java.server.getSessions()),
 };}
 
 // Start Server
 export default Start;
-export async function Start(Platform: bdsTypes.Platform, options?: startServerOptions): Promise<BdsSession> {
+export async function Start(Platform: bdsTypes.Platform, options?: bdsTypes.startServerOptions): Promise<bdsTypes.BdsSession> {
   const SessionID = crypto.randomUUID();
   const ServerPath = path.join(serverRoot, Platform);
   if (!(fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
@@ -86,20 +31,13 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     args: [],
     env: {}
   };
-  if (Platform === "bedrock") {
-    return platformManeger.bedrock.server.startServer();
-  } else if (Platform === "pocketmine") {
-    if (process.platform === "win32") Process.command = path.resolve(ServerPath, "bin/php/php.exe");
-    else {
-      Process.command = path.resolve(ServerPath, "bin/bin/php");
-      await child_process.runAsync("chmod", ["a+x", Process.command]);
-    }
-    Process.args.push(path.join(ServerPath, "PocketMine.phar"));
-  } else if (Platform === "java"||Platform === "spigot") {
+  if (Platform === "bedrock") return platformManeger.bedrock.server.startServer();
+  else if (Platform === "java") return platformManeger.java.server.startServer();
+  else if (Platform === "pocketmine") return platformManeger.pocketmine.server.startServer();
+  else if (Platform === "spigot") {
     Process.command = "java";
     Process.args.push("-jar");
-    if (Platform === "java") Process.args.push(path.resolve(ServerPath, "Server.jar"));
-    else Process.args.push(path.resolve(ServerPath, "Spigot.jar"));
+    Process.args.push(path.resolve(ServerPath, "Spigot.jar"));
   }
 
   if (options?.storageOnlyWorlds) {
@@ -131,41 +69,8 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
   } = {};
   const ports: Array<{port: number; protocol?: "TCP"|"UDP"; version?: "IPv4"|"IPv6"|"IPv4/IPv6";}> = [];
 
-  if (Platform === "pocketmine") {
-    onLog.on("all", data => {
-      const port = platformManeger.pocketmine.server.parsePorts(data);
-      if (!!port) ports.push({...port, protocol: "UDP"});
-    });
-    onLog.on("all", data => {
-      const player = platformManeger.pocketmine.server.parseUserAction(data);
-      if (!!player) {
-        if (!playersConnections[player.player]) playersConnections[player.player] = {
-          action: player.action,
-          date: player.date,
-          history: [{
-            action: player.action,
-            date: player.date
-          }]
-        }; else {
-          playersConnections[player.player].action = player.action;
-          playersConnections[player.player].date = player.date;
-          playersConnections[player.player].history.push({
-            action: player.action,
-            date: player.date
-          });
-        }
-        Object.keys(playerCallbacks).forEach(a => playerCallbacks[a].callback(player));
-      }
-    });
-  } else if (Platform === "java") {
-    onLog.on("all", data => {
-      const port = platformManeger.java.server.parsePorts(data);
-      if (!!port) ports.push({...port, protocol: "TCP"});
-    });
-  }
-
   // Run Command
-  const serverCommands: bdsSessionCommands = {
+  const serverCommands: bdsTypes.bdsSessionCommands = {
     /**
      * Run any commands in server.
      * @param command - Run any commands in server without parse commands
@@ -180,16 +85,16 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
       return serverCommands;
     },
     worldGamemode: (gamemode: "survival"|"creative"|"hardcore") => {
-      if (Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode);
+      if (Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode);
       return serverCommands;
     },
     userGamemode: (player: string, gamemode: "survival"|"creative"|"hardcore") => {
-      if (Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode, player);
+      if (Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("gamemode", gamemode, player);
       return serverCommands;
     },
     stop: (): Promise<number|null> => {
       if (ServerProcess.Exec.exitCode !== null||ServerProcess.Exec.killed) return Promise.resolve(ServerProcess.Exec.exitCode);
-      if (Platform === "java"||Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("stop");
+      if (Platform === "spigot"||Platform === "pocketmine") serverCommands.execCommand("stop");
       else ServerProcess.Exec.kill();
       if (ServerProcess.Exec.killed) return Promise.resolve(ServerProcess.Exec.exitCode);
       return ServerProcess.onExit();
@@ -247,7 +152,7 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
   const serverOnce = (act: "started" | "ban", call: (...any: any[]) => void) => serverEvents.once(act, call);
 
   // Session Object
-  const Seesion: BdsSession = {
+  const Seesion: bdsTypes.BdsSession = {
     id: SessionID,
     startDate: StartDate,
     creteBackup: backupCron,
@@ -265,22 +170,6 @@ export async function Start(Platform: bdsTypes.Platform, options?: startServerOp
     log: onLog,
     commands: serverCommands,
   };
-
-  onLog.on("all", lineData => {
-    if (Platform === "java") {
-      // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
-      if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) {
-        Seesion.started = true;
-        serverEvents.emit("started", new Date());
-      }
-    } else if (Platform === "pocketmine") {
-      // [22:52:05.580] [Server thread/INFO]: Done (0.583s)! For help, type "help" or "?"
-      if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) {
-        Seesion.started = true;
-        serverEvents.emit("started", new Date());
-      }
-    }
-  });
 
   // Return Session
   Sessions[SessionID] = Seesion;

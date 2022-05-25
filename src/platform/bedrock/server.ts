@@ -5,7 +5,7 @@ import crypto from "crypto";
 import node_cron from "cron";
 import * as child_process from "../../childProcess";
 import { backupRoot, serverRoot } from "../../pathControl";
-import { BdsSession, bdsSessionCommands } from "../../server";
+import { BdsSession, bdsSessionCommands } from "../../globalType";
 import { getConfig } from "./config";
 import { gitBackup, gitBackupOption } from "../../backup/git";
 import { createZipBackup } from "../../backup/zip";
@@ -191,7 +191,7 @@ export async function startServer(): Promise<BdsSession> {
       on: serverOn,
       once: serverOnce
     },
-    seed: undefined,
+    seed: (await getConfig()).worldSeed,
     started: false,
     addonManeger: undefined,
     log: onLog,
@@ -205,7 +205,6 @@ export async function startServer(): Promise<BdsSession> {
       serverEvents.emit("started", new Date());
     }
   });
-  Seesion.seed = (await getConfig()).worldSeed;
 
   // Return Session
   bedrockSesions[SessionID] = Seesion;
