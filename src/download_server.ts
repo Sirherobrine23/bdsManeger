@@ -1,5 +1,5 @@
 import * as bdsTypes from "./globalType";
-import * as platform from "./platform/index";
+import platform from "./platform/index";
 
 export default DownloadServer;
 export async function DownloadServer(Platform: bdsTypes.Platform, Version: string|boolean): Promise<{Version: string, Date: Date, url: string}> {

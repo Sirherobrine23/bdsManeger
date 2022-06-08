@@ -72,6 +72,7 @@ export async function startServer(): Promise<BdsSession> {
       });
     }
   });
+
   // Player
   onLog.on("all", data => {
     if (/r\s+.*\:\s+.*\,\s+xuid\:\s+.*/gi.test(data)) {
