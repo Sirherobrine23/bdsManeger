@@ -23,16 +23,9 @@ jobs:
           node-version: "${{ matrix.node_version }}.x"
 
       - name: Install latest java
-        env:
-          DEBIAN_FRONTEND: "noninteractive"
-        run: |
-          sudo apt update
-          JAVAVERSIONS="$(sudo apt search openjdk|grep '/'|grep 'openjdk-'|sed 's|/| |g'|awk '{print $1}'|grep 'jre'|sed -e 's|-jre.*||g'|uniq)"
-          case $JAVAVERSIONS in
-            *17* ) sudo apt install -y openjdk-17-*headless;;
-            *16* ) sudo apt install -y openjdk-16-*headless;;
-            *) echo "Unsupported Java Version, avaibles"; echo "$JAVAVERSIONS";exit 0;;
-          esac
+        uses: actions/setup-java@v3
+        with:
+          java-version: "17"
 
       - name: Install node depencies
         run: npm ci
