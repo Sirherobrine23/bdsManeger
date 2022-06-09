@@ -1,26 +1,27 @@
 import path from "node:path";
 import fs from "node:fs";
-import events from "events";
 import crypto from "crypto";
 import node_cron from "cron";
 import * as child_process from "../../childProcess";
 import { backupRoot, serverRoot } from "../../pathControl";
-import { BdsSession, bdsSessionCommands } from "../../globalType";
+import { BdsSession, bdsSessionCommands, playerAction2 } from '../../globalType';
 import { getConfig } from "./config";
 import { gitBackup, gitBackupOption } from "../../backup/git";
 import { createZipBackup } from "../../backup/zip";
+import events from "../../lib/customEvents";
+import portislisten from "../../lib/portIsAllocated";
 
 const bedrockSesions: {[key: string]: BdsSession} = {};
 export function getSessions() {return bedrockSesions;}
 
 const ServerPath = path.join(serverRoot, "bedrock");
 export async function startServer(): Promise<BdsSession> {
+  if (!(fs.existsSync(ServerPath))) throw new Error("Install server first");
   const SessionID = crypto.randomUUID();
-  const Process: {command: string; args: Array<string>; env: {[env: string]: string};} = {
-    command: "",
-    args: [],
-    env: {...process.env}
-  };
+  const serverConfig = await getConfig();
+  if (await portislisten(serverConfig.port.v4)) throw new Error("Port is already in use");
+  if (await portislisten(serverConfig.port.v6)) throw new Error("Port is already in use");
+  const Process: {command: string; args: Array<string>; env: {[env: string]: string};} = {command: "", args: [], env: {...process.env}};
   if (process.platform === "darwin") throw new Error("Run Docker image");
     Process.command = path.resolve(ServerPath, "bedrock_server"+(process.platform === "win32"?".exe":""));
     if (process.platform !== "win32") {
@@ -37,68 +38,45 @@ export async function startServer(): Promise<BdsSession> {
   }
 
   // Start Server
-  const serverEvents = new events();
-  const StartDate = new Date();
+  const serverEvents = new events({captureRejections: false});
+  serverEvents.setMaxListeners(0);
   const ServerProcess = await child_process.execServer({runOn: "host"}, Process.command, Process.args, {env: Process.env, cwd: ServerPath});
-  const { onExit } = ServerProcess;
-  const onLog = {on: ServerProcess.on, once: ServerProcess.once};
-  const playerCallbacks: {[id: string]: {callback: (data: {player: string; action: "connect"|"disconnect"|"unknown"; date: Date;}) => void}} = {};
-  const onPlayer = (callback: (data: {player: string; action: "connect"|"disconnect"|"unknown"; date: Date;}) => void) => {
-    const uid = crypto.randomUUID();
-    playerCallbacks[uid] = {callback: callback};
-    return uid;
-  };
+  // Log Server redirect to callbacks events and exit
+  ServerProcess.on("out", data => serverEvents.emit("log_stdout", data));
+  ServerProcess.on("err", data => serverEvents.emit("log_stderr", data));
+  ServerProcess.on("all", data => serverEvents.emit("log", data));
+  ServerProcess.Exec.on("exit", code => {
+    serverEvents.emit("closed", code);
+    if (code === null) serverEvents.emit("err", new Error("Server exited with code null"));
+  });
 
-  const playersConnections: {
-    [player: string]: {
-      action: "connect"|"disconnect"|"unknown";
-      date: Date;
-      history: Array<{
-        action: "connect"|"disconnect"|"unknown";
-        date: Date
-      }>
-    }
-  } = {};
-  const ports: Array<{port: number; protocol?: "TCP"|"UDP"; version?: "IPv4"|"IPv6"|"IPv4/IPv6";}> = [];
+  // on start
+  serverEvents.on("log", lineData => {
+    // [2022-05-19 22:35:09:315 INFO] Server started.
+    if (/\[.*\]\s+Server\s+started\./.test(lineData)) serverEvents.emit("started", new Date());
+  });
 
   // Port
-  onLog.on("all", data => {
+  serverEvents.on("log", data => {
     const portParse = data.match(/(IPv[46])\s+supported,\s+port:\s+(.*)/);
-    if (!!portParse) {
-      ports.push({
-        port: parseInt(portParse[2]),
-        version: portParse[1] as "IPv4"|"IPv6",
-        protocol: "UDP"
-      });
-    }
+    if (!!portParse) serverEvents.emit("port_listen", {port: parseInt(portParse[2]), protocol: "UDP", version: portParse[1] as "IPv4"|"IPv6"});
   });
 
   // Player
-  onLog.on("all", data => {
+  serverEvents.on("log", data => {
     if (/r\s+.*\:\s+.*\,\s+xuid\:\s+.*/gi.test(data)) {
       const actionDate = new Date();
       const [action, player, xuid] = (data.match(/r\s+(.*)\:\s+(.*)\,\s+xuid\:\s+(.*)/)||[]).slice(1, 4);
-      const __PlayerAction: {player: string, xuid: string|undefined, action: "connect"|"disconnect"|"unknown"} = {
-        player: player,
-        xuid: xuid,
-        action: "unknown"
-      };
-      if (action === "connected") __PlayerAction.action = "connect"; else if (action === "disconnected") __PlayerAction.action = "disconnect";
-      if (!playersConnections[__PlayerAction.player]) playersConnections[__PlayerAction.player] = {
-        action: __PlayerAction.action,
-        date: actionDate,
-        history: [{
-          action: __PlayerAction.action,
-          date: actionDate
-        }]
-      }; else {
-        playersConnections[__PlayerAction.player].action = __PlayerAction.action;
-        playersConnections[__PlayerAction.player].date = actionDate;
-        playersConnections[__PlayerAction.player].history.push({
-          action: __PlayerAction.action,
-          date: actionDate
-        });
-      }
+      const __PlayerAction: playerAction2 = {player: player, xuid: xuid, action: "unknown", Date: actionDate};
+      if (action === "connected") __PlayerAction.action = "connect";
+      else if (action === "disconnected") __PlayerAction.action = "disconnect";
+
+      // Server player event
+      serverEvents.emit("player", __PlayerAction);
+      delete __PlayerAction.action;
+      if (action === "connect") serverEvents.emit("player_connect", __PlayerAction);
+      else if (action === "disconnect") serverEvents.emit("player_disconnect", __PlayerAction);
+      else serverEvents.emit("player_unknown", __PlayerAction);
     }
   });
 
@@ -164,7 +142,7 @@ export async function startServer(): Promise<BdsSession> {
       }
     });
     CrontimeBackup.start();
-    onExit().catch(() => null).then(() => CrontimeBackup.stop());
+    serverEvents.on("closed", () => CrontimeBackup.stop());
     return CrontimeBackup;
   }
 
@@ -172,43 +150,50 @@ export async function startServer(): Promise<BdsSession> {
   const logFile = path.resolve(process.env.LOG_PATH||path.resolve(ServerPath, "../log"), `bedrock_${SessionID}.log`);
   if(!(fs.existsSync(path.parse(logFile).dir))) fs.mkdirSync(path.parse(logFile).dir, {recursive: true});
   const logStream = fs.createWriteStream(logFile, {flags: "w+"});
-  logStream.write(`[${StartDate.toString()}] Server started\n\n`);
+  logStream.write(`[${(new Date()).toString()}] Server started\n\n`);
   ServerProcess.Exec.stdout.pipe(logStream);
   ServerProcess.Exec.stderr.pipe(logStream);
-
-  const serverOn = (act: "started" | "ban", call: (...any: any[]) => void) => serverEvents.on(act, call);
-  const serverOnce = (act: "started" | "ban", call: (...any: any[]) => void) => serverEvents.once(act, call);
 
   // Session Object
   const Seesion: BdsSession = {
     id: SessionID,
-    startDate: StartDate,
+    logFile: logFile,
     creteBackup: backupCron,
-    onExit: onExit,
-    onPlayer: onPlayer,
-    ports: () => ports,
-    getPlayer: () => playersConnections,
-    server: {
-      on: serverOn,
-      once: serverOnce
-    },
-    seed: (await getConfig()).worldSeed,
-    started: false,
-    addonManeger: undefined,
-    log: onLog,
+    seed: serverConfig.worldSeed,
+    ports: [],
+    Player: {},
     commands: serverCommands,
+    server: {
+      on: (act, fn) => serverEvents.on(act, fn),
+      once: (act, fn) => serverEvents.once(act, fn),
+      started: false,
+      startDate: new Date(),
+    }
   };
 
-  onLog.on("all", lineData => {
-    // [2022-05-19 22:35:09:315 INFO] Server started.
-    if (/\[.*\]\s+Server\s+started\./.test(lineData)) {
-      Seesion.started = true;
-      serverEvents.emit("started", new Date());
+  serverEvents.on("port_listen", Seesion.ports.push);
+  serverEvents.on("started", date => {Seesion.server.started = true; Seesion.server.startDate = date;});
+  serverEvents.on("player", __PlayerAction => {
+    // Add to object
+    if (!Seesion.Player[__PlayerAction.player]) Seesion.Player[__PlayerAction.player] = {
+      action: __PlayerAction.action,
+      date: __PlayerAction.Date,
+      history: [{
+        action: __PlayerAction.action,
+        date: __PlayerAction.Date
+      }]
+    }; else {
+      Seesion.Player[__PlayerAction.player].action = __PlayerAction.action;
+      Seesion.Player[__PlayerAction.player].date = __PlayerAction.Date;
+      Seesion.Player[__PlayerAction.player].history.push({
+        action: __PlayerAction.action,
+        date: __PlayerAction.Date
+      });
     }
   });
 
   // Return Session
   bedrockSesions[SessionID] = Seesion;
-  onExit().catch(() => null).then(() => delete bedrockSesions[SessionID]);
+  serverEvents.on("closed", () => delete bedrockSesions[SessionID]);
   return Seesion;
 }

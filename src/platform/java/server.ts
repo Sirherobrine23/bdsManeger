@@ -1,13 +1,13 @@
 import path from "node:path";
 import fs from "node:fs";
-import events from "events";
 import crypto from "crypto";
 import node_cron from "cron";
 import * as child_process from "../../childProcess";
 import { backupRoot, serverRoot } from "../../pathControl";
-import { BdsSession, bdsSessionCommands } from "../../globalType";
+import { BdsSession, bdsSessionCommands, serverListen } from '../../globalType';
 import { gitBackup, gitBackupOption } from "../../backup/git";
 import { createZipBackup } from "../../backup/zip";
+import events from "../../lib/customEvents";
 
 const javaSesions: {[key: string]: BdsSession} = {};
 export function getSessions() {return javaSesions;}
@@ -19,27 +19,13 @@ export async function startServer(): Promise<BdsSession> {
   const serverEvents = new events();
   const StartDate = new Date();
   const ServerProcess = await child_process.execServer({runOn: "host"}, "java", ["-jar", "Server.jar"], {cwd: ServerPath});
-  const { onExit } = ServerProcess;
-  const onLog = {on: ServerProcess.on, once: ServerProcess.once};
-  const playerCallbacks: {[id: string]: {callback: (data: {player: string; action: "connect"|"disconnect"|"unknown"; date: Date;}) => void}} = {};
-  const onPlayer = (callback: (data: {player: string; action: "connect"|"disconnect"|"unknown"; date: Date;}) => void) => {
-    const uid = crypto.randomUUID();
-    playerCallbacks[uid] = {callback: callback};
-    return uid;
-  };
-
-  const ports: Array<{port: number; protocol?: "TCP"|"UDP"; version?: "IPv4"|"IPv6"|"IPv4/IPv6";}> = [];
-  const playersConnections: {[player: string]: {action: "connect"|"disconnect"|"unknown", date: Date, history: Array<{action: "connect"|"disconnect"|"unknown", date: Date}>}} = {};
-
-  // Parse ports
-  onLog.on("all", data => {
-    const portParse = data.match(/Starting\s+Minecraft\s+server\s+on\s+(.*)\:(\d+)/);
-    if (!!portParse) {
-      ports.push({
-        port: parseInt(portParse[2]),
-        version: "IPv4/IPv6"
-      });
-    }
+  // Log Server redirect to callbacks events and exit
+  ServerProcess.on("out", data => serverEvents.emit("log_stdout", data));
+  ServerProcess.on("err", data => serverEvents.emit("log_stderr", data));
+  ServerProcess.on("all", data => serverEvents.emit("log", data));
+  ServerProcess.Exec.on("exit", code => {
+    serverEvents.emit("closed", code);
+    if (code === null) serverEvents.emit("err", new Error("Server exited with code null"));
   });
 
   // Run Command
@@ -104,7 +90,7 @@ export async function startServer(): Promise<BdsSession> {
       }
     });
     CrontimeBackup.start();
-    onExit().catch(() => null).then(() => CrontimeBackup.stop());
+    serverEvents.on("closed", () => CrontimeBackup.stop());
     return CrontimeBackup;
   }
 
@@ -116,39 +102,49 @@ export async function startServer(): Promise<BdsSession> {
   ServerProcess.Exec.stdout.pipe(logStream);
   ServerProcess.Exec.stderr.pipe(logStream);
 
-  const serverOn = (act: "started" | "ban", call: (...any: any[]) => void) => serverEvents.on(act, call);
-  const serverOnce = (act: "started" | "ban", call: (...any: any[]) => void) => serverEvents.once(act, call);
-
   // Session Object
   const Seesion: BdsSession = {
     id: SessionID,
-    startDate: StartDate,
     creteBackup: backupCron,
-    onExit: onExit,
-    onPlayer: onPlayer,
-    ports: () => ports,
-    getPlayer: () => playersConnections,
-    server: {
-      on: serverOn,
-      once: serverOnce
-    },
+    ports: [],
+    Player: {},
     seed: undefined,
-    started: false,
-    addonManeger: undefined,
-    log: onLog,
     commands: serverCommands,
+    server: {
+      on: (act, fn) => serverEvents.on(act, fn),
+      once: (act, fn) => serverEvents.once(act, fn),
+      started: false,
+      startDate: StartDate
+    }
   };
 
-  onLog.on("all", lineData => {
+  // Detect server start
+  serverEvents.on("log", lineData => {
     // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
     if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) {
-      Seesion.started = true;
-      serverEvents.emit("started", new Date());
+      const StartDate = new Date();
+      Seesion.server.startDate = StartDate;
+      serverEvents.emit("started", StartDate);
+      Seesion.server.started = true;
+    }
+  });
+
+
+  // Parse ports
+  serverEvents.on("log", data => {
+    const portParse = data.match(/Starting\s+Minecraft\s+server\s+on\s+(.*)\:(\d+)/);
+    if (!!portParse) {
+      const portObject: serverListen = {
+        port: parseInt(portParse[2]),
+        version: "IPv4/IPv6"
+      };
+      serverEvents.emit("port_listen", portObject);
+      Seesion.ports.push(portObject);
     }
   });
 
   // Return Session
   javaSesions[SessionID] = Seesion;
-  onExit().catch(() => null).then(() => delete javaSesions[SessionID]);
+  serverEvents.on("closed", () => delete javaSesions[SessionID]);
   return Seesion;
 }
