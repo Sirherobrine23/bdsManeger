@@ -8,7 +8,6 @@ export default async function pocketmineTest() {
   // Run Server
   const server = await pocketmine.server.startServer();
   server.server.once("started", () => console.log("Server started"));
-  server.commands.execCommand("eng").execCommand("n")
   await new Promise((resolve, reject) => {
     server.server.once("started", resolve);
     server.server.once("closed", resolve);

@@ -21,7 +21,7 @@ export async function startServer(): Promise<BdsSession> {
     Process.command = path.resolve(ServerPath, "bin/bin/php");
     await child_process.runAsync("chmod", ["a+x", Process.command]);
   }
-  Process.args.push(path.join(ServerPath, "PocketMine.phar"));
+  Process.args.push(path.join(ServerPath, "PocketMine.phar"), "--no-wizard", "--enable-ansi");
 
   // Start Server
   const serverEvents = new events();
