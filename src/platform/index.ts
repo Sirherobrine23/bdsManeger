@@ -2,6 +2,7 @@ import * as bedrock from "./bedrock/index";
 import * as pocketmine from "./pocketmine/index";
 import * as java from "./java/index";
 import * as spigot from "./spigot/index";
+//
 // import { BdsSession } from "../globalType";
 //
 // type globalPlatform = {
@@ -26,5 +27,5 @@ import * as spigot from "./spigot/index";
 //     },
 //   }
 // };
-
-export default {bedrock, java, pocketmine, spigot}
+// export default {bedrock, java, pocketmine, spigot} as globalPlatform;
+export default {bedrock, java, pocketmine, spigot};

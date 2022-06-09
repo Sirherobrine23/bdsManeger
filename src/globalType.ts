@@ -1,6 +1,4 @@
 import { CronJob } from "cron";
-import { gitBackupOption } from "./backup/git";
-
 export type Platform = "bedrock"|"java"|"pocketmine"|"spigot";
 export const PlatformArray = ["bedrock", "java", "pocketmine", "spigot"];
 
@@ -20,12 +18,13 @@ export type bdsSessionCommands = {
 export type startServerOptions = {
   /** Save only worlds/maps without server software - (Beta) */
   storageOnlyWorlds?: boolean;
-  gitBackup?: gitBackupOption;
 };
 export type playerAction1 = {player: string, Date: Date; xuid?: string|undefined}
 export type playerAction2 = playerAction1 & {action: "connect"|"disconnect"|"unknown"}
 
 // Server events
+export type serverListen = {port: number; protocol?: "TCP"|"UDP"; version?: "IPv4"|"IPv6"|"IPv4/IPv6"};
+export type playerObject = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
 export interface serverOn {
   (act: "started", fn: (data: Date) => void);
   (act: "err", fn: (data: Error|number) => void);
@@ -40,32 +39,31 @@ export interface serverOn {
   (act: "log_stdout", fn: (data: string) => void);
   (act: "log_stderr", fn: (data: string) => void);
 }
-export type serverListen = {port: number; protocol?: "TCP"|"UDP"; version?: "IPv4"|"IPv6"|"IPv4/IPv6"};
-export type playerObject = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
 
+// Type to Bds Session (All Platforms)
 export type BdsSession = {
   /** Server Session ID */
   id: string;
   logFile?: string;
   /** register cron job to create backups */
-  creteBackup: (crontime: string|Date, option?: {type: "git"; config: gitBackupOption}|{type: "zip", pathStorage?: string}) => CronJob;
+  creteBackup: (crontime: string|Date, option?: {type: "zip", pathStorage?: string}) => CronJob;
   /** Get server players historic connections */
   Player: playerObject;
   /** Get Server ports. listening. */
   ports: Array<serverListen>;
   /** if exists server map get world seed, fist map not get seed */
   seed?: string|number;
+  /** Basic server functions. */
+  commands: bdsSessionCommands;
   /** Server actions, example on avaible to connect or banned¹ */
   server: {
-    /** Server actions, example on avaible to connect or banned¹ */
+    /** Server actions */
     on: serverOn;
-    /** Server actions, example on avaible to connect or banned¹ */
+    /** Server actions */
     once: serverOn;
     /** Server Started date */
     startDate: Date;
     /** Server Started */
     started: boolean;
   };
-  /** Basic server functions. */
-  commands: bdsSessionCommands;
 };

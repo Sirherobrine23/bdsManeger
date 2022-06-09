@@ -1,17 +1,19 @@
 import platformManeger from "./platform";
-import * as bdsTypes from "./globalType";
+import { BdsSession, Platform } from "./globalType";
 
 // Server Sessions
-const Sessions: {[Session: string]: bdsTypes.BdsSession} = {};
-export function getSessions(): {[SessionID: string]: bdsTypes.BdsSession} {return {
+const Sessions: {[Session: string]: BdsSession} = {};
+export function getSessions(): {[SessionID: string]: BdsSession} {return {
   ...Sessions,
   ...(platformManeger.bedrock.server.getSessions()),
+  ...(platformManeger.pocketmine.server.getSessions()),
   ...(platformManeger.java.server.getSessions()),
+  ...(platformManeger.spigot.server.getSessions()),
 };}
 
 // Start Server
-export default Start;
-export async function Start(Platform: bdsTypes.Platform, options?: bdsTypes.startServerOptions): Promise<bdsTypes.BdsSession> {
+export default StartServer;
+export async function StartServer(Platform: Platform): Promise<BdsSession> {
   if (Platform === "bedrock") return platformManeger.bedrock.server.startServer();
   else if (Platform === "java") return platformManeger.java.server.startServer();
   else if (Platform === "pocketmine") return platformManeger.pocketmine.server.startServer();

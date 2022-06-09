@@ -4,8 +4,8 @@ import os from "os";
 import adm_zip from "adm-zip";
 import tar from "tar";
 import * as versionManeger from "@the-bds-maneger/server_versions";
-import * as httpRequests from "../../HttpRequests";
-import * as childProcess from "../../childProcess";
+import * as httpRequests from "../../lib/HttpRequests";
+import * as childProcess from "../../lib/childProcess";
 import Readdirrec from "../../lib/listRecursive";
 import { serverRoot } from "../../pathControl";
 

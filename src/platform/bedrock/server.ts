@@ -2,11 +2,10 @@ import path from "node:path";
 import fs from "node:fs";
 import crypto from "crypto";
 import node_cron from "cron";
-import * as child_process from "../../childProcess";
+import * as child_process from "../../lib/childProcess";
 import { backupRoot, serverRoot } from "../../pathControl";
 import { BdsSession, bdsSessionCommands, playerAction2 } from '../../globalType';
 import { getConfig } from "./config";
-import { gitBackup, gitBackupOption } from "../../backup/git";
 import { createZipBackup } from "../../backup/zip";
 import events from "../../lib/customEvents";
 import portislisten from "../../lib/portIsAllocated";
@@ -111,12 +110,10 @@ export async function startServer(): Promise<BdsSession> {
     }
   }
 
-  const backupCron = (crontime: string|Date, option?: {type: "git"; config: gitBackupOption}|{type: "zip", config?: {pathZip?: string}}): node_cron.CronJob => {
+  const backupCron = (crontime: string|Date, option?: {type: "zip", config?: {pathZip?: string}}): node_cron.CronJob => {
     // Validate Config
     if (option) {
-      if (option.type === "git") {
-        if (!option.config) throw new Error("Config is required");
-      } else if (option.type === "zip") {}
+      if (option.type === "zip") {}
       else option = {type: "zip"};
     }
     async function lockServerBackup() {
@@ -131,10 +128,7 @@ export async function startServer(): Promise<BdsSession> {
     }
     if (!option) option = {type: "zip"};
     const CrontimeBackup = new node_cron.CronJob(crontime, async () => {
-      if (option.type === "git") {
-        await lockServerBackup();
-        await gitBackup(option.config).catch(() => undefined).then(() => unLockServerBackup());
-      } else if (option.type === "zip") {
+      if (option.type === "zip") {
         await lockServerBackup();
         if (!!option?.config?.pathZip) await createZipBackup({path: path.resolve(backupRoot, option?.config?.pathZip)}).catch(() => undefined);
         else await createZipBackup(true).catch(() => undefined);
