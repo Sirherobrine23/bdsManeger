@@ -7,6 +7,7 @@ export default async function javaTest() {
 
   // Start Server
   const server = await java.server.startServer();
+  if (process.argv.includes("--show-log")) server.server.on("log", console.log);
   server.server.once("started", () => console.log("Server started"));
   server.server.on("port_listen", port => console.log("Server listening on port: %o with protocol: %s", port.port, port.protocol));
   await new Promise((resolve, reject) => {

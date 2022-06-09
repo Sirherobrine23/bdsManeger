@@ -5,7 +5,7 @@ import admZip from "adm-zip";
 import { serverRoot } from '../../pathControl';
 const javaPath = path.join(serverRoot, "spigot");
 
-const filesFoldertoIgnore = ["Server.jar", "eula.txt", "libraries", "logs", "usercache.json", "versions"];
+const filesFoldertoIgnore = ["Server.jar", "bundler", "eula.txt", "help.yml", "logs", "usercache.json"];
 
 /**
  * Create backup for Worlds and Settings

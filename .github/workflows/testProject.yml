@@ -32,4 +32,4 @@ jobs:
         run: npm ci
 
       - name: Test
-        run: npm run test -- --exit-on-error --show-return
+        run: npm run test -- --show-log

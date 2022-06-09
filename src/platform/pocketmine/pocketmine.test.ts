@@ -7,6 +7,7 @@ export default async function pocketmineTest() {
 
   // Run Server
   const server = await pocketmine.server.startServer();
+  if (process.argv.includes("--show-log")) server.server.on("log", console.log);
   server.server.once("started", () => console.log("Server started"));
   await new Promise((resolve, reject) => {
     server.server.once("started", resolve);

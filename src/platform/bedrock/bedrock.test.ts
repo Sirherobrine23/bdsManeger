@@ -15,6 +15,7 @@ export default async function bedrockTest() {
 
   // Run Server
   const server = await bedrock.server.startServer();
+  if (process.argv.includes("--show-log")) server.server.on("log", console.log);
   server.server.once("started", () => console.log("Server started"));
   await new Promise((resolve, reject) => {
     server.server.once("started", resolve);
