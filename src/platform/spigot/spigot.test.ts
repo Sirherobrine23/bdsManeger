@@ -1,12 +1,12 @@
-import * as java from "./index";
+import * as spigot from "./index";
 
-export default async function javaTest() {
+export default async function spigotTest() {
   // Download and install server
-  const download = await java.DownloadServer(true);
+  const download = await spigot.DownloadServer(true);
   console.log("Version: %s, Date: %o, url: %s", download.version, download.publishDate, download.url);
 
   // Start Server
-  const server = await java.server.startServer();
+  const server = await spigot.server.startServer();
   server.server.once("started", () => console.log("Server started"));
   server.server.on("port_listen", port => console.log("Server listening on port: %o with protocol: %s", port.port, port.protocol));
   await new Promise((resolve, reject) => {
@@ -16,7 +16,7 @@ export default async function javaTest() {
   await server.commands.stop();
 
   // Backup
-  const zipFile = await java.backup.CreateBackup();
+  const zipFile = await spigot.backup.CreateBackup();
   console.log("Backup created: %o", zipFile.length);
   return;
 }

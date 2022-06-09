@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import node_cron from "cron";
 import * as child_process from "../../childProcess";
 import { backupRoot, serverRoot } from "../../pathControl";
-import { BdsSession, bdsSessionCommands, serverListen } from '../../globalType';
+import { BdsSession, bdsSessionCommands } from '../../globalType';
 import { gitBackup, gitBackupOption } from "../../backup/git";
 import { createZipBackup } from "../../backup/zip";
 import events from "../../lib/customEvents";
@@ -25,6 +25,18 @@ export async function startServer(): Promise<BdsSession> {
   execOn("err", data => serverEvents.emit("log_stderr", data));
   execOn("all", data => serverEvents.emit("log", data));
   onExit().catch(err => {serverEvents.emit("err", err);return null}).then(code => serverEvents.emit("closed", code));
+
+  // Server Start
+  serverEvents.on("log", lineData => {
+    // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
+    if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) serverEvents.emit("started", new Date());
+  });
+
+  // Parse ports
+  serverEvents.on("log", data => {
+    const portParse = data.match(/Starting\s+Minecraft\s+server\s+on\s+(.*)\:(\d+)/);
+    if (!!portParse) serverEvents.emit("port_listen", {port: parseInt(portParse[2]), version: "IPv4/IPv6", protocol: "TCP"});
+  });
 
   // Run Command
   const serverCommands: bdsSessionCommands = {
@@ -116,25 +128,8 @@ export async function startServer(): Promise<BdsSession> {
     }
   };
 
-  serverEvents.on("log", lineData => {
-    // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
-    if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) {
-      const StartDate = new Date();
-      Seesion.server.startDate = StartDate;
-      serverEvents.emit("started", StartDate);
-      Seesion.server.started = true;
-    }
-  });
-
-  // Parse ports
-  serverEvents.on("log", data => {
-    const portParse = data.match(/Starting\s+Minecraft\s+server\s+on\s+(.*)\:(\d+)/);
-    if (!!portParse) {
-      const portObject: serverListen = {port: parseInt(portParse[2]), version: "IPv4/IPv6"};
-      serverEvents.emit("port_listen", portObject);
-      Seesion.ports.push(portObject);
-    }
-  });
+  serverEvents.on("started", StartDate => {Seesion.server.startDate = StartDate; Seesion.server.started = true;});
+  serverEvents.on("port_listen", portObject => Seesion.ports.push(portObject));
 
   // Return Session
   javaSesions[SessionID] = Seesion;

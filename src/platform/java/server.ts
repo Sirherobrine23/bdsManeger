@@ -4,7 +4,7 @@ import crypto from "crypto";
 import node_cron from "cron";
 import * as child_process from "../../childProcess";
 import { backupRoot, serverRoot } from "../../pathControl";
-import { BdsSession, bdsSessionCommands, serverListen } from '../../globalType';
+import { BdsSession, bdsSessionCommands } from '../../globalType';
 import { gitBackup, gitBackupOption } from "../../backup/git";
 import { createZipBackup } from "../../backup/zip";
 import events from "../../lib/customEvents";
@@ -26,6 +26,17 @@ export async function startServer(): Promise<BdsSession> {
   ServerProcess.Exec.on("exit", code => {
     serverEvents.emit("closed", code);
     if (code === null) serverEvents.emit("err", new Error("Server exited with code null"));
+  });
+
+  // Detect server start
+  serverEvents.on("log", lineData => {
+    // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
+    if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) serverEvents.emit("started", new Date());
+  });
+  // Parse ports
+  serverEvents.on("log", data => {
+    const portParse = data.match(/Starting\s+Minecraft\s+server\s+on\s+(.*)\:(\d+)/);
+    if (!!portParse) serverEvents.emit("port_listen", {port: parseInt(portParse[2]), protocol: "TCP", version: "IPv4/IPv6",});
   });
 
   // Run Command
@@ -118,30 +129,9 @@ export async function startServer(): Promise<BdsSession> {
     }
   };
 
-  // Detect server start
-  serverEvents.on("log", lineData => {
-    // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
-    if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) {
-      const StartDate = new Date();
-      Seesion.server.startDate = StartDate;
-      serverEvents.emit("started", StartDate);
-      Seesion.server.started = true;
-    }
-  });
-
-
-  // Parse ports
-  serverEvents.on("log", data => {
-    const portParse = data.match(/Starting\s+Minecraft\s+server\s+on\s+(.*)\:(\d+)/);
-    if (!!portParse) {
-      const portObject: serverListen = {
-        port: parseInt(portParse[2]),
-        version: "IPv4/IPv6"
-      };
-      serverEvents.emit("port_listen", portObject);
-      Seesion.ports.push(portObject);
-    }
-  });
+  // Server Events
+  serverEvents.on("port_listen", port => Seesion.ports.push(port));
+  serverEvents.on("started", StartDate => {Seesion.server.started = true; Seesion.server.startDate = StartDate;});
 
   // Return Session
   javaSesions[SessionID] = Seesion;

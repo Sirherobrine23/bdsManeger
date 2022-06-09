@@ -67,16 +67,16 @@ export async function startServer(): Promise<BdsSession> {
     if (/r\s+.*\:\s+.*\,\s+xuid\:\s+.*/gi.test(data)) {
       const actionDate = new Date();
       const [action, player, xuid] = (data.match(/r\s+(.*)\:\s+(.*)\,\s+xuid\:\s+(.*)/)||[]).slice(1, 4);
-      const __PlayerAction: playerAction2 = {player: player, xuid: xuid, action: "unknown", Date: actionDate};
-      if (action === "connected") __PlayerAction.action = "connect";
-      else if (action === "disconnected") __PlayerAction.action = "disconnect";
+      const playerAction: playerAction2 = {player: player, xuid: xuid, action: "unknown", Date: actionDate};
+      if (action === "connected") playerAction.action = "connect";
+      else if (action === "disconnected") playerAction.action = "disconnect";
 
       // Server player event
-      serverEvents.emit("player", __PlayerAction);
-      delete __PlayerAction.action;
-      if (action === "connect") serverEvents.emit("player_connect", __PlayerAction);
-      else if (action === "disconnect") serverEvents.emit("player_disconnect", __PlayerAction);
-      else serverEvents.emit("player_unknown", __PlayerAction);
+      serverEvents.emit("player", playerAction);
+      delete playerAction.action;
+      if (action === "connect") serverEvents.emit("player_connect", playerAction);
+      else if (action === "disconnect") serverEvents.emit("player_disconnect", playerAction);
+      else serverEvents.emit("player_unknown", playerAction);
     }
   });
 
@@ -173,23 +173,24 @@ export async function startServer(): Promise<BdsSession> {
 
   serverEvents.on("port_listen", Seesion.ports.push);
   serverEvents.on("started", date => {Seesion.server.started = true; Seesion.server.startDate = date;});
-  serverEvents.on("player", __PlayerAction => {
+  serverEvents.on("player", playerAction => {
     // Add to object
-    if (!Seesion.Player[__PlayerAction.player]) Seesion.Player[__PlayerAction.player] = {
-      action: __PlayerAction.action,
-      date: __PlayerAction.Date,
-      history: [{
-        action: __PlayerAction.action,
-        date: __PlayerAction.Date
-      }]
-    }; else {
-      Seesion.Player[__PlayerAction.player].action = __PlayerAction.action;
-      Seesion.Player[__PlayerAction.player].date = __PlayerAction.Date;
-      Seesion.Player[__PlayerAction.player].history.push({
-        action: __PlayerAction.action,
-        date: __PlayerAction.Date
+    const playerExist = !!Seesion.Player[playerAction.player];
+    if (playerExist) {
+      Seesion.Player[playerAction.player].action = playerAction.action;
+      Seesion.Player[playerAction.player].date = playerAction.Date;
+      Seesion.Player[playerAction.player].history.push({
+        action: playerAction.action,
+        date: playerAction.Date
       });
-    }
+    } else Seesion.Player[playerAction.player] = {
+      action: playerAction.action,
+      date: playerAction.Date,
+      history: [{
+        action: playerAction.action,
+        date: playerAction.Date
+      }]
+    };
   });
 
   // Return Session

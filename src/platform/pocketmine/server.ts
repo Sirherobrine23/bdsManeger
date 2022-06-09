@@ -15,28 +15,68 @@ export function getSessions() {return pocketmineSesions;}
 const ServerPath = path.join(serverRoot, "pocketmine");
 export async function startServer(): Promise<BdsSession> {
   const SessionID = crypto.randomUUID();
-  const Process: {command: string; args: Array<string>; env: {[env: string]: string};} = {
-    command: "",
-    args: [],
-    env: {...process.env}
-  };
-  Process.args.push(path.join(ServerPath, "PocketMine.phar"));
+  const Process: {command: string; args: Array<string>} = {command: "", args: []};
   if (process.platform === "win32") Process.command = path.resolve(ServerPath, "bin/php/php.exe");
   else {
     Process.command = path.resolve(ServerPath, "bin/bin/php");
     await child_process.runAsync("chmod", ["a+x", Process.command]);
   }
+  Process.args.push(path.join(ServerPath, "PocketMine.phar"));
 
   // Start Server
   const serverEvents = new events();
   const StartDate = new Date();
-  const ServerProcess = await child_process.execServer({runOn: "host"}, Process.command, Process.args, {env: Process.env, cwd: ServerPath});
+  const ServerProcess = await child_process.execServer({runOn: "host"}, Process.command, Process.args, {cwd: ServerPath});
   const { onExit, on: execOn } = ServerProcess;
   // Log Server redirect to callbacks events and exit
   execOn("out", data => serverEvents.emit("log_stdout", data));
   execOn("err", data => serverEvents.emit("log_stderr", data));
   execOn("all", data => serverEvents.emit("log", data));
   onExit().catch(err => {serverEvents.emit("err", err);return null}).then(code => serverEvents.emit("closed", code));
+
+  // On server started
+  serverEvents.on("log", lineData => {
+    // [22:52:05.580] [Server thread/INFO]: Done (0.583s)! For help, type "help" or "?"
+    if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) serverEvents.emit("started", new Date());
+  });
+
+  // Port listen
+  serverEvents.on("log", data => {
+    // [16:49:31.284] [Server thread/INFO]: Minecraft network interface running on [::]:19133
+    // [16:49:31.273] [Server thread/INFO]: Minecraft network interface running on 0.0.0.0:19132
+    if (/\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+.*/gi.test(data)) {
+      const matchString = data.match(/\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(.*)/);
+      if (!!matchString) {
+        const portParse = matchString[1];
+        const portObject: serverListen = {port: 0, version: "IPv4", protocol: "UDP"};
+        const isIpv6 = /\[.*\]:/.test(portParse);
+        if (!isIpv6) portObject.port = parseInt(portParse.split(":")[1]);
+        else {
+          portObject.port = parseInt(portParse.replace(/\[.*\]:/, "").trim())
+          portObject.version = "IPv6";
+        }
+        serverEvents.emit("port_listen", portObject);
+      }
+    }
+  });
+
+  // Player Actions
+  serverEvents.on("log", data => {
+    const actionDate = new Date();
+    if (/\[.*\]:\s+(.*)\s+(.*)\s+the\s+game/gi.test(data)) {
+      const [action, player] = (data.match(/[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi)||[]).slice(1, 3);
+      const playerAction: playerAction2 = {player: player, action: "unknown", Date: actionDate};
+      if (action === "joined") playerAction.action = "connect";
+      else if (action === "left") playerAction.action = "disconnect";
+
+      // Server player event
+      serverEvents.emit("player", playerAction);
+      delete playerAction.action;
+      if (action === "connect") serverEvents.emit("player_connect", playerAction);
+      else if (action === "disconnect") serverEvents.emit("player_disconnect", playerAction);
+      else serverEvents.emit("player_unknown", playerAction);
+    }
+  });
 
   // Run Command
   const serverCommands: bdsSessionCommands = {
@@ -128,68 +168,23 @@ export async function startServer(): Promise<BdsSession> {
     }
   };
 
-  // On server started
-  serverEvents.on("log", lineData => {
-    // [22:52:05.580] [Server thread/INFO]: Done (0.583s)! For help, type "help" or "?"
-    if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) {
-      const StartDate = new Date();
-      Seesion.server.startDate = StartDate;
-      serverEvents.emit("started", StartDate);
-      Seesion.server.started = true;
-    }
-  });
-
-  // Port listen
-  serverEvents.on("log", data => {
-    // [16:49:31.284] [Server thread/INFO]: Minecraft network interface running on [::]:19133
-    // [16:49:31.273] [Server thread/INFO]: Minecraft network interface running on 0.0.0.0:19132
-    if (/\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+.*/gi.test(data)) {
-      const matchString = data.match(/\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(.*)/);
-      if (!!matchString) {
-        const portParse = matchString[1];
-        const isIpv6 = /\[.*\]:/.test(portParse);
-        const portObject: serverListen = {port: 0, version: "IPv4"};
-        if (!isIpv6) portObject.port = parseInt(portParse.split(":")[1]);
-        else {
-          portObject.port = parseInt(portParse.replace(/\[.*\]:/, "").trim())
-          portObject.version = "IPv6";
-        }
-        serverEvents.emit("port_listen", portObject);
-        Seesion.ports.push(portObject);
-      }
-    }
-  });
-
-  // Player Actions
-  serverEvents.on("log", data => {
-    if (/\[.*\]:\s+(.*)\s+(.*)\s+the\s+game/gi.test(data)) {
-      const actionDate = new Date();
-      const [action, player] = (data.match(/[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi)||[]).slice(1, 3);
-      const __PlayerAction: playerAction2 = {player: player, action: "unknown", Date: actionDate};
-      if (action === "joined") __PlayerAction.action = "connect";
-      else if (action === "left") __PlayerAction.action = "disconnect";
-      if (!Seesion.Player[__PlayerAction.player]) Seesion.Player[__PlayerAction.player] = {
-        action: __PlayerAction.action,
-        date: actionDate,
-        history: [{
-          action: __PlayerAction.action,
-          date: actionDate
-        }]
-      }; else {
-        Seesion.Player[__PlayerAction.player].action = __PlayerAction.action;
-        Seesion.Player[__PlayerAction.player].date = actionDate;
-        Seesion.Player[__PlayerAction.player].history.push({
-          action: __PlayerAction.action,
-          date: actionDate
-        });
-      }
-
-      // Server player event
-      serverEvents.emit("player", __PlayerAction);
-      delete __PlayerAction.action;
-      if (action === "connect") serverEvents.emit("player_connect", __PlayerAction);
-      else if (action === "disconnect") serverEvents.emit("player_disconnect", __PlayerAction);
-      else serverEvents.emit("player_unknown", __PlayerAction);
+  serverEvents.on("started", StartDate => {Seesion.server.startDate = StartDate; Seesion.server.started = true;});
+  serverEvents.on("port_listen", portObject => Seesion.ports.push(portObject));
+  serverEvents.on("player", playerAction => {
+    if (!Seesion.Player[playerAction.player]) Seesion.Player[playerAction.player] = {
+      action: playerAction.action,
+      date: playerAction.Date,
+      history: [{
+        action: playerAction.action,
+        date: playerAction.Date
+      }]
+    }; else {
+      Seesion.Player[playerAction.player].action = playerAction.action;
+      Seesion.Player[playerAction.player].date = playerAction.Date;
+      Seesion.Player[playerAction.player].history.push({
+        action: playerAction.action,
+        date: playerAction.Date
+      });
     }
   });
 

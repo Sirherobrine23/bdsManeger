@@ -5,8 +5,7 @@ import admZip from "adm-zip";
 import { serverRoot } from '../../pathControl';
 const javaPath = path.join(serverRoot, "pocketmine");
 
-const filesFoldertoIgnore = [];
-
+const filesFoldertoIgnore = ["PocketMine.phar", "bin", "server.log"];
 /**
  * Create backup for Worlds and Settings
  */

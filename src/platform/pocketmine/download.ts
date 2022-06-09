@@ -52,7 +52,6 @@ async function InstallPrebuildPHP(serverPath: string) {
     const ztsFind = await Readdirrec(path.resolve(serverPath, "bin"), [/.*debug-zts.*/]);
     if (ztsFind.length === 0) return urlBin;
     const phpIniPath = (await Readdirrec(path.resolve(serverPath, "bin"), [/php\.ini$/]))[0].path;
-    console.log("Updating php.ini");
     let phpIni = await fs.promises.readFile(phpIniPath, "utf8");
     if (phpIni.includes("extension_dir")) {
       await fs.promises.writeFile(phpIniPath, phpIni.replace(/extension_dir=.*/g, ""));
