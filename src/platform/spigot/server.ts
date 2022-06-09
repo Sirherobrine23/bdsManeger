@@ -1,31 +1,23 @@
 import path from "node:path";
 import fs from "node:fs";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import node_cron from "cron";
 import * as child_process from "../../lib/childProcess";
 import { backupRoot, serverRoot } from "../../pathControl";
-import { BdsSession, bdsSessionCommands, serverListen, playerAction2 } from '../../globalType';
+import { BdsSession, bdsSessionCommands } from '../../globalType';
 import { createZipBackup } from "../../backup/zip";
 import events from "../../lib/customEvents";
 
-const pocketmineSesions: {[key: string]: BdsSession} = {};
-export function getSessions() {return pocketmineSesions;}
+const javaSesions: {[key: string]: BdsSession} = {};
+export function getSessions() {return javaSesions;}
 
-const ServerPath = path.join(serverRoot, "pocketmine");
+const ServerPath = path.join(serverRoot, "spigot");
 export async function startServer(): Promise<BdsSession> {
   const SessionID = crypto.randomUUID();
-  const Process: {command: string; args: Array<string>} = {command: "", args: []};
-  if (process.platform === "win32") Process.command = path.resolve(ServerPath, "bin/php/php.exe");
-  else {
-    Process.command = path.resolve(ServerPath, "bin/bin/php");
-    await child_process.runAsync("chmod", ["a+x", Process.command]);
-  }
-  Process.args.push(path.join(ServerPath, "PocketMine.phar"), "--no-wizard", "--enable-ansi");
-
   // Start Server
   const serverEvents = new events();
   const StartDate = new Date();
-  const ServerProcess = await child_process.execServer({runOn: "host"}, Process.command, Process.args, {cwd: ServerPath});
+  const ServerProcess = await child_process.execServer({runOn: "host"}, "java", ["-jar", "Server.jar"], {cwd: ServerPath});
   const { onExit, on: execOn } = ServerProcess;
   // Log Server redirect to callbacks events and exit
   execOn("out", data => serverEvents.emit("log_stdout", data));
@@ -33,48 +25,16 @@ export async function startServer(): Promise<BdsSession> {
   execOn("all", data => serverEvents.emit("log", data));
   onExit().catch(err => {serverEvents.emit("err", err);return null}).then(code => serverEvents.emit("closed", code));
 
-  // On server started
+  // Server Start
   serverEvents.on("log", lineData => {
-    // [22:52:05.580] [Server thread/INFO]: Done (0.583s)! For help, type "help" or "?"
+    // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
     if (/\[.*\].*\s+Done\s+\(.*\)\!.*/.test(lineData)) serverEvents.emit("started", new Date());
   });
 
-  // Port listen
+  // Parse ports
   serverEvents.on("log", data => {
-    // [16:49:31.284] [Server thread/INFO]: Minecraft network interface running on [::]:19133
-    // [16:49:31.273] [Server thread/INFO]: Minecraft network interface running on 0.0.0.0:19132
-    if (/\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+.*/gi.test(data)) {
-      const matchString = data.match(/\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(.*)/);
-      if (!!matchString) {
-        const portParse = matchString[1];
-        const portObject: serverListen = {port: 0, version: "IPv4", protocol: "UDP"};
-        const isIpv6 = /\[.*\]:/.test(portParse);
-        if (!isIpv6) portObject.port = parseInt(portParse.split(":")[1]);
-        else {
-          portObject.port = parseInt(portParse.replace(/\[.*\]:/, "").trim())
-          portObject.version = "IPv6";
-        }
-        serverEvents.emit("port_listen", portObject);
-      }
-    }
-  });
-
-  // Player Actions
-  serverEvents.on("log", data => {
-    const actionDate = new Date();
-    if (/\[.*\]:\s+(.*)\s+(.*)\s+the\s+game/gi.test(data)) {
-      const [action, player] = (data.match(/[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi)||[]).slice(1, 3);
-      const playerAction: playerAction2 = {player: player, action: "unknown", Date: actionDate};
-      if (action === "joined") playerAction.action = "connect";
-      else if (action === "left") playerAction.action = "disconnect";
-
-      // Server player event
-      serverEvents.emit("player", playerAction);
-      delete playerAction.action;
-      if (action === "connect") serverEvents.emit("player_connect", playerAction);
-      else if (action === "disconnect") serverEvents.emit("player_disconnect", playerAction);
-      else serverEvents.emit("player_unknown", playerAction);
-    }
+    const portParse = data.match(/Starting\s+Minecraft\s+server\s+on\s+(.*)\:(\d+)/);
+    if (!!portParse) serverEvents.emit("port_listen", {port: parseInt(portParse[2]), version: "IPv4/IPv6", protocol: "TCP"});
   });
 
   // Run Command
@@ -157,33 +117,16 @@ export async function startServer(): Promise<BdsSession> {
     server: {
       on: (act, fn) => serverEvents.on(act, fn),
       once: (act, fn) => serverEvents.once(act, fn),
-      startDate: StartDate,
-      started: false
+      started: false,
+      startDate: StartDate
     }
   };
 
   serverEvents.on("started", StartDate => {Seesion.server.startDate = StartDate; Seesion.server.started = true;});
   serverEvents.on("port_listen", portObject => Seesion.ports.push(portObject));
-  serverEvents.on("player", playerAction => {
-    if (!Seesion.Player[playerAction.player]) Seesion.Player[playerAction.player] = {
-      action: playerAction.action,
-      date: playerAction.Date,
-      history: [{
-        action: playerAction.action,
-        date: playerAction.Date
-      }]
-    }; else {
-      Seesion.Player[playerAction.player].action = playerAction.action;
-      Seesion.Player[playerAction.player].date = playerAction.Date;
-      Seesion.Player[playerAction.player].history.push({
-        action: playerAction.action,
-        date: playerAction.Date
-      });
-    }
-  });
 
   // Return Session
-  pocketmineSesions[SessionID] = Seesion;
-  serverEvents.on("closed", () => delete pocketmineSesions[SessionID]);
+  javaSesions[SessionID] = Seesion;
+  serverEvents.on("closed", () => delete javaSesions[SessionID]);
   return Seesion;
 }

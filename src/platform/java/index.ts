@@ -1,3 +1,10 @@
-import * as server from "./server";
 import DownloadServer from "./download";
-export {server, DownloadServer};
+import * as server from "./server";
+import * as backup from "./backup";
+
+// Export
+export {
+  DownloadServer,
+  server,
+  backup
+};

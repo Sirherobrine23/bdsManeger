@@ -1,4 +1,3 @@
-import * as gitA from "./git";
-import * as zipA from "./zip";
-export const git = gitA;
-export const zip = zipA;
+import * as zip from "./zip";
+export default {zip}
+export {zip}

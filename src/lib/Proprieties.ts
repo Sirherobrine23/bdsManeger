@@ -1,4 +1,11 @@
 export default parse;
+
+/**
+ * Parse Proprieties files and return a map of properties.
+ * 
+ * @param Proper - String with the properties or similar files
+ * @returns
+ */
 export function parse(Proper: string): {[key: string]: string|number|true|false|null} {
   const ProPri = {};
   const ProperSplit = Proper.replace(/\r\n/g, "\n").replace(/\\\n/gi, "").split("\n").map(Line => Line.trim()).filter(line => /.*(\s+)?\=(\s+)?.*/.test(line) && !/^#/.test(line));
@@ -15,6 +22,12 @@ export function parse(Proper: string): {[key: string]: string|number|true|false|
   return ProPri;
 }
 
+/**
+ * Convert json to properities files.
+ *
+ * @param ProPri - String with properties file
+ * @returns
+ */
 export function stringify(ProPri: {[key: string]: any}): string {
   const Proper = [];
   for (const key in Object.keys(ProPri)) {

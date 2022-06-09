@@ -4,7 +4,7 @@ import fs, { promises as fsPromise } from "node:fs";
 import AdmZip from "adm-zip";
 import * as Proprieties from "../../lib/Proprieties"
 import { parse as nbtParse, NBT, Metadata as nbtData, NBTFormat } from "prismarine-nbt";
-import { getBuffer } from "../../HttpRequests";
+import { getBuffer } from "../../lib/HttpRequests";
 import { serverRoot } from "../../pathControl";
 const serverPath = path.join(serverRoot, "bedrock");
 
@@ -48,7 +48,7 @@ export type bedrockConfig = {
   texturepackRequired?: true|false
 };
 
-export async function CreateServerConfig(config: bedrockConfig): Promise<bedrockConfig&{configArray: string}> {
+export async function CreateServerConfig(config: bedrockConfig): Promise<bedrockConfig> {
   if (!!config.difficulty) {
     if (typeof config.difficulty === "number") {
       if (config.difficulty === 1) config.difficulty = "peaceful";
@@ -203,8 +203,7 @@ export async function CreateServerConfig(config: bedrockConfig): Promise<bedrock
     tickDistance,
     playerIdleTimeout,
     maxCpuThreads,
-    texturepackRequired,
-    configArray: configFileArray.join("\n")
+    texturepackRequired
   }
 }
 
@@ -221,6 +220,10 @@ type bedrockParsedConfig = {
   difficulty: "peaceful"|"easy"|"normal"|"hard",
   /** The seed to be used for randomizing the world (`If left empty a seed will be chosen at random`). */
   worldSeed: string|number,
+  port: {
+    v4: number,
+    v6: number
+  },
   /** World NBT */
   nbtParsed: {parsed: NBT, type: NBTFormat, metadata: nbtData}
 };
@@ -232,6 +235,10 @@ export async function getConfig(): Promise<bedrockParsedConfig> {
     difficulty: "normal",
     maxPlayers: 0,
     worldSeed: "",
+    port: {
+      v4: 19132,
+      v6: 19133
+    },
     nbtParsed: undefined
   };
   if (fs.existsSync(path.join(serverPath, "server.properties"))) {
@@ -241,6 +248,21 @@ export async function getConfig(): Promise<bedrockParsedConfig> {
     if (ProPri["gamemode"] !== undefined) config.gamemode = String(ProPri["gamemode"]) as "survival"|"creative"|"adventure";
     if (ProPri["max-players"] !== undefined) config.maxPlayers = Number(ProPri["max-players"]);
     if (ProPri["difficulty"] !== undefined) config.difficulty = String(ProPri["difficulty"]) as "peaceful"|"easy"|"normal"|"hard";
+    if (ProPri["server-port"] !== undefined) config.port.v4 = Number(ProPri["server-port"]);
+    if (ProPri["server-portv6"] !== undefined) config.port.v6 = Number(ProPri["server-portv6"]);
+    if (ProPri["level-seed"] !== undefined) config.worldSeed = String(ProPri["level-seed"]);
+    // if (ProPri["allow-cheats"] !== undefined) config.allowCheats = Boolean(ProPri["allow-cheats"]);
+    // if (ProPri["allow-list"] !== undefined) config.allowList = Boolean(ProPri["allow-list"]);
+    // if (ProPri["texturepack-required"] !== undefined) config.texturepackRequired = Boolean(ProPri["texturepack-required"]);
+    // if (ProPri["view-distance"] !== undefined) config.viewDistance = Number(ProPri["view-distance"]);
+    // if (ProPri["tick-distance"] !== undefined) config.tickDistance = Number(ProPri["tick-distance"]);
+    // if (ProPri["player-idle-timeout"] !== undefined) config.playerIdleTimeout = Number(ProPri["player-idle-timeout"]);
+    // if (ProPri["max-threads"] !== undefined) config.maxCpuThreads = Number(ProPri["max-threads"]);
+    // if (ProPri["default-player-permission-level"] !== undefined) config.PlayerDefaultPermissionLevel = String(ProPri["default-player-permission-level"]);
+    // if (ProPri["emit-server-telemetry"] !== undefined) config.emitServerTelemetry = Boolean(ProPri["emit-server-telemetry"]);
+    // if (ProPri["content-log-file-enabled"] !== undefined) config.contentLogFileEnabled = Boolean(ProPri["content-log-file-enabled"]);
+    // if (ProPri["compression-threshold"] !== undefined) config.compressionThreshold = Number(ProPri["compression-threshold"]);
+    // if (ProPri["server-authoritative-movement"] !== undefined) config.
     const worldDatePath = path.join(serverPath, "worlds", config.worldName, "level.dat");
     if (fs.existsSync(worldDatePath)) config.nbtParsed = await nbtParse(await fsPromise.readFile(worldDatePath));
     if (ProPri["level-seed"] !== undefined) config.worldSeed = String(ProPri["level-seed"]);

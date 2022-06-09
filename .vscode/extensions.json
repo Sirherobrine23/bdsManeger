@@ -1,7 +1,22 @@
 {
   "recommendations": [
-    "github.copilot",
     "formulahendry.code-runner",
-    "chrmarti.regex"
+    "chrmarti.regex",
+    "benshabatnoam.google-translate-ext",
+		"eamodio.gitlens",
+		"github.vscode-pull-request-github",
+		"visualstudioexptteam.vscodeintellicode",
+		"redhat.vscode-yaml",
+		"ms-vscode-remote.remote-containers",
+		"wix.vscode-import-cost",
+		"eg2.vscode-npm-script",
+		"christian-kohler.npm-intellisense",
+		"christian-kohler.path-intellisense",
+		"aaron-bond.better-comments",
+		"vscode-icons-team.vscode-icons",
+		"me-dutour-mathieu.vscode-github-actions",
+		"cschleiden.vscode-github-actions",
+		"oderwat.indent-rainbow",
+		"ms-azuretools.vscode-docker"
   ]
 }

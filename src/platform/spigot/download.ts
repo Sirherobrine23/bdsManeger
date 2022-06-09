@@ -1,7 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import * as versionManeger from "@the-bds-maneger/server_versions";
-import * as httpRequests from "../../HttpRequests";
+import * as httpRequests from "../../lib/HttpRequests";
 import { serverRoot } from "../../pathControl";
 
 export default async function download(version: string|boolean) {

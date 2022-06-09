@@ -1,36 +1,11 @@
 import * as bdsTypes from "./globalType";
-import * as platform from "./platform/index";
+import platform from "./platform/index";
 
 export default DownloadServer;
-export async function DownloadServer(Platform: bdsTypes.Platform, Version: string|boolean): Promise<{Version: string, Date: Date, url: string}> {
-  if (Platform === "bedrock") {
-    const bedrockInfo = await platform.bedrock.DownloadServer(Version);
-    return {
-      Version: bedrockInfo.version,
-      Date: bedrockInfo.publishDate,
-      url: bedrockInfo.url
-    };
-  } else if (Platform === "java") {
-    const javaInfo = await platform.java.DownloadServer(Version);
-    return {
-      Version: javaInfo.version,
-      Date: javaInfo.publishDate,
-      url: javaInfo.url
-    };
-  } else if (Platform === "spigot") {
-    const spigotInfo = await platform.spigot.DownloadServer(Version);
-    return {
-      Version: spigotInfo.version,
-      Date: spigotInfo.publishDate,
-      url: spigotInfo.url
-    };
-  } else if (Platform === "pocketmine") {
-    const pocketmineInfo = await platform.pocketmine.DownloadServer(Version);
-    return {
-      Version: pocketmineInfo.version,
-      Date: pocketmineInfo.publishDate,
-      url: pocketmineInfo.url
-    };
-  }
-  throw new Error("No file found for this Platform and Arch");
+export async function DownloadServer(Platform: bdsTypes.Platform, Version: string|boolean): Promise<{version: string, url: string; publishDate: Date}> {
+  if (Platform === "bedrock") return platform.bedrock.DownloadServer(Version);
+  else if (Platform === "java") return platform.java.DownloadServer(Version);
+  else if (Platform === "spigot") return platform.spigot.DownloadServer(Version);
+  else if (Platform === "pocketmine") return platform.pocketmine.DownloadServer(Version);
+  throw new Error("Invalid Platform");
 }

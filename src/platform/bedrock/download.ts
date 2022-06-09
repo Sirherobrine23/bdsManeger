@@ -2,8 +2,8 @@ import path from "node:path";
 import fs from "node:fs";
 import adm_zip from "adm-zip";
 import * as versionManeger from "@the-bds-maneger/server_versions";
-import * as httpRequests from "../../HttpRequests";
-import { runCommandAsync } from "../../childProcess"
+import * as httpRequests from "../../lib/HttpRequests";
+import { runCommandAsync } from "../../lib/childProcess"
 import { serverRoot } from "../../pathControl";
 
 export default async function download(version: string|boolean) {
