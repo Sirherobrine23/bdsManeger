@@ -8,7 +8,7 @@
 import path from "node:path";
 import admZip from "adm-zip";
 import fs from "node:fs";
-import { serverRoot } from "../../pathControl";
+import { serverRoot } from "../pathControl";
 // import stripJsonComments from "strip-json-comments";
 
 const stripJsonComments = (data: string) => data.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => g ? "" : m);

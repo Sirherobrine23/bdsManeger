@@ -1,7 +1,7 @@
 import {promises as fsPromise, existsSync as fsExists} from "node:fs";
 import * as path from "node:path";
 import admZip from "adm-zip";
-import { serverRoot } from "../../pathControl";
+import { serverRoot } from "../pathControl";
 
 const bedrockPath = path.join(serverRoot, "bedrock");
 /**

@@ -1,10 +1,10 @@
 import path from "node:path";
 import fs from "node:fs";
 import * as versionManeger from "@the-bds-maneger/server_versions";
-import * as httpRequests from "../../lib/HttpRequests";
-import { serverRoot } from "../../pathControl";
+import * as httpRequests from "../lib/HttpRequests";
+import { serverRoot } from "../pathControl";
 
-export default async function download(version: string|boolean) {
+export async function download(version: string|boolean) {
   const ServerPath = path.join(serverRoot, "spigot");
   if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});

@@ -2,10 +2,10 @@ import os from "os";
 import path from "node:path";
 import fs, { promises as fsPromise } from "node:fs";
 import AdmZip from "adm-zip";
-import * as Proprieties from "../../lib/Proprieties"
+import * as Proprieties from "../lib/Proprieties"
 import { parse as nbtParse, NBT, Metadata as nbtData, NBTFormat } from "prismarine-nbt";
-import { getBuffer } from "../../lib/HttpRequests";
-import { serverRoot } from "../../pathControl";
+import { getBuffer } from "../lib/HttpRequests";
+import { serverRoot } from "../pathControl";
 const serverPath = path.join(serverRoot, "bedrock");
 
 export type bedrockConfig = {

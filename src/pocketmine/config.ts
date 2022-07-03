@@ -1,6 +1,6 @@
 import path from "node:path";
 import { promises as fsPromise } from "node:fs";
-import { serverRoot } from "../../pathControl";
+import { serverRoot } from "../pathControl";
 const serverPath = path.join(serverRoot, "pocketmine");
 /*
 #Properties Config file

@@ -2,10 +2,11 @@ import * as fsOld from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import admZip from "adm-zip";
-import { serverRoot } from '../../pathControl';
-const javaPath = path.join(serverRoot, "pocketmine");
+import { serverRoot } from "../pathControl";
+const javaPath = path.join(serverRoot, "java");
 
-const filesFoldertoIgnore = ["PocketMine.phar", "bin", "server.log"];
+const filesFoldertoIgnore = ["Server.jar", "eula.txt", "libraries", "logs", "usercache.json", "versions"];
+
 /**
  * Create backup for Worlds and Settings
  */

@@ -1,4 +1,4 @@
-import * as httpRequest from "../../lib/HttpRequests";
+import * as httpRequest from "../lib/HttpRequests";
 
 export async function getPlugins(): Promise<Array<{
   id: number,

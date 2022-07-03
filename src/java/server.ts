@@ -2,11 +2,11 @@ import path from "node:path";
 import fs from "node:fs";
 import crypto from "crypto";
 import node_cron from "cron";
-import * as child_process from "../../lib/childProcess";
-import { backupRoot, serverRoot } from "../../pathControl";
-import { BdsSession, bdsSessionCommands } from '../../globalType';
-import { createZipBackup } from "../../backup/zip";
-import events from "../../lib/customEvents";
+import * as child_process from "../lib/childProcess";
+import { backupRoot, serverRoot } from "../pathControl";
+import { BdsSession, bdsSessionCommands } from '../globalType';
+import { CreateBackup } from "./backup";
+import events from "../lib/customEvents";
 
 const javaSesions: {[key: string]: BdsSession} = {};
 export function getSessions() {return javaSesions;}
@@ -89,8 +89,8 @@ export async function startServer(): Promise<BdsSession> {
     const CrontimeBackup = new node_cron.CronJob(crontime, async () => {
       if (option.type === "zip") {
         await lockServerBackup();
-        if (!!option?.config?.pathZip) await createZipBackup({path: path.resolve(backupRoot, option?.config?.pathZip)}).catch(() => undefined);
-        else await createZipBackup(true).catch(() => undefined);
+        if (!!option?.config?.pathZip) await CreateBackup().then(res => fs.promises.writeFile(path.resolve(backupRoot, option?.config?.pathZip), res)).catch(() => undefined);
+        // else await createZipBackup(true).catch(() => undefined);
         await unLockServerBackup();
       }
     });

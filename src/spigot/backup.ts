@@ -2,7 +2,7 @@ import * as fsOld from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import admZip from "adm-zip";
-import { serverRoot } from '../../pathControl';
+import { serverRoot } from '../pathControl';
 const javaPath = path.join(serverRoot, "spigot");
 
 const filesFoldertoIgnore = ["Server.jar", "bundler", "eula.txt", "help.yml", "logs", "usercache.json"];

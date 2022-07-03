@@ -2,13 +2,13 @@ export default parse;
 
 /**
  * Parse Proprieties files and return a map of properties.
- * 
+ *
  * @param Proper - String with the properties or similar files
  * @returns
  */
 export function parse(Proper: string): {[key: string]: string|number|true|false|null} {
   const ProPri = {};
-  const ProperSplit = Proper.replace(/\r\n/g, "\n").replace(/\\\n/gi, "").split("\n").map(Line => Line.trim()).filter(line => /.*(\s+)?\=(\s+)?.*/.test(line) && !/^#/.test(line));
+  const ProperSplit = Proper.replace(/\r\n/g, "\n").replace(/\\\s+?\n/gi, "").split("\n").map(Line => Line.trim()).filter(line => /.*(\s+)?\=(\s+)?.*/.test(line) && !/^#/.test(line));
   for (const Line of ProperSplit) {
     const LineMatch = Line.match(/^([^\s\=]+)\s*\=(.*)$/);
     const key = LineMatch[1].trim(), value = LineMatch[2].trim();
