@@ -7,12 +7,15 @@ import { backupRoot, serverRoot } from "../pathControl";
 import { BdsSession, bdsSessionCommands, serverListen, playerAction2 } from '../globalType';
 import { CreateBackup } from "./backup";
 import events from "../lib/customEvents";
+import { linkWorld } from "./linkWorld";
 
 const pocketmineSesions: {[key: string]: BdsSession} = {};
 export function getSessions() {return pocketmineSesions;}
 
 const ServerPath = path.join(serverRoot, "pocketmine");
 export async function startServer(): Promise<BdsSession> {
+  if (!(fs.existsSync(ServerPath))) throw new Error("Server dont installed");
+  if (process.env.AUTO_LINK_WORLD === "true" || process.env.AUTO_LINK_WORLDS === "1") await linkWorld();
   const SessionID = crypto.randomUUID();
   const Process: {command: string; args: Array<string>} = {command: "", args: []};
   if (process.platform === "win32") Process.command = path.resolve(ServerPath, "bin/php/php.exe");

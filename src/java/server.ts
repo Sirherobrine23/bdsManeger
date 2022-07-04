@@ -7,12 +7,15 @@ import { backupRoot, serverRoot } from "../pathControl";
 import { BdsSession, bdsSessionCommands } from '../globalType';
 import { CreateBackup } from "./backup";
 import events from "../lib/customEvents";
+import { linkWorld } from "./linkWorld";
 
 const javaSesions: {[key: string]: BdsSession} = {};
 export function getSessions() {return javaSesions;}
 
 const ServerPath = path.join(serverRoot, "java");
 export async function startServer(): Promise<BdsSession> {
+  if (!(fs.existsSync(ServerPath))) throw new Error("Server dont instlled");
+  if (process.env.AUTO_LINK_WORLD === "true" || process.env.AUTO_LINK_WORLDS === "1") await linkWorld();
   const SessionID = crypto.randomUUID();
   // Start Server
   const serverEvents = new events();

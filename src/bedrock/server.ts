@@ -9,13 +9,15 @@ import { getConfig } from "./config";
 import { CreateBackup } from "./backup";
 import events from "../lib/customEvents";
 import portislisten from "../lib/portIsAllocated";
+import { linkWorld } from "./linkWorld";
 
 const bedrockSesions: {[key: string]: BdsSession} = {};
 export function getSessions() {return bedrockSesions;}
 
 const ServerPath = path.join(serverRoot, "bedrock");
 export async function startServer(): Promise<BdsSession> {
-  if (!(fs.existsSync(ServerPath))) throw new Error("Install server first");
+  if (!(fs.existsSync(ServerPath))) throw new Error("server dont installed");
+  if (process.env.AUTO_LINK_WORLD === "true" || process.env.AUTO_LINK_WORLDS === "1") await linkWorld();
   const SessionID = crypto.randomUUID();
   const serverConfig = await getConfig();
   if (await portislisten(serverConfig.port.v4)) throw new Error("Port is already in use");
