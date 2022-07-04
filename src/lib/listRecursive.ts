@@ -1,8 +1,8 @@
 import { promises as fsPromise } from "node:fs";
 import path from "node:path";
 
-export default async function Readdir(pathRead: string, filter: Array<RegExp>|RegExp) {
-  if (!(Array.isArray(filter))) filter = [filter];
+export default async function Readdir(pathRead: string, filter?: Array<RegExp>) {
+if (!filter) filter = [/.*/];
   const fixedPath = path.resolve(pathRead);
   const files: Array<{
     path: string,

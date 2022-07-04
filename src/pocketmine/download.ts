@@ -1,22 +1,34 @@
-import path from "node:path";
-import fs from "node:fs";
-import os from "os";
+import * as path from "node:path";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as child_process from "node:child_process";
+import { randomBytes } from "node:crypto";
 import adm_zip from "adm-zip";
 import tar from "tar";
+import Readdirrec from "../lib/listRecursive";
 import * as versionManeger from "@the-bds-maneger/server_versions";
 import * as httpRequests from "../lib/HttpRequests";
-import * as childProcess from "../lib/childProcess";
-import Readdirrec from "../lib/listRecursive";
 import { serverRoot } from "../pathControl";
 
-export async function buildPHPBinWithDocker() {
-  const dockerFileUrl = "https://raw.githubusercontent.com/The-Bds-Maneger/Build-PHP-Bins/main/Dockerfile";
-  const tempFolder = path.join(os.tmpdir(), Buffer.from(Math.random().toString()).toString("hex"));
-  await fs.promises.mkdir(tempFolder, {recursive: true});
-  await childProcess.runCommandAsync(`docker buildx build "${dockerFileUrl}" -t phplocalbuild --output=./phplocalbuild`, {
-    cwd: tempFolder
+export async function buildLocal(serverPath: string) {
+  if (process.platform === "win32") throw new Error("Current only to unix support");
+  const randomFolder = path.join(os.tmpdir(), "bdscore_php_"+randomBytes(8).toString("hex"));
+  await new Promise<void>((resolve, reject) => {
+    child_process.execFile("git", ["clone", "--depth", "1", "https://github.com/pmmp/php-build-scripts.git", randomFolder], (err) => {
+      if (!!err) return reject(err);
+      const cpuCores = os.cpus().length * 4||2;
+      const compiler = child_process.execFile("./compile.sh", ["-j"+cpuCores], {cwd: randomFolder}, err2 => {
+        if (!!err2) return reject(err2);
+        resolve();
+      });
+      compiler.stdout.on("data", data => process.stdout.write(data));
+      compiler.stderr.on("data", data => process.stdout.write(data));
+    });
   });
-  throw new Error("Not implemented yet");
+  await Readdirrec(path.join(randomFolder, "bin/php7")).then(files => files.map(file => {
+    console.log("Move '%s' to PHP Folder", file.path);
+    return fs.promises.cp(file.path, path.join(file.path.replace(path.join(randomFolder, "bin/php7"), serverPath)));
+  })).then(res => Promise.all(res));
 }
 
 async function InstallPrebuildPHP(serverPath: string) {
@@ -67,7 +79,7 @@ export async function download(version: string|boolean) {
   if (!(await fs.existsSync(ServerPath))) fs.mkdirSync(ServerPath, {recursive: true});
   const pocketmineInfo = await versionManeger.findUrlVersion("pocketmine", version);
   await fs.promises.writeFile(path.resolve(ServerPath, "PocketMine.phar"), await httpRequests.getBuffer(String(pocketmineInfo.url)));
-  await InstallPrebuildPHP(ServerPath);
+  await buildLocal(ServerPath).catch(err => {console.log("Error on build in system, error:\n%o\nDownloading pre build files", err); return InstallPrebuildPHP(ServerPath);});
 
   // Return info
   return {
