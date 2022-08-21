@@ -4,56 +4,87 @@ import * as util from "node:util";
 import * as fsOld from "node:fs";
 import * as path from "node:path";
 import admZip from "adm-zip";
-
 const execFile = util.promisify(child_process.execFile);
 
+export type fnWithData = (err: Error|undefined, data: string) => void;
+export type fn = (err?: Error) => void;
+
 export class git {
-  private repoRoot = "";
+  public readonly repoRoot: string;
+
   public async status() {
     const data = await execFile("git", ["status", "-s"], {cwd: this.repoRoot});
-    const status = {
-      modified: [] as string[],
-      new: [] as string[],
-      deleted: [] as string[],
-      untracked: [] as {file: string, action: string}[],
-    };
+    const status: {file: string, action: "new"|"modificated"|"deleted"|"under"}[] = [];
     for (const line of data.stdout.split(/\r?\n/g)) {
       const match = line.trim().match(/^(.*)\s+(.*)$/);
       if (!match) continue;
       const [, action, filePath] = match;
-      if (action.trim() === "??") status.new.push(path.resolve(this.repoRoot, filePath));
-      else if (action.trim() === "M") status.modified.push(path.resolve(this.repoRoot, filePath));
-      else if (action.trim() === "D") status.deleted.push(path.resolve(this.repoRoot, filePath));
-      else status.untracked.push({file: path.resolve(this.repoRoot, filePath), action: action.trim()});
+      if (action.trim() === "??") status.push({file: path.resolve(this.repoRoot, filePath), action: "new"});
+      else if (action.trim() === "M") status.push({file: path.resolve(this.repoRoot, filePath), action: "modificated"});
+      else if (action.trim() === "D") status.push({file: path.resolve(this.repoRoot, filePath), action: "deleted"});
+      else status.push({file: path.resolve(this.repoRoot, filePath), action: "under"});
     }
     return status;
   }
 
-  public async add(files: string|string[]) {
+  public add(files: string|string[], callback: (error?: Error) => void) {
     const args = ["add"];
     if (typeof files === "string") args.push(files); else if (files instanceof Array) args.push(...files); else throw new Error("Files is not a string or array");
-    const repoStatus = await this.status();
-    if ((repoStatus.deleted.length + repoStatus.modified.length + repoStatus.new.length + repoStatus.untracked.length) === 0) throw new Error("No changes");
-    await execFile("git", args, {cwd: this.repoRoot});
+    this.status().then(async repoStatus => {
+      if (repoStatus.length === 0) throw new Error("No changes");
+      await execFile("git", args, {cwd: this.repoRoot});
+    }).then(() => callback()).catch(err => callback(err));
     return this;
   }
 
-  public async commit(message: string, body?: string[]) {
+  public addSync(files: string|string[]): Promise<void> {
+    return new Promise<void>((done, reject) => this.add(files, (err) => !!err ? reject(err) : done()));
+  }
+
+  public commit(message: string, body: string[], callback: fn): this;
+  public commit(message: string, callback: (error: Error) => void): this;
+  public commit(message: string, body: string[]): this;
+  public commit(message: string): this;
+  public commit(message: string, body?: string[]|fn, callback?: fn): this {
     if (!message) throw new Error("No commit message");
     else if (message.length > 72) throw new Error("Message length is long");
     const messages = ["-m", message];
-    if (body?.length > 0) body.forEach(message => messages.push("-m", message));
-    await execFile("git", ["commit", "-m", ...messages], {cwd: this.repoRoot});
+    if (typeof body === "function") {callback = body; body = undefined;}
+    if (body instanceof Array) messages.forEach(message => messages.push("-m", message));
+    execFile("git", ["commit", "-m", ...messages], {cwd: this.repoRoot}).then(() => callback(undefined)).catch(err => callback(err));
     return this;
   }
 
-  public async push(branch?: string, remote?: string, force: boolean = false) {
-    const args = ["push"];
-    if (branch) args.push(branch);
-    if (remote) args.push(remote);
-    if (force) args.push("--force");
-    await execFile("git", args, {cwd: this.repoRoot});
+  public commitSync(message: string): Promise<void>;
+  public commitSync(message: string, body: string[]): Promise<void>;
+  public commitSync(message: string, body?: string[]): Promise<void> {
+    return new Promise<void>((done, reject) => this.commit(message, body, (err) => !!err ? reject(err) : done()));
+  }
+
+  public push(branch: string, remote: string, force: boolean, callback: fn): this;
+  public push(branch: string, remote: string, force: boolean): this;
+  public push(branch: string, remote: string): this;
+  public push(branch: string): this;
+  public push(): this;
+  public push(branch?: string, remote?: string, force?: boolean, callback?: fn): this {
+    this.remote("show", async (err, data) => {
+      if (err) if (callback) return callback(err); else throw err;
+      if (data.length === 0) return callback(new Error("No remotes"));
+      const args = ["push"];
+      if (branch) args.push(branch);
+      if (remote) args.push(remote);
+      if (force) args.push("--force");
+      await execFile("git", args, {cwd: this.repoRoot});
+    });
     return this;
+  }
+
+  public pushSync(branch: string, remote: string, force: boolean): Promise<void>;
+  public pushSync(branch: string, remote: string): Promise<void>;
+  public pushSync(branch: string): Promise<void>;
+  public pushSync(): Promise<void>;
+  public pushSync(branch?: string, remote?: string, force?: boolean): Promise<void> {
+    return new Promise<void>((done, reject) => this.push(branch, remote, force, (err) => !!err ? reject(err) : done()));
   }
 
   public getZip(gitPath: string = "/", callback: (zipDate: Buffer) => void) {
@@ -136,14 +167,20 @@ export class git {
     return this;
   }
 
+  /**
+   * Init repository maneger and if not exists create a empty repository
+   */
   constructor(gitPath: string, config?: {remoteUrl?: string}) {
     this.repoRoot = path.resolve(gitPath);
+    Object.defineProperty(this, "repoRoot", {value: this.repoRoot, enumerable: true, configurable: false, writable: false}); // Make it non-writable and non-configurable to prevent accidental changes
+
     if (!fsOld.existsSync(this.repoRoot)) {
       fsOld.mkdirSync(this.repoRoot, {recursive: true});
       child_process.execFileSync("git", ["init", "-b", "main"], {cwd: this.repoRoot});
-    }
+    } else if (!fsOld.existsSync(path.join(this.repoRoot, ".git"))) child_process.execFileSync("git", ["init", "-b", "main"], {cwd: this.repoRoot});
 
     // Set url
-    if (config?.remoteUrl) this.remote("add", {gitUrl: config.remoteUrl}, () => undefined);
+    if (config?.remoteUrl) this.remote("add", {gitUrl: config.remoteUrl}, () => execFile("git", ["pull", "--all", "--rebase"], {cwd: this.repoRoot}));
   }
 }
+export default git;
