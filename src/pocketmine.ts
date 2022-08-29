@@ -4,10 +4,10 @@ import * as os from "node:os";
 import * as tar from "tar";
 import { existsSync as  fsExistsSync } from "node:fs";
 import { getPocketminePhar, versionUrl } from "@the-bds-maneger/server_versions";
-import { execFileAsync } from "./childPromisses";
+import { execFileAsync, exec } from './childPromisses';
 import { serverRoot } from "./pathControl";
 import { getBuffer } from "./httpRequest";
-import {} from "./globalPlatfroms";
+import { actionConfig, actions } from './globalPlatfroms';
 import AdmZip from "adm-zip";
 import { promisify } from 'node:util';
 export const serverPath = path.join(serverRoot, "pocketmine");
@@ -42,6 +42,7 @@ if (!filter) filter = [/.*/];
 
 async function buildPhp() {
   if (process.platform === "win32") throw new Error("Script is to Linux and MacOS");
+  if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   const tempFolder = path.join(os.tmpdir(), "bdsPhp_"+(Math.random()*19999901).toString(16).replace(".", "").replace(/[0-9]/g, (_, a) =>a=="1"?"a":a=="2"?"b":a=="3"?"S":"k"));
   if (!fsExistsSync(tempFolder)) fs.mkdir(tempFolder, {recursive: true});
   await fs.writeFile(path.join(tempFolder, "build.sh"), await getBuffer("https://raw.githubusercontent.com/pmmp/php-build-scripts/stable/compile.sh"));
@@ -51,22 +52,16 @@ async function buildPhp() {
   await fs.cp(path.join(tempFolder, "bin", (await fs.readdir(path.join(tempFolder, "bin")))[0]), path.join(serverPath, "bin"), {force: true, recursive: true, preserveTimestamps: true, verbatimSymlinks: true});
   console.log("PHP Build success!");
 }
-buildPhp();
 
 async function installPhp(): Promise<void> {
   const file = (await getBuffer(`${versionUrl}/pocketmine/bin?os=${process.platform}&arch=${process.arch}`).then(res => JSON.parse(res.toString("utf8")) as {url: string, name: string}[]))[0];
   if (!file) return buildPhp();
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
+  await fs.mkdir(path.resolve(serverPath, "bin"), {recursive: true});
   // Tar.gz
   if (/tar\.gz/.test(file.name)) {
     await fs.writeFile(path.join(os.tmpdir(), file.name), await getBuffer(file.url));
-    await tar.extract({
-      file: path.join(os.tmpdir(), file.name),
-      C: path.join(serverPath, "bin"),
-      keep: true,
-      p: true,
-      noChmod: false
-    });
+    await tar.extract({file: path.join(os.tmpdir(), file.name), C: path.join(serverPath, "bin"), keep: true, p: true, noChmod: false});
   } else {
     const zip = new AdmZip(await getBuffer(file.url));
     await promisify(zip.extractAllToAsync)(serverPath, false, true);
@@ -89,4 +84,34 @@ export async function installServer(version: string|boolean) {
   if (!fsExistsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   await installPhp();
   await fs.writeFile(serverPhar, await getPocketminePhar(version));
+}
+
+export const portListen = /\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(.*)/;
+export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
+export const player = /[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi;
+
+const serverConfig: actionConfig[] = [
+  {
+    name: "serverStarted",
+    callback(data, done) {
+      // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
+      if (started.test(data)) done(new Date());
+    }
+  },
+  {
+    name: "portListening",
+    callback(data, done) {
+      const portParse = data.match(portListen);
+      if (!!portParse) done({port: parseInt(portParse[2]), host: (portParse[1]||"").trim()||undefined, type: "TCP", protocol: "IPV4/IPv6",});
+    }
+  }
+];
+
+export async function startServer() {
+  if (!fsExistsSync(serverPath)) throw new Error("Install server fist!");
+  const phpFile = path.join(serverPath, "bin", process.platform === "win32"?"php":"bin", "php");
+
+  const serverProcess = exec(phpFile, [serverPhar], {cwd: serverPath, maxBuffer: Infinity});
+  const serverActions = new actions(serverProcess, serverConfig);
+  return {serverProcess, serverActions};
 }

@@ -1,3 +1,4 @@
-export * as bedrock from "./bedrock";
-export * as java from "./java";
-export * as spigot from "./spigot";
+export * as Bedrock from "./bedrock";
+export * as Java from "./java";
+export * as Spigot from "./spigot";
+export * as PocketmineMP from "./pocketmine";
