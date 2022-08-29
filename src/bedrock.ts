@@ -77,18 +77,16 @@ const serverConfig: actionConfig[] = [
 
 export async function startServer() {
   if (!fsOld.existsSync(serverPath)) throw new Error("Install server fist");
-  let command = path.join(serverPath, "bedrock_server");
   const args: string[] = [];
-  if (process.platform === "linux") {
-    if (process.arch !== "x64") {
-      args.push(command);
-      if (await execAsync("command -v qemu-x86_64-static").then(() => true).catch(() => false)) command = "qemu-x86_64-static";
-      else if (await execAsync("command -v box64").then(() => true).catch(() => false)) command = "box64";
-      else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
-    }
+  let command = path.join(serverPath, "bedrock_server");
+  if (process.platform === "linux" && process.arch !== "x64") {
+    args.push(command);
+    if (await execAsync("command -v qemu-x86_64-static").then(() => true).catch(() => false)) command = "qemu-x86_64-static";
+    else if (await execAsync("command -v box64").then(() => true).catch(() => false)) command = "box64";
+    else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
 
-  const serverProcess = exec(command, args, {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform !== "win32" ? serverPath:undefined}});
+  const serverProcess = exec(command, args, {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}});
   const serverActions = new actions(serverProcess, serverConfig);
   return {serverProcess, serverActions};
 }
