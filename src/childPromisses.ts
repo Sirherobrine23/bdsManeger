@@ -3,8 +3,28 @@ import { execFile, exec as nodeExec, ExecFileOptions, ChildProcess } from "node:
 import { EventEmitter } from "node:events";
 import { promisify } from "node:util";
 export {execFile};
-export const execFileAsync = promisify(execFile);
-export const execAsync = promisify(nodeExec)
+export const execAsync = promisify(nodeExec);
+// export const execFileAsync = promisify(execFile);
+
+export type execOptions = ObjectEncodingOptions & ExecFileOptions & {stdio?: "ignore"|"inherit"};
+export function execFileAsync(command: string): Promise<{stdout: string, stderr: string}>;
+export function execFileAsync(command: string, args: string[]): Promise<{stdout: string, stderr: string}>;
+export function execFileAsync(command: string, options: execOptions): Promise<{stdout: string, stderr: string}>;
+export function execFileAsync(command: string, args: string[], options: execOptions): Promise<{stdout: string, stderr: string}>;
+export function execFileAsync(command: string, args?: execOptions|string[], options?: execOptions) {
+  let childOptions: execOptions = {};
+  let childArgs: string[] = [];
+  if (args instanceof Array) childArgs = args; else if (args instanceof Object) childOptions = args as execOptions;
+  if (options) childOptions = options;
+  if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
+  return new Promise<{stdout: string, stderr: string}>((resolve, rejectExec) => {
+    const child = execFile(command, childArgs, childOptions, (err, out, err2) => {if (err) return rejectExec(err);resolve({stdout: out, stderr: err2});});
+    if (options?.stdio === "inherit") {
+      child.stdout.on("data", data => process.stdout.write(data));
+      child.stderr.on("data", data => process.stderr.write(data));
+    }
+  });
+}
 
 export class customChild {
   private eventMiter = new EventEmitter({captureRejections: false});
@@ -71,7 +91,7 @@ export function exec(command: string, args: string[], options: ObjectEncodingOpt
 export function exec(command: string, args?: ObjectEncodingOptions & ExecFileOptions|string[], options?: ObjectEncodingOptions & ExecFileOptions): customChild {
   let childOptions: ObjectEncodingOptions & ExecFileOptions = {};
   let childArgs: string[] = [];
-  if (args instanceof Object) childOptions = args as ObjectEncodingOptions & ExecFileOptions; else if (args instanceof Array) childArgs = args;
+  if (args instanceof Array) childArgs = args; else if (args instanceof Object) childOptions = args as execOptions;
   if (!options) childOptions = options;
   if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
   return new customChild(execFile(command, childArgs, childOptions));
