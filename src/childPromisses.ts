@@ -1,9 +1,10 @@
 import type { ObjectEncodingOptions } from "node:fs";
-import { execFile, ExecFileOptions, ChildProcess } from "node:child_process";
+import { execFile, exec as nodeExec, ExecFileOptions, ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { promisify } from "node:util";
-export const execFileAsync = promisify(execFile);
 export {execFile};
+export const execFileAsync = promisify(execFile);
+export const execAsync = promisify(nodeExec)
 
 export class customChild {
   private eventMiter = new EventEmitter({captureRejections: false});
@@ -11,6 +12,12 @@ export class customChild {
   private child?: ChildProcess;
 
   public kill(signal?: number|NodeJS.Signals) {if(this.child?.killed) return this.child?.killed;return this.child?.kill(signal);}
+  public writeStdin(command: string, args?: string[]) {
+    let toWrite = command;
+    if (args?.length > 0) toWrite += (" "+args.join(" "));
+    toWrite+="\n";
+    this.child.stdin.write(toWrite);
+  }
 
   private emit(act: "error", data: Error): this;
   private emit(act: "close", data: {code: number, signal: NodeJS.Signals}): this;
@@ -60,10 +67,12 @@ export class customChild {
 export function exec(command: string): customChild;
 export function exec(command: string, args: string[]): customChild;
 export function exec(command: string, options: ObjectEncodingOptions & ExecFileOptions): customChild;
+export function exec(command: string, args: string[], options: ObjectEncodingOptions & ExecFileOptions): customChild;
 export function exec(command: string, args?: ObjectEncodingOptions & ExecFileOptions|string[], options?: ObjectEncodingOptions & ExecFileOptions): customChild {
   let childOptions: ObjectEncodingOptions & ExecFileOptions = {};
   let childArgs: string[] = [];
   if (args instanceof Object) childOptions = args as ObjectEncodingOptions & ExecFileOptions; else if (args instanceof Array) childArgs = args;
   if (!options) childOptions = options;
+  if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
   return new customChild(execFile(command, childArgs, childOptions));
 }
