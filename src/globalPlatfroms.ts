@@ -7,7 +7,7 @@ export type actionsPlayer = {
   callback: (data: string, done: (player: playerBase) => void) => void
 }
 
-export type portListen = {port: number, protocol: "IPv4"|"IPv6"|"IPV4/IPv6"|"Unknown"};
+export type portListen = {port: number, host?: string, type: "TCP"|"UDP"|"TCP/UDP", protocol: "IPv4"|"IPv6"|"IPV4/IPv6"|"Unknown"};
 export type actionsPort = {
   name: "portListening",
   callback: (data: string, done: (portInfo: portListen) => void) => void

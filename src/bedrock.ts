@@ -1,11 +1,11 @@
 import * as path from "node:path";
-import * as fsOld from 'node:fs';
-import * as fs from 'node:fs/promises';
+import * as fsOld from "node:fs";
+import * as fs from "node:fs/promises";
+import { promisify } from "node:util";
 import { getBedrockZip } from "@the-bds-maneger/server_versions";
 import admZip from "adm-zip";
-import { exec, execAsync } from './childPromisses';
+import { exec, execAsync } from "./childPromisses";
 import { serverRoot } from "./pathControl";
-import { promisify } from 'node:util';
 import { actions, actionConfig } from "./globalPlatfroms"
 export const serverPath = path.join(serverRoot, "Bedrock")
 
@@ -29,6 +29,52 @@ export async function installServer(version: string|boolean) {
   if (serverConfig) await fs.writeFile(path.join(serverPath, "server.properties"), serverConfig);
 }
 
+const serverConfig: actionConfig[] = [
+  {
+    name: "portListening",
+    callback(data, done) {
+      const match = data.match(portListen);
+      if (!match) return;
+      const [, protocol, port] = match;
+      done({port: parseInt(port), type: "UDP", host: "127.0.0.1", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"});
+    }
+  },
+  {
+    name: "serverStarted",
+    callback(data, done) {
+      const resulter = data.match(started);
+      if (resulter) done(new Date());
+    },
+  },
+  {
+    name: "playerConnect",
+    callback(data, done) {
+      const match = data.match(player);
+      if (!match) return;
+      const [, action, playerName, xuid] = match;
+      if (action === "connect") done({connectTime: new Date(), playerName: playerName, xuid});
+    }
+  },
+  {
+    name: "playerDisconnect",
+    callback(data, done) {
+      const match = data.match(player);
+      if (!match) return;
+      const [, action, playerName, xuid] = match;
+      if (action === "disconnect") done({connectTime: new Date(), playerName: playerName, xuid});
+    }
+  },
+  {
+    name: "playerUnknown",
+    callback(data, done) {
+      const match = data.match(player);
+      if (!match) return;
+      const [, action, playerName, xuid] = match;
+      if (!(action === "disconnect" || action === "connect")) done({connectTime: new Date(), playerName: playerName, xuid});
+    }
+  },
+];
+
 export async function startServer() {
   if (!fsOld.existsSync(serverPath)) throw new Error("Install server fist");
   let command = path.join(serverPath, "bedrock_server");
@@ -41,55 +87,6 @@ export async function startServer() {
       else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
     }
   }
-  let serverStarted = false;
-  const serverConfig: actionConfig[] = [
-    {
-      name: "portListening",
-      callback(data, done) {
-        const match = data.match(portListen);
-        if (!match) return;
-        const [, protocol, port] = match;
-        done({protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown", port: parseInt(port)});
-      }
-    },
-    {
-      name: "serverStarted",
-      callback(data, done) {
-        const resulter = data.match(started);
-        if (!serverStarted && resulter) {
-          serverStarted = true;
-          done(new Date())
-        }
-      },
-    },
-    {
-      name: "playerConnect",
-      callback(data, done) {
-        const match = data.match(player);
-        if (!match) return;
-        const [, action, playerName, xuid] = match;
-        if (action === "connect") done({connectTime: new Date(), playerName: playerName, xuid});
-      }
-    },
-    {
-      name: "playerDisconnect",
-      callback(data, done) {
-        const match = data.match(player);
-        if (!match) return;
-        const [, action, playerName, xuid] = match;
-        if (action === "disconnect") done({connectTime: new Date(), playerName: playerName, xuid});
-      }
-    },
-    {
-      name: "playerUnknown",
-      callback(data, done) {
-        const match = data.match(player);
-        if (!match) return;
-        const [, action, playerName, xuid] = match;
-        if (!(action === "disconnect" || action === "connect")) done({connectTime: new Date(), playerName: playerName, xuid});
-      }
-    },
-  ];
 
   const serverProcess = exec(command, args, {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform !== "win32" ? serverPath:undefined}});
   const serverActions = new actions(serverProcess, serverConfig);
