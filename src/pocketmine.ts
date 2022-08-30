@@ -10,17 +10,15 @@ import { getBuffer } from "./httpRequest";
 import { actionConfig, actions } from './globalPlatfroms';
 import AdmZip from "adm-zip";
 import { promisify } from 'node:util';
+export { pocketmineServerWorld, pocketmineWorld, linkPocketmine } from "./linkWorlds/bedrock_pocketmine";
 export const serverPath = path.join(serverRoot, "pocketmine");
 export const serverPhar = path.join(serverPath, "pocketmine.phar");
 export const phpBinPath = path.join(serverPath, "bin", (process.platform === "win32"?"php":"bin"), "php");
 
-async function Readdir(pathRead: string, filter?: Array<RegExp>) {
+async function Readdir(pathRead: string, filter?: RegExp[]) {
 if (!filter) filter = [/.*/];
   const fixedPath = path.resolve(pathRead);
-  const files: Array<{
-    path: string,
-    name: string
-  }> = [];
+  const files: {path: string, name: string}[] = [];
   for (const file of await fs.readdir(fixedPath)) {
     const FullFilePath = path.join(fixedPath, file);
     const stats = await fs.stat(FullFilePath);
@@ -114,6 +112,12 @@ const serverConfig: actionConfig[] = [
       // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
       if (started.test(data)) done(new Date());
     }
+  },
+  {
+    name: "playerConnect",
+    callback(data, done) {
+      data;
+    },
   },
   {
     name: "serverStop",

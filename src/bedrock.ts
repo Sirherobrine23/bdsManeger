@@ -6,8 +6,9 @@ import { getBedrockZip } from "@the-bds-maneger/server_versions";
 import admZip from "adm-zip";
 import { exec, execAsync } from "./childPromisses";
 import { serverRoot } from "./pathControl";
-import { actions, actionConfig } from "./globalPlatfroms"
-export const serverPath = path.join(serverRoot, "Bedrock")
+import { actions, actionConfig } from "./globalPlatfroms";
+export const serverPath = path.join(serverRoot, "Bedrock");
+export { bedrockServerWorld, bedrockWorld, linkBedrock } from "./linkWorlds/bedrock_pocketmine";
 
 // RegExp
 export const saveFf = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
