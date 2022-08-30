@@ -70,17 +70,21 @@ export class customChild {
     child.stderr.on("data", data => this.eventMiter.emit("stderrRaw", data instanceof Buffer ? data.toString("utf8"):data));
     // Storage tmp lines
     const parseLog = (to: "breakStdout"|"breakStderr", data: string): any => {
+      if (this.tempLog[to] === undefined) this.tempLog[to] = "";
       const lines = data.split(/\r?\n/);
-      if (lines.length === 1) {
-        if (this.tempLog[to] === undefined) this.tempLog[to] = "";
-        return this.tempLog[to] += lines[0];
-      }
+      if (lines.length === 1) return this.tempLog[to] += lines[0];
       const a = lines.pop();
       if (a !== "") lines.push(a);
       for (const line of lines) {
-        if (!this.tempLog[to]) return this.eventMiter.emit(to, line);
-        this.eventMiter.emit(to, this.tempLog[to]+line);
-        delete this.tempLog[to];
+        if (!this.tempLog[to]) {
+          // console.log(this.tempLog, lines);
+          this.eventMiter.emit(to, line);
+          continue;
+        }
+        console.log(this.tempLog, lines);
+        this.tempLog[to]+=line;
+        this.eventMiter.emit(to, this.tempLog[to]);
+        this.tempLog[to] = "";
       }
     }
     child.stdout.on("data", data => parseLog("breakStdout", data));

@@ -88,11 +88,26 @@ export async function installServer(version: string|boolean) {
   await fs.writeFile(serverPhar, await getPocketminePhar(version));
 }
 
-export const portListen = /\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(.*)/;
+// [16:47:35.405] [Server thread/INFO]: Minecraft network interface running on 0.0.0.0:19132
+export const portListen = /\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9:]+|):([0-9]+))/;
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const player = /[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi;
 
 const serverConfig: actionConfig[] = [
+  {
+    name: "portListening",
+    callback(data, done) {
+      const portParse = data.match(portListen);
+      if (!portParse) return;
+      const [,, host, port] = portParse;
+      done({
+        port: parseInt(port),
+        host: host?.trim(),
+        type: "UDP",
+        protocol: "IPV4/IPv6"
+      });
+    }
+  },
   {
     name: "serverStarted",
     callback(data, done) {
@@ -101,11 +116,8 @@ const serverConfig: actionConfig[] = [
     }
   },
   {
-    name: "portListening",
-    callback(data, done) {
-      const portParse = data.match(portListen);
-      if (!!portParse) done({port: parseInt(portParse[2]), host: (portParse[1]||"").trim()||undefined, type: "TCP", protocol: "IPV4/IPv6",});
-    }
+    name: "serverStop",
+    run: (child) => child.writeStdin("stop")
   }
 ];
 

@@ -73,6 +73,10 @@ const serverConfig: actionConfig[] = [
       if (!(action === "disconnect" || action === "connect")) done({connectTime: new Date(), playerName: playerName, xuid});
     }
   },
+  {
+    name: "serverStop",
+    run: (child) => child.writeStdin("stop")
+  }
 ];
 
 export async function startServer() {

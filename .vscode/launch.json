@@ -1,16 +1,21 @@
 {
-  "version": "0.2.0",
-  "configurations": [
+	"version": "0.2.0",
+	"configurations": [
     {
-      "name": "Bds Test",
       "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
-      "args": ["testProject.ts"],
-      "cwd": "${workspaceRoot}",
+      "name": "Mocha Tests",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/mocha.js",
       "internalConsoleOptions": "openOnSessionStart",
-      "skipFiles": ["<node_internals>/**", "node_modules/**"]
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "args": [
+        "-r", "ts-node/register",
+        "--colors",
+        "${workspaceFolder}/tests/**/*.ts"
+      ],
     }
-  ]
+
+	]
 }

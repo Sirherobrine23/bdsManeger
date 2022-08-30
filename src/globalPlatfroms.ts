@@ -35,7 +35,7 @@ export type actionCallback = actionsPlayer|actionsPort|actionsServerStarted|acti
 export type actionConfig = actionCallback|actionRun;
 export class actions {
   private events = new EventEmitter({captureRejections: false});
-  private childProcess: customChild;
+  public childProcess: customChild;
   private stopServerFunction?: (childProcess: customChild) => void;
   private tpfunction?: (childProcess: customChild, x: number|string, y: number|string, z: number|string) => void;
 

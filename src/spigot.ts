@@ -29,6 +29,10 @@ const serverConfig: actionConfig[] = [
       const portParse = data.match(portListen);
       if (!!portParse) done({port: parseInt(portParse[2]), host: (portParse[1]||"").trim()||undefined, type: "TCP", protocol: "IPV4/IPv6",});
     }
+  },
+  {
+    name: "serverStop",
+    run: (child) => child.writeStdin("stop")
   }
 ];
 
