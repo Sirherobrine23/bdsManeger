@@ -89,7 +89,7 @@ export async function installServer(version: string|boolean) {
 }
 
 // [16:47:35.405] [Server thread/INFO]: Minecraft network interface running on 0.0.0.0:19132
-export const portListen = /\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9:]+|):([0-9]+))/;
+export const portListen = /\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|\[[A-Za-z0-9:]+\]|):([0-9]+))/;
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const player = /[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi;
 
@@ -101,10 +101,10 @@ const serverConfig: actionConfig[] = [
       if (!portParse) return;
       const [,, host, port] = portParse;
       done({
-        port: parseInt(port),
-        host: host?.trim(),
+        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
         type: "UDP",
-        protocol: "IPV4/IPv6"
+        port: parseInt(port),
+        host: host?.trim()
       });
     }
   },

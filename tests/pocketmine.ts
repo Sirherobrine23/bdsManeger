@@ -8,6 +8,7 @@ describe("Pocketmine", () => {
     await installServer("latest");
     const serverManeger = await startServer();
     serverManeger.on("log_stdout", console.log);
+    serverManeger.on("log_stderr", console.info);
     serverManeger.on("portListening", console.log);
     serverManeger.on("log_stdout", data => {
       if(/set-up.*wizard/.test(data)) {
