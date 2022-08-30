@@ -41,9 +41,6 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     if (Config?.maxMemory) args.push(`-Xmx${Config?.maxMemory}m`);
   }
 
-
   args.push(jarPath);
-  const serverProcess = exec(command, args, {cwd: serverPath, maxBuffer: Infinity});
-  const serverActions = new actions(serverProcess, serverConfig);
-  return {serverProcess, serverActions};
+  return new actions(exec(command, args, {cwd: serverPath, maxBuffer: Infinity}), serverConfig);
 }

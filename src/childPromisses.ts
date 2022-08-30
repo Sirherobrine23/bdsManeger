@@ -28,8 +28,7 @@ export function execFileAsync(command: string, args?: execOptions|string[], opti
 
 export class customChild {
   private eventMiter = new EventEmitter({captureRejections: false});
-  private tempLog = {};
-  private child?: ChildProcess;
+  public child?: ChildProcess;
 
   public kill(signal?: number|NodeJS.Signals) {if(this.child?.killed) return this.child?.killed;return this.child?.kill(signal);}
   public writeStdin(command: string, args?: string[]) {
@@ -61,17 +60,24 @@ export class customChild {
   public once(act: "breakStderr", fn: (data: string) => void): this;
   public once(act: string, fn: (...args: any[]) => void): this {this.eventMiter.once(act, fn);return this;}
 
+  private tempLog = {};
   constructor(child: ChildProcess) {
     this.child = child;
     child.on("close", (code, signal) => this.emit("close", {code, signal}));
     child.on("exit", (code, signal) => this.emit("close", {code, signal}));
     child.on("error", err => this.emit("error", err));
+    child.stdout.on("data", data => this.eventMiter.emit("stdoutRaw", data instanceof Buffer ? data.toString("utf8"):data));
+    child.stderr.on("data", data => this.eventMiter.emit("stderrRaw", data instanceof Buffer ? data.toString("utf8"):data));
     // Storage tmp lines
     const parseLog = (to: "breakStdout"|"breakStderr", data: string): any => {
-      if (this.tempLog[to] === undefined) this.tempLog[to] = "";
       const lines = data.split(/\r?\n/);
-      if (lines.length === 1) return this.tempLog[to] += lines[0];
-      for (const line of lines.slice(0, -1)) {
+      if (lines.length === 1) {
+        if (this.tempLog[to] === undefined) this.tempLog[to] = "";
+        return this.tempLog[to] += lines[0];
+      }
+      const a = lines.pop();
+      if (a !== "") lines.push(a);
+      for (const line of lines) {
         if (!this.tempLog[to]) return this.eventMiter.emit(to, line);
         this.eventMiter.emit(to, this.tempLog[to]+line);
         delete this.tempLog[to];
@@ -79,8 +85,6 @@ export class customChild {
     }
     child.stdout.on("data", data => parseLog("breakStdout", data));
     child.stderr.on("data", data => parseLog("breakStderr", data));
-    child.stdout.on("data", data => this.eventMiter.emit("stdoutRaw", data instanceof Buffer ? data.toString("utf8"):data));
-    child.stderr.on("data", data => this.eventMiter.emit("stderrRaw", data instanceof Buffer ? data.toString("utf8"):data));
   }
 };
 
@@ -92,7 +96,7 @@ export function exec(command: string, args?: ObjectEncodingOptions & ExecFileOpt
   let childOptions: ObjectEncodingOptions & ExecFileOptions = {};
   let childArgs: string[] = [];
   if (args instanceof Array) childArgs = args; else if (args instanceof Object) childOptions = args as execOptions;
-  if (!options) childOptions = options;
+  if (options) childOptions = options;
   if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
   return new customChild(execFile(command, childArgs, childOptions));
 }

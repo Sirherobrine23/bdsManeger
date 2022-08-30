@@ -3,7 +3,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as tar from "tar";
 import { existsSync as  fsExistsSync } from "node:fs";
-import { getPocketminePhar, versionUrl } from "@the-bds-maneger/server_versions";
+import { getPocketminePhar, versionAPIs } from "@the-bds-maneger/server_versions";
 import { execFileAsync, exec } from './childPromisses';
 import { serverRoot } from "./pathControl";
 import { getBuffer } from "./httpRequest";
@@ -12,6 +12,7 @@ import AdmZip from "adm-zip";
 import { promisify } from 'node:util';
 export const serverPath = path.join(serverRoot, "pocketmine");
 export const serverPhar = path.join(serverPath, "pocketmine.phar");
+export const phpBinPath = path.join(serverPath, "bin", (process.platform === "win32"?"php":"bin"), "php");
 
 async function Readdir(pathRead: string, filter?: Array<RegExp>) {
 if (!filter) filter = [/.*/];
@@ -54,7 +55,7 @@ async function buildPhp() {
 }
 
 async function installPhp(): Promise<void> {
-  const file = (await getBuffer(`${versionUrl}/pocketmine/bin?os=${process.platform}&arch=${process.arch}`).then(res => JSON.parse(res.toString("utf8")) as {url: string, name: string}[]))[0];
+  const file = (await getBuffer(`${versionAPIs[0]}/pocketmine/bin?os=${process.platform}&arch=${process.arch}`).then(res => JSON.parse(res.toString("utf8")) as {url: string, name: string}[]))[0];
   if (!file) return buildPhp();
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   await fs.mkdir(path.resolve(serverPath, "bin"), {recursive: true});
@@ -68,16 +69,17 @@ async function installPhp(): Promise<void> {
   }
   if (process.platform === "linux"||process.platform === "android"||process.platform === "darwin") {
     const ztsFind = await Readdir(path.resolve(serverPath, "bin"), [/.*debug-zts.*/]);
-    if (ztsFind.length === 0) return;
-    const phpIniPath = (await Readdir(path.resolve(serverPath, "bin"), [/php\.ini$/]))[0].path;
-    let phpIni = await fs.readFile(phpIniPath, "utf8");
-    if (phpIni.includes("extension_dir")) await fs.writeFile(phpIniPath, phpIni.replace(/extension_dir=.*/g, ""));
-    phpIni = phpIni+`\nextension_dir=${ztsFind[0].path}`
-    await fs.writeFile(phpIniPath, phpIni);
+    if (ztsFind.length > 0) {
+      const phpIniPath = (await Readdir(path.resolve(serverPath, "bin"), [/php\.ini$/]))[0].path;
+      let phpIni = await fs.readFile(phpIniPath, "utf8");
+      if (phpIni.includes("extension_dir")) await fs.writeFile(phpIniPath, phpIni.replace(/extension_dir=.*/g, ""));
+      phpIni = phpIni+`\nextension_dir=${path.resolve(ztsFind[0].path, "..")}`
+      await fs.writeFile(phpIniPath, phpIni);
+    }
   }
   // test it's works php
   await fs.writeFile(path.join(os.tmpdir(), "test.php"), `<?php echo "Hello World";`);
-  await execFileAsync(path.join(serverPath, "bin", process.platform === "win32" ? "php/php.exe" : "php"), ["-f", path.join(os.tmpdir(), "test.php")]).catch(buildPhp);
+  await execFileAsync(phpBinPath, ["-f", path.join(os.tmpdir(), "test.php")]).catch(buildPhp);
 }
 
 export async function installServer(version: string|boolean) {
@@ -109,9 +111,5 @@ const serverConfig: actionConfig[] = [
 
 export async function startServer() {
   if (!fsExistsSync(serverPath)) throw new Error("Install server fist!");
-  const phpFile = path.join(serverPath, "bin", process.platform === "win32"?"php":"bin", "php");
-
-  const serverProcess = exec(phpFile, [serverPhar], {cwd: serverPath, maxBuffer: Infinity});
-  const serverActions = new actions(serverProcess, serverConfig);
-  return {serverProcess, serverActions};
+  return new actions(exec(phpBinPath, [serverPhar], {cwd: serverPath, maxBuffer: Infinity}), serverConfig);
 }

@@ -86,7 +86,5 @@ export async function startServer() {
     else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
 
-  const serverProcess = exec(command, args, {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}});
-  const serverActions = new actions(serverProcess, serverConfig);
-  return {serverProcess, serverActions};
+  return new actions(exec(command, args, {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}}), serverConfig);
 }
