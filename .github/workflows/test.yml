@@ -1,0 +1,46 @@
+name: Test package
+on: [push]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: Test on ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+      name: Code checkout
+
+    # Install basic tools
+    - uses: actions/setup-node@v3
+      name: Setup node.js
+      with:
+        node-version: 18.x
+        registry-url: https://registry.npmjs.org/
+
+    - name: Install latest java
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: "17"
+
+    - name: Install apt dependecies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential make wget gzip bzip2 bison git cmake re2c autoconf automake pkg-config libtool* unzip zip tar
+
+    - name: Install macos dependecies
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install libtool autoconf automake pkg-config bison re2c
+        echo "PATH=/usr/local/opt/bison/bin:$PATH" >> $GITHUB_ENV
+
+    # Install dependecies
+    - name: Install dependencies
+      run: npm ci
+
+    # Run test
+    - name: Test
+      run: npm run test

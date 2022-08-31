@@ -1,5 +1,7 @@
 import { installServer, startServer } from "../src/bedrock";
 
+if (process.platform === "win32"||process.platform === "linux") {
+
 describe("Bedrock", () => {
   it("Install and Start", async function(){
     this.timeout(1000*60*60*15);
@@ -12,3 +14,5 @@ describe("Bedrock", () => {
     return new Promise((done, reject) => serverManeger.on("exit", ({code}) => code === 0?done():reject(new Error("Exit another code "+code))));
   });
 });
+
+}
