@@ -5,19 +5,20 @@ import { promisify } from "node:util";
 import { getBedrockZip } from "@the-bds-maneger/server_versions";
 import admZip from "adm-zip";
 import { exec, execAsync } from "./childPromisses";
-import { serverRoot } from "./pathControl";
 import { actions, actionConfig } from "./globalPlatfroms";
+import { serverRoot } from "./pathControl";
 export const serverPath = path.join(serverRoot, "Bedrock");
-export { bedrockServerWorld, bedrockWorld, linkBedrock } from "./linkWorlds/bedrock_pocketmine";
+export { bedrockServerWorld, bedrockWorld, linkBedrock } from "./linkWorld";
 
 // RegExp
-export const saveFf = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
+export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
 export const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
 export const started = /\[.*\]\s+Server\s+started\./;
 // [2022-08-30 20:50:53:821 INFO] Player connected: Sirherobrine, xuid: 111111111111111
 // [2022-08-30 20:56:55:231 INFO] Player disconnected: Sirherobrine, xuid: 111111111111111
 export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
 // [2022-08-30 20:56:55:601 INFO] Running AutoCompaction...
+export const compressWorld = /\[.*\]\s+Running\s+AutoCompaction/;
 
 export async function installServer(version: string|boolean) {
   let arch = process.arch;
@@ -27,7 +28,7 @@ export async function installServer(version: string|boolean) {
   const zip = new admZip(await getBedrockZip(version, arch));
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   // Remover files
-  for (const file of await fs.readdir(serverPath).then(files => files.filter(file => !saveFf.test(file)))) await fs.rm(path.join(serverPath, file), {recursive: true, force: true});
+  for (const file of await fs.readdir(serverPath).then(files => files.filter(file => !saveFileFolder.test(file)))) await fs.rm(path.join(serverPath, file), {recursive: true, force: true});
   const serverConfig = (await fs.readFile(path.join(serverPath, "server.properties"), "utf8").catch(() => "")).trim();
   await promisify(zip.extractAllToAsync)(serverPath, true, true);
   if (serverConfig) await fs.writeFile(path.join(serverPath, "server.properties"), serverConfig);

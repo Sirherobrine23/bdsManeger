@@ -17,6 +17,6 @@ describe("Pocketmine", () => {
       }
     });
     serverManeger.on("serverStarted", () => serverManeger.stopServer());
-    return new Promise((done, reject) => serverManeger.on("exit", ({code}) => code === 0?done():reject(new Error("Exit another code "+code))));
+    return serverManeger.waitExit();
   });
 });

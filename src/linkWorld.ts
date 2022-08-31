@@ -1,9 +1,9 @@
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
 import { existsSync as fsExistsSync } from "node:fs";
-import { worldFolder } from "../pathControl";
-import { serverPath as bedrockServerPath } from "../bedrock";
-import { serverPath as pocketmineServerPath } from "../pocketmine";
+import { worldFolder } from "./pathControl";
+import { serverPath as bedrockServerPath } from "./bedrock";
+import { serverPath as pocketmineServerPath } from "./pocketmine";
 
 export const bedrockWorld = path.join(worldFolder, "bedrock");
 export const bedrockServerWorld = path.join(bedrockServerPath, "worlds");

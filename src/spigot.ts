@@ -8,7 +8,7 @@ import { actions, actionConfig } from './globalPlatfroms';
 export const serverPath = path.join(serverRoot, "spigot");
 const jarPath = path.join(serverPath, "server.jar");
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
-export const portListen = /Starting\s+Minecraft\s+server\s+on\s+(.*)\:(\d+)/;
+export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
@@ -27,7 +27,15 @@ const serverConfig: actionConfig[] = [
     name: "portListening",
     callback(data, done) {
       const portParse = data.match(portListen);
-      if (!!portParse) done({port: parseInt(portParse[2]), host: (portParse[1]||"").trim()||undefined, type: "TCP", protocol: "IPV4/IPv6",});
+      if (!portParse) return;
+      let [,, host, port] = portParse;
+      if (host === "*"||!host) host = "127.0.0.1";
+      done({
+        port: parseInt(port),
+        type: "TCP",
+        host: host,
+        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6"
+      });
     }
   },
   {
@@ -46,5 +54,7 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   }
 
   args.push(jarPath);
+  const eula = path.join(serverPath, "eula.txt");
+  await fs.writeFile(eula, (await fs.readFile(eula, "utf8").catch(() => "eula=false")).replace("eula=false", "eula=true"));
   return new actions(exec(command, args, {cwd: serverPath, maxBuffer: Infinity}), serverConfig);
 }

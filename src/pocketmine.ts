@@ -10,7 +10,7 @@ import { getBuffer } from "./httpRequest";
 import { actionConfig, actions } from './globalPlatfroms';
 import AdmZip from "adm-zip";
 import { promisify } from 'node:util';
-export { pocketmineServerWorld, pocketmineWorld, linkPocketmine } from "./linkWorlds/bedrock_pocketmine";
+export { pocketmineServerWorld, pocketmineWorld, linkPocketmine } from "./linkWorld";
 export const serverPath = path.join(serverRoot, "pocketmine");
 export const serverPhar = path.join(serverPath, "pocketmine.phar");
 export const phpBinPath = path.join(serverPath, "bin", (process.platform === "win32"?"php":"bin"), "php");

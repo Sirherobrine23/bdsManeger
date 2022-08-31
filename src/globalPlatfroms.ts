@@ -61,6 +61,17 @@ export class actions {
     return this;
   }
 
+  public waitExit() {
+    if (this.childProcess.child.exitCode === null) return new Promise<number>((done, reject) => {
+      this.childProcess.child.once("error", err => reject(err));
+      this.childProcess.child.once("exit", code => {
+        if (code === 0) return done(code);
+        reject(new Error(`Server exit with ${code} code.`));
+      });
+    });
+    return Promise.resolve(this.childProcess.child.exitCode);
+  }
+
   public tp(x: number|string = 0, y: number|string = 0, z: number|string = 0) {
     if (typeof this.stopServer === "undefined") throw new Error("TP command not configured!");
     this.tpfunction(this.childProcess, x, y, z);

@@ -28,7 +28,6 @@ export function execFileAsync(command: string, args?: execOptions|string[], opti
 
 export class customChild {
   private eventMiter = new EventEmitter({captureRejections: false});
-  public child?: ChildProcess;
 
   public kill(signal?: number|NodeJS.Signals) {if(this.child?.killed) return this.child?.killed;return this.child?.kill(signal);}
   public writeStdin(command: string, args?: string[]) {
@@ -60,6 +59,7 @@ export class customChild {
   public once(act: "breakStderr", fn: (data: string) => void): this;
   public once(act: string, fn: (...args: any[]) => void): this {this.eventMiter.once(act, fn);return this;}
 
+  public child: ChildProcess;
   private tempLog = {};
   constructor(child: ChildProcess) {
     this.child = child;
@@ -77,11 +77,9 @@ export class customChild {
       if (a !== "") lines.push(a);
       for (const line of lines) {
         if (!this.tempLog[to]) {
-          // console.log(this.tempLog, lines);
           this.eventMiter.emit(to, line);
           continue;
         }
-        console.log(this.tempLog, lines);
         this.tempLog[to]+=line;
         this.eventMiter.emit(to, this.tempLog[to]);
         this.tempLog[to] = "";
