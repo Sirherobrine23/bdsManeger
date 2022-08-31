@@ -12,9 +12,12 @@ export { bedrockServerWorld, bedrockWorld, linkBedrock } from "./linkWorlds/bedr
 
 // RegExp
 export const saveFf = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
-export const portListen = /(IPv[46])\s+supported,\s+port:\s+(.*)/;
+export const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
 export const started = /\[.*\]\s+Server\s+started\./;
-export const player = /r\s+(.*)\:\s+(.*)\,\s+xuid\:\s+(.*)/;
+// [2022-08-30 20:50:53:821 INFO] Player connected: Sirherobrine, xuid: 111111111111111
+// [2022-08-30 20:56:55:231 INFO] Player disconnected: Sirherobrine, xuid: 111111111111111
+export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
+// [2022-08-30 20:56:55:601 INFO] Running AutoCompaction...
 
 export async function installServer(version: string|boolean) {
   let arch = process.arch;
@@ -52,7 +55,7 @@ const serverConfig: actionConfig[] = [
     callback(data, done) {
       const match = data.match(player);
       if (!match) return;
-      const [, action, playerName, xuid] = match;
+      const [, action,, playerName, xuid] = match;
       if (action === "connect") done({connectTime: new Date(), playerName: playerName, xuid});
     }
   },
@@ -61,7 +64,7 @@ const serverConfig: actionConfig[] = [
     callback(data, done) {
       const match = data.match(player);
       if (!match) return;
-      const [, action, playerName, xuid] = match;
+      const [, action,, playerName, xuid] = match;
       if (action === "disconnect") done({connectTime: new Date(), playerName: playerName, xuid});
     }
   },
@@ -70,7 +73,7 @@ const serverConfig: actionConfig[] = [
     callback(data, done) {
       const match = data.match(player);
       if (!match) return;
-      const [, action, playerName, xuid] = match;
+      const [, action,, playerName, xuid] = match;
       if (!(action === "disconnect" || action === "connect")) done({connectTime: new Date(), playerName: playerName, xuid});
     }
   },
