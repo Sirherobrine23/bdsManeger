@@ -1,5 +1,3 @@
-export default parse;
-
 /**
  * Parse Proprieties files and return a map of properties.
  *
