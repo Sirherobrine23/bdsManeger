@@ -2,7 +2,7 @@ import * as path from "node:path";
 import * as fs from "node:fs/promises";
 import * as fsOld from "node:fs";
 import { getSpigotJar } from "@the-bds-maneger/server_versions";
-import { serverRoot } from "./pathControl";
+import { serverRoot, logRoot } from './pathControl';
 import { exec } from "./childPromisses";
 import { actions, actionConfig } from './globalPlatfroms';
 export const serverPath = path.join(serverRoot, "spigot");
@@ -56,5 +56,6 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   args.push(jarPath);
   const eula = path.join(serverPath, "eula.txt");
   await fs.writeFile(eula, (await fs.readFile(eula, "utf8").catch(() => "eula=false")).replace("eula=false", "eula=true"));
-  return new actions(exec(command, args, {cwd: serverPath, maxBuffer: Infinity}), serverConfig);
+  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_spigot_${process.platform}_${process.arch}.stdout.log`);
+  return new actions(exec(command, args, {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}), serverConfig);
 }

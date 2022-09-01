@@ -6,7 +6,7 @@ import { getBedrockZip } from "@the-bds-maneger/server_versions";
 import admZip from "adm-zip";
 import { exec, execAsync } from "./childPromisses";
 import { actions, actionConfig } from "./globalPlatfroms";
-import { serverRoot } from "./pathControl";
+import { serverRoot, logRoot } from './pathControl';
 export const serverPath = path.join(serverRoot, "Bedrock");
 export { bedrockServerWorld, bedrockWorld, linkBedrock } from "./linkWorld";
 
@@ -95,5 +95,11 @@ export async function startServer() {
     else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
 
-  return new actions(exec(command, args, {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}}), serverConfig);
+  // Fix Libssl, https://bugs.mojang.com/browse/BDS-16913
+  // if (process.platform === "linux") {
+  //   execAsync(`echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list && sudo apt update && sudo apt install libssl1.1`, {stdio: "inherit"});
+  // }
+
+  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_bedrock_${process.platform}_${process.arch}.stdout.log`);
+  return new actions(exec(command, args, {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}, logPath: {stdout: logFileOut}}), serverConfig);
 }

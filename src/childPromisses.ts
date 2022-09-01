@@ -1,24 +1,37 @@
-import type { ObjectEncodingOptions } from "node:fs";
-import { execFile, exec as nodeExec, ExecFileOptions, ChildProcess } from "node:child_process";
+import { ObjectEncodingOptions, createWriteStream, WriteStream } from "node:fs";
+import * as child_process from "node:child_process";
 import { EventEmitter } from "node:events";
-import { promisify } from "node:util";
-export {execFile};
-export const execAsync = promisify(nodeExec);
-// export const execFileAsync = promisify(execFile);
+export const execFile = child_process.execFile;
 
-export type execOptions = ObjectEncodingOptions & ExecFileOptions & {stdio?: "ignore"|"inherit"};
+export type ExecFileOptions = ObjectEncodingOptions & child_process.ExecFileOptions & {stdio?: "ignore"|"inherit"};
 export function execFileAsync(command: string): Promise<{stdout: string, stderr: string}>;
 export function execFileAsync(command: string, args: string[]): Promise<{stdout: string, stderr: string}>;
-export function execFileAsync(command: string, options: execOptions): Promise<{stdout: string, stderr: string}>;
-export function execFileAsync(command: string, args: string[], options: execOptions): Promise<{stdout: string, stderr: string}>;
-export function execFileAsync(command: string, args?: execOptions|string[], options?: execOptions) {
-  let childOptions: execOptions = {};
+export function execFileAsync(command: string, options: ExecFileOptions): Promise<{stdout: string, stderr: string}>;
+export function execFileAsync(command: string, args: string[], options: ExecFileOptions): Promise<{stdout: string, stderr: string}>;
+export function execFileAsync(command: string, args?: ExecFileOptions|string[], options?: ExecFileOptions) {
+  let childOptions: ExecFileOptions = {};
   let childArgs: string[] = [];
-  if (args instanceof Array) childArgs = args; else if (args instanceof Object) childOptions = args as execOptions;
+  if (args instanceof Array) childArgs = args; else if (args instanceof Object) childOptions = args as ExecFileOptions;
   if (options) childOptions = options;
   if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
   return new Promise<{stdout: string, stderr: string}>((resolve, rejectExec) => {
     const child = execFile(command, childArgs, childOptions, (err, out, err2) => {if (err) return rejectExec(err);resolve({stdout: out, stderr: err2});});
+    if (options?.stdio === "inherit") {
+      child.stdout.on("data", data => process.stdout.write(data));
+      child.stderr.on("data", data => process.stderr.write(data));
+    }
+  });
+}
+
+export type execAsyncOptions = child_process.ExecOptions & {encoding?: BufferEncoding} & {stdio?: "ignore"|"inherit"};
+export function execAsync(command: string): Promise<{stdout: string, stderr: string}>;
+export function execAsync(command: string, options: execAsyncOptions): Promise<{stdout: string, stderr: string}>;
+export function execAsync(command: string, options?: execAsyncOptions) {
+  let childOptions: execAsyncOptions = {};
+  if (options) childOptions = options;
+  if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
+  return new Promise<{stdout: string, stderr: string}>((resolve, rejectExec) => {
+    const child = child_process.exec(command, {...childOptions}, (err, out: string|Buffer, err2: string|Buffer) => {if (err) return rejectExec(err);resolve({stdout: ((out instanceof Buffer) ? out.toString():out), stderr: (err2 instanceof Buffer)?err2.toString():err2});});
     if (options?.stdio === "inherit") {
       child.stdout.on("data", data => process.stdout.write(data));
       child.stderr.on("data", data => process.stderr.write(data));
@@ -59,10 +72,16 @@ export class customChild {
   public once(act: "breakStderr", fn: (data: string) => void): this;
   public once(act: string, fn: (...args: any[]) => void): this {this.eventMiter.once(act, fn);return this;}
 
-  public child: ChildProcess;
+  public child: child_process.ChildProcess;
+  public logStream?: {stdout: WriteStream, stderr?: WriteStream};
   private tempLog = {};
-  constructor(child: ChildProcess) {
+  constructor(child: child_process.ChildProcess, logStream?: {stdout: WriteStream, stderr?: WriteStream}) {
     this.child = child;
+    if (logStream) {
+      this.logStream = logStream;
+      this.child.stdout.pipe(this.logStream.stdout);
+      if (this.logStream.stderr) this.child.stderr.pipe(this.logStream.stderr);
+    }
     child.on("close", (code, signal) => this.emit("close", {code, signal}));
     child.on("exit", (code, signal) => this.emit("close", {code, signal}));
     child.on("error", err => this.emit("error", err));
@@ -90,15 +109,21 @@ export class customChild {
   }
 };
 
+export type execOptions = ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}};
 export function exec(command: string): customChild;
 export function exec(command: string, args: string[]): customChild;
-export function exec(command: string, options: ObjectEncodingOptions & ExecFileOptions): customChild;
-export function exec(command: string, args: string[], options: ObjectEncodingOptions & ExecFileOptions): customChild;
-export function exec(command: string, args?: ObjectEncodingOptions & ExecFileOptions|string[], options?: ObjectEncodingOptions & ExecFileOptions): customChild {
-  let childOptions: ObjectEncodingOptions & ExecFileOptions = {};
+export function exec(command: string, options: execOptions): customChild;
+export function exec(command: string, args: string[], options: execOptions): customChild;
+export function exec(command: string, args?: execOptions|string[], options?: execOptions): customChild {
+  let childOptions: execOptions = {};
   let childArgs: string[] = [];
   if (args instanceof Array) childArgs = args; else if (args instanceof Object) childOptions = args as execOptions;
   if (options) childOptions = options;
   if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
-  return new customChild(execFile(command, childArgs, childOptions));
+  let logStream: undefined|{stdout: WriteStream, stderr?: WriteStream} = undefined;
+  if (childOptions.logPath) logStream = {
+    stdout: createWriteStream(childOptions.logPath.stdout, {flags: "a", autoClose: true}),
+    stderr: (!!childOptions.logPath.stderr)?createWriteStream(childOptions.logPath.stderr, {flags: "a", autoClose: true}):undefined
+  };
+  return new customChild(execFile(command, childArgs, childOptions), logStream);
 }
