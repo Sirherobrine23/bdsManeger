@@ -47,6 +47,9 @@ jobs:
     # Install depencides and build
     - run: npm ci
 
+    # Build
+    - run: npm run build
+
     # Publish
     - run: npm publish --tag ${{ github.event.release.prerelease && 'next' || 'latest' }}
       name: Publish to npm
