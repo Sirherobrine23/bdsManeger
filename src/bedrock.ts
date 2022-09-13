@@ -2,7 +2,7 @@ import * as path from "node:path";
 import * as fsOld from "node:fs";
 import * as fs from "node:fs/promises";
 import { promisify } from "node:util";
-import { getBedrockZip } from "@the-bds-maneger/server_versions";
+import { platformManeger } from "@the-bds-maneger/server_versions";
 import admZip from "adm-zip";
 import { exec, execAsync } from "./childPromisses";
 import { actions, actionConfig } from "./globalPlatfroms";
@@ -21,11 +21,7 @@ export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([
 export const compressWorld = /\[.*\]\s+Running\s+AutoCompaction/;
 
 export async function installServer(version: string|boolean) {
-  let arch = process.arch;
-  if (process.platform === "linux" && process.arch !== "x64") {
-    if (await execAsync("command -v qemu-x86_64-static").then(() => true).catch(() => false)||await execAsync("command -v box64").then(() => true).catch(() => false)) arch = "x64";
-  }
-  const zip = new admZip(await getBedrockZip(version, arch));
+  const zip = new admZip(await platformManeger.bedrock.getBedrockZip(version, {}));
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   // Remover files
   for (const file of await fs.readdir(serverPath).then(files => files.filter(file => !saveFileFolder.test(file)))) await fs.rm(path.join(serverPath, file), {recursive: true, force: true});

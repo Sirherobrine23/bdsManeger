@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
 import * as fsOld from "node:fs";
-import { getSpigotJar } from "@the-bds-maneger/server_versions";
+import { platformManeger } from "@the-bds-maneger/server_versions";
 import { serverRoot, logRoot } from './pathControl';
 import { exec } from "./childPromisses";
 import { actions, actionConfig } from './globalPlatfroms';
@@ -12,7 +12,7 @@ export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  await fs.writeFile(jarPath, await getSpigotJar(version));
+  await fs.writeFile(jarPath, await platformManeger.spigot.getJar(version));
 }
 
 const serverConfig: actionConfig[] = [

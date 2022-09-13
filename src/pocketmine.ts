@@ -3,7 +3,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as tar from "tar";
 import { existsSync as  fsExistsSync } from "node:fs";
-import { getPocketminePhar, versionAPIs } from "@the-bds-maneger/server_versions";
+import { platformManeger, versionURLs } from "@the-bds-maneger/server_versions";
 import { execFileAsync, exec } from './childPromisses';
 import { logRoot, serverRoot } from "./pathControl";
 import { getBuffer } from "./httpRequest";
@@ -53,7 +53,7 @@ async function buildPhp() {
 }
 
 async function installPhp(): Promise<void> {
-  const file = (await getBuffer(`${versionAPIs[0]}/pocketmine/bin?os=${process.platform}&arch=${process.arch}`).then(res => JSON.parse(res.toString("utf8")) as {url: string, name: string}[]))[0];
+  const file = (await getBuffer(`${versionURLs[0]}/pocketmine/bin?os=${process.platform}&arch=${process.arch}`).then(res => JSON.parse(res.toString("utf8")) as {url: string, name: string}[]))[0];
   if (!file) return buildPhp();
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   await fs.mkdir(path.resolve(serverPath, "bin"), {recursive: true});
@@ -83,7 +83,7 @@ async function installPhp(): Promise<void> {
 export async function installServer(version: string|boolean) {
   if (!fsExistsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   await installPhp();
-  await fs.writeFile(serverPhar, await getPocketminePhar(version));
+  await fs.writeFile(serverPhar, await platformManeger.pocketmine.getPhar(version));
 }
 
 // [16:47:35.405] [Server thread/INFO]: Minecraft network interface running on 0.0.0.0:19132
