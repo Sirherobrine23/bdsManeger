@@ -106,26 +106,26 @@ export const fileProperties = path.join(serverPath, "server.properties");
 
 // Update file config
 export type keyConfig = "serverName"|"gamemode"|"forceGamemode"|"difficulty"|"allowCheats"|"maxPlayers"|"onlineMode"|"allowList"|"serverPort"|"serverPortv6"|"viewDistance"|"tickDistance"|"playerIdleTimeout"|"maxThreads"|"levelName"|"levelSeed"|"defaultPlayerPermissionLevel"|"texturepackRequired"|"chatRestriction";
-export async function updateFile(key: "serverName", value: string): Promise<string>;
-export async function updateFile(key: "gamemode", value: "survival"|"creative"|"adventure"): Promise<string>;
-export async function updateFile(key: "forceGamemode", value: boolean): Promise<string>;
-export async function updateFile(key: "difficulty", value: "peaceful"|"easy"|"normal"|"hard"): Promise<string>;
-export async function updateFile(key: "allowCheats", value: boolean): Promise<string>;
-export async function updateFile(key: "maxPlayers", value: number): Promise<string>;
-export async function updateFile(key: "onlineMode", value: boolean): Promise<string>;
-export async function updateFile(key: "allowList", value: boolean): Promise<string>;
-export async function updateFile(key: "serverPort", value: number): Promise<string>;
-export async function updateFile(key: "serverPortv6", value: number): Promise<string>;
-export async function updateFile(key: "viewDistance", value: number): Promise<string>;
-export async function updateFile(key: "tickDistance", value: "4"|"6"|"8"|"10"|"12"): Promise<string>;
-export async function updateFile(key: "playerIdleTimeout", value: number): Promise<string>;
-export async function updateFile(key: "maxThreads", value: number): Promise<string>;
-export async function updateFile(key: "levelName", value: string): Promise<string>;
-export async function updateFile(key: "levelSeed", value?: string): Promise<string>;
-export async function updateFile(key: "defaultPlayerPermissionLevel", value: "visitor"|"member"|"operator"): Promise<string>;
-export async function updateFile(key: "texturepackRequired", value: boolean): Promise<string>;
-export async function updateFile(key: "chatRestriction", value: "None"|"Dropped"|"Disabled"): Promise<string>;
-export async function updateFile(key: keyConfig, value: string|number|boolean): Promise<string> {
+export async function updateConfig(key: "serverName", value: string): Promise<string>;
+export async function updateConfig(key: "gamemode", value: "survival"|"creative"|"adventure"): Promise<string>;
+export async function updateConfig(key: "forceGamemode", value: boolean): Promise<string>;
+export async function updateConfig(key: "difficulty", value: "peaceful"|"easy"|"normal"|"hard"): Promise<string>;
+export async function updateConfig(key: "allowCheats", value: boolean): Promise<string>;
+export async function updateConfig(key: "maxPlayers", value: number): Promise<string>;
+export async function updateConfig(key: "onlineMode", value: boolean): Promise<string>;
+export async function updateConfig(key: "allowList", value: boolean): Promise<string>;
+export async function updateConfig(key: "serverPort", value: number): Promise<string>;
+export async function updateConfig(key: "serverPortv6", value: number): Promise<string>;
+export async function updateConfig(key: "viewDistance", value: number): Promise<string>;
+export async function updateConfig(key: "tickDistance", value: "4"|"6"|"8"|"10"|"12"): Promise<string>;
+export async function updateConfig(key: "playerIdleTimeout", value: number): Promise<string>;
+export async function updateConfig(key: "maxThreads", value: number): Promise<string>;
+export async function updateConfig(key: "levelName", value: string): Promise<string>;
+export async function updateConfig(key: "levelSeed", value?: string): Promise<string>;
+export async function updateConfig(key: "defaultPlayerPermissionLevel", value: "visitor"|"member"|"operator"): Promise<string>;
+export async function updateConfig(key: "texturepackRequired", value: boolean): Promise<string>;
+export async function updateConfig(key: "chatRestriction", value: "None"|"Dropped"|"Disabled"): Promise<string>;
+export async function updateConfig(key: keyConfig, value: string|number|boolean): Promise<string> {
   if (!fsOld.existsSync(fileProperties)) throw new Error("Install server fist!");
   let fileConfig = await fs.readFile(fileProperties, "utf8");
   if (key === "serverName") fileConfig = fileConfig.replace(/server-name=.*/, `server-name=${value}`);

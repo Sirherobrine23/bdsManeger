@@ -3,6 +3,16 @@
 	"configurations": [
     {
       "type": "node",
+      "name": "Current file",
+      "internalConsoleOptions": "openOnSessionStart",
+      "request": "launch",
+      "args": [
+        "-r", "ts-node/register",
+        "${file}"
+      ],
+    },
+    {
+      "type": "node",
       "name": "Mocha Tests",
       "program": "${workspaceFolder}/node_modules/mocha/bin/mocha.js",
       "internalConsoleOptions": "openOnSessionStart",
@@ -15,7 +25,6 @@
         "--colors",
         "${workspaceFolder}/tests/**/*.ts"
       ],
-    }
-
+    },
 	]
 }
