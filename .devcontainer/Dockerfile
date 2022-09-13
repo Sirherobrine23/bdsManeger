@@ -1,6 +1,10 @@
 FROM ghcr.io/sirherobrine23/mydockerimage:latest
+
 # Install openjdk
 RUN apt update && JAVAVERSIONS="$(apt search openjdk|grep '/'|grep 'openjdk-'|sed 's|/| |g'|awk '{print $1}'|grep 'jre'|sed -e 's|-jre.*||g'|uniq)";case $JAVAVERSIONS in   *17* ) apt install -y openjdk-17*;;   *16* ) apt install -y openjdk-16*;;   *) echo "Unsupported Java Version, avaibles"; echo "$JAVAVERSIONS";exit 0;; esac
+
+# Install dependecies to Bedrock server
+RUN (echo "deb http://security.ubuntu.com/ubuntu focal-security main" | tee /etc/apt/sources.list.d/focal-security.list && apt update && apt install -y libssl1.1) || exit 0
 
 # Add non root user and Install oh my zsh
 ARG USERNAME="devcontainer"
