@@ -4,7 +4,7 @@
  * @param Proper - String with the properties or similar files
  * @returns
  */
-export function parse(Proper: string): {[key: string]: string|number|true|false|null} {
+export function parse<PropertiesObject = {[key: string]: string|number|true|false|null}>(Proper: string): PropertiesObject {
   const ProPri = {};
   const ProperSplit = Proper.replace(/\r\n/g, "\n").replace(/\\\s+?\n/gi, "").split("\n").map(Line => Line.trim()).filter(line => /.*(\s+)?\=(\s+)?.*/.test(line) && !/^#/.test(line));
   for (const Line of ProperSplit) {
@@ -17,7 +17,7 @@ export function parse(Proper: string): {[key: string]: string|number|true|false|
     else if (/^[0-9]+\.[0-9]+/.test(ProPri[key]) && !/^[0-9]+\.[0-9]+\.[0-9]+/.test(ProPri[key])) ProPri[key] = parseFloat(ProPri[key]);
     else if (/^[0-9]+/.test(ProPri[key])) ProPri[key] = parseInt(ProPri[key]);
   }
-  return ProPri;
+  return ProPri as PropertiesObject;
 }
 
 /**
