@@ -18,7 +18,7 @@ describe("Spigot", () => {
   it("Install and Start", async function(){
     this.timeout(1000*60*60*15);
     await spigot.installServer("latest");
-    const serverManeger = await java.startServer();
+    const serverManeger = await spigot.startServer({configureGeyser: true});
     serverManeger.on("log_stdout", console.log);
     serverManeger.on("log_stderr", console.info);
     serverManeger.on("portListening", console.log);
