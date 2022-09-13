@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
 import * as fsOld from "node:fs";
-import { getJavaJar } from "@the-bds-maneger/server_versions";
+import { platformManeger } from "@the-bds-maneger/server_versions";
 import { serverRoot, logRoot } from './pathControl';
 import { exec } from "./childPromisses";
 import { actions, actionConfig } from './globalPlatfroms';
@@ -13,7 +13,7 @@ export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  await fs.writeFile(jarPath, await getJavaJar(version));
+  await fs.writeFile(jarPath, await platformManeger.java.getJar(version));
 }
 
 const serverConfig: actionConfig[] = [
@@ -35,7 +35,7 @@ const serverConfig: actionConfig[] = [
         port: parseInt(port),
         type: "TCP",
         host: host,
-        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6"
+        protocol: "IPV4/IPv6"
       });
     }
   },
