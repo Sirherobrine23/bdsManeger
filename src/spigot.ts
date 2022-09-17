@@ -13,11 +13,14 @@ const jarPath = path.join(serverPath, "server.jar");
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
 // [18:38:32] [Network Listener - #3/INFO]: [Geyser-Spigot] Started Geyser on 0.0.0.0:19132
-export const geyserPortListen = /^\[.*\]\s+Started\s+Geyser\s+on\s+(([a-zA-Z0-9\.:]+):([0-9]+))/;
+export const geyserPortListen = /^\[.*\].*Geyser.*(([a-zA-Z0-9\.:]+):([0-9]+))/;
+// [00:40:18] [Server thread/INFO]: [dynmap] Web server started on address 0.0.0.0:8123
+export const DynmapPortListen = /^\[.*\].*\[dynmap\].*(([a-zA-Z0-9\.:]+):([0-9]+))/;
 
 // Geyser Plugin
 export const floodgatePlugin = "https://ci.opencollab.dev/job/GeyserMC/job/Floodgate/job/master/lastSuccessfulBuild/artifact/spigot/build/libs/floodgate-spigot.jar";
 export const geyserPlugin = "https://ci.opencollab.dev//job/GeyserMC/job/Geyser/job/master/lastSuccessfulBuild/artifact/bootstrap/spigot/target/Geyser-Spigot.jar";
+export const DynmapPlugin = "https://dev.bukkit.org/projects/dynmap/files/latest";
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
@@ -64,6 +67,22 @@ const serverConfig: actionConfig[] = [
     }
   },
   {
+    name: "portListening",
+    callback(data, done) {
+      const portParse = data.match(DynmapPortListen);
+      if (!portParse) return;
+      let [,, host, port] = portParse;
+      if (host === "*"||!host) host = "127.0.0.1";
+      done({
+        port: parseInt(port),
+        type: "UDP",
+        host: host,
+        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
+        plugin: "dynmap"
+      });
+    }
+  },
+  {
     name: "serverStop",
     run: (child) => child.writeStdin("stop")
   }
@@ -80,6 +99,7 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
       if (!fsOld.existsSync(pluginPath)) await fs.mkdir(pluginPath, {recursive: true});
       await fs.writeFile(path.join(pluginPath, "floodgate-spigot.jar"), await getBuffer(floodgatePlugin));
       await fs.writeFile(path.join(pluginPath, "geyser-spigot.jar"), await getBuffer(geyserPlugin));
+      await fs.writeFile(path.join(pluginPath, "dynmap.jar"), await getBuffer(DynmapPlugin));
     }
     const geyserConfig = path.join(serverPath, "plugins/Geyser-Spigot/config.yml");
     if (fsOld.existsSync(geyserConfig)) await getConfig().then(res => fs.readFile(geyserConfig, "utf8").then(file => {
@@ -89,7 +109,7 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     })).catch(() => null);
   }
 
-  args.push("-jar", jarPath);
+  args.push("-jar", jarPath, "nogui");
   const eula = path.join(serverPath, "eula.txt");
   await fs.writeFile(eula, (await fs.readFile(eula, "utf8").catch(() => "eula=false")).replace("eula=false", "eula=true"));
   const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_spigot_${process.platform}_${process.arch}.stdout.log`);

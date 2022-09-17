@@ -53,7 +53,7 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     if (Config?.minMemory) args.push(`-Xms${Config?.minMemory}m`);
     if (Config?.maxMemory) args.push(`-Xmx${Config?.maxMemory}m`);
   }
-  args.push(jarPath);
+  args.push(jarPath, "nogui");
   const eula = path.join(serverPath, "eula.txt");
   await fs.writeFile(eula, (await fs.readFile(eula, "utf8").catch(() => "eula=false")).replace("eula=false", "eula=true"));
   const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_java_${process.platform}_${process.arch}.stdout.log`);
