@@ -74,7 +74,6 @@ const serverConfig: actionConfig[] = [
     callback(data, done) {
       const portParse = data.match(DynmapPortListen);
       if (!portParse) return;
-      console.log("Dynmap, %o", portParse);
       let [,, host, port] = portParse;
       if (host === "*"||!host) host = "127.0.0.1";
       done({
