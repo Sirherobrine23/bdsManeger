@@ -1,6 +1,7 @@
 import { ObjectEncodingOptions, createWriteStream, WriteStream } from "node:fs";
 import * as child_process from "node:child_process";
 import { EventEmitter } from "node:events";
+import { createInterface } from "node:readline";
 export const execFile = child_process.execFile;
 
 export type ExecFileOptions = ObjectEncodingOptions & child_process.ExecFileOptions & {stdio?: "ignore"|"inherit"};
@@ -39,8 +40,32 @@ export function execAsync(command: string, options?: execAsyncOptions) {
   });
 }
 
-export class customChild {
-  private eventMiter = new EventEmitter({captureRejections: false});
+
+export declare interface customChild {
+  emit(act: "error", data: Error): boolean;
+  emit(act: "close", data: {code: number, signal: NodeJS.Signals}): boolean;
+  emit(act: "stdoutRaw", data: string): boolean;
+  emit(act: "stderrRaw", data: string): boolean;
+  emit(act: "stdout", data: string): boolean;
+  emit(act: "stderr", data: string): boolean;
+
+  on(act: "error", fn: (data: Error) => void): this;
+  on(act: "close", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
+  on(act: "stdoutRaw", fn: (data: string) => void): this;
+  on(act: "stderrRaw", fn: (data: string) => void): this;
+  on(act: "stdout", dn: (data: string) => void): this;
+  on(act: "stderr", fn: (data: string) => void): this;
+
+  once(act: "error", fn: (data: Error) => void): this;
+  once(act: "close", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
+  once(act: "stdoutRaw", fn: (data: string) => void): this;
+  once(act: "stderrRaw", fn: (data: string) => void): this;
+  once(act: "stdout", dn: (data: string) => void): this;
+  once(act: "stderr", fn: (data: string) => void): this;
+}
+
+export class customChild extends EventEmitter {
+  public child: child_process.ChildProcess;
 
   public kill(signal?: number|NodeJS.Signals) {if(this.child?.killed) return this.child?.killed;return this.child?.kill(signal);}
   public writeStdin(command: string, args?: string[]) {
@@ -50,62 +75,20 @@ export class customChild {
     this.child.stdin.write(toWrite);
   }
 
-  private emit(act: "error", data: Error): this;
-  private emit(act: "close", data: {code: number, signal: NodeJS.Signals}): this;
-  private emit(act: "stdoutRaw", data: string): this;
-  private emit(act: "stderrRaw", data: string): this;
-  private emit(act: "breakStdout", data: string): this;
-  private emit(act: "breakStderr", data: string): this;
-  private emit(act: string, ...args: any[]): this {this.eventMiter.emit(act, ...args); return this;}
-
-  public on(act: "error", fn: (err: Error) => void): this;
-  public on(act: "close", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
-  public on(act: "stdoutRaw", fn: (data: string) => void): this;
-  public on(act: "stderrRaw", fn: (data: string) => void): this;
-  public on(act: "breakStdout", fn: (data: string) => void): this;
-  public on(act: "breakStderr", fn: (data: string) => void): this;
-  public on(act: string, fn: (...args: any[]) => void): this {this.eventMiter.on(act, fn); return this;}
-
-  public once(act: "stdoutRaw", fn: (data: string) => void): this;
-  public once(act: "stderrRaw", fn: (data: string) => void): this;
-  public once(act: "breakStdout", fn: (data: string) => void): this;
-  public once(act: "breakStderr", fn: (data: string) => void): this;
-  public once(act: string, fn: (...args: any[]) => void): this {this.eventMiter.once(act, fn);return this;}
-
-  public child: child_process.ChildProcess;
-  public logStream?: {stdout: WriteStream, stderr?: WriteStream};
-  private tempLog = {};
   constructor(child: child_process.ChildProcess, logStream?: {stdout: WriteStream, stderr?: WriteStream}) {
+    super({captureRejections: false});
     this.child = child;
     if (logStream) {
-      this.logStream = logStream;
-      this.child.stdout.pipe(this.logStream.stdout);
-      if (this.logStream.stderr) this.child.stderr.pipe(this.logStream.stderr);
+      this.child.stdout.pipe(logStream.stdout);
+      if (logStream.stderr) this.child.stderr.pipe(logStream.stderr);
     }
-    child.on("close", (code, signal) => this.emit("close", {code, signal}));
-    child.on("exit", (code, signal) => this.emit("close", {code, signal}));
-    child.on("error", err => this.emit("error", err));
-    child.stdout.on("data", data => this.eventMiter.emit("stdoutRaw", data instanceof Buffer ? data.toString("utf8"):data));
-    child.stderr.on("data", data => this.eventMiter.emit("stderrRaw", data instanceof Buffer ? data.toString("utf8"):data));
-    // Storage tmp lines
-    const parseLog = (to: "breakStdout"|"breakStderr", data: string): any => {
-      if (this.tempLog[to] === undefined) this.tempLog[to] = "";
-      const lines = data.split(/\r?\n/);
-      if (lines.length === 1) return this.tempLog[to] += lines[0];
-      const a = lines.pop();
-      if (a !== "") lines.push(a);
-      for (const line of lines) {
-        if (!this.tempLog[to]) {
-          this.eventMiter.emit(to, line);
-          continue;
-        }
-        this.tempLog[to]+=line;
-        this.eventMiter.emit(to, this.tempLog[to]);
-        this.tempLog[to] = "";
-      }
-    }
-    child.stdout.on("data", data => parseLog("breakStdout", data));
-    child.stderr.on("data", data => parseLog("breakStderr", data));
+    this.child.on("close", (code, signal) => this.emit("close", {code, signal}));
+    this.child.on("exit", (code, signal) => this.emit("close", {code, signal}));
+    this.child.on("error", err => this.emit("error", err));
+    const stdoutBreak = createInterface(this.child.stdout);
+    const stderrBreak = createInterface(this.child.stderr);
+    stdoutBreak.on("line", line => this.emit("stdout", line));
+    stderrBreak.on("line", line => this.emit("stderr", line));
   }
 };
 

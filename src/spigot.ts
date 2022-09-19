@@ -13,9 +13,9 @@ const jarPath = path.join(serverPath, "server.jar");
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
 // [18:38:32] [Network Listener - #3/INFO]: [Geyser-Spigot] Started Geyser on 0.0.0.0:19132
-export const geyserPortListen = /^\[.*\].*Geyser.*(([a-zA-Z0-9\.:]+):([0-9]+))/;
+export const geyserPortListen = /^\[.*\].*Geyser.*\s+(([a-zA-Z0-9\.:]+):([0-9]+))/;
 // [00:40:18] [Server thread/INFO]: [dynmap] Web server started on address 0.0.0.0:8123
-export const DynmapPortListen = /^\[.*\].*\[dynmap\].*(([a-zA-Z0-9\.:]+):([0-9]+))/;
+export const DynmapPortListen = /^\[.*\].*\[dynmap\].*\s+(([a-zA-Z0-9\.:]+):([0-9]+))/;
 
 // Geyser Plugin
 export const floodgatePlugin = "https://ci.opencollab.dev/job/GeyserMC/job/Floodgate/job/master/lastSuccessfulBuild/artifact/spigot/build/libs/floodgate-spigot.jar";
@@ -35,6 +35,7 @@ const serverConfig: actionConfig[] = [
       if (started.test(data)) done(new Date());
     }
   },
+  // Serverr
   {
     name: "portListening",
     callback(data, done) {
@@ -50,6 +51,7 @@ const serverConfig: actionConfig[] = [
       });
     }
   },
+  // Geyser Plugin
   {
     name: "portListening",
     callback(data, done) {
@@ -66,11 +68,13 @@ const serverConfig: actionConfig[] = [
       });
     }
   },
+  // Dynmap
   {
     name: "portListening",
     callback(data, done) {
       const portParse = data.match(DynmapPortListen);
       if (!portParse) return;
+      console.log("Dynmap, %o", portParse);
       let [,, host, port] = portParse;
       if (host === "*"||!host) host = "127.0.0.1";
       done({
