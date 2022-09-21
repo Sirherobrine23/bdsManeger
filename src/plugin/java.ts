@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs/promises";
+import admZip from "adm-zip";
 import { serverPath as spigotServerPath } from "../spigot";
 import { serverPath as papertServerPath } from "../paper";
 import { existsSync } from "node:fs";
@@ -11,6 +12,7 @@ export type pluginConfig = {
   name: string,
   fileName?: string,
   url: string,
+  type?: "zip"|"jar",
   platforms: pluginPlatform[],
   dependes?: (string|pluginConfig)[]
 };
@@ -36,7 +38,13 @@ export default class plugin_maneger {
     console.log("Installing %s plugin", plugin.name);
     const pluginFolder = path.join(this.#platform === "spigot"?spigotServerPath:papertServerPath, "plugins");
     if (!existsSync(pluginFolder)) await fs.mkdir(pluginFolder, {recursive: true});
-    await saveFile(plugin.url, {filePath: path.join(pluginFolder, plugin.fileName||`${plugin.name}.jar`)});
+    const saveOut = path.join(pluginFolder, plugin.fileName||`${plugin.name}.${path.extname(plugin.fileName||plugin.url)}`);
+    await saveFile(plugin.url, {filePath: saveOut});
+    if (plugin.type === "zip") {
+      const zip = new admZip(saveOut);
+      zip.extractAllTo(pluginFolder, true);
+      await fs.rm(saveOut, {force: true});
+    }
     if (plugin.dependes) await Promise.all(plugin.dependes.map((depend: pluginConfig) => this.installPlugin(depend.name)));
   }
 
