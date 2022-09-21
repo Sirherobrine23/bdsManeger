@@ -14,9 +14,9 @@ const jarPath = path.join(serverPath, "server.jar");
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
 // [18:38:32] [Network Listener - #3/INFO]: [Geyser-Spigot] Started Geyser on 0.0.0.0:19132
-export const geyserPortListen = /^\[.*\].*Geyser.*\s+(([a-zA-Z0-9\.:]+):([0-9]+))/;
+export const geyserPortListen = /^\[.*\].*Geyser.*\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[a-zA-Z0-9:]+):([0-9]+))/;
 // [00:40:18] [Server thread/INFO]: [dynmap] Web server started on address 0.0.0.0:8123
-export const DynmapPortListen = /^\[.*\].*\[dynmap\].*\s+(([a-zA-Z0-9\.:]+):([0-9]+))/;
+export const DynmapPortListen = /^\[.*\].*\[dynmap\].*\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[a-zA-Z0-9:]+):([0-9]+))/;
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
@@ -51,50 +51,39 @@ const serverConfig: actionConfig[] = [
   {
     name: "portListening",
     callback(data, done) {
-      const portParse = data.match(portListen);
-      if (!portParse) return;
-      let [,, host, port] = portParse;
-      if (host === "*"||!host) host = "127.0.0.1";
-      done({
-        port: parseInt(port),
-        type: "TCP",
-        host: host,
-        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6"
-      });
-    }
-  },
-  // Geyser Plugin
-  {
-    name: "portListening",
-    callback(data, done) {
-      const portParse = data.match(geyserPortListen);
-      if (!portParse) return;
-      let [,, host, port] = portParse;
-      if (host === "*"||!host) host = "127.0.0.1";
-      done({
-        port: parseInt(port),
-        type: "UDP",
-        host: host,
-        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
-        plugin: "geyser"
-      });
-    }
-  },
-  // Dynmap
-  {
-    name: "portListening",
-    callback(data, done) {
-      const portParse = data.match(DynmapPortListen);
-      if (!portParse) return;
-      let [,, host, port] = portParse;
-      if (host === "*"||!host) host = "127.0.0.1";
-      done({
-        port: parseInt(port),
-        type: "UDP",
-        host: host,
-        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
-        plugin: "dynmap"
-      });
+      const serverPort = data.match(portListen);
+      const geyserPort = data.match(geyserPortListen);
+      const dynmapPort = data.match(DynmapPortListen);
+      if (serverPort) {
+        let [,, host, port] = serverPort;
+        if (host === "*"||!host) host = "127.0.0.1";
+        return done({
+          port: parseInt(port),
+          type: "TCP",
+          host: host,
+          protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6"
+        });
+      } else if (dynmapPort) {
+        let [,, host, port] = dynmapPort;
+        if (host === "*"||!host) host = "127.0.0.1";
+        return done({
+          port: parseInt(port),
+          type: "TCP",
+          host: host,
+          protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
+          plugin: "dynmap"
+        });
+      } else if (geyserPort) {
+        let [,, host, port] = geyserPort;
+        if (host === "*"||!host) host = "127.0.0.1";
+        return done({
+          port: parseInt(port),
+          type: "UDP",
+          host: host,
+          protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
+          plugin: "geyser"
+        });
+      }
     }
   },
 ];

@@ -49,7 +49,7 @@ const serverConfig: actionConfig[] = [
       const match = data.match(portListen);
       if (!match) return;
       const [, protocol, port] = match;
-      done({port: parseInt(port), type: "UDP", host: "127.0.0.1", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"});
+      done({port: parseInt(port), type: "UDP", host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"});
     }
   },
   {

@@ -6,6 +6,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        platform:
+          - Bedrock
+          - Pocketmine
+          - Powernukkit
+          - Java
+          - Spigot
+          - Paper
     runs-on: ${{ matrix.os }}
     name: Test on ${{ matrix.os }}
     steps:
@@ -43,4 +50,4 @@ jobs:
 
     # Run test
     - name: Test
-      run: npm run test
+      run: npm run test:partial -- tests/${{ matrix.platform }}.ts
