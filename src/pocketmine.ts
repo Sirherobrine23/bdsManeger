@@ -6,7 +6,7 @@ import { existsSync as  fsExistsSync } from "node:fs";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { execFileAsync, execAsync } from './childPromisses';
 import { logRoot, serverRoot } from "./pathControl";
-import { getBuffer, GithubRelease, saveFile } from "./httpRequest";
+import { getBuffer, githubRelease, GithubRelease, saveFile } from "./httpRequest";
 import { actionConfig, actions } from './globalPlatfroms';
 import AdmZip from "adm-zip";
 import { promisify } from 'node:util';
@@ -60,30 +60,31 @@ async function buildPhp() {
 }
 
 async function installPhp(): Promise<void> {
-  if (process.platform === "win32") {
-    return await GithubRelease("The-Bds-Maneger", "Build-PHP-Bins").then(async releases => {
-      let url: string;
-      for (const release of releases) url = release.assets.filter(assert => assert.name.endsWith(".zip")).find(assert => /win32|windows/.test(assert.name))?.browser_download_url;
-      if (!url) throw new Error("Cannnot get php url");
-      return promisify((new AdmZip(await saveFile(url))).extractAllToAsync)(serverPath, false, true);
-    });
-  }
-  const file = await platformManeger.pocketmine.getPhp();
+  const releases: (githubRelease["assets"][0])[] = [];
+  (await GithubRelease("The-Bds-Maneger", "Build-PHP-Bins")).map(re => re.assets).forEach(res => releases.push(...res));
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
-  await fs.mkdir(path.resolve(serverPath, "bin"), {recursive: true});
-  // Tar.gz
-  if (/tar\.gz/.test(file.name)) {
-    await fs.writeFile(path.join(os.tmpdir(), file.name), file.buffer);
-    await tar.extract({file: path.join(os.tmpdir(), file.name), C: path.join(serverPath, "bin"), keep: true, p: true, noChmod: false});
-  } else await promisify((new AdmZip(file.buffer)).extractAllToAsync)(serverPath, false, true);
-  if (process.platform === "linux"||process.platform === "android"||process.platform === "darwin") {
-    const ztsFind = await Readdir(path.resolve(serverPath, "bin"), [/.*debug-zts.*/]);
-    if (ztsFind.length > 0) {
-      const phpIniPath = (await Readdir(path.resolve(serverPath, "bin"), [/php\.ini$/]))[0].path;
-      let phpIni = await fs.readFile(phpIniPath, "utf8");
-      if (phpIni.includes("extension_dir")) await fs.writeFile(phpIniPath, phpIni.replace(/extension_dir=.*/g, ""));
-      phpIni = phpIni+`\nextension_dir=${path.resolve(ztsFind[0].path, "..")}`
-      await fs.writeFile(phpIniPath, phpIni);
+  if (process.platform === "win32") {
+    let url: string = releases.filter(assert => assert.name.endsWith(".zip")).find(assert => /win32|windows/.test(assert.name))?.browser_download_url;
+    if (!url) throw new Error("Cannnot get php url");
+    return promisify((new AdmZip(await saveFile(url))).extractAllToAsync)(serverPath, false, true);
+  } else {
+    await fs.mkdir(path.resolve(serverPath, "bin"), {recursive: true});
+    const file = releases.find(re => re.name.includes(process.platform) && re.name.includes(process.arch));
+    if (file) {
+      const downloadFile = await saveFile(file.browser_download_url);
+      // Tar.gz
+      if (/tar\.gz/.test(file.name)) await tar.extract({file: downloadFile, C: path.join(serverPath, "bin"), keep: true, p: true, noChmod: false});
+      else await promisify((new AdmZip(downloadFile)).extractAllToAsync)(serverPath, false, true);
+      if (process.platform === "linux"||process.platform === "android"||process.platform === "darwin") {
+        const ztsFind = await Readdir(path.resolve(serverPath, "bin"), [/.*debug-zts.*/]);
+        if (ztsFind.length > 0) {
+          const phpIniPath = (await Readdir(path.resolve(serverPath, "bin"), [/php\.ini$/]))[0].path;
+          let phpIni = await fs.readFile(phpIniPath, "utf8");
+          if (phpIni.includes("extension_dir")) await fs.writeFile(phpIniPath, phpIni.replace(/extension_dir=.*/g, ""));
+          phpIni = phpIni+`\nextension_dir=${path.resolve(ztsFind[0].path, "..")}`
+          await fs.writeFile(phpIniPath, phpIni);
+        }
+      }
     }
   }
   // test it's works php

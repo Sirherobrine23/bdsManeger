@@ -6,7 +6,7 @@ import got from "got";
 import tar from "tar";
 
 export async function saveFile(url: string, options?: {filePath?: string, headers?: {[key: string]: string|number}}) {
-  let fileSave = path.join(tmpdir(), "_bdscore", (Math.random()*155515151).toFixed()+"_raw_bdscore");
+  let fileSave = path.join(tmpdir(), "bdscore_"+(Math.random()*155515151).toFixed()+"_raw_bdscore_"+path.basename(url));
   const Headers = {};
   if (options) {
     if (options.filePath && typeof options.filePath === "string") fileSave = options.filePath;
