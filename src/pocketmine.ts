@@ -6,7 +6,7 @@ import { existsSync as  fsExistsSync } from "node:fs";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { execFileAsync, execAsync } from './childPromisses';
 import { logRoot, serverRoot } from "./pathControl";
-import { getBuffer } from "./httpRequest";
+import { getBuffer, GithubRelease, saveFile } from "./httpRequest";
 import { actionConfig, actions } from './globalPlatfroms';
 import AdmZip from "adm-zip";
 import { promisify } from 'node:util';
@@ -60,6 +60,14 @@ async function buildPhp() {
 }
 
 async function installPhp(): Promise<void> {
+  if (process.platform === "win32") {
+    return await GithubRelease("The-Bds-Maneger", "Build-PHP-Bins").then(async releases => {
+      let url: string;
+      for (const release of releases) url = release.assets.filter(assert => assert.name.endsWith(".zip")).find(assert => /win32|windows/.test(assert.name))?.browser_download_url;
+      if (!url) throw new Error("Cannnot get php url");
+      return promisify((new AdmZip(await saveFile(url))).extractAllToAsync)(serverPath, false, true);
+    });
+  }
   const file = await platformManeger.pocketmine.getPhp();
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   await fs.mkdir(path.resolve(serverPath, "bin"), {recursive: true});
