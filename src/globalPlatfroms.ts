@@ -1,5 +1,5 @@
 import type { ObjectEncodingOptions } from "node:fs";
-import type javaPlugin from "./plugin/java";
+import type globalPluginManeger from "./plugin/main";
 import readline from "node:readline";
 import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
@@ -35,7 +35,7 @@ export type actionTp = {
 
 export type actionPlugin = {
   name: "pluginManeger",
-  class: () => javaPlugin
+  class: () => globalPluginManeger
 };
 
 export type actionRun = actionsServerStop|actionTp;
@@ -74,7 +74,7 @@ export class actions extends EventEmitter {
   #stopServerFunction: (childProcess: actions) => void = (child) => child.#childProcess.kill("SIGKILL");
   #tpfunction?: (childProcess: actions, x: number|string, y: number|string, z: number|string) => void;
 
-  public plugin?: javaPlugin;
+  public plugin?: globalPluginManeger;
 
   public portListening: portListen[] = [];
   public playerActions: playerClass = {};

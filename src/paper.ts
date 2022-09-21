@@ -2,7 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
-import plugin_maneger from "./plugin/java";
+import plugin_maneger from "./plugin/main";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { serverRoot, logRoot } from './pathControl';
 import { actions, actionConfig } from './globalPlatfroms';

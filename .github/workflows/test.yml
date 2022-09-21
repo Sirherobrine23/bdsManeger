@@ -1,23 +1,21 @@
-name: Test package
+name: Test all platforms
 on: [push]
 
 jobs:
-  test:
+  test_prebuild:
     strategy:
       matrix:
-        os: [windows-2019, ubuntu-latest, macos-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
         platform:
-          - Bedrock
-          - Pocketmine
-          - Powernukkit
-          - Java
-          - Spigot
-          - Paper
+        - Bedrock
+        - Powernukkit
+        - Java
+        - Paper
         exclude:
-          - os: macos-latest
-            platform: Bedrock
+        - os: macos-latest
+          platform: Bedrock
     runs-on: ${{ matrix.os }}
-    name: Test on ${{ matrix.os }} target ${{ matrix.platform }}
+    name: "${{ matrix.platform }}: Test on ${{ matrix.os }}"
     steps:
     - uses: actions/checkout@v3
       name: Code checkout
@@ -31,7 +29,45 @@ jobs:
 
     - name: Install latest java
       uses: actions/setup-java@v3
-      if: matrix.platform == 'Java' || matrix.platform == 'Spigot' || matrix.platform == 'Paper' || matrix.platform == 'Powernukkit'
+      if: matrix.platform == 'Java' || matrix.platform == 'Paper' || matrix.platform == 'Powernukkit'
+      with:
+        distribution: temurin
+        java-version: "17"
+
+    # Install dependecies
+    - name: Install nodejs dependencies
+      run: npm ci
+
+    # Run test
+    - name: Test
+      run: npm run test:partial -- tests/${{ matrix.platform }}.ts
+
+  test_needs_build:
+    strategy:
+      matrix:
+        os:
+        - windows-2019
+        - ubuntu-latest
+        - macos-latest
+        platform:
+        - Pocketmine
+        - Spigot
+    runs-on: ${{ matrix.os }}
+    name: "${{ matrix.platform }}: Test on ${{ matrix.os }}"
+    steps:
+    - uses: actions/checkout@v3
+      name: Code checkout
+
+    # Install basic tools
+    - uses: actions/setup-node@v3
+      name: Setup node.js
+      with:
+        node-version: 18.x
+        registry-url: https://registry.npmjs.org/
+
+    - name: Install latest java
+      uses: actions/setup-java@v3
+      if: matrix.platform == 'Spigot'
       with:
         distribution: temurin
         java-version: "17"
