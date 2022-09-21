@@ -2,7 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
-import plugin_maneger from "./plugin/main";
+import {pluginManeger as plugin_maneger} from "./plugin/main";
 import { serverRoot, logRoot, BuildRoot } from './pathControl';
 import { execFileAsync } from "./childPromisses";
 import { actions, actionConfig } from './globalPlatfroms';

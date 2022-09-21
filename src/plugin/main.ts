@@ -19,7 +19,6 @@ export type pluginConfig = {
   dependes?: (string|pluginConfig)[]
 };
 
-export default pluginManeger;
 export class pluginManeger {
   #platform: pluginPlatform = "spigot";
   pluginList: pluginConfig[] = [];

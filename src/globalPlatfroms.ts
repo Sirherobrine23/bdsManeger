@@ -1,5 +1,5 @@
 import type { ObjectEncodingOptions } from "node:fs";
-import type globalPluginManeger from "./plugin/main";
+import type {pluginManeger as globalPluginManeger} from "./plugin/main";
 import readline from "node:readline";
 import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
