@@ -25,7 +25,7 @@ export default class plugin_maneger {
   async #addPlugin (file?: string): Promise<pluginConfig|void> {
     const config: pluginConfig = JSON.parse(await fs.readFile(path.join(defaultFolder, file), "utf8"));
     if (this.pluginList.some(plugin => plugin.name === config.name)) return config;
-    if (!config.platforms.includes(this.#platform)) return;
+    if (!config.platforms?.includes(this.#platform)) return;
     this.pluginList.push(config);
     if (config.dependes) {
       config.dependes = await Promise.all(config.dependes.filter(depend => typeof depend === "string"?depend.startsWith("./"):false).map((depend: string) => this.#addPlugin(depend.replace("./", "")))) as pluginConfig[];
