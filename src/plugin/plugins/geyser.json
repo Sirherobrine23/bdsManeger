@@ -1,0 +1,11 @@
+{
+  "name": "Geyser",
+  "url": "https://ci.opencollab.dev//job/GeyserMC/job/Geyser/job/master/lastSuccessfulBuild/artifact/bootstrap/spigot/target/Geyser-Spigot.jar",
+  "dependes": [
+    "./floodgate.json"
+  ],
+  "platforms": [
+    "spigot",
+    "paper"
+  ]
+}

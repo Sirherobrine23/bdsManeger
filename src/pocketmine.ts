@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as tar from "tar";
 import { existsSync as  fsExistsSync } from "node:fs";
 import { platformManeger, versionURLs } from "@the-bds-maneger/server_versions";
-import { execFileAsync, exec } from './childPromisses';
+import { execFileAsync } from './childPromisses';
 import { logRoot, serverRoot } from "./pathControl";
 import { getBuffer } from "./httpRequest";
 import { actionConfig, actions } from './globalPlatfroms';
@@ -121,12 +121,12 @@ const serverConfig: actionConfig[] = [
   },
   {
     name: "serverStop",
-    run: (child) => child.writeStdin("stop")
+    run: (child) => child.runCommand("stop")
   }
 ];
 
 export async function startServer() {
   if (!fsExistsSync(serverPath)) throw new Error("Install server fist!");
   const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_pocketmine_${process.platform}_${process.arch}.stdout.log`);
-  return new actions(exec(phpBinPath, [serverPhar, "--no-wizard", "--enable-ansi"], {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}), serverConfig);
+  return new actions({command: phpBinPath, args: [serverPhar, "--no-wizard", "--enable-ansi"], options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
 }

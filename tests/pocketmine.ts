@@ -2,7 +2,7 @@ import { installServer, startServer } from "../src/pocketmine";
 
 describe("Pocketmine", () => {
   it("Install and Start", async function() {
-    this.timeout(1000*60*60*15);
+    this.timeout(Infinity);
     await installServer("latest");
     const serverManeger = await startServer();
     serverManeger.on("log_stdout", console.log);

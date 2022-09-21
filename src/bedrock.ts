@@ -4,7 +4,7 @@ import * as fs from "node:fs/promises";
 import { promisify } from "node:util";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import admZip from "adm-zip";
-import { exec, execAsync } from "./childPromisses";
+import { execAsync } from "./childPromisses";
 import { actions, actionConfig } from "./globalPlatfroms";
 import { serverRoot, logRoot } from './pathControl';
 import * as Proprieties from "./Proprieties";
@@ -33,13 +33,8 @@ export async function installServer(version: string|boolean) {
 
 const serverConfig: actionConfig[] = [
   {
-    name: "portListening",
-    callback(data, done) {
-      const match = data.match(portListen);
-      if (!match) return;
-      const [, protocol, port] = match;
-      done({port: parseInt(port), type: "UDP", host: "127.0.0.1", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"});
-    }
+    name: "serverStop",
+    run: (child) => child.runCommand("stop")
   },
   {
     name: "serverStarted",
@@ -47,6 +42,15 @@ const serverConfig: actionConfig[] = [
       const resulter = data.match(started);
       if (resulter) done(new Date());
     },
+  },
+  {
+    name: "portListening",
+    callback(data, done) {
+      const match = data.match(portListen);
+      if (!match) return;
+      const [, protocol, port] = match;
+      done({port: parseInt(port), type: "UDP", host: "127.0.0.1", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"});
+    }
   },
   {
     name: "playerConnect",
@@ -75,10 +79,6 @@ const serverConfig: actionConfig[] = [
       if (!(action === "disconnect" || action === "connect")) done({connectTime: new Date(), playerName: playerName, xuid});
     }
   },
-  {
-    name: "serverStop",
-    run: (child) => child.writeStdin("stop")
-  }
 ];
 
 export async function startServer() {
@@ -98,7 +98,7 @@ export async function startServer() {
   // }
 
   const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_bedrock_${process.platform}_${process.arch}.stdout.log`);
-  return new actions(exec(command, args, {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}, logPath: {stdout: logFileOut}}), serverConfig);
+  return new actions({command, args, options: {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}, logPath: {stdout: logFileOut}}}, serverConfig);
 }
 
 // File config

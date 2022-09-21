@@ -1,0 +1,8 @@
+{
+  "name": "Floodgate",
+  "url": "https://ci.opencollab.dev/job/GeyserMC/job/Floodgate/job/master/lastSuccessfulBuild/artifact/spigot/build/libs/floodgate-spigot.jar",
+  "platforms": [
+    "spigot",
+    "paper"
+  ]
+}

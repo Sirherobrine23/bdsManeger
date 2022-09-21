@@ -2,7 +2,6 @@ import * as path from "node:path";
 import * as fsOld from "node:fs";
 import * as fs from "node:fs/promises";
 import { serverRoot, logRoot } from './pathControl';
-import { exec } from "./childPromisses";
 import { actions, actionConfig } from './globalPlatfroms';
 import { platformManeger } from "@the-bds-maneger/server_versions";
 export const serverPath = path.join(serverRoot, "power_nukkit");
@@ -16,7 +15,7 @@ export const playerAction = /^.*\[.*\]\s(\S+)\s+(left|joined)\s+the\s+game$/;
 const serverConfig: actionConfig[] = [
   {
     name: "serverStop",
-    run: (child) => child.writeStdin("stop")
+    run: (child) => child.runCommand("stop")
   },
   {
     name: "serverStarted",
@@ -100,5 +99,5 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   }
   args.push("-jar", jarPath, "--language", "eng");
   const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_pwnukkit_${process.platform}_${process.arch}.stdout.log`);
-  return new actions(exec("java", args, {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}), serverConfig);
+  return new actions({command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
 }

@@ -14,6 +14,7 @@ export function execFileAsync(command: string, args?: ExecFileOptions|string[], 
   let childArgs: string[] = [];
   if (args instanceof Array) childArgs = args; else if (args instanceof Object) childOptions = args as ExecFileOptions;
   if (options) childOptions = options;
+  childOptions.maxBuffer = Infinity;
   if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
   return new Promise<{stdout: string, stderr: string}>((resolve, rejectExec) => {
     const child = execFile(command, childArgs, childOptions, (err, out, err2) => {if (err) return rejectExec(err);resolve({stdout: out, stderr: err2});});
@@ -66,8 +67,8 @@ export declare interface customChild {
 
 export class customChild extends EventEmitter {
   public child: child_process.ChildProcess;
-
   public kill(signal?: number|NodeJS.Signals) {if(this.child?.killed) return this.child?.killed;return this.child?.kill(signal);}
+
   public writeStdin(command: string, args?: string[]) {
     let toWrite = command;
     if (args?.length > 0) toWrite += (" "+args.join(" "));

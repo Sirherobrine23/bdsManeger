@@ -1,24 +1,32 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 import fsOld from "node:fs";
+import os from "node:os";
+import plugin_maneger from "./plugin/java";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { serverRoot, logRoot } from './pathControl';
 import { actions, actionConfig } from './globalPlatfroms';
-export const serverPath = path.join(serverRoot, "java");
+export const serverPath = path.join(serverRoot, "Papermc");
 const jarPath = path.join(serverPath, "server.jar");
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
-// [21:37:27] [Server thread/INFO]: Starting Minecraft server on *:25565
 export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  await fs.writeFile(jarPath, await platformManeger.java.getJar(version));
+  await fs.writeFile(jarPath, await platformManeger.paper.getJar(version));
 }
 
+export const pluginManger = () => (new plugin_maneger("paper", false)).loadPlugins();
 const serverConfig: actionConfig[] = [
   {
     name: "serverStop",
-    run: (child) => child.runCommand("stop")
+    run(childProcess) {
+      childProcess.runCommand("stop");
+    },
+  },
+  {
+    name: "pluginManeger",
+    class: () => new plugin_maneger("paper")
   },
   {
     name: "serverStarted",
@@ -38,23 +46,29 @@ const serverConfig: actionConfig[] = [
         port: parseInt(port),
         type: "TCP",
         host: host,
-        protocol: "IPV4/IPv6"
+        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6"
       });
     }
   },
 ];
 
-export async function startServer(Config?: {maxMemory?: number, minMemory?: number}) {
+export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean}) {
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
-  const command = "java";
-  const args = ["-jar"];
+  const args = [];
   if (Config) {
-    if (Config?.minMemory) args.push(`-Xms${Config?.minMemory}m`);
-    if (Config?.maxMemory) args.push(`-Xmx${Config?.maxMemory}m`);
+    if (Config.maxFreeMemory) {
+      const safeFree = Math.floor(os.freemem() / (1024 * 1024 * 1024))-512;
+      if (safeFree > 1000) args.push(`-Xms${safeFree}m`);
+      else console.warn("There is little ram available!")
+    } else {
+      if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
+      if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
+    }
   }
-  args.push(jarPath, "nogui");
+
+  args.push("-jar", jarPath, "nogui");
   const eula = path.join(serverPath, "eula.txt");
   await fs.writeFile(eula, (await fs.readFile(eula, "utf8").catch(() => "eula=false")).replace("eula=false", "eula=true"));
-  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_java_${process.platform}_${process.arch}.stdout.log`);
-  return new actions({command, args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
+  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_spigot_${process.platform}_${process.arch}.stdout.log`);
+  return new actions({command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
 }

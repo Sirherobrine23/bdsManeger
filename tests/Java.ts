@@ -2,7 +2,7 @@ import * as java from "../src/java";
 
 describe("Java", () => {
   it("Install and Start", async function(){
-    this.timeout(1000*60*60*15);
+    this.timeout(Infinity);
     await java.installServer("latest");
     const serverManeger = await java.startServer();
     serverManeger.on("log_stdout", console.log);

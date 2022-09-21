@@ -1,4 +1,7 @@
-import type { customChild } from "./childPromisses";
+import type { ObjectEncodingOptions } from "node:fs";
+import type javaPlugin from "./plugin/java";
+import readline from "node:readline";
+import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
 
 export type playerClass = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
@@ -22,17 +25,22 @@ export type actionsServerStarted = {
 
 export type actionsServerStop = {
   name: "serverStop",
-  run: (childProcess: customChild) => void
+  run: (childProcess: actions) => void
 }
 
 export type actionTp = {
   name: "tp",
-  run: (childProcess: customChild, x: number|string, y: number|string, z: number|string) => void
+  run: (childProcess: actions, x: number|string, y: number|string, z: number|string) => void
 }
+
+export type actionPlugin = {
+  name: "pluginManeger",
+  class: () => javaPlugin
+};
 
 export type actionRun = actionsServerStop|actionTp;
 export type actionCallback = actionsPlayer|actionsPort|actionsServerStarted|actionsServerStarted;
-export type actionConfig = actionCallback|actionRun;
+export type actionConfig = actionCallback|actionRun|actionPlugin;
 
 export declare interface actions {
   on(act: "playerConnect"|"playerDisconnect"|"playerUnknown", fn: (data: playerBase) => void): this;
@@ -50,50 +58,69 @@ export declare interface actions {
   once(act: "exit", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
 }
 
+export type actionCommandOption = {command: string, args?: string[], options?: ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
 export class actions extends EventEmitter {
-  #childProcess: customChild;
-  private stopServerFunction: (childProcess: customChild) => void = (child) => child.kill("SIGKILL");
-  private tpfunction?: (childProcess: customChild, x: number|string, y: number|string, z: number|string) => void;
-
-  public stopServer() {
-    if (typeof this.stopServer === "undefined") this.#childProcess.kill("SIGKILL");
-    this.stopServerFunction(this.#childProcess);
+  #childProcess: child_process.ChildProcess;
+  public runCommand(...command: Array<string|number|boolean>) {
+    this.#childProcess.stdin.write(command.map(a => String(a)).join(" ")+"\n");
     return this;
   }
 
-  public waitExit() {
-    if (this.#childProcess.child.exitCode === null) return new Promise<number>((done, reject) => {
-      this.#childProcess.once("error", err => reject(err));
-      this.#childProcess.child.once("exit", code => {
-        if (code === 0) return done(code);
-        reject(new Error(`Server exit with ${code} code.`));
-      });
-    });
-    return Promise.resolve(this.#childProcess.child.exitCode);
+  public killProcess(signal?: number|NodeJS.Signals) {
+    if(this.#childProcess?.killed) return this.#childProcess?.killed;
+    return this.#childProcess?.kill(signal);
   }
 
-  public tp(x: number|string = 0, y: number|string = 0, z: number|string = 0) {
-    if (typeof this.stopServer === "undefined") throw new Error("TP command not configured!");
-    this.tpfunction(this.#childProcess, x, y, z);
-    return this;
-  }
+  #stopServerFunction: (childProcess: actions) => void = (child) => child.#childProcess.kill("SIGKILL");
+  #tpfunction?: (childProcess: actions, x: number|string, y: number|string, z: number|string) => void;
 
-  public runCommand(...command: Array<string|number>) {
-    const psCommand = command.map(a => String(a));
-    this.#childProcess.writeStdin(psCommand.join(" "));
-  }
+  public plugin?: javaPlugin;
 
   public portListening: portListen[] = [];
   public playerActions: playerClass = {};
 
-  constructor(child: customChild, config: actionConfig[]) {
-    super({captureRejections: false});
-    this.#childProcess = child;
-    this.#childProcess.on("close", data => this.emit("exit", data));
-    this.#childProcess.on("stdout", data => this.emit("log_stdout", data));
-    this.#childProcess.on("stderr", data => this.emit("log_stderr", data));
-    this.on("portListening", data => this.portListening.push(data));
+  public stopServer() {
+    if (typeof this.stopServer === "undefined") this.#childProcess.kill("SIGKILL");
+    this.#stopServerFunction(this);
+    return this.waitExit();
+  }
 
+  public waitExit(): Promise<number> {
+    if (this.#childProcess.exitCode === null) return new Promise<number>((done, reject) => {
+      this.#childProcess.once("error", err => reject(err));
+      this.#childProcess.once("exit", code => {
+        if (code === 0) return done(code);
+        reject(new Error(`Server exit with ${code} code.`));
+      });
+    });
+    return Promise.resolve(this.#childProcess.exitCode);
+  }
+
+  public tp(x: number|string = 0, y: number|string = 0, z: number|string = 0) {
+    if (typeof this.stopServer === "undefined") throw new Error("TP command not configured!");
+    this.#tpfunction(this, x, y, z);
+    return this;
+  }
+
+  public processConfig: actionCommandOption;
+  constructor(processConfig: actionCommandOption, config: actionConfig[]) {
+    super({captureRejections: false});
+    if (!processConfig.args) processConfig.args = [];
+    if (!processConfig.options) processConfig.options = {};
+    processConfig.options.maxBuffer = Infinity;
+    this.processConfig = processConfig;
+    this.#childProcess = child_process.execFile(processConfig.command, processConfig.args, processConfig.options);
+
+    this.#childProcess.on("error", data => this.emit("error", data));
+    this.#childProcess.on("close", (code, signal) => this.emit("exit", {code, signal}));
+    const readlineStdout = readline.createInterface(this.#childProcess.stdout);
+    readlineStdout.on("line", data => this.emit("log_stdout", data));
+    const readlineStderr = readline.createInterface(this.#childProcess.stderr);
+    readlineStderr.on("line", data => this.emit("log_stderr", data));
+
+    // Ports listening
+    this.on("portListening", data => this.portListening.push(data));
+    // Player join to server
     this.on("playerConnect", (data): any => {
       if (!this.playerActions[data.playerName]) return this.playerActions[data.playerName] = {
         action: "connect",
@@ -104,6 +131,7 @@ export class actions extends EventEmitter {
       this.playerActions[data.playerName].date = data.connectTime;
       this.playerActions[data.playerName].history.push({action: "connect", date: data.connectTime});
     });
+    // Server left from server
     this.on("playerDisconnect", (data): any => {
       if (!this.playerActions[data.playerName]) return this.playerActions[data.playerName] = {
         action: "disconnect",
@@ -114,6 +142,7 @@ export class actions extends EventEmitter {
       this.playerActions[data.playerName].date = data.connectTime;
       this.playerActions[data.playerName].history.push({action: "disconnect", date: data.connectTime});
     });
+    // PLayer action so not infomed
     this.on("playerUnknown", (data): any => {
       if (!this.playerActions[data.playerName]) return this.playerActions[data.playerName] = {
         action: "unknown",
@@ -125,11 +154,21 @@ export class actions extends EventEmitter {
       this.playerActions[data.playerName].history.push({action: "unknown", date: data.connectTime});
     });
 
-    const actions = config.filter((a: actionCallback) => typeof a?.callback === "function") as actionCallback[];
-    child.on("stdout", data => actions.forEach(fn => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args))));
-    child.on("stderr", data => actions.forEach(fn => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args))));
-    for (const action of (config.filter((a: actionRun) => typeof a?.run === "function") as actionRun[])) {
-      if (action.name === "serverStop") this.stopServerFunction = action.run;
-    }
+    // Callbacks
+    (config.filter((a: actionCallback) => typeof a?.callback === "function") as actionCallback[]).forEach(fn => {
+      this.on("log_stdout", data => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args)));
+      this.on("log_stderr", data => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args)));
+    });
+
+    // Set backend run function
+    (config.filter((a: actionRun) => typeof a?.run === "function") as actionRun[]).forEach(action => {
+      if (action.name === "serverStop") this.#stopServerFunction = action.run;
+      else if (action.name === "tp") this.#tpfunction = action.run;
+    });
+
+    // Plugin maneger
+    (config.filter((a: actionPlugin) => !!a?.class) as actionPlugin[]).forEach(action => {
+      if (action.name === "pluginManeger") this.plugin = action.class();
+    });
   }
 }

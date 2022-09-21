@@ -11,6 +11,10 @@ if (!fsOld.existsSync(bdsRoot)) fs.mkdir(bdsRoot, {recursive: true}).then(() => 
 export const serverRoot = path.join(bdsRoot, "Servers");
 if (!fsOld.existsSync(serverRoot)) fs.mkdir(serverRoot, {recursive: true});
 
+// Build Folder
+export const BuildRoot = path.join(bdsRoot, "build");
+if (!fsOld.existsSync(BuildRoot)) fs.mkdir(BuildRoot, {recursive: true});
+
 // Logs Folder
 export const logRoot = path.join(bdsRoot, "logFolder");
 if (!fsOld.existsSync(logRoot)) fs.mkdir(logRoot, {recursive: true});

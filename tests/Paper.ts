@@ -1,12 +1,12 @@
-import * as spigot from "../src/spigot";
+import * as paper from "../src/paper";
 
-describe("Spigot", () => {
+describe("PaperMC", () => {
   it("Install and Start", async function(){
     this.timeout(Infinity);
-    await spigot.installServer("latest");
-    const plugin = await spigot.pluginManger();
+    await paper.installServer("latest");
+    const plugin = await paper.pluginManger();
     await plugin.installPlugin("Geyser");
-    const serverManeger = await spigot.startServer({});
+    const serverManeger = await paper.startServer({});
     serverManeger.on("log_stdout", console.log);
     serverManeger.on("log_stderr", console.info);
     serverManeger.on("portListening", console.log);
