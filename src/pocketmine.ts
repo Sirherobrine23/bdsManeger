@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as tar from "tar";
 import { existsSync as  fsExistsSync } from "node:fs";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { execFileAsync } from './childPromisses';
+import { execFileAsync, execAsync } from './childPromisses';
 import { logRoot, serverRoot } from "./pathControl";
 import { getBuffer } from "./httpRequest";
 import { actionConfig, actions } from './globalPlatfroms';
@@ -40,21 +40,27 @@ if (!filter) filter = [/.*/];
 }
 
 async function buildPhp() {
-  if (process.platform === "win32") throw new Error("Script is to Linux and MacOS");
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   const tempFolder = path.join(os.tmpdir(), "bdsPhp_"+(Math.random()*19999901).toString(16).replace(".", "").replace(/[0-9]/g, (_, a) =>a=="1"?"a":a=="2"?"b":a=="3"?"S":"k"));
   if (!fsExistsSync(tempFolder)) fs.mkdir(tempFolder, {recursive: true});
-  await fs.writeFile(path.join(tempFolder, "build.sh"), await getBuffer("https://raw.githubusercontent.com/pmmp/php-build-scripts/stable/compile.sh"));
-  await fs.chmod(path.join(tempFolder, "build.sh"), "777");
-  console.info("Building PHP!");
-  await execFileAsync(path.join(tempFolder, "build.sh"), ["-j"+os.cpus().length], {cwd: tempFolder, stdio: "inherit"});
-  await fs.cp(path.join(tempFolder, "bin", (await fs.readdir(path.join(tempFolder, "bin")))[0]), path.join(serverPath, "bin"), {force: true, recursive: true, preserveTimestamps: true, verbatimSymlinks: true});
+  if (process.platform === "win32") {
+    const env = {VS_EDITION: process.env.VS_EDITION||"Enterprise", SOURCES_PATH: process.env.SOURCES_PATH||`${tempFolder}\\pocketmine-php-sdk`};
+    await execFileAsync("git", ["clone", "--depth=1", "https://github.com/pmmp/php-build-scripts.git", tempFolder], {cwd: tempFolder, stdio: "inherit"});
+    await execAsync(".\\windows-compile-vs.bat", {cwd: tempFolder, stdio: "inherit", env});
+    await promisify((new AdmZip(path.join(tempFolder, (await fs.readdir(tempFolder)).find(file => file.endsWith(".zip"))))).extractAllToAsync)(serverPath, false, true);
+  } else {
+    const buildFile = path.join(tempFolder, "build.sh");
+    await fs.writeFile(buildFile, await getBuffer("https://raw.githubusercontent.com/pmmp/php-build-scripts/stable/compile.sh"));
+    await fs.chmod(buildFile, "777");
+    await execFileAsync(buildFile, ["-j"+os.cpus().length], {cwd: tempFolder, stdio: "inherit"});
+    await fs.cp(path.join(tempFolder, "bin", (await fs.readdir(path.join(tempFolder, "bin")))[0]), path.join(serverPath, "bin"), {force: true, recursive: true, preserveTimestamps: true, verbatimSymlinks: true});
+  }
+  await fs.rm(tempFolder, {recursive: true, force: true});
   console.log("PHP Build success!");
 }
 
 async function installPhp(): Promise<void> {
-  const file = await platformManeger.pocketmine.getPhp({});
-  if (!file) return buildPhp();
+  const file = await platformManeger.pocketmine.getPhp();
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   await fs.mkdir(path.resolve(serverPath, "bin"), {recursive: true});
   // Tar.gz
