@@ -63,7 +63,7 @@ export async function tarExtract(url: string, options?: {folderPath?: string, he
 
   if (!fs.existsSync(fileSave)) await fs.promises.mkdir(fileSave, {recursive: true});
   const gotStream = got.stream({url, headers: Headers, isStream: true});
-  const tarE = tar.extract({cwd: fileSave, noChmod: false, noMtime: false, preserveOwner: true})
+  const tarE = tar.extract({cwd: fileSave, noChmod: false, noMtime: false, preserveOwner: true});
   gotStream.pipe(tarE);
   return new Promise<string>((done, reject) => {
     gotStream.on("end", () => done(fileSave));
