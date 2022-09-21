@@ -31,7 +31,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@the-bds-maneger/server_versions": "^4.0.1",
+    "@the-bds-maneger/server_versions": "^4.1.2",
     "adm-zip": "^0.5.9",
     "axios": "^0.27.2",
     "cron": "^2.1.0",
