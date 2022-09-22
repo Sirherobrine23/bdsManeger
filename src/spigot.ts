@@ -93,7 +93,7 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   const args = [];
   if (Config) {
     if (Config.maxFreeMemory) {
-      const safeFree = Math.floor(os.freemem() / (1024 * 1024 * 1024))-512;
+      const safeFree = Math.floor(os.freemem()/1e6)-512;
       if (safeFree > 1000) args.push(`-Xms${safeFree}m`);
       else console.warn("There is little ram available!")
     } else {
