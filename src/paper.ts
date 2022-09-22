@@ -52,7 +52,7 @@ const serverConfig: actionConfig[] = [
   },
 ];
 
-export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean}) {
+export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, pluginList?: string[]}) {
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
   const args = [];
   if (Config) {
@@ -63,6 +63,10 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     } else {
       if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
       if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
+    }
+    if (Config.pluginList) {
+      const pluginManeger = await (new plugin_maneger("paper")).loadPlugins();
+      await Promise.all(Config.pluginList.map(pluginName => pluginManeger.installPlugin(pluginName)));
     }
   }
 

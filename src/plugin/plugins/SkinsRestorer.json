@@ -1,7 +1,0 @@
-{
-  "name": "SkinsRestorer",
-  "url": "https://nightly.link/SkinsRestorer/SkinsRestorerX/workflows/build/dev/SkinsRestorer.zip",
-  "type": "zip",
-  "fileName": "SkinsRestorer.jar",
-  "platforms": ["powernukkit"]
-}

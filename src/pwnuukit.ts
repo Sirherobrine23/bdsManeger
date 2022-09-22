@@ -1,6 +1,7 @@
 import * as path from "node:path";
 import * as fsOld from "node:fs";
 import * as fs from "node:fs/promises";
+import os from "node:os";
 import { serverRoot, logRoot } from './pathControl';
 import { actions, actionConfig } from './globalPlatfroms';
 import { platformManeger } from "@the-bds-maneger/server_versions";
@@ -69,7 +70,7 @@ export async function installServer(version: string|boolean) {
   await fs.writeFile(jarPath, await platformManeger.powernukkit.getJar(version))
 }
 
-export async function startServer(Config?: {maxMemory?: number, minMemory?: number}) {
+export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean}) {
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
   const args = [
     "-XX:+UseG1GC",
@@ -94,8 +95,14 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     "-Daikars.new.flags=true"
   ];
   if (Config) {
-    if (Config?.minMemory) args.push(`-Xms${Config?.minMemory}m`);
-    if (Config?.maxMemory) args.push(`-Xmx${Config?.maxMemory}m`);
+    if (Config.maxFreeMemory) {
+      const safeFree = Math.floor(os.freemem() / (1024 * 1024 * 1024))-512;
+      if (safeFree > 1000) args.push(`-Xms${safeFree}m`);
+      else console.warn("There is little ram available!")
+    } else {
+      if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
+      if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
+    }
   }
   args.push("-jar", jarPath, "--language", "eng");
   const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_pwnukkit_${process.platform}_${process.arch}.stdout.log`);

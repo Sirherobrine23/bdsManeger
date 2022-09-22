@@ -2,21 +2,21 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import admZip from "adm-zip";
 import { existsSync } from "node:fs";
-import { saveFile } from "../httpRequest";
+import { saveFile, githubTree, getJSON } from "../httpRequest";
 import { serverPath as spigotServerPath } from "../spigot";
 import { serverPath as papertServerPath } from "../paper";
 import { serverPath as pocketmineServerPath } from "../pocketmine";
 import { serverPath as powernukkittServerPath } from "../pwnuukit";
-const defaultFolder = path.join(__dirname, "plugins");
 
 export type pluginPlatform = "spigot"|"paper"|"pocketmine"|"powernukkit";
 export type pluginConfig = {
   name: string,
   fileName?: string,
   url: string,
-  type?: "zip"|"jar",
+  type?: "zip"|"jar"|"raw",
   platforms: pluginPlatform[],
-  dependes?: (string|pluginConfig)[]
+  dependes?: (string|pluginConfig)[],
+  hooksScript?: string
 };
 
 export class pluginManeger {
@@ -25,12 +25,16 @@ export class pluginManeger {
   getPlatform() {return this.#platform};
 
   async #addPlugin (file?: string): Promise<pluginConfig|void> {
-    const config: pluginConfig = JSON.parse(await fs.readFile(path.join(defaultFolder, file), "utf8"));
+    // https://raw.githubusercontent.com/The-Bds-Maneger/plugin_list/main/plugins/MobPlugin.json
+    const config = await getJSON<pluginConfig>(`https://raw.githubusercontent.com/The-Bds-Maneger/plugin_list/main/${file}`);
     if (this.pluginList.some(plugin => plugin.name === config.name)) return config;
     if (!config.platforms?.includes(this.#platform)) return;
     this.pluginList.push(config);
     if (config.dependes) {
-      config.dependes = await Promise.all(config.dependes.filter(depend => typeof depend === "string"?depend.startsWith("./"):false).map((depend: string) => this.#addPlugin(depend.replace("./", "")))) as pluginConfig[];
+      config.dependes = await Promise.all(config.dependes.filter(depend => typeof depend === "string"?depend.startsWith("./"):false).map((depend: string) => {
+        const url = new URL(`https://raw.githubusercontent.com/The-Bds-Maneger/plugin_list/main/${file}`);
+        return this.#addPlugin(path.join(path.dirname(url.pathname).replace("/The-Bds-Maneger/plugin_list/main/", ""), depend.replace("./", "")));
+      })) as pluginConfig[];
     }
   };
 
@@ -57,7 +61,7 @@ export class pluginManeger {
   }
 
   async loadPlugins() {
-    for (const file of await fs.readdir(defaultFolder)) await this.#addPlugin(file);
+    for (const file of (await githubTree("The-Bds-Maneger", "plugin_list", "main")).tree.filter(file => file.path.endsWith(".json"))) await this.#addPlugin(file.path);
     return this;
   }
 

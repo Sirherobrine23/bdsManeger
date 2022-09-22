@@ -152,3 +152,20 @@ export async function GithubRelease(username: string, repo?: string): Promise<gi
   }
   return getJSON<githubRelease[]>(`https://api.github.com/repos/${fullRepo}/releases?per_page=100`);
 }
+
+export type githubTree = {
+  "sha": string,
+  "url": string,
+  "truncated": boolean,
+  "tree": {
+    "path": string,
+    "mode": string,
+    "type": "blob"|"tree",
+    "sha": string,
+    "size": number,
+    "url": string
+  }[],
+};
+export async function githubTree(username: string, repo: string, tree: string) {
+  return getJSON<githubTree>(`https://api.github.com/repos/${username}/${repo}/git/trees/${tree}?recursive=true`);
+}

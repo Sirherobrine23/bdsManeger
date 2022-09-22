@@ -1,8 +1,0 @@
-{
-  "name": "dynmap",
-  "url": "https://dev.bukkit.org/projects/dynmap/files/latest",
-  "platforms": [
-    "spigot",
-    "paper"
-  ]
-}
