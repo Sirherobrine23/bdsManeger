@@ -1,8 +1,8 @@
-import type { ObjectEncodingOptions } from "node:fs";
-import type {pluginManeger as globalPluginManeger} from "./plugin/main";
+import fs from "node:fs";
 import readline from "node:readline";
 import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
+import type {pluginManeger as globalPluginManeger} from "./plugin/main";
 
 export type playerClass = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
 export type playerBase = {playerName: string, connectTime: Date, xuid?: string};
@@ -58,7 +58,7 @@ export declare interface actions {
   once(act: "exit", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
 }
 
-export type actionCommandOption = {command: string, args?: string[], options?: ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
+export type actionCommandOption = {command: string, args?: string[], options?: fs.ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
 export class actions extends EventEmitter {
   #childProcess: child_process.ChildProcess;
   public runCommand(...command: Array<string|number|boolean>) {
@@ -110,6 +110,11 @@ export class actions extends EventEmitter {
     processConfig.options.maxBuffer = Infinity;
     this.processConfig = processConfig;
     this.#childProcess = child_process.execFile(processConfig.command, processConfig.args, processConfig.options);
+
+    if (processConfig.options.logPath) {
+      this.#childProcess.stdout.pipe(fs.createWriteStream(processConfig.options.logPath.stdout));
+      if (processConfig.options.logPath.stderr) this.#childProcess.stderr.pipe(fs.createWriteStream(processConfig.options.logPath.stderr));
+    }
 
     this.#childProcess.on("error", data => this.emit("error", data));
     this.#childProcess.on("close", (code, signal) => this.emit("exit", {code, signal}));
