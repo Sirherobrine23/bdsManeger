@@ -104,6 +104,17 @@ export const player = /[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi;
 
 const serverConfig: actionConfig[] = [
   {
+    name: "serverStop",
+    run: (child) => child.runCommand("stop")
+  },
+  {
+    name: "serverStarted",
+    callback(data, done) {
+      // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
+      if (started.test(data)) done(new Date());
+    }
+  },
+  {
     name: "portListening",
     callback(data, done) {
       const portParse = data.match(portListen);
@@ -118,22 +129,11 @@ const serverConfig: actionConfig[] = [
     }
   },
   {
-    name: "serverStarted",
-    callback(data, done) {
-      // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
-      if (started.test(data)) done(new Date());
-    }
-  },
-  {
-    name: "playerConnect",
+    name: "playerAction",
     callback(data, done) {
       data;
     },
   },
-  {
-    name: "serverStop",
-    run: (child) => child.runCommand("stop")
-  }
 ];
 
 export async function startServer() {

@@ -6,13 +6,17 @@ import type {pluginManeger as globalPluginManeger} from "./plugin/main";
 
 export type playerClass = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
 export type playerBase = {playerName: string, connectTime: Date, xuid?: string, action?: string};
+
+/**
+ * @deprecated Please use playerAction now
+ */
 export type actionsPlayer = {
   name: "playerConnect"|"playerDisconnect"|"playerUnknown",
   callback: (data: string, done: (player: playerBase) => void) => void
 }
 export type newPlayerAction = {
   name: "playerAction",
-  callback: (data: string, playerConect: (player: playerBase) => void, playerDisconnect: (player: playerBase) => void, playerUnknown: (player: playerBase) => void) => void
+  callback: (data: string, playerConnect: (player: playerBase) => void, playerDisconnect: (player: playerBase) => void, playerUnknown: (player: playerBase) => void) => void
 };
 
 export type portListen = {port: number, host?: string, type: "TCP"|"UDP"|"TCP/UDP", protocol: "IPv4"|"IPv6"|"IPV4/IPv6"|"Unknown", plugin?: string};

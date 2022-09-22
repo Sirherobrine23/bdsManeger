@@ -94,5 +94,5 @@ jobs:
 
     # Run test
     - name: Test
-      timeout-minutes: 15
+      timeout-minutes: 25
       run: npm run test:partial -- tests/${{ matrix.platform }}.ts

@@ -8,6 +8,8 @@ import { platformManeger } from "@the-bds-maneger/server_versions";
 import { saveFile } from "./httpRequest";
 export const serverPath = path.join(serverRoot, "power_nukkit");
 const jarPath = path.join(serverPath, "pwnukkit.jar");
+export const playerAction = /^.*\[.*\]\s([\S\w]+|"[\S\w]+")\s+(left|joined)\s+the\s+game$/;
+export const portListen = /Opening\s+server\s+on\s+(([A-Za-z0-9:\.]+):([0-9]+))/;
 
 const serverConfig: actionConfig[] = [
   {
@@ -24,7 +26,6 @@ const serverConfig: actionConfig[] = [
   {
     name: "portListening",
     callback(data, done) {
-      const portListen = /Opening\s+server\s+on\s+(([A-Za-z0-9:\.]+):([0-9]+))/;
       if (portListen.test(data)) {
         const [,, host, port] = data.match(portListen);
         done({
@@ -37,31 +38,16 @@ const serverConfig: actionConfig[] = [
     },
   },
   {
-    name: "playerConnect",
-    callback(data, done) {
-      const playerAction = /^.*\[.*\]\s(\S+)\s+(left|joined)\s+the\s+game$/;
+    name: "playerAction",
+    callback(data, playerConect, playerDisconnect, playerUnknown) {
       if (playerAction.test(data)) {
-        const [,playerName, action] = data.match(playerAction);
-        if (action === "joined") done({
-          connectTime: new Date(),
-          playerName,
-        });
+        const [, playerName, action] = data.match(playerAction)||[];
+        if (action === "joined") playerConect({connectTime: new Date(), playerName});
+        else if (action === "left") playerDisconnect({connectTime: new Date(), playerName});
+        else playerUnknown({connectTime: new Date(), playerName});
       }
     },
-  },
-  {
-    name: "playerDisconnect",
-    callback(data, done) {
-      const playerAction = /^.*\[.*\]\s(\S+)\s+(left|joined)\s+the\s+game$/;
-      if (playerAction.test(data)) {
-        const [,playerName, action] = data.match(playerAction);
-        if (action === "left") done({
-          connectTime: new Date(),
-          playerName,
-        });
-      }
-    },
-  },
+  }
 ];
 
 export async function installServer(version: string|boolean) {

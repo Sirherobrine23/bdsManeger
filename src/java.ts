@@ -8,14 +8,15 @@ import { actions, actionConfig } from "./globalPlatfroms";
 import { saveFile } from "./httpRequest";
 export const serverPath = path.join(serverRoot, "java");
 const jarPath = path.join(serverPath, "server.jar");
-export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
-export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   return platformManeger.java.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
 }
 
+export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
+export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
+export const playerAction = /\[.*\]:\s+([\S\w]+)\s+(joined|left|lost)/;
 const serverConfig: actionConfig[] = [
   {
     name: "serverStop",
@@ -42,6 +43,18 @@ const serverConfig: actionConfig[] = [
         protocol: "IPV4/IPv6"
       });
     }
+  },
+  {
+    name: "playerAction",
+    callback(data, playerConect, playerDisconnect, playerUnknown) {
+      if (playerAction.test(data)) {
+        const [, playerName, action] = data.match(data)||[];
+        if (action === "joined") playerConect({playerName, connectTime: new Date()});
+        else if (action === "left") playerDisconnect({playerName, connectTime: new Date()});
+        else if (action === "lost") playerUnknown({playerName, connectTime: new Date(), action: "lost"});
+        else playerUnknown({playerName, connectTime: new Date()});
+      }
+    },
   },
 ];
 

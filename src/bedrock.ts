@@ -16,7 +16,6 @@ export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|
 export const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
 export const started = /\[.*\]\s+Server\s+started\./;
 export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
-export const compressWorld = /\[.*\]\s+Running\s+AutoCompaction/;
 
 export async function installServer(version: string|boolean) {
   const bedrockData = await platformManeger.bedrock.find(version);
@@ -56,31 +55,15 @@ const serverConfig: actionConfig[] = [
     }
   },
   {
-    name: "playerConnect",
-    callback(data, done) {
-      const match = data.match(player);
-      if (!match) return;
-      const [, action,, playerName, xuid] = match;
-      if (action === "connect") done({connectTime: new Date(), playerName: playerName, xuid});
-    }
-  },
-  {
-    name: "playerDisconnect",
-    callback(data, done) {
-      const match = data.match(player);
-      if (!match) return;
-      const [, action,, playerName, xuid] = match;
-      if (action === "disconnect") done({connectTime: new Date(), playerName: playerName, xuid});
-    }
-  },
-  {
-    name: "playerUnknown",
-    callback(data, done) {
-      const match = data.match(player);
-      if (!match) return;
-      const [, action,, playerName, xuid] = match;
-      if (!(action === "disconnect" || action === "connect")) done({connectTime: new Date(), playerName: playerName, xuid});
-    }
+    name: "playerAction",
+    callback(data, playerConnect, playerDisconnect, playerUnknown) {
+      if (player.test(data)) {
+        const [, action,, playerName, xuid] = data.match(player);
+        if (action === "connect") playerConnect({connectTime: new Date(), playerName: playerName, xuid});
+        else if (action === "disconnect") playerDisconnect({connectTime: new Date(), playerName: playerName, xuid});
+        else playerUnknown({connectTime: new Date(), playerName: playerName, xuid});
+      }
+    },
   },
 ];
 
@@ -185,35 +168,36 @@ export type bedrockConfig = {
 };
 
 type rawConfig = {
-  'server-name': string,
+  "server-name": string,
   gamemode: string,
-  'force-gamemode': boolean,
+  "force-gamemode": boolean,
   difficulty: string,
-  'allow-cheats': boolean,
-  'max-players': number,
-  'online-mode': true,
-  'allow-list': boolean,
-  'server-port': number,
-  'server-portv6': number,
-  'view-distance': number,
-  'tick-distance': number,
-  'player-idle-timeout': number,
-  'max-threads': number,
-  'level-name': string,
-  'level-seed': any,
-  'default-player-permission-level': string,
-  'texturepack-required': boolean,
-  'content-log-file-enabled': boolean,
-  'compression-threshold': number,
-  'server-authoritative-movement': string,
-  'player-movement-score-threshold': number,
-  'player-movement-action-direction-threshold': number,
-  'player-movement-distance-threshold': number,
-  'player-movement-duration-threshold-in-ms': number,
-  'correct-player-movement': boolean,
-  'server-authoritative-block-breaking': boolean,
-  'chat-restriction': string,
-  'disable-player-interaction': boolean
+  "allow-cheats": boolean,
+  "max-players": number,
+  "online-mode": true,
+  "allow-list": boolean,
+  "server-port": number,
+  "server-portv6": number,
+  "view-distance": number,
+  "tick-distance": number,
+  "player-idle-timeout": number,
+  "max-threads": number,
+  "level-name": string,
+  "level-seed": any,
+  "default-player-permission-level": string,
+  "texturepack-required": boolean,
+  "content-log-file-enabled": boolean,
+  "compression-threshold": number,
+  "server-authoritative-movement": string,
+  "player-movement-score-threshold": number,
+  "player-movement-action-direction-threshold": number,
+  "player-movement-distance-threshold": number,
+  "player-movement-duration-threshold-in-ms": number,
+  "correct-player-movement": boolean,
+  "server-authoritative-block-breaking": boolean,
+  "chat-restriction": string,
+  "disable-player-interaction": boolean,
+  "emit-server-telemetry"?: boolean
 }
 
 export async function getConfig(): Promise<bedrockConfig> {

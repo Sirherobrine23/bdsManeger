@@ -167,5 +167,8 @@ export type githubTree = {
   }[],
 };
 export async function githubTree(username: string, repo: string, tree: string) {
+  const validate = /^[a-zA-Z0-9_\-]+$/;
+  if (!validate.test(username)) throw new Error("Invalid username");
+  if (!validate.test(repo)) throw new Error("Invalid repository name");
   return getJSON<githubTree>(`https://api.github.com/repos/${username}/${repo}/git/trees/${tree}?recursive=true`);
 }
