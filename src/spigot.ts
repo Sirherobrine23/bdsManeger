@@ -6,31 +6,46 @@ import {pluginManeger as plugin_maneger} from "./plugin/main";
 import { serverRoot, logRoot, BuildRoot } from './pathControl';
 import { execFileAsync } from "./childPromisses";
 import { actions, actionConfig } from './globalPlatfroms';
-import { getBuffer } from "./httpRequest";
+import { getBuffer, getJSON, saveFile } from "./httpRequest";
 
 export const serverPath = path.join(serverRoot, "spigot");
 export const serverPathBuild = path.join(BuildRoot, "spigot");
 const jarPath = path.join(serverPath, "server.jar");
-export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
-export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
-// [18:38:32] [Network Listener - #3/INFO]: [Geyser-Spigot] Started Geyser on 0.0.0.0:19132
-export const geyserPortListen = /^\[.*\].*Geyser.*\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[a-zA-Z0-9:]+):([0-9]+))/;
-// [00:40:18] [Server thread/INFO]: [dynmap] Web server started on address 0.0.0.0:8123
-export const DynmapPortListen = /^\[.*\].*\[dynmap\].*\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[a-zA-Z0-9:]+):([0-9]+))/;
+
+async function listVersions() {
+  const data = (await getBuffer("https://hub.spigotmc.org/versions/")).toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));
+  data.push("latest");
+  return Promise.all(data.map(async (version) => {
+    const data = await getJSON<{name: string, description: string, toolsVersion: number, javaVersions?: number[], refs: {BuildData: string, Bukkit: string, CraftBukkit: string, Spigot: string}}>(`https://hub.spigotmc.org/versions/${version}.json`);
+    return {
+      version,
+      date: new Date((await getJSON(`https://hub.spigotmc.org/stash/rest/api/latest/projects/SPIGOT/repos/spigot/commits/${data.refs.Spigot}/`)).committerTimestamp),
+      data,
+    };
+  }));
+}
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-
   if (!fsOld.existsSync(serverPathBuild)) await fs.mkdir(serverPathBuild, {recursive: true});
   if (typeof version === "boolean") version = "latest";
-  await fs.writeFile(path.join(serverPathBuild, "buildSpigot.jar"), await getBuffer("https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar"));
+  const versions = (await listVersions()).find(ver => ver.version === version);
+  if (!versions) throw new Error("Version dont exists");
+  await saveFile("https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar", {filePath: path.join(serverPathBuild, "buildSpigot.jar")});
   await execFileAsync("java", ["-jar", path.join(serverPathBuild, "buildSpigot.jar"), "-o", path.join(serverPathBuild, "output"), "--rev", version], {stdio: "inherit", cwd: serverPathBuild});
 
-  await fs.cp(path.join(serverPathBuild, "output", (await fs.readdir(path.join(serverPathBuild, "output")))[0]), jarPath, {force: true, preserveTimestamps: true});
+  await fs.cp(path.join(serverPathBuild, "output", (await fs.readdir(path.join(serverPathBuild, "output"))).find(file => file.endsWith(".jar"))), jarPath, {force: true, preserveTimestamps: true});
   await fs.rm(path.join(serverPathBuild, "output"), {recursive: true, force: true});
+  return versions;
 }
 
 export const pluginManger = () => (new plugin_maneger("spigot", false)).loadPlugins();
+
+export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
+export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
+export const geyserPortListen = /^\[.*\].*Geyser.*\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[a-zA-Z0-9:]+):([0-9]+))/;
+export const DynmapPortListen = /^\[.*\].*\[dynmap\].*\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[a-zA-Z0-9:]+):([0-9]+))/;
+export const playerAction = /\[.*\]:\s+([\S\w]+)\s+(joined|left|lost)/;
 const serverConfig: actionConfig[] = [
   {
     name: "serverStop",
@@ -85,6 +100,18 @@ const serverConfig: actionConfig[] = [
         });
       }
     }
+  },
+  {
+    name: "playerAction",
+    callback(data, playerConect, playerDisconnect, playerUnknown) {
+      if (playerAction.test(data)) {
+        const [, playerName, action] = data.match(data)||[];
+        if (action === "joined") playerConect({playerName, connectTime: new Date()});
+        else if (action === "left") playerDisconnect({playerName, connectTime: new Date()});
+        else if (action === "lost") playerUnknown({playerName, connectTime: new Date(), action: "lost"});
+        else playerUnknown({playerName, connectTime: new Date()});
+      }
+    },
   },
 ];
 

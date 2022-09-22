@@ -4,8 +4,9 @@ import fsOld from "node:fs";
 import os from "node:os";
 import { pluginManeger as plugin_maneger } from "./plugin/main";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { serverRoot, logRoot } from './pathControl';
-import { actions, actionConfig } from './globalPlatfroms';
+import { serverRoot, logRoot } from "./pathControl";
+import { actions, actionConfig } from "./globalPlatfroms";
+import { saveFile } from "./httpRequest";
 export const serverPath = path.join(serverRoot, "Papermc");
 const jarPath = path.join(serverPath, "server.jar");
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
@@ -13,7 +14,7 @@ export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  await fs.writeFile(jarPath, await platformManeger.paper.getJar(version));
+  return platformManeger.paper.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
 }
 
 export const pluginManger = () => (new plugin_maneger("paper", false)).loadPlugins();

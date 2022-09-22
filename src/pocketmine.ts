@@ -13,7 +13,6 @@ import { promisify } from 'node:util';
 export const serverPath = path.join(serverRoot, "pocketmine");
 export const serverPhar = path.join(serverPath, "pocketmine.phar");
 export const phpBinPath = path.join(serverPath, "bin", (process.platform === "win32"?"php":"bin"), "php");
-export { pocketmineServerWorld, pocketmineWorld, linkPocketmine } from "./linkWorld";
 
 async function Readdir(pathRead: string, filter?: RegExp[]) {
 if (!filter) filter = [/.*/];

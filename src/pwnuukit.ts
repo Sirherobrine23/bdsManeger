@@ -5,13 +5,9 @@ import os from "node:os";
 import { serverRoot, logRoot } from './pathControl';
 import { actions, actionConfig } from './globalPlatfroms';
 import { platformManeger } from "@the-bds-maneger/server_versions";
+import { saveFile } from "./httpRequest";
 export const serverPath = path.join(serverRoot, "power_nukkit");
 const jarPath = path.join(serverPath, "pwnukkit.jar");
-
-export const portListen = /Opening\s+server\s+on\s+(([A-Za-z0-9:\.]+):([0-9]+))/;
-// 14:19:28 [INFO ] Sirherobrine joined the game
-// 14:25:10 [INFO ] Sirherobrine left the game
-export const playerAction = /^.*\[.*\]\s(\S+)\s+(left|joined)\s+the\s+game$/;
 
 const serverConfig: actionConfig[] = [
   {
@@ -28,6 +24,7 @@ const serverConfig: actionConfig[] = [
   {
     name: "portListening",
     callback(data, done) {
+      const portListen = /Opening\s+server\s+on\s+(([A-Za-z0-9:\.]+):([0-9]+))/;
       if (portListen.test(data)) {
         const [,, host, port] = data.match(portListen);
         done({
@@ -42,24 +39,26 @@ const serverConfig: actionConfig[] = [
   {
     name: "playerConnect",
     callback(data, done) {
+      const playerAction = /^.*\[.*\]\s(\S+)\s+(left|joined)\s+the\s+game$/;
       if (playerAction.test(data)) {
         const [,playerName, action] = data.match(playerAction);
         if (action === "joined") done({
           connectTime: new Date(),
           playerName,
-        })
+        });
       }
     },
   },
   {
     name: "playerDisconnect",
     callback(data, done) {
+      const playerAction = /^.*\[.*\]\s(\S+)\s+(left|joined)\s+the\s+game$/;
       if (playerAction.test(data)) {
         const [,playerName, action] = data.match(playerAction);
         if (action === "left") done({
           connectTime: new Date(),
           playerName,
-        })
+        });
       }
     },
   },
@@ -67,7 +66,7 @@ const serverConfig: actionConfig[] = [
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  await fs.writeFile(jarPath, await platformManeger.powernukkit.getJar(version))
+  return platformManeger.powernukkit.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
 }
 
 export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean}) {

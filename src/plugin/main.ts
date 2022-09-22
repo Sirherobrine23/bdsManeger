@@ -15,8 +15,7 @@ export type pluginConfig = {
   url: string,
   type?: "zip"|"jar"|"raw",
   platforms: pluginPlatform[],
-  dependes?: (string|pluginConfig)[],
-  hooksScript?: string
+  dependes?: (string|pluginConfig)[]
 };
 
 export class pluginManeger {

@@ -5,11 +5,15 @@ import { EventEmitter } from "node:events";
 import type {pluginManeger as globalPluginManeger} from "./plugin/main";
 
 export type playerClass = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
-export type playerBase = {playerName: string, connectTime: Date, xuid?: string};
+export type playerBase = {playerName: string, connectTime: Date, xuid?: string, action?: string};
 export type actionsPlayer = {
   name: "playerConnect"|"playerDisconnect"|"playerUnknown",
   callback: (data: string, done: (player: playerBase) => void) => void
 }
+export type newPlayerAction = {
+  name: "playerAction",
+  callback: (data: string, playerConect: (player: playerBase) => void, playerDisconnect: (player: playerBase) => void, playerUnknown: (player: playerBase) => void) => void
+};
 
 export type portListen = {port: number, host?: string, type: "TCP"|"UDP"|"TCP/UDP", protocol: "IPv4"|"IPv6"|"IPV4/IPv6"|"Unknown", plugin?: string};
 export type actionsPort = {
@@ -39,7 +43,7 @@ export type actionPlugin = {
 };
 
 export type actionRun = actionsServerStop|actionTp;
-export type actionCallback = actionsPlayer|actionsPort|actionsServerStarted|actionsServerStarted;
+export type actionCallback = actionsPlayer|newPlayerAction|actionsPort|actionsServerStarted|actionsServerStarted;
 export type actionConfig = actionCallback|actionRun|actionPlugin;
 
 export declare interface actions {
@@ -65,19 +69,16 @@ export class actions extends EventEmitter {
     this.#childProcess.stdin.write(command.map(a => String(a)).join(" ")+"\n");
     return this;
   }
-
   public killProcess(signal?: number|NodeJS.Signals) {
     if(this.#childProcess?.killed) return this.#childProcess?.killed;
     return this.#childProcess?.kill(signal);
   }
 
-  #stopServerFunction: (childProcess: actions) => void = (child) => child.#childProcess.kill("SIGKILL");
-  #tpfunction?: (childProcess: actions, x: number|string, y: number|string, z: number|string) => void;
-
   public plugin?: globalPluginManeger;
-
   public portListening: portListen[] = [];
   public playerActions: playerClass = {};
+  #stopServerFunction: (actions: actions) => void = (child) => child.#childProcess.kill("SIGKILL");
+  #tpfunction?: (actions: actions, playerName: string, x: number|string, y: number|string, z: number|string) => void = (actions, playerName, x,y,z) => actions.runCommand("tp", playerName, x,y,z);
 
   public stopServer() {
     if (typeof this.stopServer === "undefined") this.#childProcess.kill("SIGKILL");
@@ -85,7 +86,7 @@ export class actions extends EventEmitter {
     return this.waitExit();
   }
 
-  public waitExit(): Promise<number> {
+  public async waitExit(): Promise<number> {
     if (this.#childProcess.exitCode === null) return new Promise<number>((done, reject) => {
       this.#childProcess.once("error", err => reject(err));
       this.#childProcess.once("exit", code => {
@@ -93,12 +94,12 @@ export class actions extends EventEmitter {
         reject(new Error(`Server exit with ${code} code.`));
       });
     });
-    return Promise.resolve(this.#childProcess.exitCode);
+    return this.#childProcess.exitCode;
   }
 
-  public tp(x: number|string = 0, y: number|string = 0, z: number|string = 0) {
-    if (typeof this.stopServer === "undefined") throw new Error("TP command not configured!");
-    this.#tpfunction(this, x, y, z);
+  public tp(playerName: string, x: number|string = 0, y: number|string = 0, z: number|string = 0) {
+    if (!(playerName.startsWith("@")||!!this.playerActions[playerName])) throw new Error("Player or target not exist");
+    this.#tpfunction(this, playerName, x, y, z);
     return this;
   }
 
@@ -161,6 +162,13 @@ export class actions extends EventEmitter {
 
     // Callbacks
     (config.filter((a: actionCallback) => typeof a?.callback === "function") as actionCallback[]).forEach(fn => {
+      // Use new player actions
+      if (fn.name === "playerAction") {
+        const playerConnect = (data: playerBase) => this.emit("playerConnect", data), playerDisonnect = (data: playerBase) => this.emit("playerDisconnect", data), playerUnknown = (data: playerBase) => this.emit("playerUnknown", data);
+        this.on("log_stdout", data => fn.callback(data, playerConnect, playerDisonnect, playerUnknown));
+        this.on("log_stderr", data => fn.callback(data, playerConnect, playerDisonnect, playerUnknown));
+        return;
+      } else if (fn.name === "playerConnect"||fn.name === "playerDisconnect"||fn.name === "playerUnknown") console.warn("Migrate %s to playerAction", fn.name);
       this.on("log_stdout", data => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args)));
       this.on("log_stderr", data => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args)));
     });
@@ -173,7 +181,7 @@ export class actions extends EventEmitter {
 
     // Plugin maneger
     (config.filter((a: actionPlugin) => !!a?.class) as actionPlugin[]).forEach(action => {
-      if (action.name === "pluginManeger") this.plugin = action.class();
+      if (action.name === "pluginManeger") (action.class()).loadPlugins().then(maneger => this.plugin = maneger);
     });
   }
 }

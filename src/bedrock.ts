@@ -8,27 +8,30 @@ import { execAsync } from "./childPromisses";
 import { actions, actionConfig } from "./globalPlatfroms";
 import { serverRoot, logRoot } from './pathControl';
 import * as Proprieties from "./Proprieties";
+import { saveFile } from "./httpRequest";
 export const serverPath = path.join(serverRoot, "Bedrock");
-export { bedrockServerWorld, bedrockWorld, linkBedrock } from "./linkWorld";
 
 // RegExp
 export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
 export const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
 export const started = /\[.*\]\s+Server\s+started\./;
-// [2022-08-30 20:50:53:821 INFO] Player connected: Sirherobrine, xuid: 111111111111111
-// [2022-08-30 20:56:55:231 INFO] Player disconnected: Sirherobrine, xuid: 111111111111111
 export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
-// [2022-08-30 20:56:55:601 INFO] Running AutoCompaction...
 export const compressWorld = /\[.*\]\s+Running\s+AutoCompaction/;
 
 export async function installServer(version: string|boolean) {
-  const zip = new admZip(await platformManeger.bedrock.getBedrockZip(version, {}));
+  const bedrockData = await platformManeger.bedrock.find(version);
+  const zip = new admZip(await saveFile(bedrockData.url[process.platform]));
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   // Remover files
-  for (const file of await fs.readdir(serverPath).then(files => files.filter(file => !saveFileFolder.test(file)))) await fs.rm(path.join(serverPath, file), {recursive: true, force: true});
+  await fs.readdir(serverPath).then(files => files.filter(file => !saveFileFolder.test(file))).then(files => Promise.all(files.map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true}))));
   const serverConfig = (await fs.readFile(path.join(serverPath, "server.properties"), "utf8").catch(() => "")).trim();
   await promisify(zip.extractAllToAsync)(serverPath, true, true);
   if (serverConfig) await fs.writeFile(path.join(serverPath, "server.properties"), serverConfig);
+  return {
+    version: bedrockData.version,
+    date: bedrockData.date,
+    url: bedrockData.url[process.platform]
+  };
 }
 
 const serverConfig: actionConfig[] = [

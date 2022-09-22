@@ -5,7 +5,6 @@ import tar from "tar";
 import { bdsRoot } from "./pathControl";
 
 export type payload = {
-  raw?: string,
   httpVersion?: string,
   request?: {
     method: string,
@@ -15,24 +14,29 @@ export type payload = {
     code: number,
     text: string
   },
-  header: {[key: string]: string|boolean|number},
+  header?: {[key: string]: string|boolean|number},
   second?: payload,
-  body?: any
+  body?: any,
+  raw?: string,
 };
 
-const payloadRequest = /^(GET|POST|CONNECT|HEAD|PUT|DELETE)\s+(.*)\s+HTTP\/([0-9\.]+)/;
-const payloadResponse = /HTTP\/([0-9\.]+)\s+([0-9]+)\s+([\w\S\s]+)/;
-const parseHeard = /^([0-9A-Za-z\._-\s@]+):([\w\S\s]+)/;
-
 export class payloadError extends Error {
-  public payload: payload
+  public payload: payload;
   constructor(errMessage: string, payload: payload) {
     super(errMessage);
     this.payload = payload;
   }
 }
 
-function parsePayload(data: string): payload {
+const payloadRequest = /^(GET|POST|CONNECT|HEAD|PUT|DELETE)\s+(.*)\s+HTTP\/([0-9\.]+)/;
+const payloadResponse = /HTTP\/([0-9\.]+)\s+([0-9]+)\s+([\w\S\s]+)/;
+const parseHeard = /^([0-9A-Za-z\._-\s@]+):([\w\S\s]+)/;
+async function parsePayload(input: string|Buffer|net.Socket): Promise<payload> {
+  let data = "";
+  if (typeof input === "string") data = input; else {
+    if (Buffer.isBuffer(input)) data = input.toString("utf8");
+    else data = await new Promise<string>(done => input.once("data", dataInput => done(dataInput.toString("utf8"))))
+  }
   const payloadBody: payload = {raw: data, header: {}};
   if (/^{.*}$/.test(data.replace(/\r?\n/, ""))) {
     payloadBody.body = JSON.parse(data);
@@ -56,7 +60,7 @@ function parsePayload(data: string): payload {
           path: reqPath
         };
         continue;
-      } else payloadBody.second = parsePayload(`${line}\r\n${data}`);
+      } else payloadBody.second = await parsePayload(`${line}\r\n${data}`);
       break;
     } else if (parseHeard.test(line.trim())) {
       const [, key, value] = line.trim().match(parseHeard);
@@ -82,62 +86,68 @@ function parsePayload(data: string): payload {
   return payloadBody;
 }
 
-function stringifyPayload(options: {code: number, message: string, headers?: {[keyName: string]: string|number|boolean}, body?: any}, socket: net.Socket) {
-  let message = `HTTP/1.0 ${options.code} ${options.message}\r\n`;
-  if (options.headers) Object.keys(options.headers).forEach(key => `${key}: ${options.headers[key]}\r\n`);
+function stringifyPayload(socket: net.Socket, response: payload) {
+  let message = "";
+  if (response.request) message += `${response.request.method.toUpperCase()} ${response.request.path} HTTP/${response.httpVersion||"1.0"}\r\n`;
+  else message += `HTTP/${response.httpVersion||"1.0"} ${response.response.code} ${response.response.text}\r\n`;
+  if (response.header) Object.keys(response.header).forEach(key => `${key}: ${response.header[key]}\r\n`);
   message += "\r\n";
-  if (options.body) message += JSON.stringify(options.body);
-  socket.write(message+"\r\n");
-  if (options.code !== 200) socket.end();
+  if (response.body !== undefined) {
+    if (Array.isArray(response.body)||typeof response.body === "object") message += JSON.stringify(response.body);
+    else if (typeof response.body === "string") message += response.body;
+    else if (typeof response.body === "bigint") message += response.body.toString();
+    else message += String(response.body);
+  }
+  socket.write(message);
   return socket;
 }
 
-export function exportBds() {
-  const server = net.createServer();
-  let newConnection = false;
-  const authToken = crypto.randomBytes(8).toString("base64");
-  server.on("connection", async (socket): Promise<any> => {
-    if (newConnection) return stringifyPayload({code: 400, message: "Server locked", body: {errro: "Server locked"}}, socket);
-    const payload = parsePayload(await new Promise<string>(done => socket.once("data", res => done(res.toString("utf8")))));
+export class exportBds {
+  public acceptConnection = true;
+  public authToken = crypto.randomBytes(16).toString("base64");
+  #server = net.createServer(async (socket): Promise<any> => {
+    if (!this.acceptConnection) return stringifyPayload(socket, {response: {code: 400, text: "Server locked"}, body: {erro: "Server locked"}}).end();
+    const payload = await parsePayload(await new Promise<string>(done => socket.once("data", res => done(res.toString("utf8")))));
     console.log(payload);
-    if (payload.header.Authorization !== authToken) return stringifyPayload({code: 401, message: "Not allowed", body: {error: "Invalid token"}}, socket);
-    else stringifyPayload({code: 200, message: "Success", headers: {Date: (new Date()).toISOString(), "Content-Type": "bdsStream/tar"}}, socket);
-    newConnection = true;
+    if (payload.header.Authorization !== this.authToken) return stringifyPayload(socket, {response: {code: 401, text: "Not allowed"}, body: {error: "Invalid token"}}).end();
+    else stringifyPayload(socket, {response: {code: 200, text: "Success"}, header: {Date: (new Date()).toISOString(), "Content-Type": "bdsStream/tar"}});
+    this.acceptConnection = false;
     console.log("Sending to %s", socket.localAddress+":"+socket.localPort);
     // Compact bds root
     const tarCompress = tar.create({gzip: true, cwd: bdsRoot}, await fs.readdir(bdsRoot));
     tarCompress.pipe(socket);
-    tarCompress.on("end", () => server.close());
+    tarCompress.on("data", ({length}) => console.log("Send to %s, size: %f", socket.localAddress+":"+socket.localPort, length));
+    tarCompress.on("end", () => this.#server.close());
   });
-  return {
-    authToken,
-    server,
-    listen() {
-      return new Promise<number>(done => {
-        server.listen(() => {
-          console.log("Port listen on http://0.0.0.0:%s/, auth token '%s'", server.address()["port"], authToken);
-          done(server.address()["port"]);
-        });
+
+  public async listen(port = 0) {
+    return new Promise<number>(done => {
+      this.#server.listen(port, () => {
+        let address = this.#server.address()["address"], port = this.#server.address()["port"];
+        if (/::/.test(address)) address = `[${address}]`;
+        console.log("Port listen on http://%s:%s/, auth token '%s'", address, port, this.authToken);
+        return done(port);
       });
-    },
-    PromisseWait: new Promise<void>((done) => {
-      server.once("close", () => {
-        console.log("Export end");
-        done();
-      });
-    })
-  };
+    });
+  }
+  public async waitClose() {
+    return new Promise<void>((done, reject) => {
+      this.#server.on("error", reject);
+      this.#server.once("close", done);
+    });
+  }
 }
 
-export async function importBds(host: string, port: number, authToken: string) {
-  const client = net.createConnection({host, port});
-  client.write(`GET / HTTP/1.0\r\nAuthorization: ${authToken}\r\n\r\n`);
-  parsePayload(await new Promise<string>(done => client.once("data", res => done(res.toString("utf8")))));
-  const tarE = tar.extract({cwd: bdsRoot, noChmod: false, noMtime: false, preserveOwner: true});
-  client.pipe(tarE);
+export async function importBds(option: {host: string, port: number, authToken: string}) {
+  await fs.rename(bdsRoot, bdsRoot+"_backup_"+Date.now());
+  const client = stringifyPayload(net.createConnection({host: option.host, port: option.port}), {request: {method: "GET", path: "/"}, header: {Authorization: option.authToken}});
+  await parsePayload(client);
+  const tar_extract = tar.extract({cwd: bdsRoot, noChmod: false, noMtime: false, preserveOwner: true});
+  client.pipe(tar_extract);
+  client.on("data", ({length}) => console.log("Recive size: %f", length));
   return new Promise<void>((done, reject) => {
     client.once("close", () => done());
     client.on("error", reject);
-    tarE.on("error", reject);
+    tar_extract.on("error", reject);
   });
 }

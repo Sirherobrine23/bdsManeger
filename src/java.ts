@@ -3,17 +3,17 @@ import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { serverRoot, logRoot } from './pathControl';
-import { actions, actionConfig } from './globalPlatfroms';
+import { serverRoot, logRoot } from "./pathControl";
+import { actions, actionConfig } from "./globalPlatfroms";
+import { saveFile } from "./httpRequest";
 export const serverPath = path.join(serverRoot, "java");
 const jarPath = path.join(serverPath, "server.jar");
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
-// [21:37:27] [Server thread/INFO]: Starting Minecraft server on *:25565
 export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  await fs.writeFile(jarPath, await platformManeger.java.getJar(version));
+  return platformManeger.java.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
 }
 
 const serverConfig: actionConfig[] = [
