@@ -53,7 +53,7 @@ const serverConfig: actionConfig[] = [
   },
   {
     name: "pluginManeger",
-    class: () => new plugin_maneger("spigot")
+    class: () => new plugin_maneger("spigot").loadPlugins()
   },
   {
     name: "serverStarted",

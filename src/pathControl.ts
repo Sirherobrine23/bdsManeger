@@ -1,7 +1,7 @@
-import * as fs from "node:fs/promises";
-import * as fsOld from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
+import fs from "node:fs/promises";
+import fsOld from "node:fs";
+import path from "node:path";
+import os from "node:os";
 
 // bds Root
 export const bdsRoot = process.env.BDS_HOME||path.join(os.homedir(), ".bdsManeger");
@@ -22,6 +22,10 @@ if (!fsOld.existsSync(logRoot)) fs.mkdir(logRoot, {recursive: true});
 // Worlds Folder
 export const worldFolder = path.join(bdsRoot, "Worlds");
 if (!fsOld.existsSync(worldFolder)) fs.mkdir(serverRoot, {recursive: true});
+
+// Plugins hooks
+export const pluginHooksFolder = path.join(bdsRoot, "pluginHooks");
+if (!fsOld.existsSync(pluginHooksFolder)) fs.mkdir(pluginHooksFolder, {recursive: true});
 
 // Bds backup
 export const backupFolder = path.join(bdsRoot, "Backup");

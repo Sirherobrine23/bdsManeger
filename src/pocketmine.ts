@@ -94,7 +94,7 @@ async function installPhp(): Promise<void> {
 export async function installServer(version: string|boolean) {
   if (!fsExistsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   await installPhp();
-  await fs.writeFile(serverPhar, await platformManeger.pocketmine.getPhar(version));
+  await fs.writeFile(serverPhar, (await platformManeger.pocketmine.find(version))?.url);
 }
 
 // [16:47:35.405] [Server thread/INFO]: Minecraft network interface running on 0.0.0.0:19132

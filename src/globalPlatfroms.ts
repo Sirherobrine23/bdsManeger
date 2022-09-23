@@ -43,7 +43,7 @@ export type actionTp = {
 
 export type actionPlugin = {
   name: "pluginManeger",
-  class: () => globalPluginManeger
+  class: () => Promise<globalPluginManeger>
 };
 
 export type actionRun = actionsServerStop|actionTp;
@@ -79,6 +79,7 @@ export class actions extends EventEmitter {
   }
 
   public plugin?: globalPluginManeger;
+  public platform?: string;
   public portListening: portListen[] = [];
   public playerActions: playerClass = {};
   #stopServerFunction: (actions: actions) => void = (child) => child.#childProcess.kill("SIGKILL");
@@ -91,14 +92,11 @@ export class actions extends EventEmitter {
   }
 
   public async waitExit(): Promise<number> {
-    if (this.#childProcess.exitCode === null) return new Promise<number>((done, reject) => {
+    if (this.#childProcess.exitCode !== null) return this.#childProcess.exitCode;
+    return new Promise<number>((done, reject) => {
       this.#childProcess.once("error", err => reject(err));
-      this.#childProcess.once("exit", code => {
-        if (code === 0) return done(code);
-        reject(new Error(`Server exit with ${code} code.`));
-      });
+      this.#childProcess.once("close", code => done(code));
     });
-    return this.#childProcess.exitCode;
   }
 
   public tp(playerName: string, x: number|string = 0, y: number|string = 0, z: number|string = 0) {
@@ -115,18 +113,19 @@ export class actions extends EventEmitter {
     processConfig.options.maxBuffer = Infinity;
     this.processConfig = processConfig;
     this.#childProcess = child_process.execFile(processConfig.command, processConfig.args, processConfig.options);
-
     if (processConfig.options.logPath) {
       this.#childProcess.stdout.pipe(fs.createWriteStream(processConfig.options.logPath.stdout));
       if (processConfig.options.logPath.stderr) this.#childProcess.stderr.pipe(fs.createWriteStream(processConfig.options.logPath.stderr));
     }
 
     this.#childProcess.on("error", data => this.emit("error", data));
-    this.#childProcess.on("close", (code, signal) => this.emit("exit", {code, signal}));
+    this.#childProcess.on("exit", (code, signal) => this.emit("exit", {code, signal}));
     const readlineStdout = readline.createInterface(this.#childProcess.stdout);
-    readlineStdout.on("line", data => this.emit("log_stdout", data));
     const readlineStderr = readline.createInterface(this.#childProcess.stderr);
+    readlineStdout.on("line", data => this.emit("log_stdout", data));
     readlineStderr.on("line", data => this.emit("log_stderr", data));
+    readlineStdout.on("line", data => this.emit("data", data));
+    readlineStderr.on("line", data => this.emit("data", data));
 
     // Ports listening
     this.on("portListening", data => this.portListening.push(data));
@@ -164,6 +163,21 @@ export class actions extends EventEmitter {
       this.playerActions[data.playerName].history.push({action: "unknown", date: data.connectTime});
     });
 
+        // Plugin maneger
+        const plug = config.find((a: actionPlugin) => a?.name === "pluginManeger") as actionPlugin;
+        if (!!plug) plug.class().then(res => {
+          this.plugin = res;
+          // Load external script
+          res.scriptList.forEach(async script => {
+            try {
+              await script.register(this);
+              console.info("Register external (%s) script", script.scriptName);
+            } catch (err) {
+              this.emit("error", err);
+            }
+          });
+        }).catch(err => this.emit("error", err));
+
     // Callbacks
     (config.filter((a: actionCallback) => typeof a?.callback === "function") as actionCallback[]).forEach(fn => {
       // Use new player actions
@@ -181,11 +195,6 @@ export class actions extends EventEmitter {
     (config.filter((a: actionRun) => typeof a?.run === "function") as actionRun[]).forEach(action => {
       if (action.name === "serverStop") this.#stopServerFunction = action.run;
       else if (action.name === "tp") this.#tpfunction = action.run;
-    });
-
-    // Plugin maneger
-    (config.filter((a: actionPlugin) => !!a?.class) as actionPlugin[]).forEach(action => {
-      if (action.name === "pluginManeger") (action.class()).loadPlugins().then(maneger => this.plugin = maneger);
     });
   }
 }

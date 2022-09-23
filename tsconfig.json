@@ -1,8 +1,9 @@
 {
 	"compilerOptions": {
 		"esModuleInterop": true,
-		"moduleResolution": "node",
 		"module": "commonjs",
+		"moduleResolution": "node",
+		"target": "ES2019",
 		"outDir": "./dist",
 		"declaration": true,
 		"strict": false,
@@ -11,7 +12,6 @@
 		"noFallthroughCasesInSwitch": true,
 		"skipLibCheck": true,
 		"allowJs": true,
-		"target": "ES6",
 		"paths": {
 			"@/*": [
 				"./node_modules/@*"
@@ -20,9 +20,10 @@
 	},
 	"include": [
 		"src/**/*"
-	],
+, "load.js"	],
 	"exclude": [
 		"node_modules/",
-		"test/"
+		"test/",
+		"load.js"
 	]
 }

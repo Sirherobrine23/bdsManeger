@@ -28,7 +28,7 @@ const serverConfig: actionConfig[] = [
   },
   {
     name: "pluginManeger",
-    class: () => new plugin_maneger("paper")
+    class: () => new plugin_maneger("paper").loadPlugins()
   },
   {
     name: "serverStarted",
