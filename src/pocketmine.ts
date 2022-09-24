@@ -1,18 +1,30 @@
-import * as path from "node:path";
-import * as fs from "node:fs/promises";
-import * as os from "node:os";
-import * as tar from "tar";
-import { existsSync as  fsExistsSync } from "node:fs";
+import path from "node:path";
+import fs from "node:fs/promises";
+import os from "node:os";
+import { existsSync as  fsExistsSync, Stats } from "node:fs";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { execFileAsync, execAsync } from './childPromisses';
 import { logRoot, serverRoot } from "./pathControl";
-import { getBuffer, githubRelease, GithubRelease, saveFile } from "./httpRequest";
+import { getBuffer, githubRelease, GithubRelease, saveFile, tarExtract } from "./httpRequest";
 import { actionConfig, actions } from './globalPlatfroms';
 import AdmZip from "adm-zip";
 import { promisify } from 'node:util';
 export const serverPath = path.join(serverRoot, "pocketmine");
 export const serverPhar = path.join(serverPath, "pocketmine.phar");
-export const phpBinPath = path.join(serverPath, "bin", (process.platform === "win32"?"php":"bin"), "php");
+
+async function findPhp(extraPath?: string): Promise<string> {
+  if (!extraPath) extraPath = path.join(serverPath, "bin");
+  const files = await Promise.all((await fs.readdir(extraPath)).map(file => fs.lstat(path.join(extraPath, file)).then(stat => ({stat, file, fullPath: path.join(extraPath, file)})).catch(() => {})));
+  let folderFF = "";
+  for (const file of (files.filter(a=>!!a) as {file: string, fullPath: string, stat: Stats}[]).sort(a => a.stat.isDirectory() ? 1:-1)) {
+    if (file.stat.isDirectory()) {
+      folderFF = await findPhp(file.fullPath).catch(() => "");
+      if (folderFF) return folderFF;
+    } else if (file.file === "php"||file.file === "php.exe") return file.fullPath;
+  }
+  if (folderFF) return folderFF;
+  throw new Error("Cannot find php");
+}
 
 async function Readdir(pathRead: string, filter?: RegExp[]) {
 if (!filter) filter = [/.*/];
@@ -62,18 +74,19 @@ async function installPhp(): Promise<void> {
   const releases: (githubRelease["assets"][0])[] = [];
   (await GithubRelease("The-Bds-Maneger", "Build-PHP-Bins")).map(re => re.assets).forEach(res => releases.push(...res));
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
+  await fs.writeFile(path.join(os.tmpdir(), "bds_test.php"), `<?php echo "Hello World";`);
   if (process.platform === "win32") {
     let url: string = releases.filter(assert => assert.name.endsWith(".zip")).find(assert => /win32|windows/.test(assert.name))?.browser_download_url;
     if (!url) throw new Error("Cannnot get php url");
     return promisify((new AdmZip(await saveFile(url))).extractAllToAsync)(serverPath, false, true);
   } else {
-    await fs.mkdir(path.resolve(serverPath, "bin"), {recursive: true});
-    const file = releases.find(re => re.name.includes(process.platform) && re.name.includes(process.arch));
+    const fileTest = RegExp(`${process.platform.toLowerCase()}.*${process.arch.toLowerCase()}`);
+    const file = releases.find(re => fileTest.test(re.name.toLowerCase()));
     if (file) {
-      const downloadFile = await saveFile(file.browser_download_url);
-      // Tar.gz
-      if (/tar\.gz/.test(file.name)) await tar.extract({file: downloadFile, C: path.join(serverPath, "bin"), keep: true, p: true, noChmod: false});
-      else await promisify((new AdmZip(downloadFile)).extractAllToAsync)(serverPath, false, true);
+      if (/\.zip/.test(file.name)) await promisify((new AdmZip(await saveFile(file.browser_download_url))).extractAllToAsync)(serverPath, false, true);
+      else await tarExtract(file.browser_download_url, {folderPath: path.join(serverPath, "bin")});
+
+      // Update zts
       if (process.platform === "linux"||process.platform === "android"||process.platform === "darwin") {
         const ztsFind = await Readdir(path.resolve(serverPath, "bin"), [/.*debug-zts.*/]);
         if (ztsFind.length > 0) {
@@ -87,17 +100,20 @@ async function installPhp(): Promise<void> {
     }
   }
   // test it's works php
-  await fs.writeFile(path.join(os.tmpdir(), "bds_test.php"), `<?php echo "Hello World";`);
-  await execFileAsync(phpBinPath, ["-f", path.join(os.tmpdir(), "test.php")]).catch(buildPhp);
+  await execFileAsync(await findPhp(), ["-v"]).catch(err => {
+    console.warn(String(err));
+    return buildPhp()
+  });
 }
 
 export async function installServer(version: string|boolean) {
   if (!fsExistsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   await installPhp();
-  await fs.writeFile(serverPhar, (await platformManeger.pocketmine.find(version))?.url);
+  const info = await platformManeger.pocketmine.find(version);
+  await saveFile(info?.url, {filePath: serverPhar});
+  return info;
 }
 
-// [16:47:35.405] [Server thread/INFO]: Minecraft network interface running on 0.0.0.0:19132
 export const portListen = /\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|\[[A-Za-z0-9:]+\]|):([0-9]+))/;
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const player = /[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi;
@@ -139,5 +155,5 @@ const serverConfig: actionConfig[] = [
 export async function startServer() {
   if (!fsExistsSync(serverPath)) throw new Error("Install server fist!");
   const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_pocketmine_${process.platform}_${process.arch}.stdout.log`);
-  return new actions({command: phpBinPath, args: [serverPhar, "--no-wizard", "--enable-ansi"], options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
+  return new actions({command: await findPhp(), args: [serverPhar, "--no-wizard", "--enable-ansi"], options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
 }
