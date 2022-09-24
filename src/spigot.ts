@@ -4,7 +4,6 @@ import fsOld from "node:fs";
 import os from "node:os";
 import {pluginManeger as plugin_maneger} from "./plugin/main";
 import { serverRoot, logRoot, BuildRoot } from './pathControl';
-import { execFileAsync } from "./childPromisses";
 import { actions, actionConfig } from './globalPlatfroms';
 import { getBuffer, getJSON, saveFile } from "./httpRequest";
 
@@ -14,8 +13,7 @@ const jarPath = path.join(serverPath, "server.jar");
 
 async function listVersions() {
   const data = (await getBuffer("https://hub.spigotmc.org/versions/")).toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));
-  data.push("latest");
-  return Promise.all(data.map(async (version) => {
+  const data2 = await Promise.all(data.map(async (version) => {
     const data = await getJSON<{name: string, description: string, toolsVersion: number, javaVersions?: number[], refs: {BuildData: string, Bukkit: string, CraftBukkit: string, Spigot: string}}>(`https://hub.spigotmc.org/versions/${version}.json`);
     return {
       version,
@@ -23,20 +21,15 @@ async function listVersions() {
       data,
     };
   }));
+  return data2.sort((b, a) => a.date.getTime() - b.date.getTime());
 }
 
 export async function installServer(version: string|boolean) {
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   if (!fsOld.existsSync(serverPathBuild)) await fs.mkdir(serverPathBuild, {recursive: true});
-  if (typeof version === "boolean") version = "latest";
-  const versions = (await listVersions()).find(ver => ver.version === version);
-  if (!versions) throw new Error("Version dont exists");
-  await saveFile("https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar", {filePath: path.join(serverPathBuild, "buildSpigot.jar")});
-  await execFileAsync("java", ["-jar", path.join(serverPathBuild, "buildSpigot.jar"), "-o", path.join(serverPathBuild, "output"), "--rev", version], {stdio: "inherit", cwd: serverPathBuild});
-
-  await fs.cp(path.join(serverPathBuild, "output", (await fs.readdir(path.join(serverPathBuild, "output"))).find(file => file.endsWith(".jar"))), jarPath, {force: true, preserveTimestamps: true});
-  await fs.rm(path.join(serverPathBuild, "output"), {recursive: true, force: true});
-  return versions;
+  if (typeof version === "boolean"||version === "latest") version = (await listVersions())[0].version;
+  await fs.cp(await saveFile(`https://github.com/The-Bds-Maneger/SpigotBuilds/releases/download/${version}/Spigot.jar`), jarPath, {force: true});
+  return;
 }
 
 export const pluginManger = () => (new plugin_maneger("spigot", false)).loadPlugins();
