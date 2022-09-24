@@ -43,8 +43,6 @@ export const pluginManger = () => (new plugin_maneger("spigot", false)).loadPlug
 
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
-export const geyserPortListen = /^\[.*\].*Geyser.*\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[a-zA-Z0-9:]+):([0-9]+))/;
-export const DynmapPortListen = /^\[.*\].*\[dynmap\].*\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[a-zA-Z0-9:]+):([0-9]+))/;
 export const playerAction = /\[.*\]:\s+([\S\w]+)\s+(joined|left|lost)/;
 const serverConfig: actionConfig[] = [
   {
@@ -67,8 +65,6 @@ const serverConfig: actionConfig[] = [
     name: "portListening",
     callback(data, done) {
       const serverPort = data.match(portListen);
-      const geyserPort = data.match(geyserPortListen);
-      const dynmapPort = data.match(DynmapPortListen);
       if (serverPort) {
         let [,, host, port] = serverPort;
         if (host === "*"||!host) host = "127.0.0.1";
@@ -77,26 +73,6 @@ const serverConfig: actionConfig[] = [
           type: "TCP",
           host: host,
           protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6"
-        });
-      } else if (dynmapPort) {
-        let [,, host, port] = dynmapPort;
-        if (host === "*"||!host) host = "127.0.0.1";
-        return done({
-          port: parseInt(port),
-          type: "TCP",
-          host: host,
-          protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
-          plugin: "dynmap"
-        });
-      } else if (geyserPort) {
-        let [,, host, port] = geyserPort;
-        if (host === "*"||!host) host = "127.0.0.1";
-        return done({
-          port: parseInt(port),
-          type: "UDP",
-          host: host,
-          protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
-          plugin: "geyser"
         });
       }
     }

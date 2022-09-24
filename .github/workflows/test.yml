@@ -5,17 +5,13 @@ jobs:
   test_prebuild:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
         platform:
         - Bedrock
         - Powernukkit
         - Java
         - Paper
-        exclude:
-        - os: macos-latest
-          platform: Bedrock
-    runs-on: ${{ matrix.os }}
-    name: "${{ matrix.platform }}: Test on ${{ matrix.os }}"
+    runs-on: ubuntu-latest
+    name: "${{ matrix.platform }}"
     steps:
     - uses: actions/checkout@v3
       name: Code checkout
@@ -45,15 +41,11 @@ jobs:
   test_needs_build:
     strategy:
       matrix:
-        os:
-        - windows-2019
-        - ubuntu-latest
-        - macos-latest
         platform:
         - Pocketmine
         - Spigot
-    runs-on: ${{ matrix.os }}
-    name: "${{ matrix.platform }}: Test on ${{ matrix.os }}"
+    runs-on: ubuntu-latest
+    name: "${{ matrix.platform }}"
     steps:
     - uses: actions/checkout@v3
       name: Code checkout
@@ -73,20 +65,10 @@ jobs:
         java-version: "17"
 
     - name: Install apt dependecies to Pocketmine
-      if: matrix.os == 'ubuntu-latest' && matrix.platform == 'Pocketmine'
+      if: matrix.platform == 'Pocketmine'
       run: |
         sudo apt update
         sudo apt install -y build-essential make wget gzip bzip2 bison git cmake re2c autoconf automake pkg-config libtool* unzip zip tar
-
-    - name: Install apt dependecies to Pocketmine
-      if: matrix.os == 'windows-2019' && matrix.platform == 'Pocketmine'
-      run: choco install --no-progress wget
-
-    - name: Install macos dependecies to Pocketmine
-      if: matrix.os == 'macos-latest' && matrix.platform == 'Pocketmine'
-      run: |
-        brew install libtool autoconf automake pkg-config bison re2c
-        echo "PATH=/usr/local/opt/bison/bin:$PATH" >> $GITHUB_ENV
 
     # Install dependecies
     - name: Install nodejs dependencies
