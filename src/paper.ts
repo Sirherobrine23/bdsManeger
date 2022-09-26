@@ -33,7 +33,7 @@ const serverConfig: actionConfig[] = [
   },
   {
     name: "pluginHooks",
-    class: (actions) => new script_hook(actions, "paper")
+    class: (actions) => new script_hook("paper", actions)
   },
   {
     name: "serverStarted",

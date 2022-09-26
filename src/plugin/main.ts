@@ -8,6 +8,7 @@ import { serverPath as papertServerPath } from "../paper";
 import { serverPath as pocketmineServerPath } from "../pocketmine";
 import { serverPath as powernukkittServerPath } from "../pwnuukit";
 import { actions } from "../globalPlatfroms";
+import { script_hook } from "./hook";
 
 export type pluginPlatform = "spigot"|"paper"|"pocketmine"|"powernukkit";
 export type pluginFunctions = {
@@ -27,11 +28,12 @@ export type pluginConfig = {
 
 export class pluginManeger {
   #platform: pluginPlatform;
+  #hook: script_hook;
   pluginList: pluginConfig[] = [];
   scriptList: pluginFunctions[] = [];
 
   #mountRepoRaw(...args: string[]) {
-    const ufixPath = path.normalize(path.join("/The-Bds-Maneger/plugin_list/main", path.resolve("/", ...args)));
+    const ufixPath = path.join("/The-Bds-Maneger/plugin_list/main", path.resolve("/", ...args));
     return {
       url: "https://raw.githubusercontent.com"+ufixPath,
       addPluginStyle: ufixPath.replace(/\/The\-Bds\-Maneger\/plugin_list\/main\/|\.\//, "")
@@ -66,7 +68,7 @@ export class pluginManeger {
       zip.extractAllTo(pluginFolder, true);
       await fs.rm(saveOut, {force: true});
     }
-    if (plugin.scripts) {};
+    if (plugin.scripts && !!this.#hook) await Promise.all(plugin.scripts.map(file => this.#hook.installHook(this.#mountRepoRaw(file).url)));
     if (plugin.dependes) await Promise.all(plugin.dependes.map((depend: pluginConfig) => this.installPlugin(depend.name)));
   }
 
@@ -77,6 +79,7 @@ export class pluginManeger {
 
   constructor(platform: pluginPlatform, autloadPLugins: boolean = true) {
     this.#platform = platform;
+    this.#hook = new script_hook(platform);
     if (autloadPLugins) this.loadPlugins();
   }
 };

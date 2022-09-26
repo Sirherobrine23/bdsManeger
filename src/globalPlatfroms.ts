@@ -137,8 +137,8 @@ export class actions extends EventEmitter {
 
     const plug = config.find((a: actionPlugin) => a?.name === "pluginManeger") as actionPlugin;
     const hooks = config.find((a: actionHooks) => a?.name === "pluginHooks") as actionHooks;
-    if (!!plug) plug.class().then(res => this.plugin = res).catch(err => this.emit("error", err));
     if (!!hooks) Promise.resolve().then(() => hooks.class(this)).then(res => this.hooks = res);
+    if (!!plug) plug.class().then(res => this.plugin = res).catch(err => this.emit("error", err));
 
     // Ports listening
     this.on("portListening", data => this.portListening.push(data));

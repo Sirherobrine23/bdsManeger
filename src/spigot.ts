@@ -49,7 +49,7 @@ const serverConfig: actionConfig[] = [
   },
   {
     name: "pluginHooks",
-    class: (actions) => new script_hook(actions, "spigot")
+    class: (actions) => new script_hook("spigot", actions)
   },
   {
     name: "serverStarted",

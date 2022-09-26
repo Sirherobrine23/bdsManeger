@@ -26,50 +26,49 @@ export class script_hook {
   #localGericFolder = path.join(pluginHooksFolder, "Generic");
 
   async #registerScript(filePath: string) {
-    const script = (await(eval(`import("${filePath}")`))) as hooksRegister;
-    if (!script.scriptName) return;
-    else if (!script.register) return;
-    else if (!(script.platforms.includes(this.#currentPlatform)||script.platforms.includes("generic"))) return;
+    const lo_script = (await(eval(`import("${filePath}")`))) as hooksRegister|{default: hooksRegister};
+    let script: hooksRegister;
+    if (lo_script["default"]) script = lo_script["default"];
+    else script = lo_script as hooksRegister;
+    console.log(script);
+    if (!script.scriptName) throw new Error("Scriptname in null");
+    if (!script.register) throw new Error("Register not is function");
+    if (!(script.platforms.includes("generic")||script.platforms.includes(this.#currentPlatform))) throw new Error(`Cannot get valid platform (${this.#currentPlatform}) (${script.platforms?.join(", ")})`);
     const { scriptName, register } = script;
-    if (process.env.DEBUG === "1"||process.env.DEBUG === "true"||process.env.DEBUG === "ON") console.info("Loading hook %s (External)", scriptName);
+    console.log("Loading hook %s (External)", scriptName);
     return (Promise.resolve().then(() => register(this.#serverActions))).then(() => console.log("hook %s loaded (External)", scriptName));
   };
 
   async #loadLocalScript() {
     if (!this.#serverActions) throw new Error("Server actions (globalPlatform) is undefined");
-    if (await exists(this.#localFolder)) await fs.mkdir(this.#localFolder, {recursive: true});
-    if (await exists(this.#localGericFolder)) await fs.mkdir(this.#localGericFolder, {recursive: true});
-    for (const localFile of (await fs.readdir(this.#localFolder)).map(file => path.join(this.#localFolder, file))) await fs.lstat(localFile).then(async stat => {
-      if (stat.isFile()) return this.#registerScript(localFile);
-      if (await exists(path.join(localFile, "package.json"))) {
-        const externalHookPackage = JSON.parse(await fs.readFile(path.join(localFile, "package.json"), "utf8"));
-        let indexFile: string;
-        if (externalHookPackage.main) indexFile = path.join(localFile, externalHookPackage.main);
-        else {
-          const files = (await fs.readdir(localFile)).filter(file => /index\.(js|cjs|mjs)$/.test(file));
-          if (files.length === 0) throw new Error("no index files");
-          indexFile = path.join(localFile, files[0]);
+    if (!await exists(this.#localFolder)) await fs.mkdir(this.#localFolder, {recursive: true});
+    if (!await exists(this.#localGericFolder)) await fs.mkdir(this.#localGericFolder, {recursive: true});
+    const localFiles = (await fs.readdir(this.#localFolder)).map(file => path.join(this.#localFolder, file));
+    const genericLocalFiles = (await fs.readdir(this.#localGericFolder)).map(file => path.join(this.#localGericFolder, file));
+    console.log(([...localFiles, ...genericLocalFiles]));
+    for (const localFile of ([...localFiles, ...genericLocalFiles])) {
+      await fs.lstat(localFile).then(async stat => {
+        if (stat.isFile()) return this.#registerScript(localFile);
+        if (await exists(path.join(localFile, "package.json"))) {
+          const externalHookPackage = JSON.parse(await fs.readFile(path.join(localFile, "package.json"), "utf8"));
+          let indexFile: string;
+          if (externalHookPackage.main) indexFile = path.join(localFile, externalHookPackage.main);
+          else {
+            const files = (await fs.readdir(localFile)).filter(file => /index\.(js|cjs|mjs)$/.test(file));
+            if (files.length === 0) throw new Error("no index files");
+            indexFile = path.join(localFile, files[0]);
+          }
+          if (!indexFile) throw new Error("No file to init");
+          return this.#registerScript(indexFile);
         }
-        if (!indexFile) throw new Error("No file to init");
-        return this.#registerScript(indexFile);
-      }
-      throw new Error("Know know, boom!");
-    }).catch(err => console.error(String(err)));
-  }
-
-  constructor(platformActions: actions, targetPlatform: hooksPlatform) {
-    this.#serverActions = platformActions;
-    if (targetPlatform === "spigot") this.#localFolder = path.join(pluginHooksFolder, "Spigot");
-    else if (targetPlatform === "paper") this.#localFolder = path.join(pluginHooksFolder, "Spigot");
-    else if (targetPlatform === "pocketmine") this.#localFolder = path.join(pluginHooksFolder, "PocketmineMP");
-    else if (targetPlatform === "powernukkit") this.#localFolder = path.join(pluginHooksFolder, "Powernukkit");
-    else if (targetPlatform === "bedrock") this.#localFolder = path.join(pluginHooksFolder, "Bedrock");
-    else if (targetPlatform === "java") this.#localFolder = path.join(pluginHooksFolder, "Java");
-    else throw new Error("Invalid platform");
-    this.#loadLocalScript();
+        throw new Error("Know know, boom!");
+      }).catch(err => console.error(String(err)));
+    }
   }
 
   public async installHook(urlHost: string, fileName?: string, isGeneric?: boolean) {
+    if (!await exists(this.#localFolder)) await fs.mkdir(this.#localFolder, {recursive: true});
+    if (!await exists(this.#localGericFolder)) await fs.mkdir(this.#localGericFolder, {recursive: true});
     if (!fileName) fileName = path.basename(urlHost);
     const onSave = path.join(isGeneric?this.#localGericFolder:this.#localFolder, fileName);
     // Git
@@ -77,6 +76,20 @@ export class script_hook {
       await execFileAsync("git", ["clone", urlHost, "--depth", 1, onSave], {cwd: pluginHooksFolder});
       if (await exists(path.join(onSave, "package.json"))) await execFileAsync("npm", ["install", "--no-save"], {cwd: onSave, stdio: "inherit"});
     } else await saveFile(urlHost, {filePath: onSave});
-    return this.#registerScript(onSave);
+    if (!!this.#serverActions) await this.#registerScript(onSave);
+    return;
+  }
+
+  constructor(targetPlatform: hooksPlatform, platformActions?: actions) {
+    this.#serverActions = platformActions;
+    this.#currentPlatform = targetPlatform;
+    if (targetPlatform === "spigot") this.#localFolder = path.join(pluginHooksFolder, "Spigot");
+    else if (targetPlatform === "paper") this.#localFolder = path.join(pluginHooksFolder, "Spigot");
+    else if (targetPlatform === "pocketmine") this.#localFolder = path.join(pluginHooksFolder, "PocketmineMP");
+    else if (targetPlatform === "powernukkit") this.#localFolder = path.join(pluginHooksFolder, "Powernukkit");
+    else if (targetPlatform === "bedrock") this.#localFolder = path.join(pluginHooksFolder, "Bedrock");
+    else if (targetPlatform === "java") this.#localFolder = path.join(pluginHooksFolder, "Java");
+    else throw new Error("Invalid platform");
+    if (platformActions) this.#loadLocalScript();
   }
 }

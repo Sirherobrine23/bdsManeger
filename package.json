@@ -43,7 +43,7 @@
     "@types/adm-zip": "^0.5.0",
     "@types/cron": "^2.0.0",
     "@types/mocha": "^9.1.1",
-    "@types/node": "^18.7.19",
+    "@types/node": "^18.7.22",
     "@types/tar": "^6.1.2",
     "mocha": "^10.0.0",
     "ts-node": "^10.9.1",
