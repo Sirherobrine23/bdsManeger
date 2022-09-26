@@ -6,6 +6,7 @@ import {pluginManeger as plugin_maneger} from "./plugin/main";
 import { serverRoot, logRoot, BuildRoot } from './pathControl';
 import { actions, actionConfig } from './globalPlatfroms';
 import { getBuffer, getJSON, saveFile } from "./httpRequest";
+import { script_hook } from "./plugin/hook";
 
 export const serverPath = path.join(serverRoot, "spigot");
 export const serverPathBuild = path.join(BuildRoot, "spigot");
@@ -44,7 +45,11 @@ const serverConfig: actionConfig[] = [
   },
   {
     name: "pluginManeger",
-    class: () => new plugin_maneger("spigot").loadPlugins()
+    class: () => (new plugin_maneger("spigot", false)).loadPlugins()
+  },
+  {
+    name: "pluginHooks",
+    class: (actions) => new script_hook(actions, "spigot")
   },
   {
     name: "serverStarted",

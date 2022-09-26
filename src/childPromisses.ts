@@ -4,18 +4,18 @@ export const execFile = child_process.execFile;
 
 export type ExecFileOptions = ObjectEncodingOptions & child_process.ExecFileOptions & {stdio?: "ignore"|"inherit"};
 export function execFileAsync(command: string): Promise<{stdout: string, stderr: string}>;
-export function execFileAsync(command: string, args: string[]): Promise<{stdout: string, stderr: string}>;
+export function execFileAsync(command: string, args: (string|number)[]): Promise<{stdout: string, stderr: string}>;
 export function execFileAsync(command: string, options: ExecFileOptions): Promise<{stdout: string, stderr: string}>;
-export function execFileAsync(command: string, args: string[], options: ExecFileOptions): Promise<{stdout: string, stderr: string}>;
-export function execFileAsync(command: string, args?: ExecFileOptions|string[], options?: ExecFileOptions) {
+export function execFileAsync(command: string, args: (string|number)[], options: ExecFileOptions): Promise<{stdout: string, stderr: string}>;
+export function execFileAsync(command: string, args?: ExecFileOptions|(string|number)[], options?: ExecFileOptions) {
   let childOptions: ExecFileOptions = {};
   let childArgs: string[] = [];
-  if (args instanceof Array) childArgs = args; else if (args instanceof Object) childOptions = args as ExecFileOptions;
+  if (args instanceof Array) childArgs = args.map(String); else if (args instanceof Object) childOptions = args as ExecFileOptions;
   if (options) childOptions = options;
   childOptions.maxBuffer = Infinity;
   if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
   return new Promise<{stdout: string, stderr: string}>((resolve, rejectExec) => {
-    const child = execFile(command, childArgs, childOptions, (err, out, err2) => {if (err) return rejectExec(err);resolve({stdout: out, stderr: err2});});
+    const child = execFile(command, childArgs.map(String), childOptions, (err, out, err2) => {if (err) return rejectExec(err);resolve({stdout: out, stderr: err2});});
     if (options?.stdio === "inherit") {
       child.stdout.on("data", data => process.stdout.write(data));
       child.stderr.on("data", data => process.stderr.write(data));

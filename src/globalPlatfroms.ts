@@ -3,6 +3,7 @@ import readline from "node:readline";
 import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
 import type {pluginManeger as globalPluginManeger} from "./plugin/main";
+import type { script_hook } from "./plugin/hook";
 
 export type playerClass = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
 export type playerBase = {playerName: string, connectTime: Date, xuid?: string, action?: string};
@@ -46,9 +47,14 @@ export type actionPlugin = {
   class: () => Promise<globalPluginManeger>
 };
 
+export type actionHooks = {
+  name: "pluginHooks",
+  class: (runAcions: actions) => script_hook|Promise<script_hook>
+}
+
 export type actionRun = actionsServerStop|actionTp;
 export type actionCallback = actionsPlayer|newPlayerAction|actionsPort|actionsServerStarted|actionsServerStarted;
-export type actionConfig = actionCallback|actionRun|actionPlugin;
+export type actionConfig = actionCallback|actionRun|actionPlugin|actionHooks;
 
 export declare interface actions {
   on(act: "playerConnect"|"playerDisconnect"|"playerUnknown", fn: (data: playerBase) => void): this;
@@ -79,6 +85,8 @@ export class actions extends EventEmitter {
   }
 
   public plugin?: globalPluginManeger;
+  public hooks?: script_hook;
+
   public platform?: string;
   public portListening: portListen[] = [];
   public playerActions: playerClass = {};
@@ -127,6 +135,11 @@ export class actions extends EventEmitter {
     readlineStdout.on("line", data => this.emit("data", data));
     readlineStderr.on("line", data => this.emit("data", data));
 
+    const plug = config.find((a: actionPlugin) => a?.name === "pluginManeger") as actionPlugin;
+    const hooks = config.find((a: actionHooks) => a?.name === "pluginHooks") as actionHooks;
+    if (!!plug) plug.class().then(res => this.plugin = res).catch(err => this.emit("error", err));
+    if (!!hooks) Promise.resolve().then(() => hooks.class(this)).then(res => this.hooks = res);
+
     // Ports listening
     this.on("portListening", data => this.portListening.push(data));
     // Player join to server
@@ -162,21 +175,6 @@ export class actions extends EventEmitter {
       this.playerActions[data.playerName].date = data.connectTime;
       this.playerActions[data.playerName].history.push({action: "unknown", date: data.connectTime});
     });
-
-        // Plugin maneger
-        const plug = config.find((a: actionPlugin) => a?.name === "pluginManeger") as actionPlugin;
-        if (!!plug) plug.class().then(res => {
-          this.plugin = res;
-          // Load external script
-          res.scriptList.forEach(async script => {
-            try {
-              await script.register(this);
-              console.info("Register external (%s) script", script.scriptName);
-            } catch (err) {
-              this.emit("error", err);
-            }
-          });
-        }).catch(err => this.emit("error", err));
 
     // Callbacks
     (config.filter((a: actionCallback) => typeof a?.callback === "function") as actionCallback[]).forEach(fn => {

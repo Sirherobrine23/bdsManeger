@@ -7,6 +7,7 @@ import { platformManeger } from "@the-bds-maneger/server_versions";
 import { serverRoot, logRoot } from "./pathControl";
 import { actions, actionConfig } from "./globalPlatfroms";
 import { saveFile } from "./httpRequest";
+import { script_hook } from "./plugin/hook";
 export const serverPath = path.join(serverRoot, "Papermc");
 const jarPath = path.join(serverPath, "server.jar");
 
@@ -28,7 +29,11 @@ const serverConfig: actionConfig[] = [
   },
   {
     name: "pluginManeger",
-    class: () => new plugin_maneger("paper").loadPlugins()
+    class: () => (new plugin_maneger("paper", false)).loadPlugins()
+  },
+  {
+    name: "pluginHooks",
+    class: (actions) => new script_hook(actions, "paper")
   },
   {
     name: "serverStarted",

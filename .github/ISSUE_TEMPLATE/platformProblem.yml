@@ -1,0 +1,38 @@
+name: Platform problems
+description: Let us know if there are any problems that we can fix as soon as possible!
+title: "[Platform problems]: "
+labels: ["bug", "triage"]
+assignees:
+  - Sirherobrine23
+
+body:
+  - type: dropdown
+    id: platform
+    validations:
+      required: true
+    attributes:
+      label: Platform
+      description: What is the platform?
+      options:
+        - Bedrock
+        - Java
+        - Spigot
+        - Pocketmine
+        - Paper
+        - Powernukkit
+
+  - type: textarea
+    id: error
+    attributes:
+      label: error
+      description: Lines error or sample description
+      placeholder: Uninformed
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://example.com)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

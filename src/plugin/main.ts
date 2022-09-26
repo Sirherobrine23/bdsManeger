@@ -1,9 +1,7 @@
 import path from "node:path/posix";
 import fs from "node:fs/promises";
-import fsOld from "node:fs";
 import admZip from "adm-zip";
 import { existsSync } from "node:fs";
-import { pluginHooksFolder } from "../pathControl";
 import { saveFile, githubTree, getJSON } from "../httpRequest";
 import { serverPath as spigotServerPath } from "../spigot";
 import { serverPath as papertServerPath } from "../paper";
@@ -26,8 +24,6 @@ export type pluginConfig = {
   dependes?: (string|pluginConfig)[],
   scripts?: string[]
 };
-
-const localScript: pluginFunctions[] = [];
 
 export class pluginManeger {
   #platform: pluginPlatform;
@@ -52,28 +48,6 @@ export class pluginManeger {
     }
   };
 
-  async #loadInternalPlugin(plugin: string[]) {
-    const scriptLoad = async (script: string) => {
-      if (/^http[s]:\/\//.test(script)) {
-        let filePath = await saveFile(script);
-        const scriptLoad = require(filePath) as pluginFunctions;
-        if (scriptLoad.scriptName && !path.extname(scriptLoad.scriptName||"")) scriptLoad.scriptName += ".js";
-        let outFile = path.join(pluginHooksFolder, scriptLoad.scriptName||path.basename(script));
-        if (!scriptLoad.register) return console.warn("Droping external (%s) script", outFile);
-        if (fsOld.existsSync(outFile)) return console.warn("Dropping %s", outFile);
-        if (!scriptLoad.scriptName) scriptLoad.scriptName = path.basename(script);
-        if (!localScript.some(script => script.scriptName === scriptLoad.scriptName)) localScript.push(scriptLoad);
-        if (!this.scriptList.some(script => script.scriptName === scriptLoad.scriptName)) this.scriptList.push(scriptLoad);
-        return await fs.cp(filePath, outFile, {force: true});
-      } else {
-        const scriptLoad = require(script) as pluginFunctions;
-        if (!scriptLoad.register) return;
-        if (!this.scriptList.some(script => script.scriptName === scriptLoad.scriptName)) this.scriptList.push(scriptLoad);
-      }
-    }
-    await Promise.all(plugin.map(scriptFile => scriptLoad(scriptFile).catch(err => console.error("File/HTTP: %s, Error: %s", scriptFile, String(err)))));
-  }
-
   async installPlugin(name: string) {
     const plugin = this.pluginList.find(plugin => plugin.name === name);
     if (!plugin) throw new Error(`${name} plugin not avaible to install`);
@@ -92,18 +66,17 @@ export class pluginManeger {
       zip.extractAllTo(pluginFolder, true);
       await fs.rm(saveOut, {force: true});
     }
-    if (plugin.scripts) this.#loadInternalPlugin(plugin.scripts.map(file => this.#mountRepoRaw(file).url));
+    if (plugin.scripts) {};
     if (plugin.dependes) await Promise.all(plugin.dependes.map((depend: pluginConfig) => this.installPlugin(depend.name)));
   }
 
   async loadPlugins() {
-    await this.#loadInternalPlugin((await fs.readdir(pluginHooksFolder)).map(file => path.join(pluginHooksFolder, file)));
     for (const file of (await githubTree("The-Bds-Maneger", "plugin_list", "main")).tree.filter(file => file.path.endsWith(".json"))) await this.#addPlugin(file.path);
     return this;
   }
 
-  constructor(platform: pluginPlatform, autoLoad: boolean = true) {
+  constructor(platform: pluginPlatform, autloadPLugins: boolean = true) {
     this.#platform = platform;
-    if (autoLoad) this.loadPlugins();
+    if (autloadPLugins) this.loadPlugins();
   }
 };
