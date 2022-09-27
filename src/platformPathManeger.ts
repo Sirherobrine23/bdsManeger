@@ -106,3 +106,15 @@ export async function changeDefault(platform: bdsPlatform, id: bdsPlatformOption
     newPath: path.join(bdsRoot, platform, id)
   };
 }
+
+/**
+ * Get all ids to platform
+ * @param platform
+ * @returns
+ */
+export async function getIds(platform: bdsPlatform) {
+  if (!platformArray.includes(platform)) throw new Error("Invalid platform");
+  const serverPlatform = path.join(bdsRoot, platform);
+  if (!await exists(serverPlatform)) throw new Error("Install server fist!");
+  return (await fs.readdir(serverPlatform)).filter(folder => folder.toLowerCase() !== "default");
+}
