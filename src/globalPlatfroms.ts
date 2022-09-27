@@ -50,6 +50,7 @@ export type actionCallback = actionsPlayer|actionsPort|actionsServerStarted|acti
 export type actionConfig = actionCallback|actionRun|actionPlugin|actionHooks;
 
 export declare interface actions {
+  on(act: "error", fn: (data: any) => void): this;
   on(act: "playerConnect"|"playerDisconnect"|"playerUnknown", fn: (data: playerBase) => void): this;
   on(act: "portListening", fn: (data: portListen) => void): this;
   on(act: "serverStarted", fn: (data: serverStarted) => void): this;

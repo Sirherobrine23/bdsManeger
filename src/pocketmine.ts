@@ -108,7 +108,7 @@ export async function installServer(version: string|boolean, platformOptions: bd
   const { serverPath } = await pathControl("pocketmine", platformOptions);
   await installPhp(serverPath);
   const info = await platformManeger.pocketmine.find(version);
-  await saveFile(info?.url, {filePath: path.join(serverPath, "")});
+  await saveFile(info?.url, {filePath: path.join(serverPath, "pocketmine.phar")});
   return info;
 }
 

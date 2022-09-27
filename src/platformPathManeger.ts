@@ -45,20 +45,28 @@ export async function pathControl(platform: bdsPlatform, options?: bdsPlatformOp
     await fs.symlink(path.join(bdsRoot, platform, options.id), path.join(bdsRoot, platform, "default"));
   }
 
+  // Get real id
+  if (options?.id === "default") options.id = path.basename(await fs.realpath(path.join(bdsRoot, platform, options.id)));
+
   // Create folder if not exists
   const serverRoot = path.join(bdsRoot, platform, options.id);
   if (!(await exists(serverRoot))) await fs.mkdir(serverRoot, {recursive: true});
   const serverPath = path.join(serverRoot, "server");
+
   if (!(await exists(serverPath))) await fs.mkdir(serverPath, {recursive: true});
   const hooksPath = path.join(serverRoot, "hooks");
+
   if (!(await exists(hooksPath))) await fs.mkdir(hooksPath, {recursive: true});
   const backupPath = path.join(serverRoot, "backup");
+
   if (!(await exists(backupPath))) await fs.mkdir(backupPath, {recursive: true});
   const logsPath = path.join(serverRoot, "logs");
+
   if (!(await exists(logsPath))) await fs.mkdir(logsPath, {recursive: true});
   let buildFolder: string;
+
   if (options?.withBuildFolder) {
-    const buildFolder = path.join(serverRoot, "build");
+    buildFolder = path.join(serverRoot, "build");
     if (!(await exists(buildFolder))) await fs.mkdir(buildFolder, {recursive: true});
   }
 
