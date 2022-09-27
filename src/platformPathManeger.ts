@@ -3,7 +3,11 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
 
-export const bdsRoot = process.env.BDS_HOME||path.join(os.homedir(), ".bdsManeger");
+export let bdsRoot = path.join(os.homedir(), ".bdsManeger");
+if (process.env.BDS_HOME) {
+  if (process.env.BDS_HOME.startsWith("~")) process.env.BDS_HOME = process.env.BDS_HOME.replace("~", os.homedir());
+  bdsRoot = process.env.BDS_HOME;
+}
 async function exists(filePath: string) {
   return fs.access(filePath).then(() => true).catch((() => false));
 }

@@ -20,6 +20,8 @@ jobs:
         - Spigot
     runs-on: ubuntu-latest
     name: "${{ matrix.platform }}"
+    env:
+      BDS_HOME: "~/.bdsCore"
     steps:
     - uses: actions/checkout@v3
       name: Code checkout
@@ -51,3 +53,14 @@ jobs:
     # Run test
     - name: Test
       run: npm run test:partial -- tests/${{ matrix.platform }}.ts
+
+    # Upload bds root
+    - name: Upload BdsCore folder
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.platform }}
+        path: |
+          ~/.bdsCore
+          !~/.bdsCore/**/*.debug
+          !~/.bdsCore/**/bedrock_server
+          !~/.bdsCore/**/*_packs/
