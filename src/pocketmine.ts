@@ -1,24 +1,22 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
-import { existsSync as  fsExistsSync, Stats } from "node:fs";
+import AdmZip from "adm-zip";
+import { existsSync as fsExistsSync, Stats } from "node:fs";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { execFileAsync, execAsync } from './childPromisses';
-import { logRoot, serverRoot } from "./pathControl";
 import { getBuffer, githubRelease, GithubRelease, saveFile, tarExtract } from "./httpRequest";
 import { actionConfig, actions } from './globalPlatfroms';
-import AdmZip from "adm-zip";
 import { promisify } from 'node:util';
-export const serverPath = path.join(serverRoot, "pocketmine");
-export const serverPhar = path.join(serverPath, "pocketmine.phar");
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 
-async function findPhp(extraPath?: string): Promise<string> {
+async function findPhp(serverPath: string, extraPath?: string): Promise<string> {
   if (!extraPath) extraPath = path.join(serverPath, "bin");
   const files = await Promise.all((await fs.readdir(extraPath)).map(file => fs.lstat(path.join(extraPath, file)).then(stat => ({stat, file, fullPath: path.join(extraPath, file)})).catch(() => {})));
   let folderFF = "";
   for (const file of (files.filter(a=>!!a) as {file: string, fullPath: string, stat: Stats}[]).sort(a => a.stat.isDirectory() ? 1:-1)) {
     if (file.stat.isDirectory()) {
-      folderFF = await findPhp(file.fullPath).catch(() => "");
+      folderFF = await findPhp(serverPath, file.fullPath).catch(() => "");
       if (folderFF) return folderFF;
     } else if (file.file === "php"||file.file === "php.exe") return file.fullPath;
   }
@@ -50,7 +48,7 @@ if (!filter) filter = [/.*/];
   return files;
 }
 
-async function buildPhp() {
+async function buildPhp(serverPath: string) {
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   const tempFolder = path.join(os.tmpdir(), "bdsPhp_"+(Math.random()*19999901).toString(16).replace(".", "").replace(/[0-9]/g, (_, a) =>a=="1"?"a":a=="2"?"b":a=="3"?"S":"k"));
   if (!fsExistsSync(tempFolder)) fs.mkdir(tempFolder, {recursive: true});
@@ -70,7 +68,7 @@ async function buildPhp() {
   console.log("PHP Build success!");
 }
 
-async function installPhp(): Promise<void> {
+async function installPhp(serverPath: string): Promise<void> {
   const releases: (githubRelease["assets"][0])[] = [];
   (await GithubRelease("The-Bds-Maneger", "Build-PHP-Bins")).map(re => re.assets).forEach(res => releases.push(...res));
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
@@ -100,17 +98,17 @@ async function installPhp(): Promise<void> {
     }
   }
   // test it's works php
-  await execFileAsync(await findPhp(), ["-v"]).catch(err => {
+  await execFileAsync(await findPhp(serverPath), ["-v"]).catch(err => {
     console.warn(String(err));
-    return buildPhp()
+    return buildPhp(serverPath)
   });
 }
 
-export async function installServer(version: string|boolean) {
-  if (!fsExistsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  await installPhp();
+export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath } = await pathControl("pocketmine", platformOptions);
+  await installPhp(serverPath);
   const info = await platformManeger.pocketmine.find(version);
-  await saveFile(info?.url, {filePath: serverPhar});
+  await saveFile(info?.url, {filePath: path.join(serverPath, "")});
   return info;
 }
 
@@ -152,8 +150,13 @@ const serverConfig: actionConfig[] = [
   },
 ];
 
-export async function startServer() {
-  if (!fsExistsSync(serverPath)) throw new Error("Install server fist!");
-  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_pocketmine_${process.platform}_${process.arch}.stdout.log`);
-  return new actions({command: await findPhp(), args: [serverPhar, "--no-wizard", "--enable-ansi"], options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
+export async function startServer(platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath, logsPath } = await pathControl("pocketmine", platformOptions);
+  const serverPhar = path.join(serverPath, "pocketmine.phar");
+  if (!fsExistsSync(serverPhar)) throw new Error("Install server fist!");
+  const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.stdout.log`);
+  return new actions({
+    processConfig: {command: await findPhp(serverPath), args: [serverPhar, "--no-wizard", "--enable-ansi"], options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
+    hooks: serverConfig
+  });
 }

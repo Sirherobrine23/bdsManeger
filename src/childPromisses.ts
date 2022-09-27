@@ -1,6 +1,5 @@
 import type { ObjectEncodingOptions } from "node:fs";
 import * as child_process from "node:child_process";
-export const execFile = child_process.execFile;
 
 export type ExecFileOptions = ObjectEncodingOptions & child_process.ExecFileOptions & {stdio?: "ignore"|"inherit"};
 export function execFileAsync(command: string): Promise<{stdout: string, stderr: string}>;
@@ -15,7 +14,7 @@ export function execFileAsync(command: string, args?: ExecFileOptions|(string|nu
   childOptions.maxBuffer = Infinity;
   if (childOptions?.env) childOptions.env = {...process.env, ...childOptions.env};
   return new Promise<{stdout: string, stderr: string}>((resolve, rejectExec) => {
-    const child = execFile(command, childArgs.map(String), childOptions, (err, out, err2) => {if (err) return rejectExec(err);resolve({stdout: out, stderr: err2});});
+    const child = child_process.execFile(command, childArgs.map(String), childOptions, (err, out, err2) => {if (err) return rejectExec(err);resolve({stdout: out, stderr: err2});});
     if (options?.stdio === "inherit") {
       child.stdout.on("data", data => process.stdout.write(data));
       child.stderr.on("data", data => process.stderr.write(data));

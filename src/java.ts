@@ -3,14 +3,14 @@ import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { serverRoot, logRoot } from "./pathControl";
 import { actions, actionConfig } from "./globalPlatfroms";
 import { saveFile } from "./httpRequest";
-export const serverPath = path.join(serverRoot, "java");
-const jarPath = path.join(serverPath, "server.jar");
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+// export const serverPath = path.join(serverRoot, "java");
 
-export async function installServer(version: string|boolean) {
-  if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
+export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath } = await pathControl("java", platformOptions);
+  const jarPath = path.join(serverPath, "server.jar");
   return platformManeger.java.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
 }
 
@@ -58,7 +58,9 @@ const serverConfig: actionConfig[] = [
   },
 ];
 
-export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean}) {
+export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions: bdsPlatformOptions}) {
+  const { serverPath, logsPath } = await pathControl("java", Config?.platformOptions||{id: "default"});
+  const jarPath = path.join(serverPath, "server.jar");
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
   const command = "java";
   const args = ["-jar"];
@@ -75,6 +77,9 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   args.push(jarPath, "nogui");
   const eula = path.join(serverPath, "eula.txt");
   await fs.writeFile(eula, (await fs.readFile(eula, "utf8").catch(() => "eula=false")).replace("eula=false", "eula=true"));
-  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_java_${process.platform}_${process.arch}.stdout.log`);
-  return new actions({command, args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
+  const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
+  return new actions({
+    processConfig: {command, args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
+    hooks: serverConfig
+  });
 }

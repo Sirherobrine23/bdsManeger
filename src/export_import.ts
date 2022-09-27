@@ -2,7 +2,7 @@ import net from "node:net";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import tar from "tar";
-import { bdsRoot } from "./pathControl";
+import { bdsRoot } from "./platformPathManeger";
 
 export type payload = {
   httpVersion?: string,

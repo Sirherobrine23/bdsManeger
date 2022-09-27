@@ -2,15 +2,9 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
-import {pluginManeger as plugin_maneger} from "./plugin/main";
-import { serverRoot, logRoot, BuildRoot } from './pathControl';
-import { actions, actionConfig } from './globalPlatfroms';
+import { actions, actionConfig } from "./globalPlatfroms";
 import { getBuffer, getJSON, saveFile } from "./httpRequest";
-import { script_hook } from "./plugin/hook";
-
-export const serverPath = path.join(serverRoot, "spigot");
-export const serverPathBuild = path.join(BuildRoot, "spigot");
-const jarPath = path.join(serverPath, "server.jar");
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 
 async function listVersions() {
   const data = (await getBuffer("https://hub.spigotmc.org/versions/")).toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));
@@ -25,15 +19,14 @@ async function listVersions() {
   return data2.sort((b, a) => a.date.getTime() - b.date.getTime());
 }
 
-export async function installServer(version: string|boolean) {
-  if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  if (!fsOld.existsSync(serverPathBuild)) await fs.mkdir(serverPathBuild, {recursive: true});
+export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath } = await pathControl("spigot", platformOptions);
+  const jarPath = path.join(serverPath, "server.jar");
   if (typeof version === "boolean"||version === "latest") version = (await listVersions())[0].version;
   await fs.cp(await saveFile(`https://github.com/The-Bds-Maneger/SpigotBuilds/releases/download/${version}/Spigot.jar`), jarPath, {force: true});
   return;
 }
 
-export const pluginManger = () => (new plugin_maneger("spigot", false)).loadPlugins();
 
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
@@ -42,14 +35,6 @@ const serverConfig: actionConfig[] = [
   {
     name: "serverStop",
     run: (child) => child.runCommand("stop")
-  },
-  {
-    name: "pluginManeger",
-    class: () => (new plugin_maneger("spigot", false)).loadPlugins()
-  },
-  {
-    name: "pluginHooks",
-    class: (actions) => new script_hook("spigot", actions)
   },
   {
     name: "serverStarted",
@@ -89,7 +74,9 @@ const serverConfig: actionConfig[] = [
   },
 ];
 
-export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, pluginList?: string[]}) {
+export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions?: bdsPlatformOptions}) {
+  const { serverPath, logsPath } = await pathControl("spigot", Config?.platformOptions||{id: "default"});
+  const jarPath = path.join(serverPath, "server.jar");
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
   const args = [];
   if (Config) {
@@ -101,16 +88,14 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
       if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
       if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
     }
-    if (Config.pluginList) {
-      const pluginManeger = await (new plugin_maneger("spigot")).loadPlugins();
-      await Promise.all(Config.pluginList.map(pluginName => pluginManeger.installPlugin(pluginName)));
-    }
   }
-
 
   args.push("-jar", jarPath, "nogui");
   const eula = path.join(serverPath, "eula.txt");
   await fs.readFile(eula, "utf8").catch(() => "eula=false").then(eulaFile => fs.writeFile(eula, eulaFile.replace("eula=false", "eula=true")));
-  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_spigot_${process.platform}_${process.arch}.stdout.log`);
-  return new actions({command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
+  const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
+  return new actions({
+    processConfig: {command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
+    hooks: serverConfig
+  });
 }

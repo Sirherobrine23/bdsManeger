@@ -2,19 +2,14 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
-import { pluginManeger as plugin_maneger } from "./plugin/main";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { serverRoot, logRoot } from "./pathControl";
 import { actions, actionConfig } from "./globalPlatfroms";
 import { saveFile } from "./httpRequest";
-import { script_hook } from "./plugin/hook";
-export const serverPath = path.join(serverRoot, "Papermc");
-const jarPath = path.join(serverPath, "server.jar");
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 
-export const pluginManger = () => (new plugin_maneger("paper", false)).loadPlugins();
-export async function installServer(version: string|boolean) {
-  if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  return platformManeger.paper.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
+export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath } = await pathControl("paper", platformOptions);
+  return platformManeger.paper.find(version).then(release => saveFile(release.url, {filePath: path.join(serverPath, "paper.jar")}).then(() => release));
 }
 
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
@@ -26,14 +21,6 @@ const serverConfig: actionConfig[] = [
     run(childProcess) {
       childProcess.runCommand("stop");
     },
-  },
-  {
-    name: "pluginManeger",
-    class: () => (new plugin_maneger("paper", false)).loadPlugins()
-  },
-  {
-    name: "pluginHooks",
-    class: (actions) => new script_hook("paper", actions)
   },
   {
     name: "serverStarted",
@@ -71,8 +58,9 @@ const serverConfig: actionConfig[] = [
   },
 ];
 
-export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, pluginList?: string[]}) {
-  if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
+export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions?: bdsPlatformOptions}) {
+  const { serverPath, logsPath } = await pathControl("paper", Config?.platformOptions||{id: "default"});
+  if (!fsOld.existsSync(path.join(serverPath, "paper.jar"))) throw new Error("Install server fist.");
   const args = [];
   if (Config) {
     if (Config.maxFreeMemory) {
@@ -83,15 +71,14 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
       if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
       if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
     }
-    if (Config.pluginList) {
-      const pluginManeger = await (new plugin_maneger("paper")).loadPlugins();
-      await Promise.all(Config.pluginList.map(pluginName => pluginManeger.installPlugin(pluginName)));
-    }
   }
 
-  args.push("-jar", jarPath, "nogui");
+  args.push("-jar", path.join(serverPath, "paper.jar"), "nogui");
   const eula = path.join(serverPath, "eula.txt");
   await fs.writeFile(eula, (await fs.readFile(eula, "utf8").catch(() => "eula=false")).replace("eula=false", "eula=true"));
-  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_spigot_${process.platform}_${process.arch}.stdout.log`);
-  return new actions({command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
+  const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
+  return new actions({
+    processConfig: {command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
+    hooks: serverConfig
+  });
 }

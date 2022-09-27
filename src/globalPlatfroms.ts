@@ -2,20 +2,13 @@ import fs from "node:fs";
 import readline from "node:readline";
 import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
-import type {pluginManeger as globalPluginManeger} from "./plugin/main";
+import type { pluginManeger } from "./plugin/plugin";
 import type { script_hook } from "./plugin/hook";
 
 export type playerClass = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
 export type playerBase = {playerName: string, connectTime: Date, xuid?: string, action?: string};
 
-/**
- * @deprecated Please use playerAction now
- */
 export type actionsPlayer = {
-  name: "playerConnect"|"playerDisconnect"|"playerUnknown",
-  callback: (data: string, done: (player: playerBase) => void) => void
-}
-export type newPlayerAction = {
   name: "playerAction",
   callback: (data: string, playerConnect: (player: playerBase) => void, playerDisconnect: (player: playerBase) => void, playerUnknown: (player: playerBase) => void) => void
 };
@@ -44,7 +37,7 @@ export type actionTp = {
 
 export type actionPlugin = {
   name: "pluginManeger",
-  class: () => Promise<globalPluginManeger>
+  class: () => Promise<pluginManeger>
 };
 
 export type actionHooks = {
@@ -53,7 +46,7 @@ export type actionHooks = {
 }
 
 export type actionRun = actionsServerStop|actionTp;
-export type actionCallback = actionsPlayer|newPlayerAction|actionsPort|actionsServerStarted|actionsServerStarted;
+export type actionCallback = actionsPlayer|actionsPort|actionsServerStarted|actionsServerStarted;
 export type actionConfig = actionCallback|actionRun|actionPlugin|actionHooks;
 
 export declare interface actions {
@@ -62,6 +55,7 @@ export declare interface actions {
   on(act: "serverStarted", fn: (data: serverStarted) => void): this;
   on(act: "log_stderr", fn: (data: string) => void): this;
   on(act: "log_stdout", fn: (data: string) => void): this;
+  on(act: "log", fn: (data: string) => void): this;
   on(act: "exit", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
 
   once(act: "playerConnect"|"playerDisconnect"|"playerUnknown", fn: (data: playerBase) => void): this;
@@ -69,6 +63,7 @@ export declare interface actions {
   once(act: "serverStarted", fn: (data: serverStarted) => void): this;
   once(act: "log_stderr", fn: (data: string) => void): this;
   once(act: "log_stdout", fn: (data: string) => void): this;
+  once(act: "log", fn: (data: string) => void): this;
   once(act: "exit", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
 }
 
@@ -84,7 +79,7 @@ export class actions extends EventEmitter {
     return this.#childProcess?.kill(signal);
   }
 
-  public plugin?: globalPluginManeger;
+  public plugin?: pluginManeger;
   public hooks?: script_hook;
 
   public platform?: string;
@@ -114,16 +109,16 @@ export class actions extends EventEmitter {
   }
 
   public processConfig: actionCommandOption;
-  constructor(processConfig: actionCommandOption, config: actionConfig[]) {
+  constructor(platformConfig: {processConfig: actionCommandOption, hooks: actionConfig[]}) {
     super({captureRejections: false});
-    if (!processConfig.args) processConfig.args = [];
-    if (!processConfig.options) processConfig.options = {};
-    processConfig.options.maxBuffer = Infinity;
-    this.processConfig = processConfig;
-    this.#childProcess = child_process.execFile(processConfig.command, processConfig.args, processConfig.options);
-    if (processConfig.options.logPath) {
-      this.#childProcess.stdout.pipe(fs.createWriteStream(processConfig.options.logPath.stdout));
-      if (processConfig.options.logPath.stderr) this.#childProcess.stderr.pipe(fs.createWriteStream(processConfig.options.logPath.stderr));
+    if (!platformConfig?.processConfig.args) platformConfig.processConfig.args = [];
+    if (!platformConfig?.processConfig.options) platformConfig.processConfig.options = {};
+    platformConfig.processConfig.options.maxBuffer = Infinity;
+    this.processConfig = platformConfig?.processConfig;
+    this.#childProcess = child_process.execFile(platformConfig?.processConfig.command, platformConfig?.processConfig.args, platformConfig?.processConfig.options);
+    if (platformConfig?.processConfig.options.logPath) {
+      this.#childProcess.stdout.pipe(fs.createWriteStream(platformConfig?.processConfig.options.logPath.stdout));
+      if (platformConfig?.processConfig.options.logPath.stderr) this.#childProcess.stderr.pipe(fs.createWriteStream(platformConfig?.processConfig.options.logPath.stderr));
     }
 
     this.#childProcess.on("error", data => this.emit("error", data));
@@ -132,11 +127,11 @@ export class actions extends EventEmitter {
     const readlineStderr = readline.createInterface(this.#childProcess.stderr);
     readlineStdout.on("line", data => this.emit("log_stdout", data));
     readlineStderr.on("line", data => this.emit("log_stderr", data));
-    readlineStdout.on("line", data => this.emit("data", data));
-    readlineStderr.on("line", data => this.emit("data", data));
+    readlineStdout.on("line", data => this.emit("log", data));
+    readlineStderr.on("line", data => this.emit("log", data));
 
-    const plug = config.find((a: actionPlugin) => a?.name === "pluginManeger") as actionPlugin;
-    const hooks = config.find((a: actionHooks) => a?.name === "pluginHooks") as actionHooks;
+    const plug = platformConfig?.hooks?.find((a: actionPlugin) => a?.name === "pluginManeger") as actionPlugin;
+    const hooks = platformConfig?.hooks?.find((a: actionHooks) => a?.name === "pluginHooks") as actionHooks;
     if (!!hooks) Promise.resolve().then(() => hooks.class(this)).then(res => this.hooks = res);
     if (!!plug) plug.class().then(res => this.plugin = res).catch(err => this.emit("error", err));
 
@@ -177,20 +172,20 @@ export class actions extends EventEmitter {
     });
 
     // Callbacks
-    (config.filter((a: actionCallback) => typeof a?.callback === "function") as actionCallback[]).forEach(fn => {
+    (platformConfig?.hooks?.filter((a: actionCallback) => typeof a?.callback === "function") as actionCallback[]).forEach(fn => {
       // Use new player actions
       if (fn.name === "playerAction") {
         const playerConnect = (data: playerBase) => this.emit("playerConnect", data), playerDisonnect = (data: playerBase) => this.emit("playerDisconnect", data), playerUnknown = (data: playerBase) => this.emit("playerUnknown", data);
         this.on("log_stdout", data => fn.callback(data, playerConnect, playerDisonnect, playerUnknown));
         this.on("log_stderr", data => fn.callback(data, playerConnect, playerDisonnect, playerUnknown));
         return;
-      } else if (fn.name === "playerConnect"||fn.name === "playerDisconnect"||fn.name === "playerUnknown") console.warn("Migrate %s to playerAction", fn.name);
+      }
       this.on("log_stdout", data => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args)));
       this.on("log_stderr", data => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args)));
     });
 
     // Set backend run function
-    (config.filter((a: actionRun) => typeof a?.run === "function") as actionRun[]).forEach(action => {
+    (platformConfig?.hooks?.filter((a: actionRun) => typeof a?.run === "function") as actionRun[]).forEach(action => {
       if (action.name === "serverStop") this.#stopServerFunction = action.run;
       else if (action.name === "tp") this.#tpfunction = action.run;
     });

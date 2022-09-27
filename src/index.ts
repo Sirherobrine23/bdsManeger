@@ -1,5 +1,7 @@
 export { exportBds, importBds, payloadError } from "./export_import";
-export { pluginManeger } from "./plugin/main";
+export * as platformPathManeger from "./platformPathManeger"
+export * as pluginManeger from "./plugin/plugin";
+export * as pluginHooks from "./plugin/hook";
 export * as globalPlatfroms from "./globalPlatfroms";
 export * as Bedrock from "./bedrock";
 export * as PocketmineMP from "./pocketmine";
