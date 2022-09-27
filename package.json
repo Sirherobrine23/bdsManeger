@@ -33,9 +33,8 @@
   "dependencies": {
     "@the-bds-maneger/server_versions": "^4.2.0",
     "adm-zip": "^0.5.9",
-    "axios": "^0.27.2",
     "cron": "^2.1.0",
-    "got": "^11.8.5",
+    "got": "^12.5.1",
     "prismarine-nbt": "^2.2.1",
     "tar": "^6.1.11"
   },

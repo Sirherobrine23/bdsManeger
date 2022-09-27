@@ -1,29 +1,49 @@
 import { tmpdir } from "node:os";
 import fs from "node:fs";
 import path from "node:path";
-import axios from "axios";
-import got from "got";
 import tar from "tar";
+import AdmZip from "adm-zip";
+
+let got: (typeof import("got"))["default"];
+const gotCjs = async () => got||(await (eval('import("got")') as Promise<typeof import("got")>)).default;
+gotCjs().then(res => got = res);
 
 export async function saveFile(url: string, options?: {filePath?: string, headers?: {[key: string]: string|number}}) {
-  let fileSave = path.join(tmpdir(), "bdscore_"+(Math.random()*155515151).toFixed()+"_raw_bdscore_"+path.basename(url));
   const Headers = {};
+  let fileSave = path.join(tmpdir(), Date.now()+"_raw_bdscore_"+path.basename(url));
   if (options) {
     if (options.filePath && typeof options.filePath === "string") fileSave = options.filePath;
     if (options.headers) Object.keys(options.headers).forEach(key => Headers[key] = String(options.headers[key]));
   }
 
-  const gotStream = got.stream({url, headers: Headers, isStream: true});
-  gotStream.pipe(fs.createWriteStream(fileSave, {autoClose: false}));
+  const fsStream = fs.createWriteStream(fileSave, {autoClose: false});
+  const gotStream = (await gotCjs()).stream({url, headers: Headers, isStream: true});
+  gotStream.pipe(fsStream);
   await new Promise<void>((done, reject) => {
-    gotStream.on("end", () => setTimeout(done, 1000));
     gotStream.on("error", reject);
+    fsStream.on("error", reject);
+    gotStream.once("end", () => fsStream.once("finish", done));
   });
   return fileSave;
 }
 
+export async function getBuffer(url: string, options?: {method?: string,body?: any, headers?: {[key: string]: string}}): Promise<Buffer> {
+  const Headers = {};
+  let Body: any;
+  if (options) {
+    if (options.headers) Object.keys(options.headers).forEach(key => Headers[key] = options.headers[key]);
+    if (options.body) Body = options.body;
+  }
+  return (await gotCjs())(url, {
+    headers: Headers,
+    body: Body,
+    method: (options?.method||"GET").toUpperCase() as any,
+    responseType: "buffer"
+  }).then(({body}) => Buffer.from(body));
+}
+
 export async function tarExtract(url: string, options?: {folderPath?: string, headers?: {[key: string]: string|number}}) {
-  let fileSave = path.join(tmpdir(), "_bdscore", (Math.random()*155515151).toFixed()+"_raw_bdscore");
+  let fileSave = path.join(tmpdir(), "_bdscore", Date.now()+"_raw_bdscore");
   const Headers = {};
   if (options) {
     if (options.folderPath && typeof options.folderPath === "string") fileSave = options.folderPath;
@@ -31,7 +51,7 @@ export async function tarExtract(url: string, options?: {folderPath?: string, he
   }
 
   if (!fs.existsSync(fileSave)) await fs.promises.mkdir(fileSave, {recursive: true});
-  const gotStream = got.stream({url, headers: Headers, isStream: true});
+  const gotStream = (await gotCjs()).stream({url, headers: Headers, isStream: true});
   const tarE = tar.extract({
     cwd: fileSave,
     noChmod: false,
@@ -48,26 +68,28 @@ export async function tarExtract(url: string, options?: {folderPath?: string, he
   });
 }
 
-export async function getBuffer(url: string, options?: {method?: string,body?: any, headers?: {[key: string]: string}}): Promise<Buffer> {
-  const Headers = {};
-  let Body: any;
-  if (options) {
-    if (options.headers) Object.keys(options.headers).forEach(key => Headers[key] = options.headers[key]);
-    if (options.body) Body = options.body;
+const isGithubRoot = /github.com\/[\S\w]+\/[\S\w]+\/archive\//;
+export async function extractZip(url: string, folderTarget: string) {
+  const downloadedFile = await saveFile(url);
+  const extract = async (targetFolder: string) => {
+    const zip = new AdmZip(downloadedFile);
+    await new Promise<void>((done, reject) => {
+      zip.extractAllToAsync(targetFolder, true, true, (err) => {
+        if (err) return done();
+        return reject(err);
+      })
+    });
   }
-  // if (typeof fetch === "undefined")
-  return axios.get(url, {
-    responseEncoding: "arraybuffer",
-    responseType: "arraybuffer",
-    headers: Headers,
-    data: Body,
-    method: (options?.method||"GET").toUpperCase()
-  }).then(({data}) => Buffer.from(data));
-  // return fetch(url, {
-  //   method: "GET",
-  //   body: typeof Body === "object" ? JSON.stringify(Body, null, 2):Body,
-  //   headers: Headers
-  // }).then(res => res.arrayBuffer()).then(res => Buffer.from(res));
+  if (isGithubRoot.test(url)) {
+    const tempFolder = await fs.promises.mkdtemp(path.join(tmpdir(), "githubRoot_"), "utf8");
+    await extract(tempFolder);
+    const files = await fs.promises.readdir(tempFolder);
+    if (files.length === 0) throw new Error("Invalid extract");
+    console.log("%s -> %s", path.join(tempFolder, files[0]), folderTarget)
+    await fs.promises.cp(path.join(tempFolder, files[0]), folderTarget, {recursive: true, force: true, preserveTimestamps: true, verbatimSymlinks: true});
+    return await fs.promises.rm(tempFolder, {recursive: true, force: true});
+  }
+  return extract(folderTarget);
 }
 
 export async function getJSON<JSONReturn = any>(url: string, options?: {method?: string, body?: any, headers?: {[key: string]: string}}): Promise<JSONReturn> {
@@ -173,7 +195,7 @@ export type githubTree = {
     "url": string
   }[],
 };
-export async function githubTree(username: string, repo: string, tree: string) {
+export async function githubTree(username: string, repo: string, tree: string = "main") {
   const validate = /^[a-zA-Z0-9_\-]+$/;
   if (!validate.test(username)) throw new Error("Invalid username");
   if (!validate.test(repo)) throw new Error("Invalid repository name");

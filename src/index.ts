@@ -1,9 +1,11 @@
-export { exportBds, importBds, payloadError } from "./export_import";
-export { pluginManeger } from "./plugin/main";
+export { importBds, exportBds, payloadError } from "./export_import";
+export * as platformPathManeger from "./platformPathManeger"
 export * as globalPlatfroms from "./globalPlatfroms";
-export * as Bedrock from "./bedrock";
+export * as pluginManeger from "./plugin/plugin";
+export * as pluginHooks from "./plugin/hook";
 export * as PocketmineMP from "./pocketmine";
 export * as Powernukkit from "./pwnuukit";
-export * as Java from "./java";
-export * as Spigot from "./spigot";
 export * as PaperMC from "./paper";
+export * as Bedrock from "./bedrock";
+export * as Spigot from "./spigot";
+export * as Java from "./java";

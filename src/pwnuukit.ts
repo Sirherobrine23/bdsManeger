@@ -1,16 +1,21 @@
-import * as path from "node:path";
-import * as fsOld from "node:fs";
-import * as fs from "node:fs/promises";
+import path from "node:path";
+import fsOld from "node:fs";
+import fs from "node:fs/promises";
 import os from "node:os";
-import { serverRoot, logRoot } from './pathControl';
-import { actions, actionConfig } from './globalPlatfroms';
+import { actions, actionConfig } from "./globalPlatfroms";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { saveFile } from "./httpRequest";
-export const serverPath = path.join(serverRoot, "power_nukkit");
-const jarPath = path.join(serverPath, "pwnukkit.jar");
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+
+export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath } = await pathControl("powernukkit", platformOptions);
+  const jarPath = path.join(serverPath, "pwnukkit.jar");
+  if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
+  return platformManeger.powernukkit.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
+}
+
 export const playerAction = /^.*\[.*\]\s([\S\w]+|"[\S\w]+")\s+(left|joined)\s+the\s+game$/;
 export const portListen = /Opening\s+server\s+on\s+(([A-Za-z0-9:\.]+):([0-9]+))/;
-
 const serverConfig: actionConfig[] = [
   {
     name: "serverStop",
@@ -50,12 +55,9 @@ const serverConfig: actionConfig[] = [
   }
 ];
 
-export async function installServer(version: string|boolean) {
-  if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  return platformManeger.powernukkit.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
-}
-
-export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean}) {
+export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions?: bdsPlatformOptions}) {
+  const { serverPath, logsPath } = await pathControl("powernukkit", Config?.platformOptions||{id: "default"});
+  const jarPath = path.join(serverPath, "pwnukkit.jar");
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
   const args = [
     "-XX:+UseG1GC",
@@ -90,6 +92,9 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     }
   }
   args.push("-jar", jarPath, "--language", "eng");
-  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_pwnukkit_${process.platform}_${process.arch}.stdout.log`);
-  return new actions({command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}}, serverConfig);
+  const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
+  return new actions({
+    processConfig: {command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
+    hooks: serverConfig
+  });
 }

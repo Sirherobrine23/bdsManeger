@@ -1,15 +1,14 @@
-import * as path from "node:path";
-import * as fsOld from "node:fs";
-import * as fs from "node:fs/promises";
+import path from "node:path";
+import fsOld from "node:fs";
+import fs from "node:fs/promises";
+import admZip from "adm-zip";
+import * as Proprieties from "./Proprieties";
 import { promisify } from "node:util";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import admZip from "adm-zip";
 import { execAsync } from "./childPromisses";
 import { actions, actionConfig } from "./globalPlatfroms";
-import { serverRoot, logRoot } from './pathControl';
-import * as Proprieties from "./Proprieties";
 import { saveFile } from "./httpRequest";
-export const serverPath = path.join(serverRoot, "Bedrock");
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 
 // RegExp
 export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
@@ -17,7 +16,8 @@ export const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
 export const started = /\[.*\]\s+Server\s+started\./;
 export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
 
-export async function installServer(version: string|boolean) {
+export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath } = await pathControl("bedrock", platformOptions);
   const bedrockData = await platformManeger.bedrock.find(version);
   const zip = new admZip(await saveFile(bedrockData.url[process.platform]));
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
@@ -67,7 +67,8 @@ const serverConfig: actionConfig[] = [
   },
 ];
 
-export async function startServer() {
+export async function startServer(platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath, logsPath } = await pathControl("bedrock", platformOptions);
   if (!fsOld.existsSync(serverPath)) throw new Error("Install server fist");
   const args: string[] = [];
   let command = path.join(serverPath, "bedrock_server");
@@ -83,12 +84,12 @@ export async function startServer() {
   //   execAsync(`echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list && sudo apt update && sudo apt install libssl1.1`, {stdio: "inherit"});
   // }
 
-  const logFileOut = path.join(logRoot, `bdsManeger_${Date.now()}_bedrock_${process.platform}_${process.arch}.stdout.log`);
-  return new actions({command, args, options: {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}, logPath: {stdout: logFileOut}}}, serverConfig);
+  const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
+  return new actions({
+    processConfig: {command, args, options: {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}, logPath: {stdout: logFileOut}}},
+    hooks: serverConfig
+  });
 }
-
-// File config
-export const fileProperties = path.join(serverPath, "server.properties");
 
 // Update file config
 export type keyConfig = "serverName"|"gamemode"|"forceGamemode"|"difficulty"|"allowCheats"|"maxPlayers"|"onlineMode"|"allowList"|"serverPort"|"serverPortv6"|"viewDistance"|"tickDistance"|"playerIdleTimeout"|"maxThreads"|"levelName"|"levelSeed"|"defaultPlayerPermissionLevel"|"texturepackRequired"|"chatRestriction";
@@ -111,7 +112,9 @@ export async function updateConfig(key: "levelSeed", value?: string): Promise<st
 export async function updateConfig(key: "defaultPlayerPermissionLevel", value: "visitor"|"member"|"operator"): Promise<string>;
 export async function updateConfig(key: "texturepackRequired", value: boolean): Promise<string>;
 export async function updateConfig(key: "chatRestriction", value: "None"|"Dropped"|"Disabled"): Promise<string>;
-export async function updateConfig(key: keyConfig, value: string|number|boolean): Promise<string> {
+export async function updateConfig(key: keyConfig, value: string|number|boolean, platformOptions: bdsPlatformOptions = {id: "default"}): Promise<string> {
+  const { serverPath } = await pathControl("bedrock", platformOptions);
+  const fileProperties = path.join(serverPath, "server.properties");
   if (!fsOld.existsSync(fileProperties)) throw new Error("Install server fist!");
   let fileConfig = await fs.readFile(fileProperties, "utf8");
   if (key === "serverName") fileConfig = fileConfig.replace(/server-name=.*/, `server-name=${value}`);
@@ -200,7 +203,9 @@ type rawConfig = {
   "emit-server-telemetry"?: boolean
 }
 
-export async function getConfig(): Promise<bedrockConfig> {
+export async function getConfig(platformOptions: bdsPlatformOptions = {id: "default"}): Promise<bedrockConfig> {
+  const { serverPath } = await pathControl("bedrock", platformOptions);
+  const fileProperties = path.join(serverPath, "server.properties");
   if (!fsOld.existsSync(fileProperties)) throw new Error("Install server fist");
   const config = Proprieties.parse<rawConfig>(await fs.readFile(fileProperties, "utf8"));
   const configBase: bedrockConfig = {};
