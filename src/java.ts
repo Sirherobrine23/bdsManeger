@@ -58,7 +58,7 @@ const serverConfig: actionConfig[] = [
   },
 ];
 
-export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions: bdsPlatformOptions}) {
+export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions?: bdsPlatformOptions}) {
   const { serverPath, logsPath } = await pathControl("java", Config?.platformOptions||{id: "default"});
   const jarPath = path.join(serverPath, "server.jar");
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
