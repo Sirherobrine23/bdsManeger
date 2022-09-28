@@ -36,43 +36,39 @@ const platformArray: bdsPlatform[] = [
  */
 export async function pathControl(platform: bdsPlatform, options?: bdsPlatformOptions) {
   if (!platformArray.includes(platform)) throw new Error("Invalid platform");
+  const platformRoot = path.join(bdsRoot, platform);
+  if (!await exists(platformRoot)) await fs.mkdir(platformRoot, {recursive: true});
   if (!options) options = {};
-  if (!await exists(path.join(bdsRoot, platform))) await fs.mkdir(path.join(bdsRoot, platform), {recursive: true});
 
   // Create if not exists
-  const foldersAndLink = await fs.readdir(path.join(bdsRoot, platform));
+  const foldersAndLink = await fs.readdir(platformRoot);
   if (foldersAndLink.length === 0) options.newId = true;
   if (options.newId) {
     options.id = crypto.randomBytes(12).toString("hex");
-    fs.mkdir(path.join(bdsRoot, platform, options.id), {recursive: true});
-    if (await exists(path.join(bdsRoot, platform, "default"))) await fs.unlink(path.join(bdsRoot, platform, "default"));
-    await fs.symlink(path.join(bdsRoot, platform, options.id), path.join(bdsRoot, platform, "default"));
+    fs.mkdir(path.join(platformRoot, options.id), {recursive: true});
+    if (await exists(path.join(platformRoot, "default"))) await fs.unlink(path.join(platformRoot, "default"));
+    await fs.symlink(path.join(platformRoot, options.id), path.join(platformRoot, "default"));
   }
 
   // Get real id
-  if (options?.id === "default") options.id = path.basename(await fs.realpath(path.join(bdsRoot, platform, options.id)));
+  if (options?.id === "default") options.id = path.basename(await fs.realpath(path.join(platformRoot, options.id)));
+
+  // Mount Paths
+  const serverRoot = path.join(platformRoot, options.id);
+  const serverPath = path.join(serverRoot, "server");
+  const hooksPath = path.join(serverRoot, "hooks");
+  const backupPath = path.join(serverRoot, "backup");
+  const logsPath = path.join(serverRoot, "logs");
+  let buildFolder: string;
+  if (options?.withBuildFolder) buildFolder = path.join(serverRoot, "build");
 
   // Create folder if not exists
-  const serverRoot = path.join(bdsRoot, platform, options.id);
   if (!(await exists(serverRoot))) await fs.mkdir(serverRoot, {recursive: true});
-  const serverPath = path.join(serverRoot, "server");
-
   if (!(await exists(serverPath))) await fs.mkdir(serverPath, {recursive: true});
-  const hooksPath = path.join(serverRoot, "hooks");
-
   if (!(await exists(hooksPath))) await fs.mkdir(hooksPath, {recursive: true});
-  const backupPath = path.join(serverRoot, "backup");
-
   if (!(await exists(backupPath))) await fs.mkdir(backupPath, {recursive: true});
-  const logsPath = path.join(serverRoot, "logs");
-
   if (!(await exists(logsPath))) await fs.mkdir(logsPath, {recursive: true});
-  let buildFolder: string;
-
-  if (options?.withBuildFolder) {
-    buildFolder = path.join(serverRoot, "build");
-    if (!(await exists(buildFolder))) await fs.mkdir(buildFolder, {recursive: true});
-  }
+  if (buildFolder && !(await exists(buildFolder))) await fs.mkdir(buildFolder, {recursive: true});
 
   return {
     id: options?.id,

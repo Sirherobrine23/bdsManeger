@@ -56,7 +56,7 @@ const serverConfig: actionConfig[] = [
 ];
 
 export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions?: bdsPlatformOptions}) {
-  const { serverPath, logsPath } = await pathControl("powernukkit", Config?.platformOptions||{id: "default"});
+  const { serverPath, logsPath, id } = await pathControl("powernukkit", Config?.platformOptions||{id: "default"});
   const jarPath = path.join(serverPath, "pwnukkit.jar");
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
   const args = [
@@ -94,6 +94,7 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   args.push("-jar", jarPath, "--language", "eng");
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
   return new actions({
+    id,
     processConfig: {command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
     hooks: serverConfig
   });

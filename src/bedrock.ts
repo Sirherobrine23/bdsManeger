@@ -20,7 +20,6 @@ export async function installServer(version: string|boolean, platformOptions: bd
   const { serverPath } = await pathControl("bedrock", platformOptions);
   const bedrockData = await platformManeger.bedrock.find(version);
   const zip = new admZip(await saveFile(bedrockData.url[process.platform]));
-  if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   // Remover files
   await fs.readdir(serverPath).then(files => files.filter(file => !saveFileFolder.test(file))).then(files => Promise.all(files.map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true}))));
   const serverConfig = (await fs.readFile(path.join(serverPath, "server.properties"), "utf8").catch(() => "")).trim();
@@ -68,8 +67,8 @@ const serverConfig: actionConfig[] = [
 ];
 
 export async function startServer(platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath, logsPath } = await pathControl("bedrock", platformOptions);
-  if (!fsOld.existsSync(serverPath)) throw new Error("Install server fist");
+  const { serverPath, logsPath, id } = await pathControl("bedrock", platformOptions);
+  if (!fsOld.existsSync(path.join(serverPath, "bedrock_server"+(process.platform==="win32"?".exe":"")))) throw new Error("Install server fist");
   const args: string[] = [];
   let command = path.join(serverPath, "bedrock_server");
   if (process.platform === "linux" && process.arch !== "x64") {
@@ -86,6 +85,7 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
 
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
   return new actions({
+    id,
     processConfig: {command, args, options: {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}, logPath: {stdout: logFileOut}}},
     hooks: serverConfig
   });

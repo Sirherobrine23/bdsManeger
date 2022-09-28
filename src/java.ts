@@ -59,7 +59,7 @@ const serverConfig: actionConfig[] = [
 ];
 
 export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions?: bdsPlatformOptions}) {
-  const { serverPath, logsPath } = await pathControl("java", Config?.platformOptions||{id: "default"});
+  const { serverPath, logsPath, id } = await pathControl("java", Config?.platformOptions||{id: "default"});
   const jarPath = path.join(serverPath, "server.jar");
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
   const command = "java";
@@ -79,6 +79,7 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   await fs.writeFile(eula, (await fs.readFile(eula, "utf8").catch(() => "eula=false")).replace("eula=false", "eula=true"));
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
   return new actions({
+    id,
     processConfig: {command, args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
     hooks: serverConfig
   });

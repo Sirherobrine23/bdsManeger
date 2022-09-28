@@ -48,27 +48,25 @@ if (!filter) filter = [/.*/];
   return files;
 }
 
-async function buildPhp(serverPath: string) {
+async function buildPhp(serverPath: string, buildFolder: string) {
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
-  const tempFolder = path.join(os.tmpdir(), "bdsPhp_"+(Math.random()*19999901).toString(16).replace(".", "").replace(/[0-9]/g, (_, a) =>a=="1"?"a":a=="2"?"b":a=="3"?"S":"k"));
-  if (!fsExistsSync(tempFolder)) fs.mkdir(tempFolder, {recursive: true});
   if (process.platform === "win32") {
-    const env = {VS_EDITION: process.env.VS_EDITION||"Enterprise", SOURCES_PATH: process.env.SOURCES_PATH||`${tempFolder}\\pocketmine-php-sdk`};
-    await execFileAsync("git", ["clone", "--depth=1", "https://github.com/pmmp/php-build-scripts.git", tempFolder], {cwd: tempFolder, stdio: "inherit"});
-    await execAsync(".\\windows-compile-vs.bat", {cwd: tempFolder, stdio: "inherit", env});
-    await promisify((new AdmZip(path.join(tempFolder, (await fs.readdir(tempFolder)).find(file => file.endsWith(".zip"))))).extractAllToAsync)(serverPath, false, true);
+    const env = {VS_EDITION: process.env.VS_EDITION||"Enterprise", SOURCES_PATH: process.env.SOURCES_PATH||`${buildFolder}\\pocketmine-php-sdk`};
+    await execFileAsync("git", ["clone", "--depth=1", "https://github.com/pmmp/php-build-scripts.git", buildFolder], {cwd: buildFolder, stdio: "inherit"});
+    await execAsync(".\\windows-compile-vs.bat", {cwd: buildFolder, stdio: "inherit", env});
+    await promisify((new AdmZip(path.join(buildFolder, (await fs.readdir(buildFolder)).find(file => file.endsWith(".zip"))))).extractAllToAsync)(serverPath, false, true);
   } else {
-    const buildFile = path.join(tempFolder, "build.sh");
+    const buildFile = path.join(buildFolder, "build.sh");
     await fs.writeFile(buildFile, await getBuffer("https://raw.githubusercontent.com/pmmp/php-build-scripts/stable/compile.sh"));
     await fs.chmod(buildFile, "777");
-    await execFileAsync(buildFile, ["-j"+os.cpus().length], {cwd: tempFolder, stdio: "inherit"});
-    await fs.cp(path.join(tempFolder, "bin", (await fs.readdir(path.join(tempFolder, "bin")))[0]), path.join(serverPath, "bin"), {force: true, recursive: true, preserveTimestamps: true, verbatimSymlinks: true});
+    await execFileAsync(buildFile, ["-j"+os.cpus().length], {cwd: buildFolder, stdio: "inherit"});
+    await fs.cp(path.join(buildFolder, "bin", (await fs.readdir(path.join(buildFolder, "bin")))[0]), path.join(serverPath, "bin"), {force: true, recursive: true, preserveTimestamps: true, verbatimSymlinks: true});
   }
-  await fs.rm(tempFolder, {recursive: true, force: true});
+  await fs.rm(buildFolder, {recursive: true, force: true});
   console.log("PHP Build success!");
 }
 
-async function installPhp(serverPath: string): Promise<void> {
+async function installPhp(serverPath: string, buildFolder: string): Promise<void> {
   const releases: (githubRelease["assets"][0])[] = [];
   (await GithubRelease("The-Bds-Maneger", "Build-PHP-Bins")).map(re => re.assets).forEach(res => releases.push(...res));
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
@@ -100,13 +98,14 @@ async function installPhp(serverPath: string): Promise<void> {
   // test it's works php
   await execFileAsync(await findPhp(serverPath), ["-v"]).catch(err => {
     console.warn(String(err));
-    return buildPhp(serverPath)
+    return buildPhp(serverPath, buildFolder);
   });
 }
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath } = await pathControl("pocketmine", platformOptions);
-  await installPhp(serverPath);
+  platformOptions.withBuildFolder = true;
+  const { serverPath, buildFolder } = await pathControl("pocketmine", platformOptions);
+  await installPhp(serverPath, buildFolder);
   const info = await platformManeger.pocketmine.find(version);
   await saveFile(info?.url, {filePath: path.join(serverPath, "pocketmine.phar")});
   return info;
@@ -151,11 +150,12 @@ const serverConfig: actionConfig[] = [
 ];
 
 export async function startServer(platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath, logsPath } = await pathControl("pocketmine", platformOptions);
+  const { serverPath, logsPath, id } = await pathControl("pocketmine", platformOptions);
   const serverPhar = path.join(serverPath, "pocketmine.phar");
   if (!fsExistsSync(serverPhar)) throw new Error("Install server fist!");
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.stdout.log`);
   return new actions({
+    id,
     processConfig: {command: await findPhp(serverPath), args: [serverPhar, "--no-wizard", "--enable-ansi"], options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
     hooks: serverConfig
   });

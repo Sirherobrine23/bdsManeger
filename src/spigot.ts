@@ -75,7 +75,7 @@ const serverConfig: actionConfig[] = [
 ];
 
 export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions?: bdsPlatformOptions}) {
-  const { serverPath, logsPath } = await pathControl("spigot", Config?.platformOptions||{id: "default"});
+  const { serverPath, logsPath, id } = await pathControl("spigot", Config?.platformOptions||{id: "default"});
   const jarPath = path.join(serverPath, "server.jar");
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
   const args = [];
@@ -95,6 +95,7 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   await fs.readFile(eula, "utf8").catch(() => "eula=false").then(eulaFile => fs.writeFile(eula, eulaFile.replace("eula=false", "eula=true")));
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
   return new actions({
+    id,
     processConfig: {command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
     hooks: serverConfig
   });

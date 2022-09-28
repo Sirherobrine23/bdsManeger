@@ -37,7 +37,7 @@ export type actionTp = {
 
 export type actionPlugin = {
   name: "pluginManeger",
-  class: () => Promise<pluginManeger>
+  class: () => pluginManeger|Promise<pluginManeger>
 };
 
 export type actionHooks = {
@@ -51,21 +51,36 @@ export type actionConfig = actionCallback|actionRun|actionPlugin|actionHooks;
 
 export declare interface actions {
   on(act: "error", fn: (data: any) => void): this;
-  on(act: "playerConnect"|"playerDisconnect"|"playerUnknown", fn: (data: playerBase) => void): this;
-  on(act: "portListening", fn: (data: portListen) => void): this;
-  on(act: "serverStarted", fn: (data: serverStarted) => void): this;
-  on(act: "log_stderr", fn: (data: string) => void): this;
-  on(act: "log_stdout", fn: (data: string) => void): this;
-  on(act: "log", fn: (data: string) => void): this;
-  on(act: "exit", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
+  once(act: "error", fn: (data: any) => void): this;
+  // emit(act: "error", data: any): boolean;
 
+  on(act: "playerConnect"|"playerDisconnect"|"playerUnknown", fn: (data: playerBase) => void): this;
   once(act: "playerConnect"|"playerDisconnect"|"playerUnknown", fn: (data: playerBase) => void): this;
+  // emit(act: "playerConnect"|"playerDisconnect"|"playerUnknown", data: playerBase): boolean;
+
+  on(act: "portListening", fn: (data: portListen) => void): this;
   once(act: "portListening", fn: (data: portListen) => void): this;
+  // emit(act: "portListening", data: portListen): boolean;
+
+  on(act: "serverStarted", fn: (data: serverStarted) => void): this;
   once(act: "serverStarted", fn: (data: serverStarted) => void): this;
+  // emit(act: "serverStarted", data: serverStarted): boolean;
+
+  on(act: "log_stderr", fn: (data: string) => void): this;
   once(act: "log_stderr", fn: (data: string) => void): this;
+  // emit(act: "log_stderr", data: string): boolean;
+
+  on(act: "log_stdout", fn: (data: string) => void): this;
   once(act: "log_stdout", fn: (data: string) => void): this;
+  // emit(act: "log_stdout", data: string): boolean;
+
+  on(act: "log", fn: (data: string) => void): this;
   once(act: "log", fn: (data: string) => void): this;
+  // emit(act: "log", data: string): boolean;
+
+  on(act: "exit", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
   once(act: "exit", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
+  // emit(act: "exit", data: {code: number, signal: NodeJS.Signals}): boolean;
 }
 
 export type actionCommandOption = {command: string, args?: string[], options?: fs.ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
@@ -110,8 +125,11 @@ export class actions extends EventEmitter {
   }
 
   public processConfig: actionCommandOption;
-  constructor(platformConfig: {processConfig: actionCommandOption, hooks: actionConfig[]}) {
+  public id: string;
+  constructor(platformConfig: {id: string, processConfig: actionCommandOption, hooks: actionConfig[]}) {
     super({captureRejections: false});
+    this.setMaxListeners(0);
+    this.id = platformConfig.id;
     if (!platformConfig?.processConfig.args) platformConfig.processConfig.args = [];
     if (!platformConfig?.processConfig.options) platformConfig.processConfig.options = {};
     platformConfig.processConfig.options.maxBuffer = Infinity;
@@ -126,15 +144,15 @@ export class actions extends EventEmitter {
     this.#childProcess.on("exit", (code, signal) => this.emit("exit", {code, signal}));
     const readlineStdout = readline.createInterface(this.#childProcess.stdout);
     const readlineStderr = readline.createInterface(this.#childProcess.stderr);
-    readlineStdout.on("line", data => this.emit("log_stdout", data));
-    readlineStderr.on("line", data => this.emit("log_stderr", data));
     readlineStdout.on("line", data => this.emit("log", data));
     readlineStderr.on("line", data => this.emit("log", data));
+    readlineStdout.on("line", data => this.emit("log_stdout", data));
+    readlineStderr.on("line", data => this.emit("log_stderr", data));
 
     const plug = platformConfig?.hooks?.find((a: actionPlugin) => a?.name === "pluginManeger") as actionPlugin;
     const hooks = platformConfig?.hooks?.find((a: actionHooks) => a?.name === "pluginHooks") as actionHooks;
     if (!!hooks) Promise.resolve().then(() => hooks.class(this)).then(res => this.hooks = res);
-    if (!!plug) plug.class().then(res => this.plugin = res).catch(err => this.emit("error", err));
+    if (!!plug) Promise.resolve().then(() => plug.class()).then(res => this.plugin = res).catch(err => this.emit("error", err));
 
     // Ports listening
     this.on("portListening", data => this.portListening.push(data));
@@ -173,20 +191,18 @@ export class actions extends EventEmitter {
     });
 
     // Callbacks
-    (platformConfig?.hooks?.filter((a: actionCallback) => typeof a?.callback === "function") as actionCallback[]).forEach(fn => {
+    (platformConfig?.hooks?.filter((a: actionCallback) => typeof a?.callback === "function")).forEach((fn: actionCallback) => {
       // Use new player actions
       if (fn.name === "playerAction") {
         const playerConnect = (data: playerBase) => this.emit("playerConnect", data), playerDisonnect = (data: playerBase) => this.emit("playerDisconnect", data), playerUnknown = (data: playerBase) => this.emit("playerUnknown", data);
-        this.on("log_stdout", data => fn.callback(data, playerConnect, playerDisonnect, playerUnknown));
-        this.on("log_stderr", data => fn.callback(data, playerConnect, playerDisonnect, playerUnknown));
+        this.on("log", data => fn.callback(data, playerConnect, playerDisonnect, playerUnknown));
         return;
       }
-      this.on("log_stdout", data => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args)));
-      this.on("log_stderr", data => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args)));
+      this.on("log", data => fn.callback(data, (...args: any[]) => this.emit(fn.name, ...args)));
     });
 
     // Set backend run function
-    (platformConfig?.hooks?.filter((a: actionRun) => typeof a?.run === "function") as actionRun[]).forEach(action => {
+    (platformConfig?.hooks?.filter((a: actionRun) => typeof a?.run === "function")).forEach((action: actionRun) => {
       if (action.name === "serverStop") this.#stopServerFunction = action.run;
       else if (action.name === "tp") this.#tpfunction = action.run;
     });
