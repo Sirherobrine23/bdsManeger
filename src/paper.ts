@@ -61,16 +61,38 @@ const serverConfig: actionConfig[] = [
 export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions?: bdsPlatformOptions}) {
   const { serverPath, logsPath, id } = await pathControl("paper", Config?.platformOptions||{id: "default"});
   if (!fsOld.existsSync(path.join(serverPath, "paper.jar"))) throw new Error("Install server fist.");
-  const args = [];
+  const args = [
+    "-XX:+UseG1GC",
+    "-XX:+ParallelRefProcEnabled",
+    "-XX:MaxGCPauseMillis=200",
+    "-XX:+UnlockExperimentalVMOptions",
+    "-XX:+DisableExplicitGC",
+    "-XX:+AlwaysPreTouch",
+    "-XX:G1NewSizePercent=30",
+    "-XX:G1MaxNewSizePercent=40",
+    "-XX:G1HeapRegionSize=8M",
+    "-XX:G1ReservePercent=20",
+    "-XX:G1HeapWastePercent=5",
+    "-XX:G1MixedGCCountTarget=4",
+    "-XX:InitiatingHeapOccupancyPercent=15",
+    "-XX:G1MixedGCLiveThresholdPercent=90",
+    "-XX:G1RSetUpdatingPauseTimePercent=5",
+    "-XX:SurvivorRatio=32",
+    "-XX:+PerfDisableSharedMem",
+    "-XX:MaxTenuringThreshold=1",
+    "-Dusing.aikars.flags=https://mcflags.emc.gs",
+    "-Daikars.new.flags=true",
+    "-XX:+UnlockDiagnosticVMOptions",
+    "-XX:-UseAESCTRIntrinsics"
+  ];
   if (Config) {
     if (Config.maxFreeMemory) {
-      const safeFree = Math.floor(os.freemem()/1e6)-512;
-      if (safeFree > 1000) args.push(`-Xms${safeFree}m`);
+      const safeFree = Math.floor(os.freemem()/1e6);
+      if (safeFree > 1000) Config.maxMemory = safeFree;
       else console.warn("There is little ram available!")
-    } else {
-      if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
-      if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
     }
+    if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
+    if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
   }
 
   args.push("-jar", path.join(serverPath, "paper.jar"), "nogui");

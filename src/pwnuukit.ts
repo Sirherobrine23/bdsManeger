@@ -79,17 +79,18 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     "-XX:+PerfDisableSharedMem",
     "-XX:MaxTenuringThreshold=1",
     "-Dusing.aikars.flags=https://mcflags.emc.gs",
-    "-Daikars.new.flags=true"
+    "-Daikars.new.flags=true",
+    "-XX:+UnlockDiagnosticVMOptions",
+    "-XX:-UseAESCTRIntrinsics"
   ];
   if (Config) {
     if (Config.maxFreeMemory) {
-      const safeFree = Math.floor(os.freemem()/1e6)-512;
-      if (safeFree > 1000) args.push(`-Xms${safeFree}m`);
+      const safeFree = Math.floor(os.freemem()/1e6);
+      if (safeFree > 1000) Config.maxMemory = safeFree;
       else console.warn("There is little ram available!")
-    } else {
-      if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
-      if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
     }
+    if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
+    if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
   }
   args.push("-jar", jarPath, "--language", "eng");
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);

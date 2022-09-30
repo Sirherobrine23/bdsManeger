@@ -63,18 +63,40 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   const jarPath = path.join(serverPath, "server.jar");
   if (!fsOld.existsSync(jarPath)) throw new Error("Install server fist.");
   const command = "java";
-  const args = ["-jar"];
+  const args = [
+    "-XX:+UseG1GC",
+    "-XX:+ParallelRefProcEnabled",
+    "-XX:MaxGCPauseMillis=200",
+    "-XX:+UnlockExperimentalVMOptions",
+    "-XX:+DisableExplicitGC",
+    "-XX:+AlwaysPreTouch",
+    "-XX:G1NewSizePercent=30",
+    "-XX:G1MaxNewSizePercent=40",
+    "-XX:G1HeapRegionSize=8M",
+    "-XX:G1ReservePercent=20",
+    "-XX:G1HeapWastePercent=5",
+    "-XX:G1MixedGCCountTarget=4",
+    "-XX:InitiatingHeapOccupancyPercent=15",
+    "-XX:G1MixedGCLiveThresholdPercent=90",
+    "-XX:G1RSetUpdatingPauseTimePercent=5",
+    "-XX:SurvivorRatio=32",
+    "-XX:+PerfDisableSharedMem",
+    "-XX:MaxTenuringThreshold=1",
+    "-Dusing.aikars.flags=https://mcflags.emc.gs",
+    "-Daikars.new.flags=true",
+    "-XX:+UnlockDiagnosticVMOptions",
+    "-XX:-UseAESCTRIntrinsics"
+  ];
   if (Config) {
     if (Config.maxFreeMemory) {
-      const safeFree = Math.floor(os.freemem()/1e6)-512;
-      if (safeFree > 1000) args.push(`-Xms${safeFree}m`);
+      const safeFree = Math.floor(os.freemem()/1e6);
+      if (safeFree > 1000) Config.maxMemory = safeFree;
       else console.warn("There is little ram available!")
-    } else {
-      if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
-      if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
     }
+    if (Config.maxMemory) args.push(`-Xmx${Config.maxMemory}m`);
+    if (Config.minMemory) args.push(`-Xms${Config.minMemory}m`);
   }
-  args.push(jarPath, "nogui");
+  args.push("-jar", jarPath, "nogui");
   const eula = path.join(serverPath, "eula.txt");
   await fs.writeFile(eula, (await fs.readFile(eula, "utf8").catch(() => "eula=false")).replace("eula=false", "eula=true"));
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
