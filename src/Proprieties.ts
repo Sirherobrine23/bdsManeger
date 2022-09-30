@@ -1,18 +1,19 @@
+export type properitiesBase = {[key: string]: string|number|true|false};
+
 /**
  * Parse Proprieties files and return a map of properties.
  *
  * @param Proper - String with the properties or similar files
  * @returns
  */
-export function parse<PropertiesObject = {[key: string]: string|number|true|false|null}>(Proper: string): PropertiesObject {
+export function parse<PropertiesObject = properitiesBase>(Proper: string): PropertiesObject {
   const ProPri = {};
-  const ProperSplit = Proper.replace(/\r\n/g, "\n").replace(/\\\s+?\n/gi, "").split("\n").map(Line => Line.trim()).filter(line => /.*(\s+)?\=(\s+)?.*/.test(line) && !/^#/.test(line));
+  const ProperSplit = Proper.replace(/\\\s+?\n/gi, "").split(/\r?\n/).map(Line => Line.trim()).filter(line => /.*(\s+)?\=(\s+)?.*/.test(line) && !/^#/.test(line));
   for (const Line of ProperSplit) {
     const LineMatch = Line.match(/^([^\s\=]+)\s*\=(.*)$/);
     const key = LineMatch[1].trim(), value = LineMatch[2].trim();
     ProPri[key] = value;
-    if (ProPri[key] === "") ProPri[key] = null;
-    else if (ProPri[key] === "true") ProPri[key] = true;
+    if (ProPri[key] === "true") ProPri[key] = true;
     else if (ProPri[key] === "false") ProPri[key] = false;
     else if (/^[0-9]+\.[0-9]+/.test(ProPri[key]) && !/^[0-9]+\.[0-9]+\.[0-9]+/.test(ProPri[key])) ProPri[key] = parseFloat(ProPri[key]);
     else if (/^[0-9]+/.test(ProPri[key])) ProPri[key] = parseInt(ProPri[key]);
@@ -26,7 +27,7 @@ export function parse<PropertiesObject = {[key: string]: string|number|true|fals
  * @param ProPri - String with properties file
  * @returns
  */
-export function stringify(ProPri: {[key: string]: any}): string {
+export function stringify(ProPri: properitiesBase): string {
   const Proper = [];
   for (const key in Object.keys(ProPri)) {
     if (ProPri[key] === null) Proper.push(`${key}=`);
@@ -39,3 +40,5 @@ export function stringify(ProPri: {[key: string]: any}): string {
   }
   return Proper.join("\n");
 }
+
+export default {parse, stringify};

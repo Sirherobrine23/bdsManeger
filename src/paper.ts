@@ -6,6 +6,8 @@ import { platformManeger } from "@the-bds-maneger/server_versions";
 import { actions, actionConfig } from "./globalPlatfroms";
 import { saveFile } from "./httpRequest";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import Proprieties from "./Proprieties";
+import type { spigotProprieties } from "./spigot";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath } = await pathControl("paper", platformOptions);
@@ -104,4 +106,17 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     processConfig: {command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
     hooks: serverConfig
   });
+}
+
+export async function getConfig(platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath } = await pathControl("paper", platformOptions);
+  return Proprieties.parse<spigotProprieties>(await fs.readFile(path.join(serverPath, "server.properties"), "utf8"));
+}
+
+// This is a fast and dirty way to implement a new feature, but i'm too exhausted to implement the same type as bedrock
+export async function updateConfig(config: {key: string, value: any}, platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const currentConfig = await getConfig(platformOptions);
+  const { serverPath } = await pathControl("paper", platformOptions);
+  currentConfig[config.key] = config.value;
+  return fs.writeFile(path.join(serverPath, "server.properties"), Proprieties.stringify(currentConfig));
 }

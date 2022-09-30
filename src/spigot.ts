@@ -5,6 +5,7 @@ import os from "node:os";
 import { actions, actionConfig } from "./globalPlatfroms";
 import { getBuffer, getJSON, saveFile } from "./httpRequest";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import Proprieties from "./Proprieties"
 
 async function listVersions() {
   const data = (await getBuffer("https://hub.spigotmc.org/versions/")).toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));
@@ -121,4 +122,81 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     processConfig: {command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
     hooks: serverConfig
   });
+}
+
+export type baseConfig = {
+  "gamemode": string,
+  "level-name": string,
+  "level-seed": number,
+  "pvp": boolean,
+  "difficulty": "easy"|"normal"|"hard",
+  "hardcore": boolean,
+  "motd": string,
+  "server-port": number,
+  "enforce-secure-profile": boolean,
+  "require-resource-pack": boolean,
+  "max-players": number,
+  "online-mode": boolean,
+  "enable-status": boolean,
+  "allow-flight": boolean,
+  "view-distance": number,
+  "simulation-distance": number,
+  "player-idle-timeout": number,
+  "force-gamemode": boolean,
+  "white-list": boolean,
+  "spawn-animals": boolean,
+  "enforce-whitelist": boolean,
+  "enable-command-block": boolean,
+};
+
+export type ignoreBaseConfig = {
+  "query.port": number,
+  "enable-jmx-monitoring": boolean,
+  "rcon.port": number,
+  "enable-query": boolean,
+  "generator-settings": "{}"|string,
+  "generate-structures": boolean,
+  "max-chained-neighbor-updates": number,
+  "network-compression-threshold": number,
+  "max-tick-time": number,
+  "use-native-transport": boolean,
+  "broadcast-rcon-to-ops": boolean,
+  "server-ip": string,
+  "resource-pack-prompt": any,
+  "allow-nether": boolean,
+  "enable-rcon": boolean,
+  "sync-chunk-writes": boolean,
+  "op-permission-level": number,
+  "prevent-proxy-connections": boolean,
+  "hide-online-players": boolean,
+  "resource-pack": any,
+  "entity-broadcast-range-percentage": number,
+  "rcon.password": string,
+  "debug": boolean,
+  "rate-limit": number,
+  "broadcast-console-to-ops": boolean,
+  "spawn-npcs": boolean,
+  "previews-chat": boolean,
+  "function-permission-level": number,
+  "level-type": "minecraft\\:normal"|string,
+  "text-filtering-config": any,
+  "spawn-monsters": boolean,
+  "spawn-protection": number,
+  "resource-pack-sha1": any|string,
+  "max-world-size": number
+}
+
+export type spigotProprieties = baseConfig & ignoreBaseConfig;
+
+export async function getConfig(platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath } = await pathControl("spigot", platformOptions);
+  return Proprieties.parse<spigotProprieties>(await fs.readFile(path.join(serverPath, "server.properties"), "utf8"));
+}
+
+// This is a fast and dirty way to implement a new feature, but i'm too exhausted to implement the same type as bedrock
+export async function updateConfig(config: {key: string, value: any}, platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const currentConfig = await getConfig(platformOptions);
+  const { serverPath } = await pathControl("spigot", platformOptions);
+  currentConfig[config.key] = config.value;
+  return fs.writeFile(path.join(serverPath, "server.properties"), Proprieties.stringify(currentConfig));
 }
