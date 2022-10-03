@@ -60,7 +60,8 @@ const serverConfig: globalPlatfroms.actionConfig[] = [
           protocol: portData.protocol,
           type: "TCP",
           plugin: "internalBds",
-          port
+          port,
+          proxyOrigin: portData.port
         })
       })
     }

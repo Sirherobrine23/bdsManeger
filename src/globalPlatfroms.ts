@@ -13,7 +13,7 @@ export type actionsPlayer = {
   callback: (data: string, playerConnect: (player: playerBase) => void, playerDisconnect: (player: playerBase) => void, playerUnknown: (player: playerBase) => void) => void
 };
 
-export type portListen = {port: number, host?: string, type: "TCP"|"UDP"|"TCP/UDP", protocol: "IPv4"|"IPv6"|"IPV4/IPv6"|"Unknown", plugin?: string};
+export type portListen = {port: number, host?: string, type: "TCP"|"UDP"|"TCP/UDP", protocol: "IPv4"|"IPv6"|"IPV4/IPv6"|"Unknown", proxyOrigin?: number, plugin?: string};
 export type actionsPort = {
   name: "portListening",
   callback: (data: string, done: (portInfo: portListen) => void) => void
