@@ -2,13 +2,14 @@ import path from "node:path";
 import fsOld from "node:fs";
 import fs from "node:fs/promises";
 import admZip from "adm-zip";
-import * as Proprieties from "./Proprieties";
+import * as Proprieties from "./lib/Proprieties";
 import { promisify } from "node:util";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { execAsync } from "./childPromisses";
-import { actions, actionConfig } from "./globalPlatfroms";
-import { saveFile } from "./httpRequest";
+import * as globalPlatfroms from "./globalPlatfroms";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import { execAsync } from "./lib/childPromisses";
+import { saveFile } from "./lib/httpRequest";
+import { proxyUdpToTcp } from "./lib/proxy";
 
 // RegExp
 export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
@@ -19,7 +20,8 @@ export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath } = await pathControl("bedrock", platformOptions);
   const bedrockData = await platformManeger.bedrock.find(version);
-  const zip = new admZip(await saveFile(bedrockData.url[process.platform]));
+  console.log(bedrockData);
+  const zip = new admZip(await saveFile(bedrockData?.url[process.platform]));
   // Remover files
   await fs.readdir(serverPath).then(files => files.filter(file => !saveFileFolder.test(file))).then(files => Promise.all(files.map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true}))));
   const serverConfig = (await fs.readFile(path.join(serverPath, "server.properties"), "utf8").catch(() => "")).trim();
@@ -32,7 +34,7 @@ export async function installServer(version: string|boolean, platformOptions: bd
   };
 }
 
-const serverConfig: actionConfig[] = [
+const serverConfig: globalPlatfroms.actionConfig[] = [
   {
     name: "serverStop",
     run: (child) => child.runCommand("stop")
@@ -50,7 +52,17 @@ const serverConfig: actionConfig[] = [
       const match = data.match(portListen);
       if (!match) return;
       const [, protocol, port] = match;
-      done({port: parseInt(port), type: "UDP", host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"});
+      const portData: globalPlatfroms.portListen = {port: parseInt(port), type: "UDP", host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"};
+      done(portData);
+      proxyUdpToTcp(portData.port, {
+        udpType: portData.protocol === "IPv4"?"udp4":"udp6",
+        portListen: (port) => done({
+          protocol: portData.protocol,
+          type: "TCP",
+          plugin: "internalBds",
+          port
+        })
+      })
     }
   },
   {
@@ -84,7 +96,7 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
   // }
 
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
-  return new actions({
+  return new globalPlatfroms.actions({
     id,
     processConfig: {command, args, options: {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}, logPath: {stdout: logFileOut}}},
     hooks: serverConfig

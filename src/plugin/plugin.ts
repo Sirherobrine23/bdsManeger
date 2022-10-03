@@ -1,5 +1,5 @@
 import path from "node:path";
-import * as http_request from "../httpRequest";
+import * as http_request from "../lib/httpRequest";
 import type { bdsPlatform } from "../platformPathManeger";
 
 export type pluginConfig = {

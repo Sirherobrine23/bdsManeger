@@ -3,5 +3,4 @@ node_modules/
 dist/
 src/**/*.d.ts
 src/**/*.d.js
-backup_*.zip
-.testDir/
+src/**/*.js

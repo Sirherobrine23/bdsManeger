@@ -3,11 +3,11 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import AdmZip from "adm-zip";
 import { existsSync as fsExistsSync, Stats } from "node:fs";
-import { platformManeger } from "@the-bds-maneger/server_versions";
-import { execFileAsync, execAsync } from './childPromisses';
-import { getBuffer, githubRelease, GithubRelease, saveFile, tarExtract } from "./httpRequest";
-import { actionConfig, actions } from './globalPlatfroms';
 import { promisify } from 'node:util';
+import { platformManeger } from "@the-bds-maneger/server_versions";
+import { execFileAsync, execAsync } from './lib/childPromisses';
+import { getBuffer, githubRelease, GithubRelease, saveFile, tarExtract } from "./lib/httpRequest";
+import { actionConfig, actions } from './globalPlatfroms';
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 
 async function findPhp(serverPath: string, extraPath?: string): Promise<string> {

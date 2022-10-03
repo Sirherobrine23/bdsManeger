@@ -1,8 +1,8 @@
 import path from "node:path";
 import fs from "node:fs/promises";
-import { execFileAsync } from "../childPromisses";
 import { actions } from "../globalPlatfroms";
-import { saveFile } from "../httpRequest";
+import { execFileAsync } from "../lib/childPromisses";
+import { saveFile } from "../lib/httpRequest";
 
 export type hooksPlatform = "bedrock"|"java"|"pocketmine"|"spigot"|"powernukkit"|"paper";
 export type hooksPlatformGeneric = hooksPlatform|"generic";

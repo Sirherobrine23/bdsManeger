@@ -3,9 +3,9 @@ import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
 import { actions, actionConfig } from "./globalPlatfroms";
-import { getBuffer, getJSON, saveFile } from "./httpRequest";
+import { getBuffer, getJSON, saveFile } from "./lib/httpRequest";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import Proprieties from "./Proprieties"
+import Proprieties from "./lib/Proprieties"
 
 async function listVersions() {
   const data = (await getBuffer("https://hub.spigotmc.org/versions/")).toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));

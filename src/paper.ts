@@ -4,9 +4,9 @@ import fsOld from "node:fs";
 import os from "node:os";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { actions, actionConfig } from "./globalPlatfroms";
-import { saveFile } from "./httpRequest";
+import { saveFile } from "./lib/httpRequest";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import Proprieties from "./Proprieties";
+import Proprieties from "./lib/Proprieties";
 import type { spigotProprieties } from "./spigot";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {

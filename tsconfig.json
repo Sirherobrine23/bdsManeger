@@ -4,7 +4,7 @@
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"target": "ES2019",
-		"outDir": "./dist",
+		// "outDir": "./dist",
 		"declaration": true,
 		"strict": false,
 		"noUnusedLocals": true,
