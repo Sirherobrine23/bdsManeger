@@ -16,6 +16,11 @@ export type proxyTcpToUdpClient = {
   },
 };
 
+/**
+ * Transfer packets from UDP to TCP to send through some tunnel that only accepts TCP
+ *
+ * This also means that it will also have error transporting the data, so it is not guaranteed to work properly even more when dealing with UDP packets.
+ */
 export function proxyUdpToTcp(udpPort: number, options?: proxyUdpToTcpOptions) {
   const tcpServer = net.createServer();
   tcpServer.on("error", err => console.error(err));
@@ -42,8 +47,11 @@ export function proxyUdpToTcp(udpPort: number, options?: proxyUdpToTcpOptions) {
   tcpServer.listen(options?.listen||0, function() {
     const addr = this.address();
     if (options?.portListen) options.portListen(addr.port);
-    console.log("bds proxy port listen, %s, (udp -> tcp)", addr.port);
+    console.debug("bds proxy port listen, %s, (udp -> tcp)", addr.port);
+    tcpServer.once("close", () => console.debug("bds proxy close, %s", addr.port));
   });
+
+  return tcpServer;
 }
 
 export function proxyTcpToUdp(options: proxyTcpToUdpClient) {

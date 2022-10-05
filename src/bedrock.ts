@@ -9,7 +9,6 @@ import * as globalPlatfroms from "./globalPlatfroms";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { execAsync } from "./lib/childPromisses";
 import { saveFile } from "./lib/httpRequest";
-import { proxyUdpToTcp } from "./lib/proxy";
 
 // RegExp
 export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
@@ -54,16 +53,6 @@ const serverConfig: globalPlatfroms.actionConfig[] = [
       const [, protocol, port] = match;
       const portData: globalPlatfroms.portListen = {port: parseInt(port), type: "UDP", host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"};
       done(portData);
-      proxyUdpToTcp(portData.port, {
-        udpType: portData.protocol === "IPv4"?"udp4":"udp6",
-        portListen: (port) => done({
-          protocol: portData.protocol,
-          type: "TCP",
-          plugin: "internalBds",
-          port,
-          proxyOrigin: portData.port
-        })
-      })
     }
   },
   {

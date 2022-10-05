@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "nodemon",
     "build": "tsc",
-    "test:partial": "mocha -r ts-node/register",
+    "test:partial": "mocha -r ts-node/register --exit",
     "test": "npm run test:partial -- 'tests/**/*.ts'"
   },
   "repository": {
