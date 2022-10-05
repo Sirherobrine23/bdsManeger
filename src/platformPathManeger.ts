@@ -48,7 +48,7 @@ export async function pathControl(platform: bdsPlatform, options?: bdsPlatformOp
     fs.mkdir(path.join(platformRoot, options.id), {recursive: true});
     if (await exists(path.join(platformRoot, "default"))) await fs.unlink(path.join(platformRoot, "default"));
     await fs.symlink(path.join(platformRoot, options.id), path.join(platformRoot, "default"));
-  }
+  } else if (!await exists(path.join(platformRoot, options.id))) throw new Error("Folder ID not created!");
 
   // Get real id
   if (options?.id === "default") options.id = path.basename(await fs.realpath(path.join(platformRoot, options.id)));
