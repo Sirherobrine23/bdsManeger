@@ -1,8 +1,11 @@
+import { tmpdir } from "node:os";
 import express from "express";
 import fs from "node:fs";
-import { tmpdir } from "node:os";
+import fsPromise from "node:fs/promises";
 import path from "node:path";
+import crypto from "node:crypto";
 import * as bdsCore from "../index";
+
 const expressRoot = express();
 const app = express.Router();
 const sessions: {[sessionId: string]: bdsCore.globalPlatfroms.actions} = {};
@@ -12,6 +15,35 @@ const sockListen = path.join(tmpdir(), "bdsd.sock");
 if (fs.existsSync(sockListen)) fs.rmSync(sockListen, {force: true});
 expressRoot.listen(sockListen, () => console.info("Socket listen on %s", sockListen));
 expressRoot.listen(3000, () => console.info("Socket listen on %s", 3000));
+
+// Auth
+const bdsdAuth = path.join(bdsCore.platformPathManeger.bdsRoot, "bdsd_auth.json");
+expressRoot.use(async (req, res, next) => {
+  // Allow by default socket
+  if (!req.socket.remoteAddress && !req.socket.remotePort) {
+    res.setHeader("AuthSocket", "true");
+    return next();
+  }
+
+  // External requests
+  if (!fs.existsSync(bdsdAuth)) {
+    if (!fs.existsSync(bdsCore.platformPathManeger.bdsRoot)) await fsPromise.mkdir(bdsCore.platformPathManeger.bdsRoot, {recursive: true});
+    const keys = crypto.generateKeyPairSync("rsa", {modulusLength: 4096, publicKeyEncoding: {type: "spki", format: "pem"}, privateKeyEncoding: {type: "pkcs8", format: "pem", cipher: "aes-256-cbc", passphrase: crypto.randomBytes(128).toString("hex")}});
+    await fsPromise.writeFile(bdsdAuth, JSON.stringify(keys, null, 2));
+    console.log("Bdsd Keys\n\nPublic base64: '%s'\Ppublic: '%s'", Buffer.from(keys.publicKey).toString("base64"), keys.publicKey);
+    return res.status(204).json({
+      message: "Generated keys, re-auth with new public key!"
+    });
+  }
+
+  if (!req.headers.authorization) return res.status(400).json({error: "Send authorization with public key!"});
+  const authorizationPub = Buffer.from(req.headers.authorization.replace(/^.*\s+/, ""), "base64").toString("utf8").trim();
+  const publicKey = (JSON.parse(await fsPromise.readFile(bdsdAuth, "utf8")) as crypto.KeyPairSyncResult<string, string>).publicKey.trim();
+  if (publicKey === authorizationPub) return next();
+  return res.status(400).json({
+    error: "Invalid auth or incorret public key"
+  });
+});
 
 expressRoot.use(express.json());
 expressRoot.use(express.urlencoded({extended: true}));
@@ -100,6 +132,7 @@ app.put("/server", async (req, res) => {
 app.get("/server/log/:id", (req, res) => {
   const session = sessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
+  res.setHeader("Upgrade", "WebSocket").setHeader("Connection", "Upgrade");
   if (session.processConfig.options?.logPath?.stdout) {
     const log = fs.createReadStream(session.processConfig.options.logPath.stdout, {encoding: "utf8"});
     log.on("data", data => res.write(data));
@@ -139,3 +172,9 @@ expressRoot.all("*", (req, res) => res.status(404).json({
   error: "Page not found",
   path: req.path
 }));
+
+expressRoot.use((error, _1, res, _3) => {
+  return res.status(500).json({
+    internalError: String(error).replace(/Error:\s+/, ""),
+  });
+});
