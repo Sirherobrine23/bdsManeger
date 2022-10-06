@@ -11,13 +11,15 @@ const app = express.Router();
 const sessions: {[sessionId: string]: bdsCore.globalPlatfroms.actions} = {};
 
 // Listen socks
+const bdsdAuth = path.join(bdsCore.platformPathManeger.bdsRoot, "bdsd_auth.json");
 const sockListen = path.join(tmpdir(), "bdsd.sock");
 if (fs.existsSync(sockListen)) fs.rmSync(sockListen, {force: true});
 expressRoot.listen(sockListen, () => console.info("Socket listen on %s", sockListen));
 expressRoot.listen(3000, () => console.info("Socket listen on %s", 3000));
-
-// Auth
-const bdsdAuth = path.join(bdsCore.platformPathManeger.bdsRoot, "bdsd_auth.json");
+expressRoot.disable("x-powered-by").disable("etag");
+expressRoot.use(express.json());
+expressRoot.use(express.urlencoded({extended: true}));
+expressRoot.use((_req, res, next) => {res.json = (body: any) => res.setHeader("Content-Type", "application/json").send(JSON.stringify(body, null, 2)); return next();});
 expressRoot.use(async (req, res, next) => {
   // Allow by default socket
   if (!req.socket.remoteAddress && !req.socket.remotePort) {
@@ -45,12 +47,7 @@ expressRoot.use(async (req, res, next) => {
   });
 });
 
-expressRoot.use(express.json());
-expressRoot.use(express.urlencoded({extended: true}));
-expressRoot.use((_req, res, next) => {
-  res.json = (body: any) => res.setHeader("Content-Type", "application/json").send(JSON.stringify(body, null, 2));
-  return next();
-});
+// v1 routes
 expressRoot.use("/v1", app);
 
 // Send Status
@@ -132,7 +129,10 @@ app.put("/server", async (req, res) => {
 app.get("/server/log/:id", (req, res) => {
   const session = sessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
-  res.setHeader("Upgrade", "WebSocket").setHeader("Connection", "Upgrade");
+  res.writeHead(101, {
+    Upgrade: "WebSocket",
+    Connection: "Upgrade"
+  });
   if (session.processConfig.options?.logPath?.stdout) {
     const log = fs.createReadStream(session.processConfig.options.logPath.stdout, {encoding: "utf8"});
     log.on("data", data => res.write(data));
