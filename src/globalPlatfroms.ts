@@ -5,6 +5,7 @@ import { EventEmitter } from "node:events";
 import type { pluginManeger } from "./plugin/plugin";
 import type { script_hook } from "./plugin/hook";
 export const internalSessions: {[sessionID: string]: serverActionV2|actions} = {};
+export type actionCommandOption = {command: string, args?: string[], options?: fs.ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
 
 export type playerHistoric = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
 export type playerBase = {playerName: string, connectTime: Date, xuid?: string, action?: string};
@@ -83,8 +84,8 @@ export declare interface actions {
   // emit(act: "exit", data: {code: number, signal: NodeJS.Signals}): boolean;
 }
 
-export type actionCommandOption = {command: string, args?: string[], options?: fs.ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
 export class actions extends EventEmitter {
+  static version: 1 = 1;
   #childProcess: child_process.ChildProcess;
   public runCommand(...command: Array<string|number|boolean>) {
     this.#childProcess.stdin.write(command.map(a => String(a)).join(" ")+"\n");
@@ -129,6 +130,7 @@ export class actions extends EventEmitter {
   constructor(platformConfig: {id: string, processConfig: actionCommandOption, hooks?: actionConfig[]}) {
     if (internalSessions[platformConfig.id]) throw new Error("The platform with that id is already running!");
     super({captureRejections: false});
+    internalSessions[platformConfig.id] = this;
     this.setMaxListeners(0);
     this.once("exit", () => delete internalSessions[platformConfig.id]);
 
@@ -220,9 +222,6 @@ export class actions extends EventEmitter {
       if (action.name === "serverStop") this.#stopServerFunction = action.run;
       else if (action.name === "tp") this.#tpfunction = action.run;
     });
-
-    // Add listen
-    internalSessions[platformConfig.id] = this;
   }
 }
 
@@ -270,6 +269,7 @@ export type actionsV2 = {
 };
 
 export type serverActionV2 = {
+  version: 2,
   folderId: string,
   platform?: string,
   events: serverActionsEvent,
@@ -290,6 +290,7 @@ export async function actionV2(options: {id: string, processConfig: actionComman
   if (internalSessions[options.id]) throw new Error("The platform with that id is already running!");
   const {processConfig} = options;
   const serverObject: serverActionV2 = {
+    version: 2,
     folderId: options.id,
     events: new serverActionsEvent({captureRejections: false}),
     playerActions: {},

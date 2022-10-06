@@ -8,18 +8,19 @@ import * as bdsCore from "../index";
 
 const expressRoot = express();
 const app = express.Router();
-const sessions: {[sessionId: string]: bdsCore.globalPlatfroms.actions} = {};
-
-// Listen socks
 const bdsdAuth = path.join(bdsCore.platformPathManeger.bdsRoot, "bdsd_auth.json");
 const sockListen = path.join(tmpdir(), "bdsd.sock");
 if (fs.existsSync(sockListen)) fs.rmSync(sockListen, {force: true});
+
+process.on("unhandledRejection", err => console.trace(err));
+
+// Listen socks
 expressRoot.listen(sockListen, () => console.info("Socket listen on %s", sockListen));
 expressRoot.listen(3000, () => console.info("Socket listen on %s", 3000));
 expressRoot.disable("x-powered-by").disable("etag");
 expressRoot.use(express.json());
 expressRoot.use(express.urlencoded({extended: true}));
-expressRoot.use((_req, res, next) => {res.json = (body: any) => res.setHeader("Content-Type", "application/json").send(JSON.stringify(body, null, 2)); return next();});
+expressRoot.use(({ res, next }) => { res.json = (body: any) => res.setHeader("Content-Type", "application/json").send(JSON.stringify(body, null, 2)); return next(); });
 expressRoot.use(async (req, res, next) => {
   // Allow by default socket
   if (!req.socket.remoteAddress && !req.socket.remotePort) {
@@ -50,26 +51,23 @@ expressRoot.use(async (req, res, next) => {
 // v1 routes
 expressRoot.use("/v1", app);
 
-// Send Status
-app.get("/", ({res}) => res.json({version: "v1", support: true}));
-
 // Send Sessions
-app.get("/sessions", ({res}) => res.json(sessions));
+app.get("/", ({res}) => res.json(bdsCore.globalPlatfroms.internalSessions));
 
 // Install server
-app.put("/server", async (req, res) => {
+app.put("/server", async (req, res, next) => {
+  try {
   if (!req.body||Object.keys(req.body).length === 0) return res.status(400).json({
     error: "Body is empty"
   });
   const action = req.body.action as "install"|"start";
-  const platform = req.body.platform as bdsCore.pluginHooks.hooksPlatform;
+  const platform = req.body.platform as bdsCore.platformPathManeger.bdsPlatform;
   if (action === "install" && req.body.version === undefined) req.body.version = "latest";
 
   if (platform === "bedrock") {
     if (action === "install") return res.json(await bdsCore.Bedrock.installServer(req.body.version, req.body.platformOptions));
     else if (action === "start") {
       const platform = await bdsCore.Bedrock.startServer(req.body.platformOptions);
-      sessions[platform.id] = platform;
       return res.json({
         id: platform.id
       });
@@ -78,7 +76,6 @@ app.put("/server", async (req, res) => {
     if (action === "install") return res.json(await bdsCore.PocketmineMP.installServer(req.body.version, req.body.platformOptions));
     else if (action === "start") {
       const platform = await bdsCore.PocketmineMP.startServer(req.body.platformOptions);
-      sessions[platform.id] = platform;
       return res.json({
         id: platform.id
       });
@@ -87,7 +84,6 @@ app.put("/server", async (req, res) => {
     if (action === "install") return res.json(await bdsCore.Java.installServer(req.body.version, req.body.platformOptions));
     else if (action === "start") {
       const platform = await bdsCore.Java.startServer(req.body.javaOptions);
-      sessions[platform.id] = platform;
       return res.json({
         id: platform.id
       });
@@ -96,7 +92,6 @@ app.put("/server", async (req, res) => {
     if (action === "install") return res.json(await bdsCore.PaperMC.installServer(req.body.version, req.body.platformOptions));
     else if (action === "start") {
       const platform = await bdsCore.PaperMC.startServer(req.body.javaOptions);
-      sessions[platform.id] = platform;
       return res.json({
         id: platform.id
       });
@@ -105,7 +100,6 @@ app.put("/server", async (req, res) => {
     if (action === "install") return res.json(await bdsCore.Spigot.installServer(req.body.version, req.body.platformOptions));
     else if (action === "start") {
       const platform = await bdsCore.Spigot.startServer(req.body.javaOptions);
-      sessions[platform.id] = platform;
       return res.json({
         id: platform.id
       });
@@ -114,11 +108,12 @@ app.put("/server", async (req, res) => {
     if (action === "install") return res.json(await bdsCore.Powernukkit.installServer(req.body.version, req.body.platformOptions));
     else if (action === "start") {
       const platform = await bdsCore.Powernukkit.startServer(req.body.javaOptions);
-      sessions[platform.id] = platform;
       return res.json({
         id: platform.id
       });
     }
+  }} catch(err) {
+    return next(err);
   }
 
   return res.status(400).json({
@@ -127,40 +122,36 @@ app.put("/server", async (req, res) => {
 });
 
 app.get("/server/log/:id", (req, res) => {
-  const session = sessions[req.params.id];
+  const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
-  res.writeHead(101, {
-    Upgrade: "WebSocket",
-    Connection: "Upgrade"
-  });
-  if (session.processConfig.options?.logPath?.stdout) {
-    const log = fs.createReadStream(session.processConfig.options.logPath.stdout, {encoding: "utf8"});
-    log.on("data", data => res.write(data));
+  res.status(200);
+  if (session instanceof bdsCore.globalPlatfroms.actions) {
+    if (session.processConfig.options?.logPath?.stdout) fs.createReadStream(session.processConfig.options.logPath.stdout, {autoClose: false, emitClose: false}).on("data", data => res.write(data));
+    session.on("log", data => res.write(data));
+    session.once("exit", () => {if (res.closed) res.end()});
+  } else {
+    if (session.commandRun.options?.logPath?.stdout) fs.createReadStream(session.commandRun.options.logPath.stdout, {autoClose: false, emitClose: false}).on("data", data => res.write(data));
+    session.events.on("log", data => res.write(data));
+    session.events.once("exit", () => {if (res.closed) res.end()});
   }
-  session.on("log", log => res.write(log));
   return res;
 });
 
 app.put("/server/command/:id", (req, res) => {
-  const session = sessions[req.params.id];
+  const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   session.runCommand(req.body?.command);
   return res;
 });
 
-app.get("/server/ws/:id", (req, res) => {
-  const session: bdsCore.globalPlatfroms.actions = sessions[req.params.id];
+app.post("/server/stop/:id", (req, res, next) => {
+  const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
-  const sendAction = (action: string, body: any) => res.write(JSON.stringify({action, data: body}));
-  session.on("playerDisconnect", data => sendAction("playerDisconnect", data));
-  session.on("playerConnect", data => sendAction("playerConnect", data));
-  session.on("portListening", data => sendAction("portListening", data));
-  session.on("serverStarted", data => sendAction("serverStarted", data));
-  return res;
+  return session.stopServer().then(exitCode => res.status(200).json({exitCode})).catch(err => next(err));
 });
 
 app.get("/server/:id", (req, res) => {
-  const session: bdsCore.globalPlatfroms.actions = sessions[req.params.id];
+  const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   return res.json({
     port: session.portListening,
