@@ -2,7 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
-import { actions, actionConfig } from "./globalPlatfroms";
+import * as globalPlatfroms from "./globalPlatfroms";
 import { getBuffer, getJSON, saveFile } from "./lib/httpRequest";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import Proprieties from "./lib/Proprieties"
@@ -32,48 +32,38 @@ export async function installServer(version: string|boolean, platformOptions: bd
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const portListen = /\[.*\]:\s+Starting\s+Minecraft\s+server\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[A-Za-z0-9]+|\*):([0-9]+))/;
 export const playerAction = /\[.*\]:\s+([\S\w]+)\s+(joined|left|lost)/;
-const serverConfig: actionConfig[] = [
-  {
-    name: "serverStop",
-    run: (child) => child.runCommand("stop")
+export const serverConfig: globalPlatfroms.actionsV2 = {
+  serverStarted(data, done) {
+    // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
+    if (started.test(data)) done(new Date());
   },
-  {
-    name: "serverStarted",
-    callback(data, done) {
-      // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
-      if (started.test(data)) done(new Date());
+  portListening(data, done) {
+    const serverPort = data.match(portListen);
+    if (serverPort) {
+      let [,, host, port] = serverPort;
+      if (host === "*"||!host) host = "127.0.0.1";
+      return done({
+        port: parseInt(port),
+        type: "TCP",
+        host: host,
+        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6"
+      });
     }
   },
-  // Serverr
-  {
-    name: "portListening",
-    callback(data, done) {
-      const serverPort = data.match(portListen);
-      if (serverPort) {
-        let [,, host, port] = serverPort;
-        if (host === "*"||!host) host = "127.0.0.1";
-        return done({
-          port: parseInt(port),
-          type: "TCP",
-          host: host,
-          protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6"
-        });
-      }
+  playerAction(data, playerConnect, playerDisconnect, playerUnknown) {
+    if (playerAction.test(data)) {
+      const [, playerName, action] = data.match(data)||[];
+      if (action === "joined") playerConnect({playerName, connectTime: new Date()});
+      else if (action === "left") playerDisconnect({playerName, connectTime: new Date()});
+      else if (action === "lost") playerUnknown({playerName, connectTime: new Date(), action: "lost"});
+      else playerUnknown({playerName, connectTime: new Date()});
     }
   },
-  {
-    name: "playerAction",
-    callback(data, playerConect, playerDisconnect, playerUnknown) {
-      if (playerAction.test(data)) {
-        const [, playerName, action] = data.match(data)||[];
-        if (action === "joined") playerConect({playerName, connectTime: new Date()});
-        else if (action === "left") playerDisconnect({playerName, connectTime: new Date()});
-        else if (action === "lost") playerUnknown({playerName, connectTime: new Date(), action: "lost"});
-        else playerUnknown({playerName, connectTime: new Date()});
-      }
-    },
+  stopServer(components) {
+    components.actions.runCommand("stop");
+    return components.actions.waitExit();
   },
-];
+};
 
 export async function startServer(Config?: {maxMemory?: number, minMemory?: number, maxFreeMemory?: boolean, platformOptions?: bdsPlatformOptions}) {
   const { serverPath, logsPath, id } = await pathControl("spigot", Config?.platformOptions||{id: "default"});
@@ -117,8 +107,8 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   const eula = path.join(serverPath, "eula.txt");
   await fs.readFile(eula, "utf8").catch(() => "eula=false").then(eulaFile => fs.writeFile(eula, eulaFile.replace("eula=false", "eula=true")));
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
-  return new actions({
-    id,
+  return globalPlatfroms.actionV2({
+    id, platform: "spigot",
     processConfig: {command: "java", args, options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
     hooks: serverConfig
   });

@@ -4,6 +4,7 @@ import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
 import type { pluginManeger } from "./plugin/plugin";
 import type { script_hook } from "./plugin/hook";
+import { bdsPlatform } from "./platformPathManeger";
 export const internalSessions: {[sessionID: string]: serverActionV2|actions} = {};
 export type actionCommandOption = {command: string, args?: string[], options?: fs.ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
 
@@ -271,9 +272,9 @@ export type actionsV2 = {
 export type serverActionV2 = {
   version: 2,
   folderId: string,
-  platform?: string,
+  platform: bdsPlatform,
   events: serverActionsEvent,
-  commandRun?: actionCommandOption,
+  serverCommand?: actionCommandOption,
   killProcess?: (signal?: number|NodeJS.Signals) => boolean,
   waitExit?: () => Promise<number>
   stopServer?: () => Promise<number>,
@@ -286,12 +287,13 @@ export type serverActionV2 = {
 /**
  * A second version for actions, this version fixes several issues that occur with the old class-based version.
  */
-export async function actionV2(options: {id: string, processConfig: actionCommandOption, hooks: actionsV2}) {
+export async function actionV2(options: {id: string, platform: bdsPlatform, processConfig: actionCommandOption, hooks: actionsV2}) {
   if (internalSessions[options.id]) throw new Error("The platform with that id is already running!");
   const {processConfig} = options;
   const serverObject: serverActionV2 = {
     version: 2,
     folderId: options.id,
+    platform: options.platform,
     events: new serverActionsEvent({captureRejections: false}),
     playerActions: {},
     portListening: {}
@@ -333,7 +335,7 @@ export async function actionV2(options: {id: string, processConfig: actionComman
 
   // Run commands
   const childProcess = child_process.execFile(processConfig.command, processConfig.args, processConfig.options);
-  serverObject.commandRun = processConfig;
+  serverObject.serverCommand = processConfig;
 
   // Pipe logs
   if (processConfig.options.logPath) {
@@ -347,10 +349,10 @@ export async function actionV2(options: {id: string, processConfig: actionComman
 
   // Break lines with readline
   const readlineStdout = readline.createInterface(childProcess.stdout);
-  const readlineStderr = readline.createInterface(childProcess.stderr);
   readlineStdout.on("line", data => serverObject.events.emit("log", data));
-  readlineStderr.on("line", data => serverObject.events.emit("log", data));
   readlineStdout.on("line", data => serverObject.events.emit("log_stdout", data));
+  const readlineStderr = readline.createInterface(childProcess.stderr);
+  readlineStderr.on("line", data => serverObject.events.emit("log", data));
   readlineStderr.on("line", data => serverObject.events.emit("log_stderr", data));
 
   // Server options

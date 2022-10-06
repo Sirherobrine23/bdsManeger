@@ -3,11 +3,11 @@ import fsOld from "node:fs";
 import fs from "node:fs/promises";
 import admZip from "adm-zip";
 import * as Proprieties from "./lib/Proprieties";
+import * as globalPlatfroms from "./globalPlatfroms";
 import { promisify } from "node:util";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import * as globalPlatfroms from "./globalPlatfroms";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import { execAsync } from "./lib/childPromisses";
+import { commendExists } from "./lib/childPromisses";
 import { saveFile } from "./lib/httpRequest";
 
 // RegExp
@@ -19,7 +19,6 @@ export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath } = await pathControl("bedrock", platformOptions);
   const bedrockData = await platformManeger.bedrock.find(version);
-  console.log(bedrockData);
   const zip = new admZip(await saveFile(bedrockData?.url[process.platform]));
   // Remover files
   await fs.readdir(serverPath).then(files => files.filter(file => !saveFileFolder.test(file))).then(files => Promise.all(files.map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true}))));
@@ -33,50 +32,46 @@ export async function installServer(version: string|boolean, platformOptions: bd
   };
 }
 
-const serverConfig: globalPlatfroms.actionConfig[] = [
-  {
-    name: "serverStop",
-    run: (child) => child.runCommand("stop")
+const serverConfig: globalPlatfroms.actionsV2 = {
+  serverStarted(data, done) {
+    const resulter = data.match(started);
+    if (resulter) done(new Date());
   },
-  {
-    name: "serverStarted",
-    callback(data, done) {
-      const resulter = data.match(started);
-      if (resulter) done(new Date());
-    },
+  portListening(data, done) {
+    const match = data.match(portListen);
+    if (!match) return;
+    const [, protocol, port] = match;
+    const portData: globalPlatfroms.portListen = {port: parseInt(port), type: "UDP", host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"};
+    done(portData);
   },
-  {
-    name: "portListening",
-    callback(data, done) {
-      const match = data.match(portListen);
-      if (!match) return;
-      const [, protocol, port] = match;
-      const portData: globalPlatfroms.portListen = {port: parseInt(port), type: "UDP", host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"};
-      done(portData);
+  playerAction(data, playerConnect, playerDisconnect, playerUnknown) {
+    if (player.test(data)) {
+      const [, action,, playerName, xuid] = data.match(player);
+      if (action === "connect") playerConnect({connectTime: new Date(), playerName: playerName, xuid});
+      else if (action === "disconnect") playerDisconnect({connectTime: new Date(), playerName: playerName, xuid});
+      else playerUnknown({connectTime: new Date(), playerName: playerName, xuid});
     }
   },
-  {
-    name: "playerAction",
-    callback(data, playerConnect, playerDisconnect, playerUnknown) {
-      if (player.test(data)) {
-        const [, action,, playerName, xuid] = data.match(player);
-        if (action === "connect") playerConnect({connectTime: new Date(), playerName: playerName, xuid});
-        else if (action === "disconnect") playerDisconnect({connectTime: new Date(), playerName: playerName, xuid});
-        else playerUnknown({connectTime: new Date(), playerName: playerName, xuid});
-      }
-    },
+  stopServer(components) {
+    components.actions.runCommand("stop");
+    return components.actions.waitExit();
   },
-];
+  playerTp(actions, playerName, x, y, z) {
+    if (!/".*"/.test(playerName) && playerName.includes(" ")) playerName = `"${playerName}"`;
+    actions.runCommand("tp", playerName, x, y, z);
+  },
+};
 
 export async function startServer(platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, logsPath, id } = await pathControl("bedrock", platformOptions);
   if (!fsOld.existsSync(path.join(serverPath, "bedrock_server"+(process.platform==="win32"?".exe":"")))) throw new Error("Install server fist");
   const args: string[] = [];
   let command = path.join(serverPath, "bedrock_server");
-  if (process.platform === "linux" && process.arch !== "x64") {
+  if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
     args.push(command);
-    if (await execAsync("command -v qemu-x86_64-static").then(() => true).catch(() => false)) command = "qemu-x86_64-static";
-    else if (await execAsync("command -v box64").then(() => true).catch(() => false)) command = "box64";
+    if (await commendExists("qemu-x86_64-static")) command = "qemu-x86_64-static";
+    if (await commendExists("qemu-x86_64")) command = "qemu-x86_64";
+    else if (await commendExists("box64")) command = "box64";
     else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
 
@@ -86,15 +81,16 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
   // }
 
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
-  return new globalPlatfroms.actions({
+  return globalPlatfroms.actionV2({
     id,
+    platform: "bedrock",
     processConfig: {command, args, options: {cwd: serverPath, maxBuffer: Infinity, env: {LD_LIBRARY_PATH: process.platform === "win32"?undefined:serverPath}, logPath: {stdout: logFileOut}}},
     hooks: serverConfig
   });
 }
 
 // Update file config
-export type keyConfig = "serverName"|"gamemode"|"forceGamemode"|"difficulty"|"allowCheats"|"maxPlayers"|"onlineMode"|"allowList"|"serverPort"|"serverPortv6"|"viewDistance"|"tickDistance"|"playerIdleTimeout"|"maxThreads"|"levelName"|"levelSeed"|"defaultPlayerPermissionLevel"|"texturepackRequired"|"chatRestriction";
+export type keyConfig = "serverName"|"gamemode"|"forceGamemode"|"difficulty"|"allowCheats"|"maxPlayers"|"onlineMode"|"allowList"|"serverPort"|"serverPortv6"|"viewDistance"|"tickDistance"|"playerIdleTimeout"|"maxThreads"|"levelName"|"levelSeed"|"defaultPlayerPermissionLevel"|"texturepackRequired"|"chatRestriction"|"mojangTelemetry";
 export async function updateConfig(key: "serverName", value: string): Promise<string>;
 export async function updateConfig(key: "gamemode", value: "survival"|"creative"|"adventure"): Promise<string>;
 export async function updateConfig(key: "forceGamemode", value: boolean): Promise<string>;
@@ -114,6 +110,7 @@ export async function updateConfig(key: "levelSeed", value?: string): Promise<st
 export async function updateConfig(key: "defaultPlayerPermissionLevel", value: "visitor"|"member"|"operator"): Promise<string>;
 export async function updateConfig(key: "texturepackRequired", value: boolean): Promise<string>;
 export async function updateConfig(key: "chatRestriction", value: "None"|"Dropped"|"Disabled"): Promise<string>;
+export async function updateConfig(key: "mojangTelemetry", value: boolean): Promise<string>;
 export async function updateConfig(key: keyConfig, value: string|number|boolean, platformOptions: bdsPlatformOptions = {id: "default"}): Promise<string> {
   const { serverPath } = await pathControl("bedrock", platformOptions);
   const fileProperties = path.join(serverPath, "server.properties");
@@ -144,6 +141,10 @@ export async function updateConfig(key: keyConfig, value: string|number|boolean,
   else if (key === "defaultPlayerPermissionLevel") fileConfig = fileConfig.replace(/default-player-permission-level=(visitor|member|operator)/, `default-player-permission-level=${value}`);
   else if (key === "texturepackRequired") fileConfig = fileConfig.replace(/texturepack-required=(false|true)/, `texturepack-required=${value}`);
   else if (key === "chatRestriction") fileConfig = fileConfig.replace(/chat-restriction=(None|Dropped|Disabled)/, `chat-restriction=${value}`);
+  else if (key === "mojangTelemetry") {
+    if (!fileConfig.includes("emit-server-telemetry")) fileConfig = fileConfig.trim()+`\nemit-server-telemetry=false\n`;
+    fileConfig = fileConfig.replace(/chat-restriction=(true|false)/, `nemit-server-telemetry=${value}`);
+  }
   else throw new Error("Invalid key");
 
   await fs.writeFile(fileProperties, fileConfig);
@@ -169,7 +170,8 @@ export type bedrockConfig = {
   "levelSeed"?: string,
   "defaultPlayerPermissionLevel"?: "visitor"|"member"|"operator",
   "texturepackRequired"?: boolean,
-  "chatRestriction"?: "None"|"Dropped"|"Disabled"
+  "chatRestriction"?: "None"|"Dropped"|"Disabled",
+  "mojangTelemetry"?: boolean
 };
 
 type rawConfig = {
@@ -212,16 +214,8 @@ export async function getConfig(platformOptions: bdsPlatformOptions = {id: "defa
   const config = Proprieties.parse<rawConfig>(await fs.readFile(fileProperties, "utf8"));
   const configBase: bedrockConfig = {};
   const ignore = [
-    "content-log-file-enabled",
-    "compression-threshold",
-    "server-authoritative-movement",
-    "player-movement-score-threshold",
-    "player-movement-action-direction-threshold",
-    "player-movement-distance-threshold",
-    "player-movement-duration-threshold-in-ms",
-    "correct-player-movement",
-    "server-authoritative-block-breaking",
-    "disable-player-interaction"
+    "content-log-file-enabled", "compression-threshold", "server-authoritative-movement", "player-movement-score-threshold", "player-movement-action-direction-threshold",
+    "player-movement-distance-threshold", "player-movement-duration-threshold-in-ms", "correct-player-movement", "server-authoritative-block-breaking", "disable-player-interaction"
   ]
   for (const configKey of Object.keys(config)) {
     if (ignore.includes(configKey)) continue;

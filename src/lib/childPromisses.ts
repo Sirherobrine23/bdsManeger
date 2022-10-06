@@ -37,3 +37,16 @@ export function execAsync(command: string, options?: execAsyncOptions) {
     }
   });
 }
+
+export const defaultCommandNotExists = new Error("This command not exists or is a shell function");
+export async function commendExists(command: string): Promise<boolean>;
+export async function commendExists(command: string, returnBoolean: true): Promise<boolean>;
+export async function commendExists(command: string, returnBoolean: false): Promise<string>;
+export async function commendExists(command: string, returnBoolean: boolean = true): Promise<string|boolean> {
+  let location: string;
+  if (process.platform === "win32") location = (await execAsync(`where ${command}`).catch(() => ({stdout: ""}))).stdout;
+  else location = (await execAsync(`command -v ${command}`).catch(() => ({stdout: ""}))).stdout;
+  if (returnBoolean) return !!location
+  if (!location) throw defaultCommandNotExists;
+  return location;
+}

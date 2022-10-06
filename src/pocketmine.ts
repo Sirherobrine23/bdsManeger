@@ -2,12 +2,12 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
 import AdmZip from "adm-zip";
+import * as globalPlatfroms from "./globalPlatfroms";
 import { existsSync as fsExistsSync, Stats } from "node:fs";
-import { promisify } from 'node:util';
+import { promisify } from "node:util";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { execFileAsync, execAsync } from './lib/childPromisses';
+import { execFileAsync, execAsync } from "./lib/childPromisses";
 import { getBuffer, githubRelease, GithubRelease, saveFile, tarExtract } from "./lib/httpRequest";
-import { actionConfig, actions } from './globalPlatfroms';
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 
 async function findPhp(serverPath: string, extraPath?: string): Promise<string> {
@@ -114,49 +114,36 @@ export async function installServer(version: string|boolean, platformOptions: bd
 export const portListen = /\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|\[[A-Za-z0-9:]+\]|):([0-9]+))/;
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
 export const player = /[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi;
-
-const serverConfig: actionConfig[] = [
-  {
-    name: "serverStop",
-    run: (child) => child.runCommand("stop")
+export const pocketmineHooks: globalPlatfroms.actionsV2 = {
+  serverStarted(data, done) {
+    // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
+    if (started.test(data)) done(new Date());
   },
-  {
-    name: "serverStarted",
-    callback(data, done) {
-      // [22:35:26] [Server thread/INFO]: Done (6.249s)! For help, type "help"
-      if (started.test(data)) done(new Date());
-    }
+  portListening(data, done) {
+    const portParse = data.match(portListen);
+    if (!portParse) return;
+    const [,, host, port] = portParse;
+    done({
+      protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
+      type: "UDP",
+      port: parseInt(port),
+      host: host?.trim()
+    });
   },
-  {
-    name: "portListening",
-    callback(data, done) {
-      const portParse = data.match(portListen);
-      if (!portParse) return;
-      const [,, host, port] = portParse;
-      done({
-        protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
-        type: "UDP",
-        port: parseInt(port),
-        host: host?.trim()
-      });
-    }
+  stopServer(components) {
+    components.actions.runCommand("stop");
+    return components.actions.waitExit();
   },
-  {
-    name: "playerAction",
-    callback(data, done) {
-      data;
-    },
-  },
-];
+};
 
 export async function startServer(platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, logsPath, id } = await pathControl("pocketmine", platformOptions);
   const serverPhar = path.join(serverPath, "pocketmine.phar");
   if (!fsExistsSync(serverPhar)) throw new Error("Install server fist!");
   const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.stdout.log`);
-  return new actions({
-    id,
+  return globalPlatfroms.actionV2({
+    id, platform: "pocketmine",
     processConfig: {command: await findPhp(serverPath), args: [serverPhar, "--no-wizard", "--enable-ansi"], options: {cwd: serverPath, maxBuffer: Infinity, logPath: {stdout: logFileOut}}},
-    hooks: serverConfig
+    hooks: pocketmineHooks
   });
 }
