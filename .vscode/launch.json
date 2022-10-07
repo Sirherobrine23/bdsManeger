@@ -6,6 +6,10 @@
       "name": "Current file",
       "internalConsoleOptions": "openOnSessionStart",
       "request": "launch",
+      "env": {
+        "BDSD_IGNORE_KEY": "1",
+        "PORT": "3000"
+      },
       "args": [
         "-r", "ts-node/register",
         "${file}"

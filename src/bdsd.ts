@@ -1,26 +1,27 @@
-import { tmpdir } from "node:os";
+#!/usr/bin/env node
+import os from "node:os";
 import express from "express";
 import fs from "node:fs";
 import fsPromise from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import * as bdsCore from "../index";
+import * as bdsCore from "./index";
 
 const expressRoot = express();
 const app = express.Router();
 const bdsdAuth = path.join(bdsCore.platformPathManeger.bdsRoot, "bdsd_auth.json");
-const sockListen = path.join(tmpdir(), "bdsd.sock");
+const sockListen = path.join(os.tmpdir(), "bdsd.sock");
 if (fs.existsSync(sockListen)) fs.rmSync(sockListen, {force: true});
-
 process.on("unhandledRejection", err => console.trace(err));
 
 // Listen socks
-expressRoot.listen(sockListen, () => console.info("Socket listen on %s", sockListen));
-expressRoot.listen(3000, () => console.info("Socket listen on %s", 3000));
+expressRoot.listen(sockListen, function () {console.info("Socket listen on '%s'", this.address());});
+if (process.env.PORT) expressRoot.listen(process.env.PORT, () => console.info("HTTP listen on http://127.0.0.1:%s", process.env.PORT));
 expressRoot.disable("x-powered-by").disable("etag");
 expressRoot.use(express.json());
 expressRoot.use(express.urlencoded({extended: true}));
 expressRoot.use(({ res, next }) => { res.json = (body: any) => res.setHeader("Content-Type", "application/json").send(JSON.stringify(body, null, 2)); return next(); });
+if (process.env.BDSD_IGNORE_KEY) console.warn("Bdsd ignore auth key!");
 expressRoot.use(async (req, res, next) => {
   // Allow by default socket
   if (!req.socket.remoteAddress && !req.socket.remotePort) {
@@ -29,11 +30,12 @@ expressRoot.use(async (req, res, next) => {
   }
 
   // External requests
+  if (process.env.BDSD_IGNORE_KEY) return next();
   if (!fs.existsSync(bdsdAuth)) {
     if (!fs.existsSync(bdsCore.platformPathManeger.bdsRoot)) await fsPromise.mkdir(bdsCore.platformPathManeger.bdsRoot, {recursive: true});
     const keys = crypto.generateKeyPairSync("rsa", {modulusLength: 4096, publicKeyEncoding: {type: "spki", format: "pem"}, privateKeyEncoding: {type: "pkcs8", format: "pem", cipher: "aes-256-cbc", passphrase: crypto.randomBytes(128).toString("hex")}});
     await fsPromise.writeFile(bdsdAuth, JSON.stringify(keys, null, 2));
-    console.log("Bdsd Keys\n\nPublic base64: '%s'\Ppublic: '%s'", Buffer.from(keys.publicKey).toString("base64"), keys.publicKey);
+    console.log("Bdsd Keys\nPublic base64: '%s'\n\npublic:\n%s", Buffer.from(keys.publicKey).toString("base64"), keys.publicKey);
     return res.status(204).json({
       message: "Generated keys, re-auth with new public key!"
     });
@@ -45,6 +47,17 @@ expressRoot.use(async (req, res, next) => {
   if (publicKey === authorizationPub) return next();
   return res.status(400).json({
     error: "Invalid auth or incorret public key"
+  });
+});
+
+expressRoot.get("/", ({res}) => {
+  return res.status(200).json({
+    platform: process.platform,
+    arch: process.arch,
+    machinime_arch: os.machine(),
+    cpuCores: os.cpus().length,
+    loadavg: process.cpuUsage(),
+    resourceUsage: process.resourceUsage()
   });
 });
 
@@ -121,7 +134,7 @@ app.put("/server", async (req, res, next) => {
   });
 });
 
-app.get("/server/log/:id", (req, res) => {
+app.get("/log/:id", (req, res) => {
   const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   res.status(200);
@@ -131,20 +144,20 @@ app.get("/server/log/:id", (req, res) => {
   return res;
 });
 
-app.put("/server/command/:id", (req, res) => {
+app.put("/command/:id", (req, res) => {
   const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   session.runCommand(req.body?.command);
   return res;
 });
 
-app.post("/server/stop/:id", (req, res, next) => {
+app.get("/stop/:id", (req, res, next) => {
   const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   return session.stopServer().then(exitCode => res.status(200).json({exitCode})).catch(err => next(err));
 });
 
-app.get("/server/:id", (req, res) => {
+app.get("/info/:id", (req, res) => {
   const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   return res.json({

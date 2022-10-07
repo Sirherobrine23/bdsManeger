@@ -1,6 +1,6 @@
 import path from "node:path";
 import fs from "node:fs/promises";
-import { actions } from "../globalPlatfroms";
+import { actionsV2 } from "../globalPlatfroms";
 import { execFileAsync } from "../lib/childPromisses";
 import { saveFile } from "../lib/httpRequest";
 
@@ -9,7 +9,7 @@ export type hooksPlatformGeneric = hooksPlatform|"generic";
 export type hooksRegister = {
   scriptName: string,
   platforms: hooksPlatformGeneric[],
-  register: (actions: actions) => void,
+  register: (actions: actionsV2) => void,
 };
 
 async function exists(path: string) {
@@ -19,7 +19,7 @@ async function exists(path: string) {
 const gitUrlDetect = /(^http:\/\/.*\.git$|^http:\/\/.*.git$|^git:\/\/)/;
 
 export class script_hook {
-  #serverActions: actions;
+  #serverActions: actionsV2;
   #currentPlatform: hooksPlatformGeneric;
   #localFolder: string;
 
@@ -74,7 +74,7 @@ export class script_hook {
     return;
   }
 
-  constructor(hookFolder: string, targetPlatform: hooksPlatform, platformActions?: actions) {
+  constructor(hookFolder: string, targetPlatform: hooksPlatform, platformActions?: actionsV2) {
     this.#serverActions = platformActions;
     this.#currentPlatform = targetPlatform;
     this.#localFolder = hookFolder;

@@ -4,8 +4,9 @@ import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
 import { bdsPlatform } from "./platformPathManeger";
 export const internalSessions: {[sessionID: string]: serverActionV2} = {};
-export type actionCommandOption = {command: string, args?: string[], options?: fs.ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
+process.once("exit", () => Object.keys(internalSessions).forEach(id => internalSessions[id].stopServer()));
 
+export type actionCommandOption = {command: string, args?: string[], options?: fs.ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
 export type playerHistoric = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
 export type playerBase = {playerName: string, connectTime: Date, xuid?: string, action?: string};
 export type portListen = {port: number, host?: string, type: "TCP"|"UDP"|"TCP/UDP", protocol: "IPv4"|"IPv6"|"IPV4/IPv6"|"Unknown", proxyOrigin?: number, plugin?: string};
@@ -60,6 +61,7 @@ export type serverActionV2 = {
   platform: bdsPlatform,
   events: serverActionsEvent,
   serverCommand?: actionCommandOption,
+  serverStarted?: Date,
   killProcess: (signal?: number|NodeJS.Signals) => boolean,
   waitExit: () => Promise<number>
   stopServer: () => Promise<number>,
@@ -155,6 +157,7 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
   // Add listeners to actions events
   childProcess.on("error", data => serverObject.events.emit("error", data));
   childProcess.on("exit", (code, signal) => serverObject.events.emit("exit", {code, signal}));
+  childProcess.on("exit", () => serverObject.events.removeAllListeners());
 
   // Break lines with readline
   const readlineStdout = readline.createInterface(childProcess.stdout);
@@ -166,7 +169,13 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
 
   // Register hooks
   // Server avaible to player
-  if (options.hooks.serverStarted) serverObject.events.on("log", data => options.hooks.serverStarted(data, onAvaible => serverObject.events.emit("serverStarted", onAvaible)));
+  if (options.hooks.serverStarted) serverObject.events.on("log", function(data) {
+    return options.hooks.serverStarted(data, onAvaible => {
+      serverObject.serverStarted = onAvaible;
+      serverObject.events.emit("serverStarted", onAvaible);
+      serverObject.events.removeListener("log", this);
+    });
+  });
 
   // Server Player actions
   if (options.hooks.playerAction) {
