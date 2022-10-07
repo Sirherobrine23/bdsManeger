@@ -41,6 +41,7 @@
     "express-rate-limit": "^6.6.0",
     "got": "^12.5.1",
     "prismarine-nbt": "^2.2.1",
+    "prom-client": "^14.1.0",
     "tar": "^6.1.11"
   },
   "devDependencies": {
