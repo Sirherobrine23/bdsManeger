@@ -10,12 +10,6 @@ import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { commendExists } from "./lib/childPromisses";
 import { saveFile } from "./lib/httpRequest";
 
-// RegExp
-export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
-export const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
-export const started = /\[.*\]\s+Server\s+started\./;
-export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
-
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath } = await pathControl("bedrock", platformOptions);
   const bedrockData = await platformManeger.bedrock.find(version);
@@ -32,35 +26,11 @@ export async function installServer(version: string|boolean, platformOptions: bd
   };
 }
 
-const serverConfig: globalPlatfroms.actionsV2 = {
-  serverStarted(data, done) {
-    const resulter = data.match(started);
-    if (resulter) done(new Date());
-  },
-  portListening(data, done) {
-    const match = data.match(portListen);
-    if (!match) return;
-    const [, protocol, port] = match;
-    const portData: globalPlatfroms.portListen = {port: parseInt(port), type: "UDP", host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"};
-    done(portData);
-  },
-  playerAction(data, playerConnect, playerDisconnect, playerUnknown) {
-    if (player.test(data)) {
-      const [, action,, playerName, xuid] = data.match(player);
-      if (action === "connect") playerConnect({connectTime: new Date(), playerName: playerName, xuid});
-      else if (action === "disconnect") playerDisconnect({connectTime: new Date(), playerName: playerName, xuid});
-      else playerUnknown({connectTime: new Date(), playerName: playerName, xuid});
-    }
-  },
-  stopServer(components) {
-    components.actions.runCommand("stop");
-    return components.actions.waitExit();
-  },
-  playerTp(actions, playerName, x, y, z) {
-    if (!/".*"/.test(playerName) && playerName.includes(" ")) playerName = `"${playerName}"`;
-    actions.runCommand("tp", playerName, x, y, z);
-  },
-};
+// RegExp
+export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
+export const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
+export const started = /\[.*\]\s+Server\s+started\./;
+export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
 
 export async function startServer(platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, logsPath, id } = await pathControl("bedrock", platformOptions);
@@ -74,13 +44,39 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
     else if (await commendExists("box64")) command = "box64";
     else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
-
-  // Fix Libssl, https://bugs.mojang.com/browse/BDS-16913
-  // if (process.platform === "linux") {
-  //   execAsync(`echo "deb http://security.ubuntu.com/ubuntu focal-security main" | sudo tee /etc/apt/sources.list.d/focal-security.list && sudo apt update && sudo apt install libssl1.1`, {stdio: "inherit"});
-  // }
-
-  const logFileOut = path.join(logsPath, `${Date.now()}_${process.platform}_${process.arch}.log`);
+  const backendStart = new Date();
+  const logFileOut = path.join(logsPath, `${backendStart.getTime()}_${process.platform}_${process.arch}.log`);
+  const serverConfig: globalPlatfroms.actionsV2 = {
+    serverStarted(data, done) {
+      if (started.test(data)) done({
+        onAvaible: new Date(),
+        timePassed: Date.now() - backendStart.getTime()
+      });
+    },
+    portListening(data, done) {
+      const match = data.match(portListen);
+      if (!match) return;
+      const [, protocol, port] = match;
+      const portData: globalPlatfroms.portListen = {port: parseInt(port), type: "UDP", host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"};
+      done(portData);
+    },
+    playerAction(data, playerConnect, playerDisconnect, playerUnknown) {
+      if (player.test(data)) {
+        const [, action,, playerName, xuid] = data.match(player);
+        if (action === "connect") playerConnect({connectTime: new Date(), playerName: playerName, xuid});
+        else if (action === "disconnect") playerDisconnect({connectTime: new Date(), playerName: playerName, xuid});
+        else playerUnknown({connectTime: new Date(), playerName: playerName, xuid});
+      }
+    },
+    stopServer(components) {
+      components.actions.runCommand("stop");
+      return components.actions.waitExit();
+    },
+    playerTp(actions, playerName, x, y, z) {
+      if (!/".*"/.test(playerName) && playerName.includes(" ")) playerName = `"${playerName}"`;
+      actions.runCommand("tp", playerName, x, y, z);
+    },
+  };
   return globalPlatfroms.actionV2({
     id,
     platform: "bedrock",

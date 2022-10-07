@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import os from "node:os";
 import express from "express";
+import expressRateLimit from "express-rate-limit";
 import fs from "node:fs";
 import fsPromise from "node:fs/promises";
 import path from "node:path";
@@ -14,10 +15,13 @@ const sockListen = path.join(os.tmpdir(), "bdsd.sock");
 if (fs.existsSync(sockListen)) fs.rmSync(sockListen, {force: true});
 process.on("unhandledRejection", err => console.trace(err));
 
-// Listen socks
-expressRoot.listen(sockListen, function () {console.info("Socket listen on '%s'", this.address());});
-if (process.env.PORT) expressRoot.listen(process.env.PORT, () => console.info("HTTP listen on http://127.0.0.1:%s", process.env.PORT));
 expressRoot.disable("x-powered-by").disable("etag");
+expressRoot.use(expressRateLimit({
+  skipSuccessfulRequests: true,
+  message: "Already reached the limit, please wait a few moments",
+  windowMs: (1000*60)*2,
+  max: 1500,
+}));
 expressRoot.use(express.json());
 expressRoot.use(express.urlencoded({extended: true}));
 expressRoot.use(({ res, next }) => { res.json = (body: any) => res.setHeader("Content-Type", "application/json").send(JSON.stringify(body, null, 2)); return next(); });
@@ -50,13 +54,30 @@ expressRoot.use(async (req, res, next) => {
   });
 });
 
+// Listen socks
+expressRoot.listen(sockListen, function () {console.info("Socket listen on '%s'", this.address());});
+if (process.env.PORT) expressRoot.listen(process.env.PORT, () => console.info("HTTP listen on http://127.0.0.1:%s", process.env.PORT));
+
+let timesBefore = os.cpus().map(c => c.times);
+function getAverageUsage() {
+  let timesAfter = os.cpus().map(c => c.times);
+  let timeDeltas = timesAfter.map((t, i) => ({
+    user: t.user - timesBefore[i].user,
+    sys: t.sys - timesBefore[i].sys,
+    idle: t.idle - timesBefore[i].idle
+  }));
+  timesBefore = timesAfter;
+  return Math.floor(timeDeltas.map(times => 1 - times.idle / (times.user + times.sys + times.idle)).reduce((l1, l2) => l1 + l2) / timeDeltas.length*100);
+}
+
 expressRoot.get("/", ({res}) => {
   return res.status(200).json({
     platform: process.platform,
     arch: process.arch,
-    cpuCores: os.cpus().length,
-    loadavg: process.cpuUsage(),
-    resourceUsage: process.resourceUsage()
+    cpu: {
+      avg: getAverageUsage(),
+      cores: os.cpus().length,
+    },
   });
 });
 
@@ -64,7 +85,15 @@ expressRoot.get("/", ({res}) => {
 expressRoot.use("/v1", app);
 
 // Send Sessions
-app.get("/", ({res}) => res.json(bdsCore.globalPlatfroms.internalSessions));
+app.get("/", ({res}) => res.json(Object.keys(bdsCore.globalPlatfroms.internalSessions).map(key => {
+  return {
+    id: bdsCore.globalPlatfroms.internalSessions[key].id,
+    platform: bdsCore.globalPlatfroms.internalSessions[key].platform,
+    serverStarted: bdsCore.globalPlatfroms.internalSessions[key].serverStarted,
+    portListen: bdsCore.globalPlatfroms.internalSessions[key].portListening,
+    playerActions: bdsCore.globalPlatfroms.internalSessions[key].playerActions,
+  };
+})));
 
 // Install server
 app.put("/server", async (req, res, next) => {
@@ -138,7 +167,7 @@ app.get("/log/:id", (req, res) => {
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   res.status(200);
   if (session.serverCommand.options?.logPath?.stdout) fs.createReadStream(session.serverCommand.options.logPath.stdout, {autoClose: false, emitClose: false}).on("data", data => res.write(data));
-  session.events.on("log", data => res.write(data+"\n"));
+  session.events.on("log", data => res.write(Buffer.from(data+"\n")));
   session.events.once("exit", () => {if (res.closed) res.end()});
   return res;
 });
@@ -154,15 +183,6 @@ app.get("/stop/:id", (req, res, next) => {
   const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   return session.stopServer().then(exitCode => res.status(200).json({exitCode})).catch(err => next(err));
-});
-
-app.get("/info/:id", (req, res) => {
-  const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
-  if (!session) return res.status(400).json({error: "Session ID not exists!"});
-  return res.json({
-    port: session.portListening,
-    players: session.playerActions
-  });
 });
 
 expressRoot.all("*", (req, res) => res.status(404).json({

@@ -10,7 +10,10 @@ export type actionCommandOption = {command: string, args?: string[], options?: f
 export type playerHistoric = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
 export type playerBase = {playerName: string, connectTime: Date, xuid?: string, action?: string};
 export type portListen = {port: number, host?: string, type: "TCP"|"UDP"|"TCP/UDP", protocol: "IPv4"|"IPv6"|"IPV4/IPv6"|"Unknown", proxyOrigin?: number, plugin?: string};
-export type serverStarted = Date;
+export type serverStarted = Date|{
+  onAvaible: Date,
+  timePassed: number
+};
 
 export declare interface serverActionsEvent {
   on(act: "error", fn: (data: any) => void): this;
@@ -48,7 +51,7 @@ export declare interface serverActionsEvent {
 export class serverActionsEvent extends EventEmitter {};
 
 export type actionsV2 = {
-  serverStarted?: (data: string, done: (startedDate: Date) => void) => void,
+  serverStarted?: (data: string, done: (startedDate: serverStarted) => void) => void,
   portListening?: (data: string, done: (portInfo: portListen) => void) => void,
   playerAction?: (data: string, playerConnect: (player: playerBase) => void, playerDisconnect: (player: playerBase) => void, playerUnknown: (player: playerBase) => void) => void,
   stopServer?: (components: {child: child_process.ChildProcess, actions: serverActionV2}) => void|Promise<number>,
@@ -61,7 +64,7 @@ export type serverActionV2 = {
   platform: bdsPlatform,
   events: serverActionsEvent,
   serverCommand?: actionCommandOption,
-  serverStarted?: Date,
+  serverStarted?: serverStarted,
   killProcess: (signal?: number|NodeJS.Signals) => boolean,
   waitExit: () => Promise<number>
   stopServer: () => Promise<number>,
@@ -123,6 +126,32 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
     }
   };
 
+  // Add to internal sessions
+  internalSessions[options.id] = serverObject;
+  serverObject.events.on("exit", () => delete internalSessions[options.id]);
+
+  // Register hooks
+  // Server avaible to player
+  if (options.hooks.serverStarted) serverObject.events.on("log", function started(data: string) {
+    return options.hooks.serverStarted(data, onAvaible => {
+      if (serverObject.serverStarted) return;
+      serverObject.serverStarted = onAvaible;
+      serverObject.events.emit("serverStarted", onAvaible);
+      serverObject.events.removeListener("log", started);
+    });
+  });
+
+  // Server Player actions
+  if (options.hooks.playerAction) {
+    const playerConnect = (data: playerBase) => serverObject.events.emit("playerConnect", data);
+    const playerDisonnect = (data: playerBase) => serverObject.events.emit("playerDisconnect", data);
+    const playerUnknown = (data: playerBase) => serverObject.events.emit("playerUnknown", data);
+    serverObject.events.on("log", data => options.hooks.playerAction(data, playerConnect, playerDisonnect, playerUnknown));
+  }
+
+  // Port listen
+  if (options.hooks.portListening) serverObject.events.on("log", data => options.hooks.portListening(data, (portData) => serverObject.events.emit("portListening", portData)));
+
   // Port listen
   serverObject.events.on("portListening", data => serverObject.portListening[data.port] = data);
 
@@ -161,35 +190,12 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
 
   // Break lines with readline
   const readlineStdout = readline.createInterface(childProcess.stdout);
-  readlineStdout.on("line", data => serverObject.events.emit("log", data));
-  readlineStdout.on("line", data => serverObject.events.emit("log_stdout", data));
   const readlineStderr = readline.createInterface(childProcess.stderr);
+  readlineStdout.on("line", data => serverObject.events.emit("log", data));
   readlineStderr.on("line", data => serverObject.events.emit("log", data));
+  readlineStdout.on("line", data => serverObject.events.emit("log_stdout", data));
   readlineStderr.on("line", data => serverObject.events.emit("log_stderr", data));
 
-  // Register hooks
-  // Server avaible to player
-  if (options.hooks.serverStarted) serverObject.events.on("log", function(data) {
-    return options.hooks.serverStarted(data, onAvaible => {
-      if (serverObject.serverStarted) return;
-      serverObject.serverStarted = onAvaible;
-      serverObject.events.emit("serverStarted", onAvaible);
-    });
-  });
-
-  // Server Player actions
-  if (options.hooks.playerAction) {
-    const playerConnect = (data: playerBase) => serverObject.events.emit("playerConnect", data);
-    const playerDisonnect = (data: playerBase) => serverObject.events.emit("playerDisconnect", data);
-    const playerUnknown = (data: playerBase) => serverObject.events.emit("playerUnknown", data);
-    serverObject.events.on("log", data => options.hooks.playerAction(data, playerConnect, playerDisonnect, playerUnknown));
-  }
-
-  // Port listen
-  if (options.hooks.portListening) serverObject.events.on("log", data => options.hooks.portListening(data, (portData) => serverObject.events.emit("portListening", portData)));
-
   // Return session maneger
-  internalSessions[options.id] = serverObject;
-  serverObject.events.on("exit", () => delete internalSessions[options.id]);
   return serverObject;
 }
