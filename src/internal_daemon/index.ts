@@ -125,15 +125,9 @@ app.get("/server/log/:id", (req, res) => {
   const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   res.status(200);
-  if (session instanceof bdsCore.globalPlatfroms.actions) {
-    if (session.processConfig.options?.logPath?.stdout) fs.createReadStream(session.processConfig.options.logPath.stdout, {autoClose: false, emitClose: false}).on("data", data => res.write(data));
-    session.on("log", data => res.write(data));
-    session.once("exit", () => {if (res.closed) res.end()});
-  } else {
-    if (session.commandRun.options?.logPath?.stdout) fs.createReadStream(session.commandRun.options.logPath.stdout, {autoClose: false, emitClose: false}).on("data", data => res.write(data));
-    session.events.on("log", data => res.write(data));
-    session.events.once("exit", () => {if (res.closed) res.end()});
-  }
+  if (session.serverCommand.options?.logPath?.stdout) fs.createReadStream(session.serverCommand.options.logPath.stdout, {autoClose: false, emitClose: false}).on("data", data => res.write(data));
+  session.events.on("log", data => res.write(data));
+  session.events.once("exit", () => {if (res.closed) res.end()});
   return res;
 });
 

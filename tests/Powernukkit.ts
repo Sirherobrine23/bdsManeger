@@ -5,10 +5,10 @@ describe("Powernukkit", () => {
     this.timeout(Infinity);
     await installServer("latest");
     const serverManeger = await startServer();
-    serverManeger.on("log_stdout", console.log);
-    serverManeger.on("log_stderr", console.log);
-    serverManeger.on("portListening", console.log);
-    serverManeger.once("serverStarted", () => serverManeger.stopServer());
+    serverManeger.events.on("log_stdout", console.log);
+    serverManeger.events.on("log_stderr", console.log);
+    serverManeger.events.on("portListening", console.log);
+    serverManeger.events.once("serverStarted", () => serverManeger.stopServer());
     return serverManeger.waitExit();
   });
 });

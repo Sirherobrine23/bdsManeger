@@ -5,10 +5,10 @@ describe("Spigot", () => {
     this.timeout(Infinity);
     await spigot.installServer("latest");
     const serverManeger = await spigot.startServer();
-    serverManeger.on("log_stdout", console.log);
-    serverManeger.on("log_stderr", console.info);
-    serverManeger.on("portListening", console.log);
-    serverManeger.once("serverStarted", () => serverManeger.stopServer());
+    serverManeger.events.on("log_stdout", console.log);
+    serverManeger.events.on("log_stderr", console.info);
+    serverManeger.events.on("portListening", console.log);
+    serverManeger.events.once("serverStarted", () => serverManeger.stopServer());
     return serverManeger.waitExit();
   });
 });
