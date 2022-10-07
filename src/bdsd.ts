@@ -54,7 +54,6 @@ expressRoot.get("/", ({res}) => {
   return res.status(200).json({
     platform: process.platform,
     arch: process.arch,
-    machinime_arch: os.machine(),
     cpuCores: os.cpus().length,
     loadavg: process.cpuUsage(),
     resourceUsage: process.resourceUsage()
@@ -139,7 +138,7 @@ app.get("/log/:id", (req, res) => {
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   res.status(200);
   if (session.serverCommand.options?.logPath?.stdout) fs.createReadStream(session.serverCommand.options.logPath.stdout, {autoClose: false, emitClose: false}).on("data", data => res.write(data));
-  session.events.on("log", data => res.write(data));
+  session.events.on("log", data => res.write(data+"\n"));
   session.events.once("exit", () => {if (res.closed) res.end()});
   return res;
 });
