@@ -171,10 +171,9 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
   // Server avaible to player
   if (options.hooks.serverStarted) serverObject.events.on("log", function(data) {
     return options.hooks.serverStarted(data, onAvaible => {
-      if (!serverObject.serverStarted) return;
+      if (serverObject.serverStarted) return;
       serverObject.serverStarted = onAvaible;
       serverObject.events.emit("serverStarted", onAvaible);
-      serverObject.events.removeListener("log", this);
     });
   });
 
