@@ -29,6 +29,7 @@ expressRoot.use(expressRateLimit({
   windowMs: (1000*60)*2,
   max: 1500,
 }));
+
 if (process.env.BDSD_IGNORE_KEY) console.warn("Bdsd ignore auth key!");
 expressRoot.use(async (req, res, next) => {
   // Allow by default socket

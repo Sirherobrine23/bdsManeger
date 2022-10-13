@@ -9,6 +9,7 @@ import { platformManeger } from "@the-bds-maneger/server_versions";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { commendExists } from "./lib/childPromisses";
 import { saveFile } from "./lib/httpRequest";
+import { exists, readdirrecursive } from "./lib/extendsFs";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath } = await pathControl("bedrock", platformOptions);
@@ -220,4 +221,40 @@ export async function getConfig(platformOptions: bdsPlatformOptions = {id: "defa
     else configBase[key] = config[configKey];
   }
   return configBase;
+}
+
+export type resourcePacks = {
+  pack_id: string,
+  version?: number[]
+};
+
+export type resourceManifest = {
+  format_version?: 2,
+  header: {
+    uuid: string,
+    name?: string,
+    description?: string,
+    version?: number[],
+    min_engine_version?: number[]
+  },
+  modules?: {
+    uuid: string,
+    type: "resources",
+    description?: string,
+    version: number[]
+  }[]
+};
+
+export async function addResourcePacksToWorld(resourceId: string, platformOptions: bdsPlatformOptions = {id: "default"}) {
+  const { serverPath } = await pathControl("bedrock", platformOptions);
+  const serverConfig = await getConfig(platformOptions);
+  if (!await exists(path.join(serverPath, "worlds", serverConfig.levelName, "world_resource_packs.json"))) await fs.writeFile(path.join(serverPath, "worlds", serverConfig.levelName, "world_resource_packs.json"), "[]");
+  const resourcesData: resourcePacks[] = JSON.parse(await fs.readFile(path.join(serverPath, "worlds", serverConfig.levelName, "world_resource_packs.json"), "utf8"));
+  const manifests: resourceManifest[] = await Promise.all((await readdirrecursive([path.join(serverPath, "resource_packs"), path.join(serverPath, "worlds", serverConfig.levelName, "resource_packs")])).filter(file => file.endsWith("manifest.json")).map(async file => JSON.parse(await fs.readFile(file, "utf8"))));
+  const packInfo = manifests.find(pf => pf.header.uuid === resourceId);
+  if (!packInfo) throw new Error("UUID to texture not installed in the server");
+  if (resourcesData.includes({pack_id: resourceId})) throw new Error("Textura alredy installed in the World");
+  resourcesData.push({pack_id: packInfo.header.uuid, version: packInfo.header.version});
+  await fs.writeFile(path.join(serverPath, "worlds", serverConfig.levelName, "world_resource_packs.json"), JSON.stringify(resourcesData, null, 2));
+  return resourcesData;
 }
