@@ -84,6 +84,7 @@ export async function pathControl(platform: bdsPlatform, options?: bdsPlatformOp
     backupPath,
     logsPath,
     buildFolder,
+    platformIDs: foldersAndLink
   };
 }
 

@@ -10,9 +10,22 @@ import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { commendExists } from "./lib/childPromisses";
 import { saveFile } from "./lib/httpRequest";
 import { exists, readdirrecursive } from "./lib/extendsFs";
+import { randomPort } from "./lib/randomPort";
+
+async function createServerPort(ids: string[]) {
+  const platformPorts = (await Promise.all(ids.map(id => getConfig({id})))).map(config => ({v4: config.serverPort, v6: config.serverPortv6}));
+  let v4: number, v6: number;
+  while (!v4||!v6) {
+    const tmpNumber = await randomPort();
+    if (platformPorts.some(ports => ports.v4 === tmpNumber||ports.v6 == tmpNumber)) continue;
+    if (!v4) v4 = tmpNumber;
+    else v6 = tmpNumber;
+  };
+  return {v4, v6};
+}
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath } = await pathControl("bedrock", platformOptions);
+  const { serverPath, serverRoot, platformIDs, id } = await pathControl("bedrock", platformOptions);
   const bedrockData = await platformManeger.bedrock.find(version);
   const zip = new admZip(await saveFile(bedrockData?.url[process.platform]));
   // Remover files
@@ -20,7 +33,14 @@ export async function installServer(version: string|boolean, platformOptions: bd
   const serverConfig = (await fs.readFile(path.join(serverPath, "server.properties"), "utf8").catch(() => "")).trim();
   await promisify(zip.extractAllToAsync)(serverPath, true, true);
   if (serverConfig) await fs.writeFile(path.join(serverPath, "server.properties"), serverConfig);
+  await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: bedrockData.version, date: bedrockData.date, installDate: new Date()}));
+  if (platformIDs.length > 1) {
+    const ports = await createServerPort(platformIDs);
+    await updateConfig("serverPort", ports.v4, {id});
+    await updateConfig("serverPortv6", ports.v6, {id});
+  }
   return {
+    id,
     version: bedrockData.version,
     date: bedrockData.date,
     url: bedrockData.url[process.platform]
@@ -88,26 +108,26 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
 
 // Update file config
 export type keyConfig = "serverName"|"gamemode"|"forceGamemode"|"difficulty"|"allowCheats"|"maxPlayers"|"onlineMode"|"allowList"|"serverPort"|"serverPortv6"|"viewDistance"|"tickDistance"|"playerIdleTimeout"|"maxThreads"|"levelName"|"levelSeed"|"defaultPlayerPermissionLevel"|"texturepackRequired"|"chatRestriction"|"mojangTelemetry";
-export async function updateConfig(key: "serverName", value: string): Promise<string>;
-export async function updateConfig(key: "gamemode", value: "survival"|"creative"|"adventure"): Promise<string>;
-export async function updateConfig(key: "forceGamemode", value: boolean): Promise<string>;
-export async function updateConfig(key: "difficulty", value: "peaceful"|"easy"|"normal"|"hard"): Promise<string>;
-export async function updateConfig(key: "allowCheats", value: boolean): Promise<string>;
-export async function updateConfig(key: "maxPlayers", value: number): Promise<string>;
-export async function updateConfig(key: "onlineMode", value: boolean): Promise<string>;
-export async function updateConfig(key: "allowList", value: boolean): Promise<string>;
-export async function updateConfig(key: "serverPort", value: number): Promise<string>;
-export async function updateConfig(key: "serverPortv6", value: number): Promise<string>;
-export async function updateConfig(key: "viewDistance", value: number): Promise<string>;
-export async function updateConfig(key: "tickDistance", value: "4"|"6"|"8"|"10"|"12"): Promise<string>;
-export async function updateConfig(key: "playerIdleTimeout", value: number): Promise<string>;
-export async function updateConfig(key: "maxThreads", value: number): Promise<string>;
-export async function updateConfig(key: "levelName", value: string): Promise<string>;
-export async function updateConfig(key: "levelSeed", value?: string): Promise<string>;
-export async function updateConfig(key: "defaultPlayerPermissionLevel", value: "visitor"|"member"|"operator"): Promise<string>;
-export async function updateConfig(key: "texturepackRequired", value: boolean): Promise<string>;
-export async function updateConfig(key: "chatRestriction", value: "None"|"Dropped"|"Disabled"): Promise<string>;
-export async function updateConfig(key: "mojangTelemetry", value: boolean): Promise<string>;
+export async function updateConfig(key: "serverName", value: string, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "gamemode", value: "survival"|"creative"|"adventure", platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "forceGamemode", value: boolean, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "difficulty", value: "peaceful"|"easy"|"normal"|"hard", platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "allowCheats", value: boolean, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "maxPlayers", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "onlineMode", value: boolean, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "allowList", value: boolean, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "serverPort", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "serverPortv6", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "viewDistance", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "tickDistance", value: "4"|"6"|"8"|"10"|"12", platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "playerIdleTimeout", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "maxThreads", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "levelName", value: string, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "levelSeed", value?: string, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "defaultPlayerPermissionLevel", value: "visitor"|"member"|"operator", platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "texturepackRequired", value: boolean, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "chatRestriction", value: "None"|"Dropped"|"Disabled", platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "mojangTelemetry", value: boolean, platformOptions?: bdsPlatformOptions): Promise<string>;
 export async function updateConfig(key: keyConfig, value: string|number|boolean, platformOptions: bdsPlatformOptions = {id: "default"}): Promise<string> {
   const { serverPath } = await pathControl("bedrock", platformOptions);
   const fileProperties = path.join(serverPath, "server.properties");
@@ -122,10 +142,8 @@ export async function updateConfig(key: keyConfig, value: string|number|boolean,
   else if (key === "onlineMode") fileConfig = fileConfig.replace(/online-mode=(true|false)/, `online-mode=${value}`);
   else if (key === "allowList") fileConfig = fileConfig.replace(/allow-list=(false|true)/, `allow-list=${value}`);
   else if (key === "serverPort"||key === "serverPortv6") {
-    if (value > 1 && 65535 < value) {
-      if (key === "serverPort") fileConfig = fileConfig.replace(/server-port=[0-9]+/, `server-port=${value}`);
-      else fileConfig = fileConfig.replace(/server-portv6=[0-9]+/, `server-portc6=${value}`);
-    } else throw new Error("Invalid port range");
+    if (key === "serverPort") fileConfig = fileConfig.replace(/server-port=[0-9]+/, `server-port=${value}`);
+    else fileConfig = fileConfig.replace(/server-portv6=[0-9]+/, `server-portv6=${value}`);
   }
   else if (key === "viewDistance") {
     if (value > 4) fileConfig = fileConfig.replace(/view-distance=[0-9]+/, `view-distance=${value}`);

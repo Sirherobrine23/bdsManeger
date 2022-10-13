@@ -4,8 +4,8 @@ if (process.platform === "win32"||process.platform === "linux") {
   describe("Bedrock", () => {
     it("Install and Start", async function(){
       this.timeout(Infinity);
-      await installServer("latest");
-      const serverManeger = await startServer();
+      const {id} = await installServer("latest", {newId: true});
+      const serverManeger = await startServer({id});
       serverManeger.events.on("log_stdout", console.log);
       serverManeger.events.on("log_stderr", console.log);
       serverManeger.events.on("portListening", console.log);
