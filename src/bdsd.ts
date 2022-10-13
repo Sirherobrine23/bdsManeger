@@ -7,29 +7,27 @@ import crypto from "node:crypto";
 import express from "express";
 import expressRateLimit from "express-rate-limit";
 import * as bdsCore from "./index";
-import { collectDefaultMetrics, register } from "prom-client";
-collectDefaultMetrics();
+import * as Prometheus from "prom-client";
+process.on("unhandledRejection", err => console.trace(err));
+Prometheus.collectDefaultMetrics({prefix: "bdsd"});
+const requests = new Prometheus.Counter({
+  name: "bdsd_requests",
+  help: "Total number of requests to the Server",
+  labelNames: ["method", "from", "path"]
+});
 
 const expressRoot = express();
 const app = express.Router();
 const bdsdAuth = path.join(bdsCore.platformPathManeger.bdsRoot, "bdsd_auth.json");
 const sockListen = path.join(os.tmpdir(), "bdsd.sock");
 if (fs.existsSync(sockListen)) fs.rmSync(sockListen, {force: true});
-process.on("unhandledRejection", err => console.trace(err));
-
 expressRoot.disable("x-powered-by").disable("etag");
 expressRoot.use(express.json());
 expressRoot.use(express.urlencoded({extended: true}));
 expressRoot.use(({ res, next }) => { res.json = (body: any) => res.setHeader("Content-Type", "application/json").send(JSON.stringify(body, null, 2)); return next(); });
-expressRoot.get("/metrics", async ({res, next}) => register.metrics().then(data => res.set("Content-Type", register.contentType).send(data)).catch(err => next(err)));
-
-expressRoot.use(expressRateLimit({
-  skipSuccessfulRequests: true,
-  message: "Already reached the limit, please wait a few moments",
-  windowMs: (1000*60)*2,
-  max: 1500,
-}));
-
+expressRoot.get("/metrics", async ({res, next}) => Prometheus.register.metrics().then(data => res.set("Content-Type", Prometheus.register.contentType).send(data)).catch(err => next(err)));
+expressRoot.use((req, _, next) => {requests.inc({method: req.method, path: req.path, from: !(req.socket.remoteAddress&&req.socket.remotePort)?"socket":req.protocol});next();});
+expressRoot.use(expressRateLimit({skipSuccessfulRequests: true, message: "Already reached the limit, please wait a few moments", windowMs: (1000*60)*2, max: 1500}));
 if (process.env.BDSD_IGNORE_KEY) console.warn("Bdsd ignore auth key!");
 expressRoot.use(async (req, res, next) => {
   // Allow by default socket
