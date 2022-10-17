@@ -16,20 +16,19 @@ const requests = new Prometheus.Counter({
   labelNames: ["method", "from", "path"]
 });
 
-const expressRoot = express();
-const app = express.Router();
+const app = express();
 const bdsdAuth = path.join(bdsCore.platformPathManeger.bdsRoot, "bdsd_auth.json");
 const sockListen = path.join(os.tmpdir(), "bdsd.sock");
 if (fs.existsSync(sockListen)) fs.rmSync(sockListen, {force: true});
-expressRoot.disable("x-powered-by").disable("etag");
-expressRoot.use(express.json());
-expressRoot.use(express.urlencoded({extended: true}));
-expressRoot.use(({ res, next }) => { res.json = (body: any) => res.setHeader("Content-Type", "application/json").send(JSON.stringify(body, null, 2)); return next(); });
-expressRoot.get("/metrics", async ({res, next}) => Prometheus.register.metrics().then(data => res.set("Content-Type", Prometheus.register.contentType).send(data)).catch(err => next(err)));
-expressRoot.use((req, _, next) => {requests.inc({method: req.method, path: req.path, from: !(req.socket.remoteAddress&&req.socket.remotePort)?"socket":req.protocol});next();});
-expressRoot.use(expressRateLimit({skipSuccessfulRequests: true, message: "Already reached the limit, please wait a few moments", windowMs: (1000*60)*2, max: 1500}));
+app.disable("x-powered-by").disable("etag");
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
+app.use(({ res, next }) => { res.json = (body: any) => res.setHeader("Content-Type", "application/json").send(JSON.stringify(body, null, 2)); return next(); });
+app.get("/metrics", async ({res, next}) => Prometheus.register.metrics().then(data => res.set("Content-Type", Prometheus.register.contentType).send(data)).catch(err => next(err)));
+app.use((req, _, next) => {requests.inc({method: req.method, path: req.path, from: !(req.socket.remoteAddress&&req.socket.remotePort)?"socket":req.protocol});next();});
+app.use(expressRateLimit({skipSuccessfulRequests: true, message: "Already reached the limit, please wait a few moments", windowMs: (1000*60)*2, max: 1500}));
 if (process.env.BDSD_IGNORE_KEY) console.warn("Bdsd ignore auth key!");
-expressRoot.use(async (req, res, next) => {
+app.use(async (req, res, next) => {
   // Allow by default socket
   if (!req.socket.remoteAddress && !req.socket.remotePort) {
     res.setHeader("AuthSocket", "true");
@@ -58,8 +57,8 @@ expressRoot.use(async (req, res, next) => {
 });
 
 // Listen socks
-expressRoot.listen(sockListen, function () {console.info("Socket listen on '%s'", this.address());});
-if (process.env.PORT) expressRoot.listen(process.env.PORT, () => console.info("HTTP listen on http://127.0.0.1:%s", process.env.PORT));
+app.listen(sockListen, function () {console.info("Socket listen on '%s'", this.address());});
+if (process.env.PORT) app.listen(process.env.PORT, () => console.info("HTTP listen on http://127.0.0.1:%s", process.env.PORT));
 
 let timesBefore = os.cpus().map(c => c.times);
 function getAverageUsage() {
@@ -73,7 +72,7 @@ function getAverageUsage() {
   return Math.floor(timeDeltas.map(times => 1 - times.idle / (times.user + times.sys + times.idle)).reduce((l1, l2) => l1 + l2) / timeDeltas.length*100);
 }
 
-expressRoot.get("/", ({res}) => {
+app.get("/", ({res}) => {
   return res.status(200).json({
     platform: process.platform,
     arch: process.arch,
@@ -85,10 +84,11 @@ expressRoot.get("/", ({res}) => {
 });
 
 // v1 routes
-expressRoot.use("/v1", app);
+const app_v1 = express.Router();
+app.use("/v1", app_v1);
 
 // Send Sessions
-app.get("/", ({res}) => res.json(Object.keys(bdsCore.globalPlatfroms.internalSessions).map(key => {
+app_v1.get("/", ({res}) => res.json(Object.keys(bdsCore.globalPlatfroms.internalSessions).map(key => {
   return {
     id: bdsCore.globalPlatfroms.internalSessions[key].id,
     platform: bdsCore.globalPlatfroms.internalSessions[key].platform,
@@ -99,7 +99,7 @@ app.get("/", ({res}) => res.json(Object.keys(bdsCore.globalPlatfroms.internalSes
 })));
 
 // Install server
-app.put("/server", async (req, res, next) => {
+app_v1.put("/server", async (req, res, next) => {
   try {
   if (!req.body||Object.keys(req.body).length === 0) return res.status(400).json({
     error: "Body is empty"
@@ -165,7 +165,7 @@ app.put("/server", async (req, res, next) => {
   });
 });
 
-app.get("/log/:id", (req, res) => {
+app_v1.get("/log/:id", (req, res) => {
   const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   res.status(200);
@@ -175,25 +175,32 @@ app.get("/log/:id", (req, res) => {
   return res;
 });
 
-app.put("/command/:id", (req, res) => {
+app_v1.put("/command/:id", (req, res) => {
   const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   session.runCommand(req.body?.command);
   return res;
 });
 
-app.get("/stop/:id", (req, res, next) => {
+app_v1.get("/stop/:id", (req, res, next) => {
   const session = bdsCore.globalPlatfroms.internalSessions[req.params.id];
   if (!session) return res.status(400).json({error: "Session ID not exists!"});
   return session.stopServer().then(exitCode => res.status(200).json({exitCode})).catch(err => next(err));
 });
 
-expressRoot.all("*", (req, res) => res.status(404).json({
+// v2
+const app_v2 = express.Router();
+app.use("/v2", app_v2);
+
+// list sessions
+app_v2.get("/", async (req, res) => {});
+
+// Errors pages
+app.all("*", (req, res) => res.status(404).json({
   error: "Page not found",
   path: req.path
 }));
-
-expressRoot.use((error, _1, res, _3) => {
+app.use((error, _1, res, _3) => {
   return res.status(500).json({
     internalError: String(error).replace(/Error:\s+/, ""),
   });

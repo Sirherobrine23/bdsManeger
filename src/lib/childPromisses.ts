@@ -1,5 +1,6 @@
 import type { ObjectEncodingOptions } from "node:fs";
 import * as child_process from "node:child_process";
+export default {execFileAsync, execAsync, commendExists};
 
 export type ExecFileOptions = ObjectEncodingOptions & child_process.ExecFileOptions & {stdio?: "ignore"|"inherit"};
 export function execFileAsync(command: string): Promise<{stdout: string, stderr: string}>;

@@ -115,7 +115,7 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
       return new Promise<number>((done, reject) => {
         childProcess.once("error", err => reject(err));
         childProcess.once("close", code => done(code));
-      },);
+      });
     },
     tp(playerName: string, x: number|string = 0, y: number|string = 0, z: number|string = 0) {
       const tpfunction = options.hooks.playerTp;
