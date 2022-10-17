@@ -4,3 +4,4 @@ dist/
 src/**/*.d.ts
 src/**/*.d.js
 src/**/*.js
+docs/
