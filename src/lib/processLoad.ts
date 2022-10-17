@@ -111,7 +111,7 @@ export type netDef = {
   }
 };
 
-export type avg = {cwd: string, cmdline: string[], net: {[name: string]: netDef}, cpuAvg: pidstat}
+export type avg = {cpuAvg: number, cpuAvgNoAbs: number, cwd: string, cmdline: string[], net: {[name: string]: netDef}}
 
 export declare interface processLoad {
   on(act: "error", fn: (data: any) => void): this;
@@ -123,10 +123,7 @@ export declare interface processLoad {
   emit(act: "avg", data: avg & {latestLoop?: Date}): boolean;
 }
 
-const validPlatformToRun: NodeJS.Platform[] = [
-  "android",
-  "linux"
-];
+const linuxPlatform: NodeJS.Platform[] = ["android", "linux"];
 
 export class processLoad extends EventEmitter {
   pidNumber: number;
@@ -135,7 +132,7 @@ export class processLoad extends EventEmitter {
 
   close(){this.terminateProcess = false; return this;}
 
-  async getInfo(): Promise<avg> {
+  async #linux(): Promise<avg> {
     const pidFolder = path.join(this.#procFolder, this.pidNumber.toFixed(0));
     if (!await extendsFs.exists(pidFolder)) throw new Error("PID not found!");
     // cwd
@@ -146,45 +143,7 @@ export class processLoad extends EventEmitter {
 
     // stat
     const [pid, exName, state, euid, egid, ppid, pgrp, session, tty, tpgid, flags, minflt, cminflt, majflt, cmajflt, utime, stime, cutime, cstime, counter, priority, timeout, itrealvalue, starttime, vsize, rss, rlim, startcode, endcode, startstack, kstkesp, kstkeip, signal, blocked, sigignore, sigcatch, wchan, sched, sched_priority] = (await fs.readFile(path.join(pidFolder, "stat"), "utf8")).trim().split(/\s+|[\t]+|\t/);
-    const cpuAvg: pidstat = {
-      pid: parseInt(pid),
-      exName, state: state as pidstat["state"], euid: parseInt(euid),
-      egid: parseInt(egid),
-      ppid: parseInt(ppid),
-      pgrp: parseInt(pgrp),
-      session: parseInt(session),
-      tty: parseInt(tty),
-      tpgid: parseInt(tpgid),
-      flags: parseInt(flags),
-      minflt: parseInt(minflt),
-      cminflt: parseInt(cminflt),
-      majflt: parseInt(majflt),
-      cmajflt: parseInt(cmajflt),
-      utime: parseInt(utime),
-      stime: parseInt(stime),
-      cutime: parseInt(cutime),
-      cstime: parseInt(cstime),
-      counter: parseInt(counter),
-      priority: parseInt(priority),
-      timeout: parseInt(timeout),
-      itrealvalue: parseInt(itrealvalue),
-      starttime: parseInt(starttime),
-      vsize: parseInt(vsize),
-      rss: parseInt(rss),
-      rlim: parseInt(rlim),
-      startcode: parseInt(startcode),
-      endcode: parseInt(endcode),
-      startstack: parseInt(startstack),
-      kstkesp: parseInt(kstkesp),
-      kstkeip: parseInt(kstkeip),
-      signal: parseInt(signal),
-      blocked: parseInt(blocked),
-      sigignore: parseInt(sigignore),
-      sigcatch: parseInt(sigcatch),
-      wchan: parseInt(wchan),
-      sched: parseInt(sched),
-      sched_priority
-    };
+    const cpuAvg: pidstat = {pid: parseInt(pid), exName, state: state as pidstat["state"], euid: parseInt(euid), egid: parseInt(egid), ppid: parseInt(ppid), pgrp: parseInt(pgrp), session: parseInt(session), tty: parseInt(tty), tpgid: parseInt(tpgid), flags: parseInt(flags), minflt: parseInt(minflt), cminflt: parseInt(cminflt), majflt: parseInt(majflt), cmajflt: parseInt(cmajflt), utime: parseInt(utime), stime: parseInt(stime), cutime: parseInt(cutime), cstime: parseInt(cstime), counter: parseInt(counter), priority: parseInt(priority), timeout: parseInt(timeout), itrealvalue: parseInt(itrealvalue), starttime: parseInt(starttime), vsize: parseInt(vsize), rss: parseInt(rss), rlim: parseInt(rlim), startcode: parseInt(startcode), endcode: parseInt(endcode), startstack: parseInt(startstack), kstkesp: parseInt(kstkesp), kstkeip: parseInt(kstkeip), signal: parseInt(signal), blocked: parseInt(blocked), sigignore: parseInt(sigignore), sigcatch: parseInt(sigcatch), wchan: parseInt(wchan), sched: parseInt(sched), sched_priority: sched_priority?parseInt(sched_priority):sched_priority};
 
     // net
     const netInterface = /([a-zA-Z0-9_\-]+):\s+(.*)/;
@@ -219,22 +178,26 @@ export class processLoad extends EventEmitter {
       return;
     });
 
-    return {cwd, cmdline, net, cpuAvg};
+    const cpu_usage = Math.abs((cpuAvg.cmajflt+cpuAvg.utime+cpuAvg.stime+cpuAvg.cutime+cpuAvg.cstime)/30)//Hartz;
+    return {
+      cpuAvg: parseFloat(cpu_usage.toFixed(2)),
+      cpuAvgNoAbs: cpu_usage,
+      cwd,
+      cmdline,
+      net,
+    };
   }
 
   latestLoop: Date;
-  async loop() {
-    while(this.terminateProcess) {
-      await this.getInfo().then(data => this.emit("avg", {...data, latestLoop: this.latestLoop})).catch(err => this.emit("error", err));
-      this.latestLoop = new Date();
-      await new Promise(done => setTimeout(done, 2500));
-    }
-  }
-
+  latestAvg?: avg;
   constructor(processPid: number) {
     super({captureRejections: false});
-    if (!validPlatformToRun.includes(process.platform)) throw new Error("Platform not valid to run process load");
     this.pidNumber = processPid;
-    // this.load();
+    (async () => {
+      while(this.terminateProcess) {
+        if (linuxPlatform.includes(process.platform)) await this.#linux().then(data => {this.latestAvg = data; this.latestLoop = new Date(); this.emit("avg", {...data, latestLoop: this.latestLoop});}).catch(err => {this.emit("error", err); this.close()});
+        await new Promise(done => setTimeout(done, 1800));
+      }
+    })();
   }
 }

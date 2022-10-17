@@ -3,6 +3,7 @@ import readline from "node:readline";
 import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
 import { bdsPlatform } from "./platformPathManeger";
+import * as process_load from "./lib/processLoad";
 export const internalSessions: {[sessionID: string]: serverActionV2} = {};
 process.once("exit", () => Object.keys(internalSessions).forEach(id => internalSessions[id].stopServer()));
 
@@ -43,6 +44,10 @@ export declare interface serverActionsEvent {
   on(act: "log", fn: (data: string) => void): this;
   once(act: "log", fn: (data: string) => void): this;
   emit(act: "log", data: string): boolean;
+
+  on(act: "avg", fn: (data: process_load.avg) => void): this;
+  once(act: "avg", fn: (data: process_load.avg) => void): this;
+  emit(act: "avg", data: process_load.avg): boolean;
 
   on(act: "exit", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
   once(act: "exit", fn: (data: {code: number, signal: NodeJS.Signals}) => void): this;
@@ -129,6 +134,10 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
   // Add to internal sessions
   internalSessions[options.id] = serverObject;
   serverObject.events.on("exit", () => delete internalSessions[options.id]);
+  const processMetric = new process_load.processLoad(childProcess.pid);
+  processMetric.on("avg", data => serverObject.events.emit("avg", data));
+  processMetric.on("error", err => serverObject.events.emit("error", err));
+  serverObject.events.on("exit", () => processMetric.close());
 
   // Register hooks
   // Server avaible to player
