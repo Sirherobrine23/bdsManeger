@@ -100,6 +100,23 @@ export async function getJSON<JSONReturn = any>(url: string, options?: {method?:
   }).then(res => JSON.parse(res.toString("utf8")) as JSONReturn);
 }
 
+export type testIpv6 = {
+  ip: string,
+  type: "ipv4"|"ipv6",
+  subtype: string,
+  via: string,
+  padding: string,
+  asn: string,
+  asnlist: string,
+  asn_name: string,
+  country: string,
+  protocol: "HTTP/2.0"|"HTTP/1.1"|"HTTP/1.0"
+};
+
+export async function getExternalIP(): Promise<{ipv4: string, ipv6?: string, rawRequest?: {ipv4: testIpv6, ipv6?: testIpv6}}> {
+  return getJSON<testIpv6>("https://ipv4.lookup.test-ipv6.com/ip/").then(ipv4 => getJSON<testIpv6>("https://ipv6.lookup.test-ipv6.com/ip/").then(ipv6 => ({ipv4: ipv4.ip, ipv6: ipv6?.ip, rawRequest: {ipv4, ipv6}})).catch(() => ({ipv4: ipv4.ip, rawRequest: {ipv4}})));
+}
+
 export type githubRelease = {
   url: string;
   assets_url: string;

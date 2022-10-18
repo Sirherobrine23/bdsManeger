@@ -3,10 +3,8 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import tar from "tar";
 import { bdsRoot } from "./platformPathManeger";
-
-async function exists(filePath: string) {
-  return fs.access(filePath).then(() => true).catch(() => false);
-}
+import { exists } from "./lib/extendsFs";
+import { getExternalIP } from "./lib/httpRequest";
 
 export type payload = {
   httpVersion?: string,
@@ -124,10 +122,14 @@ export class exportBds {
 
   public async listen(port = 0) {
     return new Promise<number>(done => {
-      this.#server.listen(port, () => {
+      this.#server.listen(port, async () => {
+        const externalIP = await getExternalIP();
         let address = this.#server.address()["address"], port = this.#server.address()["port"];
         if (/::/.test(address)) address = `[${address}]`;
-        console.log("Port listen on http://%s:%s/, auth token '%s'", address, port, this.authToken);
+        console.log("auth token '%s'", this.authToken);
+        console.log("Port listen on http://%s:%s/", address, port);
+        console.log("Port listen on http://%s:%s/", externalIP.ipv4, port);
+        if (externalIP.ipv6) console.log("Port listen on http://[%s]:%s/", externalIP.ipv6, port);
         return done(port);
       });
     });

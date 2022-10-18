@@ -96,3 +96,37 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
     hooks: javaHooks
   });
 }
+
+export type keyConfig = "gamemode"|"difficulty"|"serverPort"|"serverDescription"|"worldName"|"maxPlayers";
+export async function updateConfig(key: "gamemode", value: "survival"|"creative"|"hardcore", platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "difficulty", value: "peaceful"|"easy"|"normal"|"hard", platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "serverPort", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "serverDescription", value: string, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "worldName", value: string, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: "maxPlayers", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
+export async function updateConfig(key: keyConfig, value: string|number|boolean, platformOptions: bdsPlatformOptions = {id: "default"}): Promise<string> {
+  const { serverPath } = await pathControl("java", platformOptions);
+  const fileProperties = path.join(serverPath, "server.properties");
+  if (!fsOld.existsSync(fileProperties)) throw new Error("Install server fist!");
+  let fileConfig = await fs.readFile(fileProperties, "utf8");
+  if (key === "gamemode") {
+    if (value === "hardcore") fileConfig = fileConfig.replace(/gamemode=(survival|creative)/, `gamemode=survial`).replace(/hardcore=(false|true)/, `hardcore=true`);
+    else {
+      if (!(value === "survival"||value === "creative")) throw new Error("Invalid gamemode");
+      fileConfig = fileConfig.replace(/gamemode=(survival|creative)/, `gamemode=${value}`).replace(/hardcore=(false|true)/, `hardcore=false`);
+    }
+  } else if (key === "difficulty") {
+    if (!(["peaceful", "easy", "normal", "hard"]).includes(value as string)) throw new Error("Invalid difficulty");
+    fileConfig = fileConfig.replace(/difficulty=(peaceful|easy|normal|hard)/, `difficulty=${value}`);
+  } else if (key === "serverPort") {
+    fileConfig = fileConfig.replace(/server-port=([0-9]+)/, `server-port=${value}`).replace(/query.port=([0-9]+)/, `query.port=${value}`);
+  } else if (key === "serverDescription") {
+    fileConfig = fileConfig.replace(/motd=(.*)/, `motd=${value}`);
+  } else if (key === "worldName") {
+    fileConfig = fileConfig.replace(/level-name=(.*)/, `level-name=${value}`);
+  } else if (key === "maxPlayers") {
+    fileConfig = fileConfig.replace(/max-players=([0-9]+)/, `max-players=${value}`);
+  } else throw new Error("Invalid key");
+  await fs.writeFile(fileProperties, fileConfig);
+  return fileConfig;
+}

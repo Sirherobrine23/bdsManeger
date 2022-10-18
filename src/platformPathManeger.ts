@@ -2,11 +2,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
-
-/** Same fs.exsistSync */
-async function exists(filePath: string) {
-  return fs.access(filePath).then(() => true).catch((() => false));
-}
+import { exists } from "./lib/extendsFs";
 
 export let bdsRoot = path.join(os.homedir(), ".bdsManeger");
 if (process.env.BDS_HOME) {
@@ -115,7 +111,12 @@ export async function changeDefault(platform: bdsPlatform, id: bdsPlatformOption
  * @param platform
  * @returns
  */
-export async function getIds(platform: bdsPlatform) {
+export async function getIds(platform?: bdsPlatform) {
+  if (!platform) {
+    const platformIds: {[platform: string]: string[]} = {};
+    await Promise.all((await fs.readdir(bdsRoot)).map(platforms => fs.readdir(path.join(bdsRoot, platforms)).then(data => platformIds[platforms] = data.filter(folder => folder !== "default"))));
+    return platformIds;
+  }
   if (!platformArray.includes(platform)) throw new Error("Invalid platform");
   const serverPlatform = path.join(bdsRoot, platform);
   if (!await exists(serverPlatform)) throw new Error("Install server fist!");
