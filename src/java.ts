@@ -6,11 +6,33 @@ import { platformManeger } from "@the-bds-maneger/server_versions";
 import { actionV2, actionsV2 } from "./globalPlatfroms";
 import { saveFile } from "./lib/httpRequest";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import { manegerConfigProprieties } from "./configManipulate";
+import { randomPort } from "./lib/randomPort";
+import extendsFs from "./lib/extendsFs";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath } = await pathControl("java", platformOptions);
-  const jarPath = path.join(serverPath, "server.jar");
-  return platformManeger.java.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
+  const { serverPath, serverRoot, platformIDs, id } = await pathControl("java", platformOptions);
+  const javaDownload = await platformManeger.java.find(version);
+  await saveFile(javaDownload.url, {filePath: path.join(serverPath, "server.jar")});
+  await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: javaDownload.version, date: javaDownload.date, installDate: new Date()}));
+
+  if (platformIDs.length > 1) {
+    const platformPorts = (await Promise.all(platformIDs.map(id => serverConfig({id})))).map(config => config.getConfig()["server-port"]);
+    let port: number;
+    while (!port) {
+      const tmpNumber = await randomPort();
+      if (platformPorts.some(ports => ports === tmpNumber)) continue;
+      port = tmpNumber;
+    };
+    await (await serverConfig({id})).editConfig({name: "serverPort", data: port}).save();
+  }
+
+  return {
+    id,
+    version: javaDownload.version,
+    date: javaDownload.date,
+    url: javaDownload.url
+  };
 }
 
 export const started = /\[.*\].*\s+Done\s+\([0-9\.]+s\)\!.*/;
@@ -97,36 +119,66 @@ export async function startServer(Config?: {maxMemory?: number, minMemory?: numb
   });
 }
 
-export type keyConfig = "gamemode"|"difficulty"|"serverPort"|"serverDescription"|"worldName"|"maxPlayers";
-export async function updateConfig(key: "gamemode", value: "survival"|"creative"|"hardcore", platformOptions?: bdsPlatformOptions): Promise<string>;
-export async function updateConfig(key: "difficulty", value: "peaceful"|"easy"|"normal"|"hard", platformOptions?: bdsPlatformOptions): Promise<string>;
-export async function updateConfig(key: "serverPort", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
-export async function updateConfig(key: "serverDescription", value: string, platformOptions?: bdsPlatformOptions): Promise<string>;
-export async function updateConfig(key: "worldName", value: string, platformOptions?: bdsPlatformOptions): Promise<string>;
-export async function updateConfig(key: "maxPlayers", value: number, platformOptions?: bdsPlatformOptions): Promise<string>;
-export async function updateConfig(key: keyConfig, value: string|number|boolean, platformOptions: bdsPlatformOptions = {id: "default"}): Promise<string> {
+export type Gamemode = {name: "Gamemode", data: "survival"|"creative"|"hardcore"};
+export type Difficulty = {name: "Difficulty", data: "peaceful"|"easy"|"normal"|"hard"};
+export type serverPort = {name: "serverPort", data: number};
+export type maxPlayers = {name: "maxPlayers", data: number};
+export type allowList = {name: "allowList", data: boolean};
+export type serverDescription = {name: "serverDescription", data: string};
+export type worldName = {name: "worldName", data: string};
+export type editConfig = Gamemode|Difficulty|serverPort|maxPlayers|allowList|serverDescription|worldName;
+
+/**
+ * Update java server config
+ * @param platformOptions
+ * @returns
+ */
+export async function serverConfig(platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath } = await pathControl("java", platformOptions);
   const fileProperties = path.join(serverPath, "server.properties");
-  if (!fsOld.existsSync(fileProperties)) throw new Error("Install server fist!");
-  let fileConfig = await fs.readFile(fileProperties, "utf8");
-  if (key === "gamemode") {
-    if (value === "hardcore") fileConfig = fileConfig.replace(/gamemode=(survival|creative)/, `gamemode=survial`).replace(/hardcore=(false|true)/, `hardcore=true`);
-    else {
-      if (!(value === "survival"||value === "creative")) throw new Error("Invalid gamemode");
-      fileConfig = fileConfig.replace(/gamemode=(survival|creative)/, `gamemode=${value}`).replace(/hardcore=(false|true)/, `hardcore=false`);
+  if (!await extendsFs.exists(fileProperties)) await fs.cp(path.join(__dirname, "../configs/java/server.properties"), fileProperties);
+  return manegerConfigProprieties<editConfig>({
+    configPath: fileProperties,
+    configManipulate: {
+      Gamemode: (fileConfig, value) => {
+        if (!(["survival", "creative", "hardcore"]).includes(value)) throw new Error("Invalid gameode");
+        if (value === "hardcore") fileConfig = fileConfig.replace(/gamemode=(survival|creative)/, `gamemode=survial`).replace(/hardcore=(false|true)/, `hardcore=true`);
+        else {
+          if (!(value === "survival"||value === "creative")) throw new Error("Invalid gamemode");
+          fileConfig = fileConfig.replace(/gamemode=(survival|creative)/, `gamemode=${value}`).replace(/hardcore=(false|true)/, `hardcore=false`);
+        }
+        return fileConfig;
+      },
+      Difficulty: {
+        validate: (value) => (["peaceful", "easy", "normal", "hard"]).includes(value),
+        regexReplace: /difficulty=(peaceful|easy|normal|hard)/,
+        valueFormat:  "difficulty=%s"
+      },
+      serverPort: {
+        validate: (value: number) => value > 1000,
+        regexReplace: /server-port=([0-9]+)/,
+        valueFormat: "server-port=%f"
+      },
+      maxPlayers: {
+        validate: (value: number) => value > 1,
+        regexReplace: /max-players=([0-9]+)/,
+        valueFormat: "max-players=%f"
+      },
+      serverDescription: {
+        validate: (value: string) => value.length < 50,
+        regexReplace: /motd=(.*)/,
+        valueFormat: "motd=%s"
+      },
+      worldName: {
+        validate: (value: string) => value.length < 50,
+        regexReplace: /level-name=(.*)/,
+        valueFormat: "level-name=%s"
+      },
+      allowList: {
+        validate: (value: boolean) => value === true||value === false,
+        regexReplace: /white-list=(true|false)/,
+        valueFormat: "white-list=%o"
+      }
     }
-  } else if (key === "difficulty") {
-    if (!(["peaceful", "easy", "normal", "hard"]).includes(value as string)) throw new Error("Invalid difficulty");
-    fileConfig = fileConfig.replace(/difficulty=(peaceful|easy|normal|hard)/, `difficulty=${value}`);
-  } else if (key === "serverPort") {
-    fileConfig = fileConfig.replace(/server-port=([0-9]+)/, `server-port=${value}`).replace(/query.port=([0-9]+)/, `query.port=${value}`);
-  } else if (key === "serverDescription") {
-    fileConfig = fileConfig.replace(/motd=(.*)/, `motd=${value}`);
-  } else if (key === "worldName") {
-    fileConfig = fileConfig.replace(/level-name=(.*)/, `level-name=${value}`);
-  } else if (key === "maxPlayers") {
-    fileConfig = fileConfig.replace(/max-players=([0-9]+)/, `max-players=${value}`);
-  } else throw new Error("Invalid key");
-  await fs.writeFile(fileProperties, fileConfig);
-  return fileConfig;
+  })
 }
