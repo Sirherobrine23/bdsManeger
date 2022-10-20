@@ -4,6 +4,7 @@ import path from "node:path";
 import type { Method } from "got";
 import tar from "tar";
 import AdmZip from "adm-zip";
+import stream from "node:stream";
 
 let got: (typeof import("got"))["default"];
 const gotCjs = async () => got||(await (eval('import("got")') as Promise<typeof import("got")>)).default.extend({enableUnixSockets: true});
@@ -18,18 +19,17 @@ export type requestOptions = {
   body?: any,
 };
 
-export async function pipeFetch(options: requestOptions & {stream: fs.WriteStream}) {
-  let urlRequest: string;
-  if (options.url) urlRequest = options.url+options.path;
-  else if (options.socket) urlRequest = `${options.socket.protocoll||"http"}://unix:${options.socket.path}:${options.path||"/"}`;
-  else throw new Error("Enter a url or an (IPC/Unix) socket");
+export async function pipeFetch(options: requestOptions & {stream: fs.WriteStream|stream.Writable}) {
+  if (!(options.url||options.socket)) throw new Error("Enter a url or an (IPC/Unix) socket");
+  const urlRequest = (options.url||`${options.socket.protocoll||"http"}://unix:${options.socket.path}:`)+(options.path||"");
   const gotStream = (await gotCjs()).stream(urlRequest, {
     isStream: true,
-    headers: (!options.headers)?{}:options.headers,
+    headers: options.headers||{},
     method: options.method||"GET",
-    body: options.body,
+    json: options.body,
   });
   await new Promise<void>((done, reject) => {
+    gotStream.pipe(options.stream);
     options.stream.on("error", reject);
     gotStream.on("error", reject);
     gotStream.once("end", () => options.stream.once("finish", done));
@@ -37,14 +37,12 @@ export async function pipeFetch(options: requestOptions & {stream: fs.WriteStrea
 }
 
 export async function bufferFetch(options: requestOptions) {
-  let urlRequest: string;
-  if (options.url) urlRequest = options.url+options.path;
-  else if (options.socket) urlRequest = `${options.socket.protocoll||"http"}://unix:${options.socket.path}:${options.path||"/"}`;
-  else throw new Error("Enter a url or an (IPC/Unix) socket");
+  if (!(options.url||options.socket)) throw new Error("Enter a url or an (IPC/Unix) socket");
+  const urlRequest = (options.url||`${options.socket.protocoll||"http"}://unix:${options.socket.path}:`)+(options.path||"");
   return gotCjs().then(request => request(urlRequest, {
-    headers: (!options.headers)?{}:options.headers,
+    headers: options.headers||{},
     method: options.method||"GET",
-    body: options.body,
+    json: options.body,
     responseType: "buffer",
   })).then(res => ({headers: res.headers, data: Buffer.from(res.body), response: res}));
 }
@@ -61,29 +59,17 @@ export async function getBuffer(url: string, options?: {method?: string, body?: 
 }
 
 export async function getJSON<JSONReturn = any>(url: string|requestOptions, options?: requestOptions): Promise<JSONReturn> {
-  return bufferFetch(typeof url === "string"?{...(options||{}), url}:url).then(res => JSON.parse(res.data.toString("utf8")) as JSONReturn);
+  return bufferFetch(typeof url === "string"?{...(options||{}), url}:url).then(({data}) => JSON.parse(data.toString("utf8")) as JSONReturn);
 }
 
-export async function saveFile(url: string, options?: {filePath?: string, headers?: {[key: string]: string|number}}) {
-  const Headers = {};
-  let fileSave = path.join(tmpdir(), Date.now()+"_raw_bdscore_"+path.basename(url));
-  if (options) {
-    if (options.filePath && typeof options.filePath === "string") fileSave = options.filePath;
-    if (options.headers) Object.keys(options.headers).forEach(key => Headers[key] = String(options.headers[key]));
-  }
-
+export async function saveFile(url: string, options?: {filePath?: string, headers?: {[key: string]: string}}) {
+  const fileSave = options?.filePath||path.join(tmpdir(), Date.now()+"_raw_bdscore_"+path.basename(url));
   const fsStream = fs.createWriteStream(fileSave, {autoClose: false});
-  const gotStream = (await gotCjs()).stream({url, headers: Headers, isStream: true});
-  gotStream.pipe(fsStream);
-  await new Promise<void>((done, reject) => {
-    gotStream.on("error", reject);
-    fsStream.on("error", reject);
-    gotStream.once("end", () => fsStream.once("finish", done));
-  });
+  await pipeFetch({url, stream: fsStream, headers: options?.headers});
   return fileSave;
 }
 
-export async function tarExtract(url: string, options?: {folderPath?: string, headers?: {[key: string]: string|number}}) {
+export async function tarExtract(url: string, options?: {folderPath?: string, headers?: {[key: string]: string}}) {
   let fileSave = path.join(tmpdir(), "_bdscore", Date.now()+"_raw_bdscore");
   const Headers = {};
   if (options) {
@@ -92,8 +78,7 @@ export async function tarExtract(url: string, options?: {folderPath?: string, he
   }
 
   if (!fs.existsSync(fileSave)) await fs.promises.mkdir(fileSave, {recursive: true});
-  const gotStream = (await gotCjs()).stream({url, headers: Headers, isStream: true});
-  const tarE = tar.extract({
+  const tar_Extract = tar.extract({
     cwd: fileSave,
     noChmod: false,
     noMtime: false,
@@ -101,12 +86,7 @@ export async function tarExtract(url: string, options?: {folderPath?: string, he
     keep: true,
     p: true
   });
-  gotStream.pipe(tarE);
-  return new Promise<string>((done, reject) => {
-    gotStream.on("end", () => done(fileSave));
-    gotStream.on("error", reject);
-    tarE.on("error", reject);
-  });
+  await pipeFetch({url, stream: tar_Extract, headers: options?.headers});
 }
 
 const isGithubRoot = /github.com\/[\S\w]+\/[\S\w]+\/archive\//;
