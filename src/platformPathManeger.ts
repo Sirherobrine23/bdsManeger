@@ -113,8 +113,19 @@ export async function changeDefault(platform: bdsPlatform, id: bdsPlatformOption
  */
 export async function getIds(platform?: bdsPlatform) {
   if (!platform) {
-    const platformIds: {[platform: string]: string[]} = {};
-    await Promise.all((await fs.readdir(bdsRoot)).map(platforms => fs.readdir(path.join(bdsRoot, platforms)).then(data => platformIds[platforms] = data.filter(folder => folder !== "default"))));
+    const platformIds: {[platform: string]: {id: string, realID?: string}[]} = {};
+    if (!await exists(bdsRoot)) return platformIds;
+    const Platforms = await fs.readdir(bdsRoot);
+    if (Platforms.filter(folder => !platformArray.includes(folder as bdsPlatform)).length > 0) throw new Error("Old or invalid Platform path.");
+    for (const Platform of Platforms) {
+      for (const id of await fs.readdir(path.join(bdsRoot, Platform))) {
+        if (!platformIds[Platform]) platformIds[Platform] = []
+        const idPlatform = path.join(bdsRoot, Platform, id);
+        const realPath = await fs.realpath(idPlatform);
+        if (idPlatform !== realPath) platformIds[Platform].push({id, realID: path.basename(realPath)});
+        else platformIds[Platform].push({id});
+      }
+    }
     return platformIds;
   }
   if (!platformArray.includes(platform)) throw new Error("Invalid platform");
