@@ -1,12 +1,68 @@
 import { tmpdir } from "node:os";
 import fs from "node:fs";
 import path from "node:path";
+import type { Method } from "got";
 import tar from "tar";
 import AdmZip from "adm-zip";
 
 let got: (typeof import("got"))["default"];
-const gotCjs = async () => got||(await (eval('import("got")') as Promise<typeof import("got")>)).default;
+const gotCjs = async () => got||(await (eval('import("got")') as Promise<typeof import("got")>)).default.extend({enableUnixSockets: true});
 gotCjs().then(res => got = res);
+
+export type requestOptions = {
+  path?: string,
+  url?: string,
+  socket?: {path: string, protocoll?: "http"|"https"},
+  method?: Method,
+  headers?: {[headerName: string]: string[]|string},
+  body?: any,
+};
+
+export async function pipeFetch(options: requestOptions & {stream: fs.WriteStream}) {
+  let urlRequest: string;
+  if (options.url) urlRequest = options.url+options.path;
+  else if (options.socket) urlRequest = `${options.socket.protocoll||"http"}://unix:${options.socket.path}:${options.path||"/"}`;
+  else throw new Error("Enter a url or an (IPC/Unix) socket");
+  const gotStream = (await gotCjs()).stream(urlRequest, {
+    isStream: true,
+    headers: (!options.headers)?{}:options.headers,
+    method: options.method||"GET",
+    body: options.body,
+  });
+  await new Promise<void>((done, reject) => {
+    options.stream.on("error", reject);
+    gotStream.on("error", reject);
+    gotStream.once("end", () => options.stream.once("finish", done));
+  });
+}
+
+export async function bufferFetch(options: requestOptions) {
+  let urlRequest: string;
+  if (options.url) urlRequest = options.url+options.path;
+  else if (options.socket) urlRequest = `${options.socket.protocoll||"http"}://unix:${options.socket.path}:${options.path||"/"}`;
+  else throw new Error("Enter a url or an (IPC/Unix) socket");
+  return gotCjs().then(request => request(urlRequest, {
+    headers: (!options.headers)?{}:options.headers,
+    method: options.method||"GET",
+    body: options.body,
+    responseType: "buffer",
+  })).then(res => ({headers: res.headers, data: Buffer.from(res.body), response: res}));
+}
+
+export async function getBuffer(url: string, options?: {method?: string, body?: any, headers?: {[key: string]: string}}): Promise<Buffer> {
+  const urlPar = new URL(url);
+  return bufferFetch({
+    path: urlPar.pathname,
+    url: urlPar.protocol+"//"+urlPar.host,
+    headers: options?.headers,
+    body: options?.body,
+    method: options.method as any
+  }).then(({data}) => data);
+}
+
+export async function getJSON<JSONReturn = any>(url: string|requestOptions, options?: requestOptions): Promise<JSONReturn> {
+  return bufferFetch(typeof url === "string"?{...(options||{}), url}:url).then(res => JSON.parse(res.data.toString("utf8")) as JSONReturn);
+}
 
 export async function saveFile(url: string, options?: {filePath?: string, headers?: {[key: string]: string|number}}) {
   const Headers = {};
@@ -25,21 +81,6 @@ export async function saveFile(url: string, options?: {filePath?: string, header
     gotStream.once("end", () => fsStream.once("finish", done));
   });
   return fileSave;
-}
-
-export async function getBuffer(url: string, options?: {method?: string,body?: any, headers?: {[key: string]: string}}): Promise<Buffer> {
-  const Headers = {};
-  let Body: any;
-  if (options) {
-    if (options.headers) Object.keys(options.headers).forEach(key => Headers[key] = options.headers[key]);
-    if (options.body) Body = options.body;
-  }
-  return (await gotCjs())(url, {
-    headers: Headers,
-    body: Body,
-    method: (options?.method||"GET").toUpperCase() as any,
-    responseType: "buffer"
-  }).then(({body}) => Buffer.from(body));
 }
 
 export async function tarExtract(url: string, options?: {folderPath?: string, headers?: {[key: string]: string|number}}) {
@@ -90,14 +131,6 @@ export async function extractZip(url: string, folderTarget: string) {
     return await fs.promises.rm(tempFolder, {recursive: true, force: true});
   }
   return extract(folderTarget);
-}
-
-export async function getJSON<JSONReturn = any>(url: string, options?: {method?: string, body?: any, headers?: {[key: string]: string}}): Promise<JSONReturn> {
-  return getBuffer(url, {
-    body: options?.body,
-    headers: options?.headers,
-    method: options?.method
-  }).then(res => JSON.parse(res.toString("utf8")) as JSONReturn);
 }
 
 export type testIpv6 = {
