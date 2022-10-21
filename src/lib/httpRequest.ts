@@ -24,15 +24,15 @@ export async function pipeFetch(options: requestOptions & {stream: fs.WriteStrea
   const urlRequest = (options.url||`${options.socket.protocoll||"http"}://unix:${options.socket.path}:`)+(options.path||"");
   const gotStream = (await gotCjs()).stream(urlRequest, {
     isStream: true,
-    headers: options.headers,
+    headers: options.headers||{},
     method: options.method||"GET",
-    body: options.body,
+    json: options.body,
   });
   await new Promise<void>((done, reject) => {
+    gotStream.pipe(options.stream);
     options.stream.on("error", reject);
     gotStream.on("error", reject);
     gotStream.once("end", () => options.stream.once("finish", done));
-    gotStream.pipe(options.stream);
   });
 }
 
@@ -40,9 +40,9 @@ export async function bufferFetch(options: requestOptions) {
   if (!(options.url||options.socket)) throw new Error("Enter a url or an (IPC/Unix) socket");
   const urlRequest = (options.url||`${options.socket.protocoll||"http"}://unix:${options.socket.path}:`)+(options.path||"");
   return gotCjs().then(request => request(urlRequest, {
-    headers: options.headers,
+    headers: options.headers||{},
     method: options.method||"GET",
-    body: options.body,
+    json: options.body,
     responseType: "buffer",
   })).then(res => ({headers: res.headers, data: Buffer.from(res.body), response: res}));
 }
