@@ -20,7 +20,7 @@ export type requestOptions = {
 
 export async function pipeFetch(options: requestOptions & {stream: fs.WriteStream}) {
   let urlRequest: string;
-  if (options.url) urlRequest = options.url+options.path;
+  if (options.url) urlRequest = options.url+(options.path||"/");
   else if (options.socket) urlRequest = `${options.socket.protocoll||"http"}://unix:${options.socket.path}:${options.path||"/"}`;
   else throw new Error("Enter a url or an (IPC/Unix) socket");
   const gotStream = (await gotCjs()).stream(urlRequest, {
@@ -38,7 +38,7 @@ export async function pipeFetch(options: requestOptions & {stream: fs.WriteStrea
 
 export async function bufferFetch(options: requestOptions) {
   let urlRequest: string;
-  if (options.url) urlRequest = options.url+options.path;
+  if (options.url) urlRequest = options.url+(options.path||"/");
   else if (options.socket) urlRequest = `${options.socket.protocoll||"http"}://unix:${options.socket.path}:${options.path||"/"}`;
   else throw new Error("Enter a url or an (IPC/Unix) socket");
   return gotCjs().then(request => request(urlRequest, {
