@@ -104,11 +104,16 @@ async function installPhp(serverPath: string, buildFolder: string): Promise<void
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   platformOptions.withBuildFolder = true;
-  const { serverPath, buildFolder } = await pathControl("pocketmine", platformOptions);
+  const { serverPath, buildFolder, id } = await pathControl("pocketmine", platformOptions);
   await installPhp(serverPath, buildFolder);
   const info = await platformManeger.pocketmine.find(version);
   await saveFile(info?.url, {filePath: path.join(serverPath, "pocketmine.phar")});
-  return info;
+  return {
+    id,
+    version: info.version,
+    url: info.url,
+    date: info.date
+  };
 }
 
 export const portListen = /\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|\[[A-Za-z0-9:]+\]|):([0-9]+))/;

@@ -1,3 +1,4 @@
+import { Stats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 export default {exists, isDirectory, isFile, readdirrecursive};
@@ -21,19 +22,22 @@ export async function isFile(filePath: string) {
   }
 }
 
-export async function readdirrecursive(filePath: string|string[]): Promise<string[]> {
-  if (Array.isArray(filePath)) {
-    const filesStorage: string[] = [];
-    await Promise.all(filePath.map(files => readdirrecursive(files).then(res => filesStorage.push(...res)).catch(() => null)));
-    return filesStorage;
-  }
+export type dirRecursive = {path: string, stat: Stats};
+export async function readdirrecursive(filePath: string|string[], returnInfo = false): Promise<(dirRecursive|string)[]> {
+  if (typeof filePath === "object") return Promise.all(filePath.map(folder => readdirrecursive(folder, returnInfo))).then(returnArray => {
+    const files: ((typeof returnArray)[0]) = [];
+    for (const folderInfo of returnArray) files.push(...folderInfo);
+    return files;
+  });
+
   if (!(await exists(filePath))) throw new Error("Folder not exists");
-  filePath = path.resolve(filePath);
-  if (!await isDirectory(filePath)) throw new Error("path if not directory");
-  const dirfiles = (await fs.readdir(filePath)).map(file => path.join(filePath as string, file));
+  const resolvedPath = path.resolve(filePath);
+  if (!await isDirectory(resolvedPath)) throw new Error("path if not directory");
+  const dirfiles = (await fs.readdir(resolvedPath)).map(file => path.join(resolvedPath, file));
   for (const folder of dirfiles) {
     if (await isFile(folder)) continue;
-    dirfiles.push(...(await readdirrecursive(folder).catch(() => [])));
+    await readdirrecursive(folder, false).then(files => dirfiles.push(...files as string[])).catch(err => err);
   }
+  if (returnInfo) return Promise.all(dirfiles.map(async file => typeof file === "string"?fs.lstat(file).then(stat => ({ path: file, stat })):file));
   return dirfiles;
 }

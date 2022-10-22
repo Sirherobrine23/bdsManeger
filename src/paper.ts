@@ -10,8 +10,15 @@ import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { spigotProprieties } from "./spigot";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath } = await pathControl("paper", platformOptions);
-  return platformManeger.paper.find(version).then(release => saveFile(release.url, {filePath: path.join(serverPath, "paper.jar")}).then(() => release));
+  const { serverPath, id } = await pathControl("paper", platformOptions);
+  const release = await platformManeger.paper.find(version);
+  await saveFile(release.url, {filePath: path.join(serverPath, "paper.jar")});
+  return {
+    id,
+    version: release.version,
+    url: release.url,
+    date: release.date
+  };
 }
 
 export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;

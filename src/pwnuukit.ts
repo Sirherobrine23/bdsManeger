@@ -8,10 +8,17 @@ import { saveFile } from "./lib/httpRequest";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath } = await pathControl("powernukkit", platformOptions);
+  const { serverPath, id } = await pathControl("powernukkit", platformOptions);
   const jarPath = path.join(serverPath, "pwnukkit.jar");
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  return platformManeger.powernukkit.find(version).then(release => saveFile(release.url, {filePath: jarPath}).then(() => release));
+  const pwNukktiData = await platformManeger.powernukkit.find(version);
+  await saveFile(pwNukktiData.url, {filePath: jarPath})
+  return {
+    id,
+    version: pwNukktiData.version,
+    url: pwNukktiData.url,
+    date: pwNukktiData.date
+  }
 }
 
 export const playerAction = /^.*\[.*\]\s([\S\w]+|"[\S\w]+")\s+(left|joined)\s+the\s+game$/;

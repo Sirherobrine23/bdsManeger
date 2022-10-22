@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
 import * as globalPlatfroms from "./globalPlatfroms";
-import { getBuffer, getJSON, saveFile } from "./lib/httpRequest";
+import { getBuffer, getJSON, GithubRelease, saveFile } from "./lib/httpRequest";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import Proprieties from "./lib/Proprieties"
 
@@ -21,11 +21,16 @@ async function listVersions() {
 }
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath } = await pathControl("spigot", platformOptions);
+  const { serverPath, id } = await pathControl("spigot", platformOptions);
   const jarPath = path.join(serverPath, "server.jar");
   if (typeof version === "boolean"||version === "latest") version = (await listVersions())[0].version;
-  await fs.cp(await saveFile(`https://github.com/The-Bds-Maneger/SpigotBuilds/releases/download/${version}/Spigot.jar`), jarPath, {force: true});
-  return;
+  const url = `https://github.com/The-Bds-Maneger/SpigotBuilds/releases/download/${version}/Spigot.jar`;
+  await saveFile(url, {filePath: jarPath});
+  return {
+    id, url,
+    version: version,
+    date: new Date((await GithubRelease("The-Bds-Maneger", "SpigotBuilds", version)).created_at),
+  };
 }
 
 

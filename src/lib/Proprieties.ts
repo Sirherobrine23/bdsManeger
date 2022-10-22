@@ -1,3 +1,4 @@
+export default {parse, stringify};
 export type properitiesBase = {[key: string]: string|number|true|false};
 
 /**
@@ -6,7 +7,7 @@ export type properitiesBase = {[key: string]: string|number|true|false};
  * @param Proper - String with the properties or similar files
  * @returns
  */
-export function parse<PropertiesObject = properitiesBase>(Proper: string): PropertiesObject {
+export function parse<PropertiesObject extends properitiesBase>(Proper: string): PropertiesObject {
   const ProPri = {};
   const ProperSplit = Proper.replace(/\\\s+?\n/gi, "").split(/\r?\n/).map(Line => Line.trim()).filter(line => /.*(\s+)?\=(\s+)?.*/.test(line) && !/^#/.test(line));
   for (const Line of ProperSplit) {
@@ -29,8 +30,8 @@ export function parse<PropertiesObject = properitiesBase>(Proper: string): Prope
  */
 export function stringify(ProPri: properitiesBase): string {
   const Proper = [];
-  for (const key in Object.keys(ProPri)) {
-    if (ProPri[key] === null) Proper.push(`${key}=`);
+  for (const key of Object.keys(ProPri)) {
+    if (ProPri[key] === null||ProPri[key] === undefined) Proper.push(`${key}=`);
     else if (ProPri[key] === true) Proper.push(`${key}=true`);
     else if (ProPri[key] === false) Proper.push(`${key}=false`);
     else if (typeof ProPri[key] === "number") Proper.push(`${key}=${ProPri[key]}`);
@@ -40,5 +41,3 @@ export function stringify(ProPri: properitiesBase): string {
   }
   return Proper.join("\n");
 }
-
-export default {parse, stringify};

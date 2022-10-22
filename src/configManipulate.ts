@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import utils from "node:util";
-import Proprieties from "./lib/Proprieties";
+import Proprieties, { properitiesBase } from "./lib/Proprieties";
 
 export type Manipulate = ((config: string, value: any) => string)|{
   validate?: (value: any) => boolean,
@@ -15,7 +15,7 @@ export type configOptions = {
 };
 
 export type configEdit = {name: string, data: any};
-export async function manegerConfigProprieties<updateConfig extends configEdit, configJson = any>(config: configOptions) {
+export async function manegerConfigProprieties<updateConfig extends configEdit, configJson extends properitiesBase = any>(config: configOptions) {
   let configFile: string = await fs.readFile(config.configPath, "utf8");
   const mani = {save, editConfig, getConfig: () => Proprieties.parse<configJson>(configFile)};
   async function save() {

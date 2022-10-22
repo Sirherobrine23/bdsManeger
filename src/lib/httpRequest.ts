@@ -11,17 +11,16 @@ const gotCjs = async () => got||(await (eval('import("got")') as Promise<typeof 
 gotCjs().then(res => got = res);
 
 export type requestOptions = {
+  host: string,
   path?: string,
-  url?: string,
-  socket?: {path: string, protocoll?: "http"|"https"},
   method?: Method,
   headers?: {[headerName: string]: string[]|string},
   body?: any,
 };
 
 export async function pipeFetch(options: requestOptions & {stream: fs.WriteStream|stream.Writable}) {
-  if (!(options.url||options.socket)) throw new Error("Enter a url or an (IPC/Unix) socket");
-  const urlRequest = (options.url||`${options.socket.protocoll||"http"}://unix:${options.socket.path}:`)+(options.path||"");
+  if (!options.host) throw new Error("Host blank")
+  const urlRequest = options.host.startsWith("http")?options.host+(options.path||""):`http://unix:${options.host}:${options.path||"/"}`;
   const gotStream = (await gotCjs()).stream(urlRequest, {
     isStream: true,
     headers: options.headers||{},
@@ -37,8 +36,8 @@ export async function pipeFetch(options: requestOptions & {stream: fs.WriteStrea
 }
 
 export async function bufferFetch(options: requestOptions) {
-  if (!(options.url||options.socket)) throw new Error("Enter a url or an (IPC/Unix) socket");
-  const urlRequest = (options.url||`${options.socket.protocoll||"http"}://unix:${options.socket.path}:`)+(options.path||"");
+  if (!options.host) throw new Error("Host blank")
+  const urlRequest = options.host.startsWith("http")?options.host+(options.path||""):`http://unix:${options.host}:${options.path||"/"}`;
   return gotCjs().then(request => request(urlRequest, {
     headers: options.headers||{},
     method: options.method||"GET",
@@ -51,7 +50,7 @@ export async function getBuffer(url: string, options?: {method?: string, body?: 
   const urlPar = new URL(url);
   return bufferFetch({
     path: urlPar.pathname,
-    url: urlPar.protocol+"//"+urlPar.host,
+    host: urlPar.protocol+"//"+urlPar.host,
     headers: options?.headers,
     body: options?.body,
     method: options?.method as any
@@ -59,13 +58,13 @@ export async function getBuffer(url: string, options?: {method?: string, body?: 
 }
 
 export async function getJSON<JSONReturn = any>(url: string|requestOptions, options?: requestOptions): Promise<JSONReturn> {
-  return bufferFetch(typeof url === "string"?{...(options||{}), url}:url).then(({data}) => JSON.parse(data.toString("utf8")) as JSONReturn);
+  return bufferFetch(typeof url === "string"?{...(options||{}), host: url}:url).then(({data}) => JSON.parse(data.toString("utf8")) as JSONReturn);
 }
 
 export async function saveFile(url: string, options?: {filePath?: string, headers?: {[key: string]: string}}) {
   const fileSave = options?.filePath||path.join(tmpdir(), Date.now()+"_raw_bdscore_"+path.basename(url));
   const fsStream = fs.createWriteStream(fileSave, {autoClose: false});
-  await pipeFetch({url, stream: fsStream, headers: options?.headers});
+  await pipeFetch({host: url, stream: fsStream, headers: options?.headers});
   return fileSave;
 }
 
@@ -86,7 +85,7 @@ export async function tarExtract(url: string, options?: {folderPath?: string, he
     keep: true,
     p: true
   });
-  await pipeFetch({url, stream: tar_Extract, headers: options?.headers});
+  await pipeFetch({host: url, stream: tar_Extract, headers: options?.headers});
 }
 
 const isGithubRoot = /github.com\/[\S\w]+\/[\S\w]+\/archive\//;
@@ -113,9 +112,9 @@ export async function extractZip(url: string, folderTarget: string) {
   return extract(folderTarget);
 }
 
-export type testIpv6 = {
+export type testIp<protocolType extends "ipv4"|"ipv6" = "ipv4"> = {
   ip: string,
-  type: "ipv4"|"ipv6",
+  type: protocolType,
   subtype: string,
   via: string,
   padding: string,
@@ -126,8 +125,14 @@ export type testIpv6 = {
   protocol: "HTTP/2.0"|"HTTP/1.1"|"HTTP/1.0"
 };
 
-export async function getExternalIP(): Promise<{ipv4: string, ipv6?: string, rawRequest?: {ipv4: testIpv6, ipv6?: testIpv6}}> {
-  return getJSON<testIpv6>("https://ipv4.lookup.test-ipv6.com/ip/").then(ipv4 => getJSON<testIpv6>("https://ipv6.lookup.test-ipv6.com/ip/").then(ipv6 => ({ipv4: ipv4.ip, ipv6: ipv6?.ip, rawRequest: {ipv4, ipv6}})).catch(() => ({ipv4: ipv4.ip, rawRequest: {ipv4}})));
+export async function getExternalIP(): Promise<{ipv4: string, ipv6?: string, rawRequest?: {ipv4: testIp<"ipv4">, ipv6?: testIp<"ipv6">}}> {
+  const ipv6: testIp<"ipv6"> = await getJSON("https://ipv6.lookup.test-ipv6.com/ip/").catch(() => undefined);
+  const ipv4: testIp<"ipv4"> = await getJSON("https://ipv4.lookup.test-ipv6.com/ip/");
+  return {
+    ipv4: ipv4.ip,
+    ipv6: ipv6?.ip,
+    rawRequest: {ipv4, ipv6}
+  };
 }
 
 export type githubRelease = {
@@ -203,12 +208,16 @@ export type githubRelease = {
   }>;
 };
 
-export async function GithubRelease(username: string, repo?: string): Promise<githubRelease[]> {
+export async function GithubRelease(username: string, repo: string, releaseTag: string): Promise<githubRelease>;
+export async function GithubRelease(username: string, repo: string): Promise<githubRelease[]>;
+export async function GithubRelease(username: string): Promise<githubRelease[]>;
+export async function GithubRelease(username: string, repo?: string, releaseTag?: string): Promise<githubRelease|githubRelease[]> {
   let fullRepo = username;
   if (!username) throw new Error("Repository is required, example: GithubRelease(\"Username/repo\") or GithubRelease(\"Username\", \"repo\")");
   if (repo) {
     if (!/\//.test(fullRepo)) fullRepo += "/"+repo;
   }
+  if (releaseTag) return getJSON<githubRelease>(`https://api.github.com/repos/${fullRepo}/releases/tags/${releaseTag}`);
   return getJSON<githubRelease[]>(`https://api.github.com/repos/${fullRepo}/releases?per_page=100`);
 }
 

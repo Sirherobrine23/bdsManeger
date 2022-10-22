@@ -268,7 +268,7 @@ export async function addResourcePacksToWorld(resourceId: string, platformOption
   const serverConfig = await getConfig(platformOptions);
   if (!await exists(path.join(serverPath, "worlds", serverConfig.levelName, "world_resource_packs.json"))) await fs.writeFile(path.join(serverPath, "worlds", serverConfig.levelName, "world_resource_packs.json"), "[]");
   const resourcesData: resourcePacks[] = JSON.parse(await fs.readFile(path.join(serverPath, "worlds", serverConfig.levelName, "world_resource_packs.json"), "utf8"));
-  const manifests: resourceManifest[] = await Promise.all((await readdirrecursive([path.join(serverPath, "resource_packs"), path.join(serverPath, "worlds", serverConfig.levelName, "resource_packs")])).filter(file => file.endsWith("manifest.json")).map(async file => JSON.parse(await fs.readFile(file, "utf8"))));
+  const manifests: resourceManifest[] = await Promise.all((await readdirrecursive([path.join(serverPath, "resource_packs"), path.join(serverPath, "worlds", serverConfig.levelName, "resource_packs")])).filter((file: string) => file.endsWith("manifest.json")).map(async (file: string) => JSON.parse(await fs.readFile(file, "utf8"))));
   const packInfo = manifests.find(pf => pf.header.uuid === resourceId);
   if (!packInfo) throw new Error("UUID to texture not installed in the server");
   if (resourcesData.includes({pack_id: resourceId})) throw new Error("Textura alredy installed in the World");
