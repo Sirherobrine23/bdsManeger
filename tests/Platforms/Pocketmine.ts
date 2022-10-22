@@ -6,7 +6,6 @@ describe("Pocketmine", function() {
   it("Install", async () => id = (await installServer("latest", {newId: true})).id as string)
   it("Start", async () => {
     const serverManeger = await startServer({id});
-    serverManeger.events.on("portListening", console.log);
     serverManeger.events.once("serverStarted", () => serverManeger.stopServer());
     return serverManeger.waitExit();
   });

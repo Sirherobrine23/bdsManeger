@@ -12,7 +12,7 @@ export async function installServer(version: string|boolean, platformOptions: bd
   const jarPath = path.join(serverPath, "pwnukkit.jar");
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   const pwNukktiData = await platformManeger.powernukkit.find(version);
-  await saveFile(pwNukktiData.url, {filePath: jarPath})
+  await saveFile({url: pwNukktiData.url, filePath: jarPath})
   return {
     id,
     version: pwNukktiData.version,

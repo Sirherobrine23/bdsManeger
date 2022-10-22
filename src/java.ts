@@ -13,7 +13,7 @@ import extendsFs from "./lib/extendsFs";
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, serverRoot, platformIDs, id } = await pathControl("java", platformOptions);
   const javaDownload = await platformManeger.java.find(version);
-  await saveFile(javaDownload.url, {filePath: path.join(serverPath, "server.jar")});
+  await saveFile({url: javaDownload.url, filePath: path.join(serverPath, "server.jar")});
   await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: javaDownload.version, date: javaDownload.date, installDate: new Date()}));
 
   if (platformIDs.length > 1) {

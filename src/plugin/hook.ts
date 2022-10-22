@@ -69,7 +69,7 @@ export class script_hook {
     if (gitUrlDetect.test(urlHost)) {
       await execFileAsync("git", ["clone", urlHost, "--depth", 1, onSave], {cwd: this.#localFolder});
       if (await exists(path.join(onSave, "package.json"))) await execFileAsync("npm", ["install", "--no-save"], {cwd: onSave, stdio: "inherit"});
-    } else await saveFile(urlHost, {filePath: onSave});
+    } else await saveFile({url: urlHost, filePath: onSave});
     if (!!this.#serverActions) await this.#registerScript(onSave);
     return;
   }

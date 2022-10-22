@@ -44,14 +44,16 @@ export class pluginManeger {
     if (info.version === 2) {
       const platformData = info.platform[this.#platform];
       if (!platformData) throw new Error("Platform not supported to Plugin!");
-      await http_request.saveFile(platformData.url, {
+      await http_request.saveFile({
+        url: platformData.url,
         filePath: path.join(this.#pluginFolder, platformData.fileName||path.basename(platformData.url))
       });
       if (platformData.dependencies) await Promise.all(platformData.dependencies.map(dep => this.installPlugin(dep)));
       return;
     }
     if (!info.platforms.includes(this.#platform)) throw new Error("Platform not supported to Plugin!");
-    await http_request.saveFile(info.url, {
+    await http_request.saveFile({
+      url: info.url,
       filePath: path.join(this.#pluginFolder, info.fileName||path.basename(info.url))
     });
     if (info.dependecies) await Promise.all(info.dependecies.map(dep => this.installPlugin(dep)));

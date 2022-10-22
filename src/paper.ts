@@ -12,7 +12,7 @@ import { spigotProprieties } from "./spigot";
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, id } = await pathControl("paper", platformOptions);
   const release = await platformManeger.paper.find(version);
-  await saveFile(release.url, {filePath: path.join(serverPath, "paper.jar")});
+  await saveFile({url: release.url, filePath: path.join(serverPath, "paper.jar")});
   return {
     id,
     version: release.version,

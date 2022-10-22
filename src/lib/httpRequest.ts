@@ -1,26 +1,31 @@
-import { tmpdir } from "node:os";
+import type { Method } from "got";
+import os from "node:os";
 import fs from "node:fs";
 import path from "node:path";
-import type { Method } from "got";
+import crypto from "node:crypto";
 import tar from "tar";
 import AdmZip from "adm-zip";
 import stream from "node:stream";
+import { exists } from "./extendsFs";
 
 let got: (typeof import("got"))["default"];
 const gotCjs = async () => got||(await (eval('import("got")') as Promise<typeof import("got")>)).default.extend({enableUnixSockets: true});
 gotCjs().then(res => got = res);
 
 export type requestOptions = {
-  host: string,
-  path?: string,
+  url?: string,
+  socket?: {
+    socketPath: string,
+    path?: string,
+  }
   method?: Method,
   headers?: {[headerName: string]: string[]|string},
   body?: any,
 };
 
-export async function pipeFetch(options: requestOptions & {stream: fs.WriteStream|stream.Writable}) {
-  if (!options.host) throw new Error("Host blank")
-  const urlRequest = options.host.startsWith("http")?options.host+(options.path||""):`http://unix:${options.host}:${options.path||"/"}`;
+export async function pipeFetch(options: requestOptions & {stream: fs.WriteStream|stream.Writable, waitFinish?: boolean}) {
+  if (!(options?.url||options?.socket)) throw new Error("Host blank")
+  const urlRequest = (typeof options.url === "string")?options.url:`http://unix:${options.socket.socketPath}:${options.socket.path||"/"}`;
   const gotStream = (await gotCjs()).stream(urlRequest, {
     isStream: true,
     headers: options.headers||{},
@@ -31,85 +36,74 @@ export async function pipeFetch(options: requestOptions & {stream: fs.WriteStrea
     gotStream.pipe(options.stream);
     options.stream.on("error", reject);
     gotStream.on("error", reject);
-    gotStream.once("end", () => options.stream.once("finish", done));
+    gotStream.once("end", () => {
+      if (options.waitFinish) return options.stream.once("finish", done);
+      return done();
+    });
   });
 }
 
-export async function bufferFetch(options: requestOptions) {
-  if (!options.host) throw new Error("Host blank")
-  const urlRequest = options.host.startsWith("http")?options.host+(options.path||""):`http://unix:${options.host}:${options.path||"/"}`;
-  return gotCjs().then(request => request(urlRequest, {
+export async function bufferFetch(options: string|requestOptions) {
+  if (typeof options === "string") options = {url: options};
+  if (!(options.url||options.socket)) throw new Error("Host blank")
+  const urlRequest = (typeof options.url === "string")?options.url:`http://unix:${options.socket.socketPath}:${options.socket.path||"/"}`;
+  return (await gotCjs())(urlRequest, {
     headers: options.headers||{},
     method: options.method||"GET",
     json: options.body,
     responseType: "buffer",
-  })).then(res => ({headers: res.headers, data: Buffer.from(res.body), response: res}));
+  }).then(res => ({headers: res.headers, data: Buffer.from(res.body), response: res}));
 }
 
-export async function getBuffer(url: string, options?: {method?: string, body?: any, headers?: {[key: string]: string}}): Promise<Buffer> {
-  const urlPar = new URL(url);
-  return bufferFetch({
-    path: urlPar.pathname,
-    host: urlPar.protocol+"//"+urlPar.host,
-    headers: options?.headers,
-    body: options?.body,
-    method: options?.method as any
-  }).then(({data}) => data);
+export async function getJSON<JSONReturn = any>(request: string|requestOptions): Promise<JSONReturn> {
+  if (typeof request === "string") request = {url: request};
+  const res = (await bufferFetch(request)).data.toString("utf8");
+  return JSON.parse(res) as JSONReturn;
 }
 
-export async function getJSON<JSONReturn = any>(url: string|requestOptions, options?: requestOptions): Promise<JSONReturn> {
-  return bufferFetch(typeof url === "string"?{...(options||{}), host: url}:url).then(({data}) => JSON.parse(data.toString("utf8")) as JSONReturn);
+export async function saveFile(request: string|requestOptions & {filePath?: string}) {
+  if (typeof request === "string") request = {url: request};
+  const filePath = request.filePath||path.join(os.tmpdir(), `raw_bdscore_${Date.now()}_${(path.parse(request.url||request.socket?.path||crypto.randomBytes(16).toString("hex"))).name}`);
+  await pipeFetch({...request, waitFinish: true, stream: fs.createWriteStream(filePath, {autoClose: false})});
+  return filePath;
 }
 
-export async function saveFile(url: string, options?: {filePath?: string, headers?: {[key: string]: string}}) {
-  const fileSave = options?.filePath||path.join(tmpdir(), Date.now()+"_raw_bdscore_"+path.basename(url));
-  const fsStream = fs.createWriteStream(fileSave, {autoClose: false});
-  await pipeFetch({host: url, stream: fsStream, headers: options?.headers});
-  return fileSave;
-}
-
-export async function tarExtract(url: string, options?: {folderPath?: string, headers?: {[key: string]: string}}) {
-  let fileSave = path.join(tmpdir(), "_bdscore", Date.now()+"_raw_bdscore");
-  const Headers = {};
-  if (options) {
-    if (options.folderPath && typeof options.folderPath === "string") fileSave = options.folderPath;
-    if (options.headers) Object.keys(options.headers).forEach(key => Headers[key] = String(options.headers[key]));
-  }
-
-  if (!fs.existsSync(fileSave)) await fs.promises.mkdir(fileSave, {recursive: true});
-  const tar_Extract = tar.extract({
-    cwd: fileSave,
-    noChmod: false,
-    noMtime: false,
-    preserveOwner: true,
-    keep: true,
-    p: true
+export async function tarExtract(request: requestOptions & {folderPath?: string}) {
+  const folderToExtract = request.folderPath||path.join(os.tmpdir(), `raw_bdscore_${Date.now()}_${(path.parse(request.url||request.socket?.path||crypto.randomBytes(16).toString("hex"))).name}`);
+  if (!await exists(folderToExtract)) await fs.promises.mkdir(folderToExtract, {recursive: true});
+  await pipeFetch({
+    ...request,
+    waitFinish: true,
+    stream: tar.extract({
+      cwd: folderToExtract,
+      noChmod: false,
+      noMtime: false,
+      preserveOwner: true,
+      keep: true,
+      p: true
+    })
   });
-  await pipeFetch({host: url, stream: tar_Extract, headers: options?.headers});
+  return folderToExtract
 }
 
-const isGithubRoot = /github.com\/[\S\w]+\/[\S\w]+\/archive\//;
-export async function extractZip(url: string, folderTarget: string) {
-  const downloadedFile = await saveFile(url);
-  const extract = async (targetFolder: string) => {
-    const zip = new AdmZip(downloadedFile);
-    await new Promise<void>((done, reject) => {
-      zip.extractAllToAsync(targetFolder, true, true, (err) => {
-        if (err) return done();
-        return reject(err);
-      })
-    });
-  }
-  if (isGithubRoot.test(url)) {
-    const tempFolder = await fs.promises.mkdtemp(path.join(tmpdir(), "githubRoot_"), "utf8");
-    await extract(tempFolder);
-    const files = await fs.promises.readdir(tempFolder);
+const githubAchive = /github.com\/[\S\w]+\/[\S\w]+\/archive\//;
+export async function extractZip(request: requestOptions & {folderTarget: string}) {
+  const zip = new AdmZip(await saveFile(request));
+  const targetFolder = githubAchive.test(request.url)?await fs.promises.mkdtemp(path.join(os.tmpdir(), "githubRoot_"), "utf8"):request.folderTarget;
+  await new Promise<void>((done, reject) => {
+    zip.extractAllToAsync(targetFolder, true, true, (err) => {
+      if (!err) return done();
+      return reject(err);
+    })
+  });
+
+  if (githubAchive.test(request.url)) {
+    const files = await fs.promises.readdir(targetFolder);
     if (files.length === 0) throw new Error("Invalid extract");
-    console.log("%s -> %s", path.join(tempFolder, files[0]), folderTarget)
-    await fs.promises.cp(path.join(tempFolder, files[0]), folderTarget, {recursive: true, force: true, preserveTimestamps: true, verbatimSymlinks: true});
-    return await fs.promises.rm(tempFolder, {recursive: true, force: true});
+    await fs.promises.cp(path.join(targetFolder, files[0]), request.folderTarget, {recursive: true, force: true, preserveTimestamps: true, verbatimSymlinks: true});
+    return await fs.promises.rm(targetFolder, {recursive: true, force: true});
   }
-  return extract(folderTarget);
+  return;
 }
 
 export type testIp<protocolType extends "ipv4"|"ipv6" = "ipv4"> = {

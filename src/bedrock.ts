@@ -1,49 +1,44 @@
 import path from "node:path";
 import fsOld from "node:fs";
 import fs from "node:fs/promises";
-import admZip from "adm-zip";
 import * as Proprieties from "./lib/Proprieties";
 import * as globalPlatfroms from "./globalPlatfroms";
-import { promisify } from "node:util";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { commendExists } from "./lib/childPromisses";
-import { saveFile } from "./lib/httpRequest";
+import * as httpRequest from "./lib/httpRequest";
 import { exists, readdirrecursive } from "./lib/extendsFs";
 import { randomPort } from "./lib/randomPort";
-
-async function createServerPort(ids: string[]) {
-  const platformPorts = (await Promise.all(ids.map(id => getConfig({id})))).map(config => ({v4: config.serverPort, v6: config.serverPortv6}));
-  let v4: number, v6: number;
-  while (!v4||!v6) {
-    const tmpNumber = await randomPort();
-    if (platformPorts.some(ports => ports.v4 === tmpNumber||ports.v6 == tmpNumber)) continue;
-    if (!v4) v4 = tmpNumber;
-    else v6 = tmpNumber;
-  };
-  return {v4, v6};
-}
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, serverRoot, platformIDs, id } = await pathControl("bedrock", platformOptions);
   const bedrockData = await platformManeger.bedrock.find(version);
-  const zip = new admZip(await saveFile(bedrockData?.url[process.platform]));
+  const url = bedrockData?.url[process.platform];
+
   // Remover files
   await fs.readdir(serverPath).then(files => files.filter(file => !saveFileFolder.test(file))).then(files => Promise.all(files.map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true}))));
+
   const serverConfig = (await fs.readFile(path.join(serverPath, "server.properties"), "utf8").catch(() => "")).trim();
-  await promisify(zip.extractAllToAsync)(serverPath, true, true);
+  await httpRequest.extractZip({url, folderTarget: serverPath});
   if (serverConfig) await fs.writeFile(path.join(serverPath, "server.properties"), serverConfig);
   await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: bedrockData.version, date: bedrockData.date, installDate: new Date()}));
+
   if (platformIDs.length > 1) {
-    const ports = await createServerPort(platformIDs);
-    await updateConfig("serverPort", ports.v4, {id});
-    await updateConfig("serverPortv6", ports.v6, {id});
+    let v4: number, v6: number;
+    const platformPorts = (await Promise.all(platformIDs.map(id => getConfig({id})))).map(config => ({v4: config.serverPort, v6: config.serverPortv6}));
+    while (!v4||!v6) {
+      const tmpNumber = await randomPort();
+      if (platformPorts.some(ports => ports.v4 === tmpNumber||ports.v6 == tmpNumber)) continue;
+      if (!v4) v4 = tmpNumber;
+      else v6 = tmpNumber;
+    };
+    await updateConfig("serverPort", v4, {id});
+    await updateConfig("serverPortv6", v6, {id});
   }
   return {
-    id,
+    id, url,
     version: bedrockData.version,
-    date: bedrockData.date,
-    url: bedrockData.url[process.platform]
+    date: bedrockData.date
   };
 }
 

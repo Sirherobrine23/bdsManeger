@@ -9,7 +9,6 @@ describe("Java", function() {
       platformOptions: {id},
       maxFreeMemory: true
     });
-    serverManeger.events.on("portListening", console.log);
     serverManeger.events.once("serverStarted", () => serverManeger.stopServer());
     return serverManeger.waitExit();
   });

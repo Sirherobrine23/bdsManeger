@@ -3,12 +3,12 @@ import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
 import * as globalPlatfroms from "./globalPlatfroms";
-import { getBuffer, getJSON, GithubRelease, saveFile } from "./lib/httpRequest";
+import { bufferFetch, getJSON, GithubRelease, saveFile } from "./lib/httpRequest";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import Proprieties from "./lib/Proprieties"
 
 async function listVersions() {
-  const data = (await getBuffer("https://hub.spigotmc.org/versions/")).toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));
+  const data = (await bufferFetch("https://hub.spigotmc.org/versions/")).data.toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));
   const data2 = await Promise.all(data.map(async (version) => {
     const data = await getJSON<{name: string, description: string, toolsVersion: number, javaVersions?: number[], refs: {BuildData: string, Bukkit: string, CraftBukkit: string, Spigot: string}}>(`https://hub.spigotmc.org/versions/${version}.json`);
     return {
@@ -25,7 +25,7 @@ export async function installServer(version: string|boolean, platformOptions: bd
   const jarPath = path.join(serverPath, "server.jar");
   if (typeof version === "boolean"||version === "latest") version = (await listVersions())[0].version;
   const url = `https://github.com/The-Bds-Maneger/SpigotBuilds/releases/download/${version}/Spigot.jar`;
-  await saveFile(url, {filePath: jarPath});
+  await saveFile({url, filePath: jarPath});
   return {
     id, url,
     version: version,
