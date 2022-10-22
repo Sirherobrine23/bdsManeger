@@ -9,9 +9,10 @@ jobs:
         platform:
         - Bedrock
         - Powernukkit
-        - Java
-        - Paper
         - Pocketmine
+        # very slow platforms
+        - Paper
+        - Java
         - Spigot
     runs-on: ubuntu-latest
     name: "Partial test to ${{ matrix.platform }}"
@@ -56,16 +57,14 @@ jobs:
       with:
         name: ${{ matrix.platform }}_Fail
         path: |
-          ~/.bdsCore
-          !~/.bdsCore/**/*.debug
-          !~/.bdsCore/**/bedrock_server
-          !~/.bdsCore/**/*_packs/
+          ~/.bdsCore/**/*.log
+          ~/.bdsCore/**/world*/
 
   test:
     needs:
     - test_partial
     runs-on: ubuntu-latest
-    name: "Test unit"
+    name: "Test"
     env:
       BDS_HOME: "~/.bdsCore"
     steps:
