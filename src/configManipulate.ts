@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import utils from "node:util";
 import Proprieties, { properitiesBase } from "./lib/Proprieties";
 
-export type configEdit = {name: string, data?: string|number|boolean};
+export type configEdit = {name: string, data?: any};
 export async function manegerConfigProprieties<updateConfig extends configEdit, configJson extends properitiesBase = any>(config: {configPath: string, configManipulate: {[Properties in updateConfig["name"]]: ((config: string, value: updateConfig["data"]) => string)|{validate?: (value: updateConfig["data"]) => boolean, regexReplace: RegExp, valueFormat: string, addIfNotExist?: string}}}) {
   let configFile = await fs.readFile(config.configPath, "utf8");
   const mani = {save, editConfig, getConfig: () => Proprieties.parse<configJson>(configFile)};

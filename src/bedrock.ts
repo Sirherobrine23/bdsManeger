@@ -58,7 +58,7 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
   if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
     args.push(command);
     if (await commendExists("qemu-x86_64-static")) command = "qemu-x86_64-static";
-    if (await commendExists("qemu-x86_64")) command = "qemu-x86_64";
+    else if (await commendExists("qemu-x86_64")) command = "qemu-x86_64";
     else if (await commendExists("box64")) command = "box64";
     else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
