@@ -140,7 +140,7 @@ export async function serverConfig(platformOptions: bdsPlatformOptions = {id: "d
   return manegerConfigProprieties<editConfig>({
     configPath: fileProperties,
     configManipulate: {
-      Gamemode: (fileConfig, value) => {
+      Gamemode: (fileConfig, value: string) => {
         if (!(["survival", "creative", "hardcore"]).includes(value)) throw new Error("Invalid gameode");
         if (value === "hardcore") fileConfig = fileConfig.replace(/gamemode=(survival|creative)/, `gamemode=survial`).replace(/hardcore=(false|true)/, `hardcore=true`);
         else {
@@ -150,7 +150,7 @@ export async function serverConfig(platformOptions: bdsPlatformOptions = {id: "d
         return fileConfig;
       },
       Difficulty: {
-        validate: (value) => (["peaceful", "easy", "normal", "hard"]).includes(value),
+        validate: (value: string) => (["peaceful", "easy", "normal", "hard"]).includes(value),
         regexReplace: /difficulty=(peaceful|easy|normal|hard)/,
         valueFormat:  "difficulty=%s"
       },
