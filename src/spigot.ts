@@ -3,7 +3,9 @@ import fs from "node:fs/promises";
 import fsOld from "node:fs";
 import os from "node:os";
 import * as globalPlatfroms from "./globalPlatfroms";
-import { bufferFetch, getJSON, GithubRelease, saveFile } from "./lib/httpRequest";
+import { bufferFetch, getJSON } from "@http/simples";
+import { saveFile } from "@http/large";
+import { GithubRelease } from "@http/github";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import Proprieties from "./lib/Proprieties"
 

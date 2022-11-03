@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import * as globalPlatfroms from "./globalPlatfroms";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { saveFile } from "./lib/httpRequest";
+import { saveFile } from "@http/large";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {

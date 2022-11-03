@@ -5,7 +5,7 @@ import * as globalPlatfroms from "./globalPlatfroms";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { commendExists } from "./lib/childPromisses";
-import * as httpRequest from "./lib/httpRequest";
+import * as httpLarge from "@http/large";
 import extendsFs, { exists, readdirrecursive } from "./lib/extendsFs";
 import { randomPort } from "./lib/randomPort";
 import { manegerConfigProprieties } from "./configManipulate";
@@ -28,7 +28,7 @@ export async function installServer(version: string|boolean, platformOptions: bd
   await fs.readdir(serverPath).then(files => Promise.all(files.filter(file => !saveFileFolder.test(file)).map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true}))));
 
   const serverConfigProperties = (await fs.readFile(path.join(serverPath, "server.properties"), "utf8").catch(() => "")).trim();
-  await httpRequest.extractZip({url, folderTarget: serverPath});
+  await httpLarge.extractZip({url, folderTarget: serverPath});
   if (serverConfigProperties) await fs.writeFile(path.join(serverPath, "server.properties"), serverConfigProperties);
   await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: bedrockData.version, date: bedrockData.date, installDate: new Date()}));
 

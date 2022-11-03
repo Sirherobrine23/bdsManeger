@@ -5,7 +5,7 @@ import os from "node:os";
 import Proprieties from "./lib/Proprieties";
 import * as globalPlatfroms from "./globalPlatfroms";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { saveFile } from "./lib/httpRequest";
+import { saveFile } from "@http/large";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { spigotProprieties } from "./spigot";
 

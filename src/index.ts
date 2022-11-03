@@ -1,5 +1,10 @@
+// HTTP
+import * as httpSimples from "@http/simples";
+import * as httpLarge from "@http/large";
+import * as httpGithub from "@http/github";
+import * as httpClient from "@http/client";
+
 // Utils
-import * as httpRequest from "./lib/httpRequest";
 import * as platformPathManeger from "./platformPathManeger"
 import * as globalPlatfroms from "./globalPlatfroms";
 import * as pluginManeger from "./plugin/plugin";
@@ -15,7 +20,7 @@ import * as Spigot from "./spigot";
 import * as Powernukkit from "./pwnuukit";
 import * as PaperMC from "./paper";
 
-export {platformPathManeger, globalPlatfroms, pluginManeger, export_import, PocketmineMP, pluginHooks, Powernukkit, httpRequest, PaperMC, Bedrock, Spigot, proxy, Java};
+export {platformPathManeger, globalPlatfroms, pluginManeger, export_import, PocketmineMP, pluginHooks, Powernukkit, PaperMC, Bedrock, Spigot, proxy, Java};
 export default {
   Bedrock,
   Java,
@@ -28,8 +33,13 @@ export default {
     globalPlatfroms,
     pluginManeger,
     pluginHooks,
-    httpRequest,
     export_import,
-    proxy
+    proxy,
+    httpRequest: {
+      httpSimples,
+      httpLarge,
+      httpGithub,
+      httpClient
+    }
   }
 };

@@ -4,7 +4,7 @@ import fsOld from "node:fs";
 import os from "node:os";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { actionV2, actionsV2 } from "./globalPlatfroms";
-import { saveFile } from "./lib/httpRequest";
+import { saveFile } from "@http/large";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { manegerConfigProprieties } from "./configManipulate";
 import { randomPort } from "./lib/randomPort";
