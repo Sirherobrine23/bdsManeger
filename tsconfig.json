@@ -1,29 +1,29 @@
 {
-	"compilerOptions": {
-		"esModuleInterop": true,
-		"module": "commonjs",
-		"moduleResolution": "node",
-		"target": "ES2019",
-		// "outDir": "./dist",
-		"declaration": true,
-		"strict": false,
-		"noUnusedLocals": true,
-		"noImplicitReturns": true,
-		"noFallthroughCasesInSwitch": true,
-		"skipLibCheck": true,
-		"allowJs": true,
-		"paths": {
-			"@/*": [
-				"./node_modules/@*"
-			]
-		}
-	},
-	"include": [
-		"src/**/*"
-, "load.js"	],
-	"exclude": [
-		"node_modules/",
-		"test/",
-		"load.js"
-	]
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2019",
+    "declaration": true,
+    "strict": false,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "lib": ["ES6"],
+    "baseUrl": ".",
+    "paths": {
+      "@http/*": [
+        "./src/lib/request/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules/",
+    "tests/"
+  ]
 }
