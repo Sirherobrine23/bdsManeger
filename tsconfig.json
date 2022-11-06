@@ -15,7 +15,7 @@
     "baseUrl": ".",
     "paths": {
       "@http/*": [
-        "src/lib/request/*"
+        "src/request/*"
       ]
     }
   },

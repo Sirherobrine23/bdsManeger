@@ -2,17 +2,19 @@ import type { Method } from "got";
 import * as fs from "node:fs";
 import * as stream from "node:stream";
 
-const UserAgent = "Mozilla/5.0 (Linux; Android 12; moto g(7) plus) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36";
-
-export let got;
+export let got: (typeof import("got"))["default"];
 async function gotCjs(): Promise<(typeof import("got"))["default"]> {
   if (got) return got;
-  const dyImport = (await (eval('import("got")') as Promise<typeof import("got")>)).default.extend({enableUnixSockets: true, headers: {"User-Agent": UserAgent, "USER-AGENT": UserAgent, "user-agent": UserAgent}});
+  const dyImport = (await (eval('import("got")') as Promise<typeof import("got")>)).default.extend({
+    enableUnixSockets: true,
+    headers: {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36",
+      "Accept": "*/*"
+    }
+  });
   got = dyImport;
   return dyImport;
 }
-
-gotCjs().then(res => got = res);
 
 export type requestOptions = {
   url?: string,
@@ -32,7 +34,7 @@ export async function pipeFetch(options: requestOptions & {stream: fs.WriteStrea
     isStream: true,
     headers: options.headers||{},
     method: options.method||"GET",
-    json: options.body,
+    ...((options.method||"GET").toLowerCase()!=="get"?(typeof options.body === "string"?{body: options.body}:{json: options.body}):{}),
   });
   await new Promise<void>((done, reject) => {
     gotStream.pipe(options.stream);
@@ -50,21 +52,18 @@ export async function bufferFetch(options: string|requestOptions) {
   if (!(options.url||options.socket)) throw new Error("Host blank")
   const urlRequest = (typeof options.url === "string")?options.url:`http://unix:${options.socket.socketPath}:${options.socket.path||"/"}`;
   return (await gotCjs())(urlRequest, {
+    responseType: "buffer",
     headers: options.headers||{},
     method: options.method||"GET",
-    json: options.body,
-    responseType: "buffer",
+    ...((options.method||"GET").toLowerCase()!=="get"?(typeof options.body === "string"?{body: options.body}:{json: options.body}):{}),
   }).then(res => ({headers: res.headers, data: Buffer.from(res.body), response: res}));
 }
 
 export async function getJSON<JSONReturn = any>(request: string|requestOptions): Promise<JSONReturn> {
-  if (typeof request === "string") request = {url: request};
-  const res = (await bufferFetch(request)).data.toString("utf8");
-  return JSON.parse(res) as JSONReturn;
+  return bufferFetch(request).then(({data}) => JSON.parse(data.toString("utf8")) as JSONReturn)
 }
 
-const httpUrl = /^http[s]:\/\/[a-z0-9\.\-_]+(|\/([\s\W\S]+?))/;
 export async function urls(options: requestOptions|string): Promise<string[]> {
   const data = (await bufferFetch(options)).data.toString("utf8");
-  return data.split(/["'<>]/gi).filter(line => httpUrl.test(line))
+  return (data.match(/((http[s]):(([A-Za-z0-9$_.+!*(),;/?:@&~=-])|%[A-Fa-f0-9]{2}){2,}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*(),;/?:@&~=%-]*))?([A-Za-z0-9$_+!*();/?:~-]))/g)).map(res => typeof res === "string"?res:res[1]);
 }
