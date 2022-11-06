@@ -5,7 +5,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import tar from "tar";
 import AdmZip from "adm-zip";
-import { exists } from "../extendsFs";
+import { exists } from "../lib/extendsFs";
 
 export async function saveFile(request: string|requestOptions & {filePath?: string}) {
   if (typeof request === "string") request = {url: request};
