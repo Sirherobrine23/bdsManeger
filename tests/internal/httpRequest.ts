@@ -1,8 +1,8 @@
 import stream from "node:stream";
-import { getJSON, pipeFetch } from "../../src/lib/request/simples";
-import { saveFile } from "../../src/lib/request/large";
-import { GithubRelease, githubTree } from "../../src/lib/request/github";
-import { getExternalIP } from "../../src/lib/request/client";
+import { getJSON, pipeFetch } from "../../src/request/simples";
+import { saveFile } from "../../src/request/large";
+import { GithubRelease, githubTree } from "../../src/request/github";
+import { getExternalIP } from "../../src/request/client";
 
 describe("HTTP Request", function(){
   this.timeout(Infinity);
