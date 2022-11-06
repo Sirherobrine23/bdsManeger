@@ -2,7 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { actionsV2 } from "../globalPlatfroms";
 import { execFileAsync } from "../lib/childPromisses";
-import { saveFile } from "../lib/httpRequest";
+import { saveFile } from "@http/large";
 
 export type hooksPlatform = "bedrock"|"java"|"pocketmine"|"spigot"|"powernukkit"|"paper";
 export type hooksPlatformGeneric = hooksPlatform|"generic";

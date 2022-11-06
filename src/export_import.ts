@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import tar from "tar";
 import { bdsRoot } from "./platformPathManeger";
 import { exists } from "./lib/extendsFs";
-import { getExternalIP } from "./lib/httpRequest";
+import { getExternalIP } from "@http/client";
 
 export type payload = {
   httpVersion?: string,
