@@ -1,16 +1,13 @@
+import { customChildProcess, httpRequest, httpRequestGithub, httpRequestLarge } from "@the-bds-maneger/core-utils";
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import { platformManeger } from "@the-bds-maneger/server_versions";
+import { existsSync as fsExistsSync, Stats } from "node:fs";
+import { promisify } from "node:util";
+import * as globalPlatfroms from "./globalPlatfroms";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
 import AdmZip from "adm-zip";
-import * as globalPlatfroms from "./globalPlatfroms";
-import { existsSync as fsExistsSync, Stats } from "node:fs";
-import { promisify } from "node:util";
-import { platformManeger } from "@the-bds-maneger/server_versions";
-import { execFileAsync, execAsync } from "./lib/childPromisses";
-import { extractZip, saveFile, tarExtract } from "@http/large";
-import { bufferFetch } from "@http/simples";
-import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import {GithubRelease, githubRelease} from "@http/github";
 
 async function findPhp(serverPath: string, extraPath?: string): Promise<string> {
   if (!extraPath) extraPath = path.join(serverPath, "bin");
@@ -54,14 +51,14 @@ async function buildPhp(serverPath: string, buildFolder: string) {
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   if (process.platform === "win32") {
     const env = {VS_EDITION: process.env.VS_EDITION||"Enterprise", SOURCES_PATH: process.env.SOURCES_PATH||`${buildFolder}\\pocketmine-php-sdk`};
-    await execFileAsync("git", ["clone", "--depth=1", "https://github.com/pmmp/php-build-scripts.git", buildFolder], {cwd: buildFolder, stdio: "inherit"});
-    await execAsync(".\\windows-compile-vs.bat", {cwd: buildFolder, stdio: "inherit", env});
+    await customChildProcess.execFileAsync("git", ["clone", "--depth=1", "https://github.com/pmmp/php-build-scripts.git", buildFolder], {cwd: buildFolder, stdio: "inherit"});
+    await customChildProcess.execAsync(".\\windows-compile-vs.bat", {cwd: buildFolder, stdio: "inherit", env});
     await promisify((new AdmZip(path.join(buildFolder, (await fs.readdir(buildFolder)).find(file => file.endsWith(".zip"))))).extractAllToAsync)(serverPath, false, true);
   } else {
     const buildFile = path.join(buildFolder, "build.sh");
-    await fs.writeFile(buildFile, (await bufferFetch({url: "https://raw.githubusercontent.com/pmmp/php-build-scripts/stable/compile.sh"})).data);
+    await fs.writeFile(buildFile, (await httpRequest.bufferFetch({url: "https://raw.githubusercontent.com/pmmp/php-build-scripts/stable/compile.sh"})).data);
     await fs.chmod(buildFile, "777");
-    await execFileAsync(buildFile, ["-j"+os.cpus().length], {cwd: buildFolder, stdio: "inherit"});
+    await customChildProcess.execFileAsync(buildFile, ["-j"+os.cpus().length], {cwd: buildFolder, stdio: "inherit"});
     await fs.cp(path.join(buildFolder, "bin", (await fs.readdir(path.join(buildFolder, "bin")))[0]), path.join(serverPath, "bin"), {force: true, recursive: true, preserveTimestamps: true, verbatimSymlinks: true});
   }
   await fs.rm(buildFolder, {recursive: true, force: true});
@@ -69,20 +66,20 @@ async function buildPhp(serverPath: string, buildFolder: string) {
 }
 
 async function installPhp(serverPath: string, buildFolder: string): Promise<void> {
-  const releases: (githubRelease["assets"][0])[] = [];
-  (await GithubRelease("The-Bds-Maneger", "Build-PHP-Bins")).map(re => re.assets).forEach(res => releases.push(...res));
+  const releases: (httpRequestGithub.githubRelease["assets"][0])[] = [];
+  (await httpRequestGithub.GithubRelease("The-Bds-Maneger", "Build-PHP-Bins")).map(re => re.assets).forEach(res => releases.push(...res));
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   await fs.writeFile(path.join(os.tmpdir(), "bds_test.php"), `<?php echo "Hello World";`);
   if (process.platform === "win32") {
     let url: string = releases.filter(assert => assert.name.endsWith(".zip")).find(assert => /win32|windows/.test(assert.name))?.browser_download_url;
     if (!url) throw new Error("Cannnot get php url");
-    return promisify((new AdmZip(await saveFile({url}))).extractAllToAsync)(serverPath, false, true);
+    return promisify((new AdmZip(await httpRequestLarge.saveFile({url}))).extractAllToAsync)(serverPath, false, true);
   } else {
     const fileTest = RegExp(`${process.platform.toLowerCase()}.*${process.arch.toLowerCase()}`);
     const file = releases.find(re => fileTest.test(re.name.toLowerCase()));
     if (file) {
-      if (/\.zip/.test(file.name)) await extractZip({url: file.browser_download_url, folderTarget: serverPath});
-      else await tarExtract({url: file.browser_download_url, folderPath: path.join(serverPath, "bin")});
+      if (/\.zip/.test(file.name)) await httpRequestLarge.extractZip({url: file.browser_download_url, folderTarget: serverPath});
+      else await httpRequestLarge.tarExtract({url: file.browser_download_url, folderPath: path.join(serverPath, "bin")});
 
       // Update zts
       if (process.platform === "linux"||process.platform === "android"||process.platform === "darwin") {
@@ -98,7 +95,7 @@ async function installPhp(serverPath: string, buildFolder: string): Promise<void
     }
   }
   // test it's works php
-  await execFileAsync(await findPhp(serverPath), ["-v"]).catch(err => {
+  await customChildProcess.execFileAsync(await findPhp(serverPath), ["-v"]).catch(err => {
     console.warn(String(err));
     return buildPhp(serverPath, buildFolder);
   });
@@ -109,7 +106,7 @@ export async function installServer(version: string|boolean, platformOptions: bd
   const { serverPath, buildFolder, id } = await pathControl("pocketmine", platformOptions);
   await installPhp(serverPath, buildFolder);
   const info = await platformManeger.pocketmine.find(version);
-  await saveFile({url: info?.url, filePath: path.join(serverPath, "pocketmine.phar")});
+  await httpRequestLarge.saveFile({url: info?.url, filePath: path.join(serverPath, "pocketmine.phar")});
   return {
     id,
     version: info.version,

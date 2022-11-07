@@ -1,7 +1,6 @@
 import path from "node:path";
 import type { bdsPlatform } from "../platformPathManeger";
-import { getJSON } from "@http/simples";
-import { saveFile } from "@http/large";
+import { httpRequest, httpRequestLarge } from "@the-bds-maneger/core-utils";
 
 export type pluginConfig = {
   version?: 1,
@@ -41,11 +40,11 @@ export class pluginManeger {
     const urlandbds = /http[s]:\/\/|bdsplugin:\/\//;
     if (/bdsplugin:\/\//.test(plugin)) plugin = `https://raw.githubusercontent.com/The-Bds-Maneger/plugin_list/main/plugins/${plugin.replace(urlandbds, "").replace(".json", "")}.json`;
     else if (!/http[s]:\/\/\//.test(plugin)) plugin = "bdsplugin://"+plugin;
-    const info = await getJSON<pluginConfig|pluginV2>(plugin);
+    const info = await httpRequest.getJSON<pluginConfig|pluginV2>(plugin);
     if (info.version === 2) {
       const platformData = info.platform[this.#platform];
       if (!platformData) throw new Error("Platform not supported to Plugin!");
-      await saveFile({
+      await httpRequestLarge.saveFile({
         url: platformData.url,
         filePath: path.join(this.#pluginFolder, platformData.fileName||path.basename(platformData.url))
       });
@@ -53,7 +52,7 @@ export class pluginManeger {
       return;
     }
     if (!info.platforms.includes(this.#platform)) throw new Error("Platform not supported to Plugin!");
-    await saveFile({
+    await httpRequestLarge.saveFile({
       url: info.url,
       filePath: path.join(this.#pluginFolder, info.fileName||path.basename(info.url))
     });

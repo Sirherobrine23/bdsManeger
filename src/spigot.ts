@@ -1,21 +1,19 @@
+import { httpRequest, httpRequestLarge, httpRequestGithub } from "@the-bds-maneger/core-utils";
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import * as globalPlatfroms from "./globalPlatfroms";
+import Proprieties from "./lib/Proprieties"
+import fsOld from "node:fs";
 import path from "node:path";
 import fs from "node:fs/promises";
-import fsOld from "node:fs";
 import os from "node:os";
-import * as globalPlatfroms from "./globalPlatfroms";
-import { bufferFetch, getJSON } from "@http/simples";
-import { saveFile } from "@http/large";
-import { GithubRelease } from "@http/github";
-import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import Proprieties from "./lib/Proprieties"
 
 async function listVersions() {
-  const data = (await bufferFetch("https://hub.spigotmc.org/versions/")).data.toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));
+  const data = (await httpRequest.bufferFetch("https://hub.spigotmc.org/versions/")).data.toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));
   const data2 = await Promise.all(data.map(async (version) => {
-    const data = await getJSON<{name: string, description: string, toolsVersion: number, javaVersions?: number[], refs: {BuildData: string, Bukkit: string, CraftBukkit: string, Spigot: string}}>(`https://hub.spigotmc.org/versions/${version}.json`);
+    const data = await httpRequest.getJSON<{name: string, description: string, toolsVersion: number, javaVersions?: number[], refs: {BuildData: string, Bukkit: string, CraftBukkit: string, Spigot: string}}>(`https://hub.spigotmc.org/versions/${version}.json`);
     return {
       version,
-      date: new Date((await getJSON(`https://hub.spigotmc.org/stash/rest/api/latest/projects/SPIGOT/repos/spigot/commits/${data.refs.Spigot}/`)).committerTimestamp),
+      date: new Date((await httpRequest.getJSON(`https://hub.spigotmc.org/stash/rest/api/latest/projects/SPIGOT/repos/spigot/commits/${data.refs.Spigot}/`)).committerTimestamp),
       data,
     };
   }));
@@ -27,11 +25,11 @@ export async function installServer(version: string|boolean, platformOptions: bd
   const jarPath = path.join(serverPath, "server.jar");
   if (typeof version === "boolean"||version === "latest") version = (await listVersions())[0].version;
   const url = `https://github.com/The-Bds-Maneger/SpigotBuilds/releases/download/${version}/Spigot.jar`;
-  await saveFile({url, filePath: jarPath});
+  await httpRequestLarge.saveFile({url, filePath: jarPath});
   return {
     id, url,
     version: version,
-    date: new Date((await GithubRelease("The-Bds-Maneger", "SpigotBuilds", version)).created_at),
+    date: new Date((await httpRequestGithub.GithubRelease("The-Bds-Maneger", "SpigotBuilds", version)).created_at),
   };
 }
 

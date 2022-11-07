@@ -1,18 +1,18 @@
-import path from "node:path";
-import fs from "node:fs/promises";
-import fsOld from "node:fs";
-import os from "node:os";
-import Proprieties from "./lib/Proprieties";
-import * as globalPlatfroms from "./globalPlatfroms";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { saveFile } from "@http/large";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { spigotProprieties } from "./spigot";
+import * as globalPlatfroms from "./globalPlatfroms";
+import * as coreUtils from "@the-bds-maneger/core-utils";
+import Proprieties from "./lib/Proprieties";
+import fsOld from "node:fs";
+import path from "node:path";
+import fs from "node:fs/promises";
+import os from "node:os";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, id } = await pathControl("paper", platformOptions);
   const release = await platformManeger.paper.find(version);
-  await saveFile({url: release.url, filePath: path.join(serverPath, "paper.jar")});
+  await coreUtils.httpRequestLarge.saveFile({url: release.url, filePath: path.join(serverPath, "paper.jar")});
   return {
     id,
     version: release.version,

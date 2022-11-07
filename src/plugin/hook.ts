@@ -1,8 +1,7 @@
+import { httpRequestLarge, customChildProcess } from "@the-bds-maneger/core-utils";
+import { actionsV2 } from "../globalPlatfroms";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { actionsV2 } from "../globalPlatfroms";
-import { execFileAsync } from "../lib/childPromisses";
-import { saveFile } from "@http/large";
 
 export type hooksPlatform = "bedrock"|"java"|"pocketmine"|"spigot"|"powernukkit"|"paper";
 export type hooksPlatformGeneric = hooksPlatform|"generic";
@@ -67,9 +66,9 @@ export class script_hook {
     const onSave = path.join(this.#localFolder, fileName);
     // Git
     if (gitUrlDetect.test(urlHost)) {
-      await execFileAsync("git", ["clone", urlHost, "--depth", 1, onSave], {cwd: this.#localFolder});
-      if (await exists(path.join(onSave, "package.json"))) await execFileAsync("npm", ["install", "--no-save"], {cwd: onSave, stdio: "inherit"});
-    } else await saveFile({url: urlHost, filePath: onSave});
+      await customChildProcess.execFileAsync("git", ["clone", urlHost, "--depth", 1, onSave], {cwd: this.#localFolder});
+      if (await exists(path.join(onSave, "package.json"))) await customChildProcess.execFileAsync("npm", ["install", "--no-save"], {cwd: onSave, stdio: "inherit"});
+    } else await httpRequestLarge.saveFile({url: urlHost, filePath: onSave});
     if (!!this.#serverActions) await this.#registerScript(onSave);
     return;
   }

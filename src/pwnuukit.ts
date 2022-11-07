@@ -1,18 +1,18 @@
+import { platformManeger } from "@the-bds-maneger/server_versions";
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import { httpRequestLarge } from "@the-bds-maneger/core-utils";
+import * as globalPlatfroms from "./globalPlatfroms";
 import path from "node:path";
 import fsOld from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
-import * as globalPlatfroms from "./globalPlatfroms";
-import { platformManeger } from "@the-bds-maneger/server_versions";
-import { saveFile } from "@http/large";
-import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, id } = await pathControl("powernukkit", platformOptions);
   const jarPath = path.join(serverPath, "pwnukkit.jar");
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
   const pwNukktiData = await platformManeger.powernukkit.find(version);
-  await saveFile({url: pwNukktiData.url, filePath: jarPath})
+  await httpRequestLarge.saveFile({url: pwNukktiData.url, filePath: jarPath})
   return {
     id,
     version: pwNukktiData.version,
