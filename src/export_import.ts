@@ -1,10 +1,9 @@
+import * as coreUtils from "@the-bds-maneger/core-utils";
 import net from "node:net";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import tar from "tar";
 import { bdsRoot } from "./platformPathManeger";
-import { exists } from "./lib/extendsFs";
-import { getExternalIP } from "@http/client";
 
 export type payload = {
   httpVersion?: string,
@@ -123,7 +122,7 @@ export class exportBds {
   public async listen(port = 0) {
     return new Promise<number>(done => {
       this.#server.listen(port, async () => {
-        const externalIP = await getExternalIP();
+        const externalIP = await coreUtils.httpRequestClient.getExternalIP();
         let address = this.#server.address()["address"], port = this.#server.address()["port"];
         if (/::/.test(address)) address = `[${address}]`;
         console.log("auth token '%s'", this.authToken);
@@ -143,7 +142,7 @@ export class exportBds {
 }
 
 export async function importBds(option: {host: string, port: number, authToken: string}) {
-  if (await exists(bdsRoot)) await fs.rename(bdsRoot, bdsRoot+"_backup_"+Date.now());
+  if (await coreUtils.extendFs.exists(bdsRoot)) await fs.rename(bdsRoot, bdsRoot+"_backup_"+Date.now());
   const {socket} = await parsePayload(stringifyPayload(net.createConnection({host: option.host, port: option.port}), {request: {method: "GET", path: "/"}, header: {Authorization: option.authToken}}));
   console.info("Connection sucess!");
   const tar_extract = tar.extract({cwd: bdsRoot, noChmod: false, noMtime: false, preserveOwner: true});

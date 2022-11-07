@@ -1,19 +1,18 @@
-import path from "node:path";
-import fs from "node:fs/promises";
-import fsOld from "node:fs";
-import os from "node:os";
+import * as coreUtils from "@the-bds-maneger/core-utils";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { actionV2, actionsV2 } from "./globalPlatfroms";
-import { saveFile } from "@http/large";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { manegerConfigProprieties } from "./configManipulate";
 import { randomPort } from "./lib/randomPort";
-import extendsFs from "./lib/extendsFs";
+import fsOld from "node:fs";
+import path from "node:path";
+import fs from "node:fs/promises";
+import os from "node:os";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, serverRoot, platformIDs, id } = await pathControl("java", platformOptions);
   const javaDownload = await platformManeger.java.find(version);
-  await saveFile({url: javaDownload.url, filePath: path.join(serverPath, "server.jar")});
+  await coreUtils.httpRequestLarge.saveFile({url: javaDownload.url, filePath: path.join(serverPath, "server.jar")});
   await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: javaDownload.version, date: javaDownload.date, installDate: new Date()}));
 
   if (platformIDs.length > 1) {
@@ -136,7 +135,7 @@ export type editConfig = Gamemode|Difficulty|serverPort|maxPlayers|allowList|ser
 export async function serverConfig(platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath } = await pathControl("java", platformOptions);
   const fileProperties = path.join(serverPath, "server.properties");
-  if (!await extendsFs.exists(fileProperties)) await fs.cp(path.join(__dirname, "../configs/java/server.properties"), fileProperties);
+  if (!await coreUtils.extendFs.exists(fileProperties)) await fs.cp(path.join(__dirname, "../configs/java/server.properties"), fileProperties);
   return manegerConfigProprieties<editConfig>({
     configPath: fileProperties,
     configManipulate: {

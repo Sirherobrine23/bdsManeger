@@ -1,14 +1,12 @@
+import { platformManeger } from "@the-bds-maneger/server_versions";
+import { manegerConfigProprieties } from "./configManipulate";
+import { randomPort } from "./lib/randomPort";
+import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import * as globalPlatfroms from "./globalPlatfroms";
+import * as coreUtils from "@the-bds-maneger/core-utils";
 import path from "node:path";
 import fsOld from "node:fs";
 import fs from "node:fs/promises";
-import * as globalPlatfroms from "./globalPlatfroms";
-import { platformManeger } from "@the-bds-maneger/server_versions";
-import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import { commendExists } from "./lib/childPromisses";
-import * as httpLarge from "@http/large";
-import extendsFs, { exists, readdirrecursive } from "./lib/extendsFs";
-import { randomPort } from "./lib/randomPort";
-import { manegerConfigProprieties } from "./configManipulate";
 
 // RegExp
 export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
@@ -28,7 +26,7 @@ export async function installServer(version: string|boolean, platformOptions: bd
   await fs.readdir(serverPath).then(files => Promise.all(files.filter(file => !saveFileFolder.test(file)).map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true}))));
 
   const serverConfigProperties = (await fs.readFile(path.join(serverPath, "server.properties"), "utf8").catch(() => "")).trim();
-  await httpLarge.extractZip({url, folderTarget: serverPath});
+  await coreUtils.httpRequestLarge.extractZip({url, folderTarget: serverPath});
   if (serverConfigProperties) await fs.writeFile(path.join(serverPath, "server.properties"), serverConfigProperties);
   await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: bedrockData.version, date: bedrockData.date, installDate: new Date()}));
 
@@ -57,9 +55,9 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
   let command = path.join(serverPath, "bedrock_server");
   if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
     args.push(command);
-    if (await commendExists("qemu-x86_64-static")) command = "qemu-x86_64-static";
-    else if (await commendExists("qemu-x86_64")) command = "qemu-x86_64";
-    else if (await commendExists("box64")) command = "box64";
+    if (await coreUtils.customChildProcess.commendExists("qemu-x86_64-static")) command = "qemu-x86_64-static";
+    else if (await coreUtils.customChildProcess.commendExists("qemu-x86_64")) command = "qemu-x86_64";
+    else if (await coreUtils.customChildProcess.commendExists("box64")) command = "box64";
     else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
   const backendStart = new Date();
@@ -161,7 +159,7 @@ export type bedrockConfig = {
 export async function serverConfig(platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath } = await pathControl("bedrock", platformOptions);
   const fileProperties = path.join(serverPath, "server.properties");
-  if (!await extendsFs.exists(fileProperties)) await fs.cp(path.join(__dirname, "../configs/java/server.properties"), fileProperties);
+  if (!await coreUtils.extendFs.exists(fileProperties)) await fs.cp(path.join(__dirname, "../configs/java/server.properties"), fileProperties);
   return manegerConfigProprieties<editConfig, bedrockConfig>({
     configPath: fileProperties,
     configManipulate: {
@@ -277,9 +275,9 @@ export type resourceManifest = {
 export async function addResourcePacksToWorld(resourceId: string, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath } = await pathControl("bedrock", platformOptions);
   const serverConfigObject = (await serverConfig(platformOptions)).getConfig();
-  if (!await exists(path.join(serverPath, "worlds", serverConfigObject["level-name"], "world_resource_packs.json"))) await fs.writeFile(path.join(serverPath, "worlds", serverConfigObject["level-name"], "world_resource_packs.json"), "[]");
+  if (!await coreUtils.extendFs.exists(path.join(serverPath, "worlds", serverConfigObject["level-name"], "world_resource_packs.json"))) await fs.writeFile(path.join(serverPath, "worlds", serverConfigObject["level-name"], "world_resource_packs.json"), "[]");
   const resourcesData: resourcePacks[] = JSON.parse(await fs.readFile(path.join(serverPath, "worlds", serverConfigObject["level-name"], "world_resource_packs.json"), "utf8"));
-  const manifests: resourceManifest[] = await Promise.all((await readdirrecursive([path.join(serverPath, "resource_packs"), path.join(serverPath, "worlds", serverConfigObject["level-name"], "resource_packs")])).filter((file: string) => file.endsWith("manifest.json")).map(async (file: string) => JSON.parse(await fs.readFile(file, "utf8"))));
+  const manifests: resourceManifest[] = await Promise.all((await coreUtils.extendFs.readdirrecursive([path.join(serverPath, "resource_packs"), path.join(serverPath, "worlds", serverConfigObject["level-name"], "resource_packs")])).filter((file: string) => file.endsWith("manifest.json")).map(async (file: string) => JSON.parse(await fs.readFile(file, "utf8"))));
   const packInfo = manifests.find(pf => pf.header.uuid === resourceId);
   if (!packInfo) throw new Error("UUID to texture not installed in the server");
   if (resourcesData.includes({pack_id: resourceId})) throw new Error("Textura alredy installed in the World");

@@ -16,7 +16,7 @@
     "docs": "typedoc --readme none --out docs src/index.ts",
     "dev": "nodemon",
     "build": "tsc",
-    "test:partial": "mocha -r ts-node/register -r tsconfig-paths/register --exit",
+    "test:partial": "mocha -r ts-node/register --exit",
     "test": "npm run test:partial -- 'tests/**/*.ts'"
   },
   "repository": {
@@ -32,16 +32,14 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
+    "@the-bds-maneger/core-utils": "^1.0.0",
     "@the-bds-maneger/server_versions": "^4.2.0",
     "adm-zip": "^0.5.9",
-    "cron": "^2.1.0",
-    "got": "^12.5.2",
     "prismarine-nbt": "^2.2.1",
     "tar": "^6.1.12"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.0",
-    "@types/cron": "^2.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.11.9",
     "@types/tar": "^6.1.3",
