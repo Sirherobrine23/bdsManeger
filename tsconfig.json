@@ -11,7 +11,11 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "allowJs": true,
-    "lib": ["ES6"]
+    "lib": ["ES6"],
+    "baseUrl": ".",
+    "paths": {
+      "@core_utils/*": ["./src/utils/*"]
+    }
   },
   "include": [
     "src/**/*"

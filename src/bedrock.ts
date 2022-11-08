@@ -1,6 +1,6 @@
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { manegerConfigProprieties } from "./configManipulate";
-import { randomPort } from "./lib/randomPort";
+import { randomPort } from "./utils/randomPort";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import * as globalPlatfroms from "./globalPlatfroms";
 import * as coreUtils from "@the-bds-maneger/core-utils";

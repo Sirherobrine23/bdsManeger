@@ -16,7 +16,7 @@
     "docs": "typedoc --readme none --out docs src/index.ts",
     "dev": "nodemon",
     "build": "tsc",
-    "test:partial": "mocha -r ts-node/register --exit",
+    "test:partial": "mocha -r ts-node/register -r tsconfig-paths/register --exit",
     "test": "npm run test:partial -- 'tests/**/*.ts'"
   },
   "repository": {

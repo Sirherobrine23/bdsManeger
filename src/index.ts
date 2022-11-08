@@ -4,7 +4,7 @@ import * as globalPlatfroms from "./globalPlatfroms";
 import * as pluginManeger from "./plugin/plugin";
 import * as export_import from "./export_import";
 import * as pluginHooks from "./plugin/hook";
-import * as proxy from "./lib/proxy";
+import * as proxy from "./utils/proxy";
 
 // Platforms
 import * as Bedrock from "./bedrock";

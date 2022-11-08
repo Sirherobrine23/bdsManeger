@@ -3,7 +3,7 @@ import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { spigotProprieties } from "./spigot";
 import * as globalPlatfroms from "./globalPlatfroms";
 import * as coreUtils from "@the-bds-maneger/core-utils";
-import Proprieties from "./lib/Proprieties";
+import Proprieties from "./utils/Proprieties";
 import fsOld from "node:fs";
 import path from "node:path";
 import fs from "node:fs/promises";
