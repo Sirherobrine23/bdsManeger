@@ -1,6 +1,9 @@
 import dgram from "node:dgram";
 import net from "node:net";
 
+export type playitTunnelOptions = {};
+export async function playitTunnel(options: playitTunnelOptions) {}
+
 export type proxyUdpToTcpOptions = {
   udpType?: dgram.SocketType,
   listen?: number,
