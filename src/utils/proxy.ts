@@ -2,38 +2,37 @@ import type { HTTPError } from "got";
 import { httpRequest } from "@the-bds-maneger/core-utils";
 import { format } from "node:util";
 import crypto from "node:crypto";
-import dgram from "node:dgram";
+// import dgram from "node:dgram";
 import net from "node:net";
-import { writeFileSync } from "node:fs";
 
 export type agentSecret = {type: "agent-secret", secret_key: string};
-
-/**
- * Create a key to asynchronously authenticate playit.gg clients
- */
-export async function playitClaimUrl(clainUrlCallback?: (url: string) => void) {
-  const claimCode = crypto.pseudoRandomBytes(5).toString("hex");
-  const url = format("https://playit.gg/claim/%s?type=%s&name=%s", claimCode, "self-managed", `bdscore_agent`);
-  if (clainUrlCallback) clainUrlCallback(url); else console.log("Playit claim url: %s", url);
-
-  // Register to API
-  let waitAuth = 0;
-  let authAttempts = 0;
-  async function getSecret(): Promise<agentSecret> {
-    return httpRequest.getJSON({url: "https://api.playit.cloud/agent", method: "POST", headers: {}, body: {type: "exchange-claim-for-secret", claim_key: claimCode}}).catch(async (err: HTTPError) => {
-      if (err?.response?.statusCode === 404||err?.response?.statusCode === 401) {
-        if (err.response.statusCode === 404) if (authAttempts++ > 225) throw new Error("client not open auth url");
-        if (err.response.statusCode === 401) if (waitAuth++ > 16) throw new Error("Claim code not authorized per client");
-        await new Promise(resolve => setTimeout(resolve, 500));
-        return getSecret();
-      }
-      throw err;
-    });
-  }
-
-  return (await getSecret()).secret_key;
+export type playitTunnelOptions = {secretKey: string, apiUrl?: string, controlAddress?: string, clientVersion?: string};
+export type tunnelList = {
+  type: "account-tunnels",
+  agent_id: string,
+  tunnels: {
+    id: string,
+    enabled: boolean,
+    name?: string,
+    ip_address: string,
+    ip_hostname: string,
+    custom_domain?: string,
+    assigned_domain: string,
+    display_address: string,
+    is_dedicated_ip: boolean,
+    from_port: number,
+    to_port: number,
+    tunnel_type: "minecraft-bedrock"|"minecraft-java",
+    port_type: "udp"|"tcp"|"both",
+    firewall_id?: string,
+    protocol: {
+      protocol: "to-agent",
+      local_ip: string,
+      local_port: number,
+      agent_id: number
+    }
+  }[]
 }
-
 export type playitAgentAccountStatus = {type: "agent-account-status", status: "verified-account", account_id: number};
 export type agentConfig = {
   type: "agent-config",
@@ -63,33 +62,33 @@ export type playitTunnelAuth = {
   content: number[]
 }
 
-export type playitTunnelOptions = {secretKey: string, apiUrl?: string, controlAddress?: string, clientVersion?: string};
-export type tunnelList = {
-  type: "account-tunnels",
-  agent_id: string,
-  tunnels: {
-    id: string,
-    enabled: boolean,
-    name?: string,
-    ip_address: string,
-    ip_hostname: string,
-    custom_domain?: string,
-    assigned_domain: string,
-    display_address: string,
-    is_dedicated_ip: boolean,
-    from_port: number,
-    to_port: number,
-    tunnel_type: "minecraft-bedrock"|"minecraft-java",
-    port_type: "udp"|"tcp"|"both",
-    firewall_id?: string,
-    protocol: {
-      protocol: "to-agent",
-      local_ip: string,
-      local_port: number,
-      agent_id: number
-    }
-  }[]
+
+/**
+ * Create a key to asynchronously authenticate playit.gg clients
+ */
+export async function playitClainSecret(clainUrlCallback?: (url: string) => void) {
+  const claimCode = crypto.pseudoRandomBytes(5).toString("hex");
+  const url = format("https://playit.gg/claim/%s?type=%s&name=%s", claimCode, "self-managed", `bdscore_agent`);
+  if (clainUrlCallback) clainUrlCallback(url); else console.log("Playit claim url: %s", url);
+
+  // Register to API
+  let waitAuth = 0;
+  let authAttempts = 0;
+  async function getSecret(): Promise<agentSecret> {
+    return httpRequest.getJSON({url: "https://api.playit.cloud/agent", method: "POST", headers: {}, body: {type: "exchange-claim-for-secret", claim_key: claimCode}}).catch(async (err: HTTPError) => {
+      if (err?.response?.statusCode === 404||err?.response?.statusCode === 401) {
+        if (err.response.statusCode === 404) if (authAttempts++ > 225) throw new Error("client not open auth url");
+        if (err.response.statusCode === 401) if (waitAuth++ > 16) throw new Error("Claim code not authorized per client");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return getSecret();
+      }
+      throw err;
+    });
+  }
+
+  return (await getSecret()).secret_key;
 }
+
 
 /**
  * Crie um tunnel para o minecraft bedrock ou minecraft java para que usuarios fora da rede possa se conectar no servidor
@@ -119,8 +118,8 @@ export async function playitTunnel(options: playitTunnelOptions) {
         type: "list-account-tunnels"
       }
     }).catch(err => Promise.reject(JSON.parse(err.response?.body?.toString())));
-
-    return {...data};
+    data.tunnels = data.tunnels.filter(tunnel => (["minecraft-bedrock", "minecraft-java"]).includes(tunnel.tunnel_type));
+    return data;
   }
 
   async function createTunnel(options: {tunnel_for: "bedrock"|"java", name: string, local_ip: string, local_port: number}) {
@@ -141,89 +140,11 @@ export async function playitTunnel(options: playitTunnelOptions) {
     return (await listTunnels()).tunnels.find(tunnel => tunnel.id === tunnelCreated.id);
   }
 
-  return {agentInfo, signTunnel, listTunnels, createTunnel};
-}
+  async function connectTunnel(name?: string) {
+    const tunnelInfo = (await listTunnels()).tunnels.find(tunnel => name?(tunnel.name === name||tunnel.id === name):true);
+    if (!tunnelInfo) throw new Error("No tunnel selected");
+    if (tunnelInfo.port_type !== "tcp") throw new Error("Current support only TCP tunnel");
+  }
 
-export type proxyUdpToTcpOptions = {
-  udpType?: dgram.SocketType,
-  listen?: number,
-  portListen?: (port: number) => void
-};
-
-export type proxyTcpToUdpClient = {
-  udpType?: dgram.SocketType,
-  listen?: number,
-  remote: {
-    host: string,
-    port: number
-  },
-};
-
-/**
- * Transfer packets from UDP to TCP to send through some tunnel that only accepts TCP
- *
- * This also means that it will also have error transporting the data, so it is not guaranteed to work properly even more when dealing with UDP packets.
- */
-export function proxyUdpToTcp(udpPort: number, options?: proxyUdpToTcpOptions) {
-  const tcpServer = net.createServer();
-  tcpServer.on("error", err => console.error(err));
-  tcpServer.on("connection", socket => {
-    const udpClient = dgram.createSocket(options?.udpType||"udp4");
-
-    // Close Sockets
-    udpClient.once("close", () => socket.end());
-    socket.once("close", () => udpClient.close());
-
-    // Print error
-    udpClient.on("error", console.error);
-    socket.on("error", console.error);
-
-    // Pipe Datas
-    udpClient.on("message", data => socket.write(data));
-    socket.on("data", data => udpClient.send(data));
-
-    // Connect
-    udpClient.connect(udpPort);
-  });
-
-  // Listen
-  tcpServer.listen(options?.listen||0, function() {
-    const addr = this.address();
-    if (options?.portListen) options.portListen(addr.port);
-    console.debug("bds proxy port listen, %s, (udp -> tcp)", addr.port);
-    tcpServer.once("close", () => console.debug("bds proxy close, %s", addr.port));
-  });
-
-  return tcpServer;
-}
-
-export function proxyTcpToUdp(options: proxyTcpToUdpClient) {
-  const sessions: {[keyIP: string]: net.Socket} = {};
-  const udp = dgram.createSocket(options?.udpType||"udp4");
-
-  udp.on("error", console.error);
-  udp.on("message", (msg, ipInfo) => {
-    const keyInfo = `${ipInfo.address}:${ipInfo.port}`;
-
-    // Client TCP
-    if (!sessions[keyInfo]) {
-      sessions[keyInfo] = net.createConnection(options.remote);
-      sessions[keyInfo].on("data", data => udp.send(data, ipInfo.port, ipInfo.address));
-      sessions[keyInfo].on("error", console.error);
-      sessions[keyInfo].once("close", () => {
-        delete sessions[keyInfo];
-        console.log("Client %s:%f close", ipInfo.address, ipInfo.port);
-      });
-      console.log("Client %s:%f connected", ipInfo.address, ipInfo.port);
-    }
-
-    // Send message
-    sessions[keyInfo].write(msg);
-  });
-
-  // Listen port
-  udp.bind(options.listen||0, function(){
-    const addr = this.address();
-    console.log("Port listen, %s (tcp -> udp)", addr.port);
-  });
+  return {agentInfo, signTunnel, listTunnels, createTunnel, connectTunnel};
 }

@@ -1,4 +1,4 @@
-import Proprieties from "../../src/lib/Proprieties";
+import Proprieties from "../../src/utils/Proprieties";
 const stringExample = `test.ls=aaa\ntest.ab=true`;
 
 describe("Proprieties", () => {
