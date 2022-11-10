@@ -9,10 +9,10 @@ import fsOld from "node:fs";
 import fs from "node:fs/promises";
 
 // RegExp
-export const saveFileFolder = /^(worlds|server\.properties|config|((permissions|allowlist|valid_known_packs)\.json)|(development_.*_packs))$/;
-export const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
-export const started = /\[.*\]\s+Server\s+started\./;
-export const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
+const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
+const started = /\[.*\]\s+Server\s+started\./;
+const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
+const fileSave = /^(worlds|server\.properties|((permissions|allowlist)\.json))$/;
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, serverRoot, platformIDs, id } = await pathControl("bedrock", platformOptions);
@@ -23,14 +23,18 @@ export async function installServer(version: string|boolean, platformOptions: bd
   if (!url) throw new Error("No url to current os platform");
 
   // Remover files
-  await fs.readdir(serverPath).then(files => Promise.all(files.filter(file => !saveFileFolder.test(file)).map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true}))));
+  const files = await fs.readdir(serverPath);
+  await Promise.all(files.filter(file => !fileSave.test(file)).map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true})));
+  const backups = await Promise.all(files.filter(file => fileSave.test(file)).map(async file => fs.lstat(path.join(serverPath, file)).then(res => res.isFile()?fs.readFile(path.join(serverPath, file)).then(data => ({data, file: path.join(serverPath, file)})).catch(() => null):null)))
 
-  const serverConfigProperties = (await fs.readFile(path.join(serverPath, "server.properties"), "utf8").catch(() => "")).trim();
+  // Extract file
   await coreUtils.httpRequestLarge.extractZip({url, folderTarget: serverPath});
-  if (serverConfigProperties) await fs.writeFile(path.join(serverPath, "server.properties"), serverConfigProperties);
   await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: bedrockData.version, date: bedrockData.date, installDate: new Date()}));
 
-  if (platformIDs.length > 1) {
+  // Restore files
+  if (backups.length > 0) await Promise.all(backups.filter(file => file !== null).map(({data, file}) => fs.writeFile(file, data).catch(() => null)));
+
+  if (platformIDs.length > 2) {
     let v4: number, v6: number;
     const platformPorts = (await Promise.all(platformIDs.map(async id =>(await serverConfig({id})).getConfig()))).map(config => ({v4: config["server-port"], v6: config["server-portv6"]}));
     while (!v4||!v6) {
