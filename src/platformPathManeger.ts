@@ -106,18 +106,30 @@ export async function changeDefault(platform: bdsPlatform, id: bdsPlatformOption
   };
 }
 
+export type platformIds = {
+  [platform in bdsPlatform]?: {
+    realID?: string,
+    id: string,
+  }[]
+};
+
 /**
- * Get all ids to platform
- * @param platform
+ * Get all ids to all platforms installed
  * @returns
  */
-export async function getIds(platform?: bdsPlatform) {
+export async function getIds(): Promise<platformIds>;
+/**
+ * Get all ids to platform
+ * @param platform - Set platform to get ids
+ * @returns
+ */
+export async function getIds(platform: bdsPlatform): Promise<string[]>;
+export async function getIds(platform?: bdsPlatform): Promise<platformIds|string[]> {
   if (!platform) {
-    const platformIds: {[platform: string]: {id: string, realID?: string}[]} = {};
+    const platformIds: platformIds = {};
     if (!await extendFs.exists(bdsRoot)) return platformIds;
-    const Platforms = await fs.readdir(bdsRoot);
-    if (Platforms.filter(folder => !platformArray.includes(folder as bdsPlatform)).length > 0) throw new Error("Old or invalid Platform path.");
-    for (const Platform of Platforms) {
+    const Platforms = (await fs.readdir(bdsRoot)).filter(folder => platformArray.includes(folder as bdsPlatform));
+    await Promise.all(Platforms.map(async Platform => {
       for (const id of await fs.readdir(path.join(bdsRoot, Platform))) {
         if (!platformIds[Platform]) platformIds[Platform] = []
         const idPlatform = path.join(bdsRoot, Platform, id);
@@ -125,7 +137,7 @@ export async function getIds(platform?: bdsPlatform) {
         if (idPlatform !== realPath) platformIds[Platform].push({id, realID: path.basename(realPath)});
         else platformIds[Platform].push({id});
       }
-    }
+    }));
     return platformIds;
   }
   if (!platformArray.includes(platform)) throw new Error("Invalid platform");
