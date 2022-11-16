@@ -19,7 +19,7 @@ export async function installServer(version: string|boolean, platformOptions: bd
   const bedrockData = await platformManeger.bedrock.find(version);
   let platform = process.platform;
   if (platform === "android") platform = "linux";
-  const url = bedrockData?.url[platform];
+  let url = bedrockData?.url[platform]?.[process.arch];
   if (!url) throw new Error("No url to current os platform");
 
   // Remover files

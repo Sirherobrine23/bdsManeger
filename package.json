@@ -14,7 +14,6 @@
   },
   "scripts": {
     "docs": "typedoc --readme none --out docs src/index.ts",
-    "dev": "nodemon",
     "build": "tsc",
     "test:partial": "mocha -r ts-node/register --exit",
     "test": "npm run test:partial -- 'tests/**/*.ts'"
@@ -32,8 +31,8 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@the-bds-maneger/core-utils": "^1.0.0",
-    "@the-bds-maneger/server_versions": "^4.2.0",
+    "@the-bds-maneger/core-utils": "^1.1.1",
+    "@the-bds-maneger/server_versions": "^4.3.0",
     "adm-zip": "^0.5.9",
     "prismarine-nbt": "^2.2.1",
     "tar": "^6.1.12"
@@ -46,7 +45,7 @@
     "mocha": "^10.1.0",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.1.0",
-    "typedoc": "^0.23.20",
-    "typescript": "^4.8.4"
+    "typedoc": "^0.23.21",
+    "typescript": "^4.9.3"
   }
 }

@@ -1,6 +1,6 @@
 FROM ghcr.io/sirherobrine23/initjs:latest
 # Install dependecies to Bedrock server
-RUN (echo "deb http://security.ubuntu.com/ubuntu focal-security main" | tee /etc/apt/sources.list.d/focal-security.list && apt update && apt install -y libssl1.1) || exit 0
+RUN (apt update && apt install -y libssl1.1 || (echo "deb http://security.ubuntu.com/ubuntu focal-security main" | tee /etc/apt/sources.list.d/focal-security.list && apt update && apt install -y libssl1.1)) || echo exit $?
 
 # Add non root user and Install oh my zsh
 ARG USERNAME="devcontainer"

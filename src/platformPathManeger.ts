@@ -1,14 +1,9 @@
+import { extendFs } from "@the-bds-maneger/core-utils";
 import crypto from "node:crypto";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
-import { extendFs } from "@the-bds-maneger/core-utils";
-
-export let bdsRoot = path.join(os.homedir(), ".bdsManeger");
-if (process.env.BDS_HOME) {
-  if (process.env.BDS_HOME.startsWith("~")) process.env.BDS_HOME = process.env.BDS_HOME.replace("~", os.homedir());
-  bdsRoot = process.env.BDS_HOME;
-}
+export let bdsRoot = process.env.BDS_HOME?(process.env.BDS_HOME.startsWith("~")?process.env.BDS_HOME.replace("~", os.homedir()):process.env.BDS_HOME):path.join(os.homedir(), ".bdsManeger");
 
 export type bdsPlatform = "bedrock"|"java"|"pocketmine"|"spigot"|"powernukkit"|"paper";
 export type bdsPlatformOptions = {

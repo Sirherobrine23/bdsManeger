@@ -1,8 +1,19 @@
+image:
+  file: .devcontainer/Dockerfile
 tasks:
   - init: npm install
-ports:
-  - port: 3000
-    visibility: public
-    onOpen: ignore
-  - port: 19132
-    visibility: public
+vscode:
+  extensions:
+    - formulahendry.code-runner
+    - github.vscode-pull-request-github
+    - redhat.vscode-yaml
+    - eamodio.gitlens
+    - wix.vscode-import-cost
+    - eg2.vscode-npm-script
+    - christian-kohler.npm-intellisense
+    - christian-kohler.path-intellisense
+    - aaron-bond.better-comments
+    - vscode-icons-team.vscode-icons
+    - cschleiden.vscode-github-actions
+    - oderwat.indent-rainbow
+    - ms-azuretools.vscode-docker
