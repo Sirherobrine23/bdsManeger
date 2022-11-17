@@ -122,6 +122,7 @@ export type editConfig =
 {name: "maxThreads", data: number}|
 {name: "levelName", data: string}|
 {name: "levelSeed", data?: string}|
+{name: "levelType", data?: "FLAT"|"LEGACY"|"DEFAULT"}|
 {name: "defaultPlayerPermissionLevel", data: "visitor"|"member"|"operator"}|
 {name: "texturepackRequired", data: boolean}|
 {name: "chatRestriction", data: "None"|"Dropped"|"Disabled"}|
@@ -219,6 +220,10 @@ export async function serverConfig(platformOptions: bdsPlatformOptions = {id: "d
       levelSeed: {
         regexReplace: /level-seed=[0-9]+/,
         valueFormat: "level-seed=%f"
+      },
+      levelType: {
+        regexReplace: /level-type=(FLAT|LEGACY|DEFAULT)/,
+        valueFormat: "level-type=%s"
       },
       defaultPlayerPermissionLevel: {
         regexReplace: /default-player-permission-level=(visitor|member|operator)/,
