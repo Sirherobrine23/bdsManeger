@@ -1,12 +1,12 @@
 # Bds Maneger Core
 
-A quick and simple way to create and manage Minecraft servers like `Bedrock`, `Java`, `Paper`, `Spigot`, `Pocketmine-MP` and `Powernukkit`.
+A quick way to install, update and start your Minecraft Java and Bedrock server.
 
-## Requeriments
+## Current Bds core support servers
 
-- Nodejs (`16^`).
-- linux/Windows/Macos.
-
-## Wiki
-
-We are moving the documentation [here](https://wiki.bdsmaneger.sirherobrine23.org/).
+1. `Bedrock` (Mojang)
+2. `Java` (Mojang)
+3. `Pocketmine` (PMMP - Minecraft bedrock server writed in PHP)
+4. `Spigot` (Spigot-MC is Minecraft java server to add plugins and more to server)
+5. `Powernukkit` (Minecraft Bedrock Server in java)
+6. `Paper` (PaperMC is Minecraft java server with plugins and mods)
