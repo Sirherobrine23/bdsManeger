@@ -1,4 +1,4 @@
-import { extendFs } from "@the-bds-maneger/core-utils";
+import { extendFs } from "@sirherobrine23/coreutils";
 import crypto from "node:crypto";
 import path from "node:path";
 import fs from "node:fs/promises";

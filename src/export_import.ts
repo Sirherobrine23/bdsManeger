@@ -1,4 +1,4 @@
-import * as coreUtils from "@the-bds-maneger/core-utils";
+import * as coreUtils from "@sirherobrine23/coreutils";
 import net from "node:net";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";

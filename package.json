@@ -31,6 +31,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
+    "@sirherobrine23/coreutils": "^1.2.0",
     "@the-bds-maneger/core-utils": "^1.1.1",
     "@the-bds-maneger/server_versions": "^4.3.0",
     "adm-zip": "^0.5.9",

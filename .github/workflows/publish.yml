@@ -22,8 +22,10 @@ jobs:
     - uses: actions/setup-node@v3
       name: Setup node.js
       with:
-        node-version: 18.x
-        registry-url: https://registry.npmjs.org/
+        node-version: latest
+
+    - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
     - run: sudo npm install -g ts-node typescript
       name: Install typescript and ts-node
 

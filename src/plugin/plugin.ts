@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { bdsPlatform } from "../platformPathManeger";
-import { httpRequest, httpRequestLarge } from "@the-bds-maneger/core-utils";
+import { httpRequest, httpRequestLarge } from "@sirherobrine23/coreutils";
 
 export type pluginConfig = {
   version?: 1,

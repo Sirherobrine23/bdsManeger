@@ -1,4 +1,4 @@
-import { customChildProcess, httpRequest, httpRequestGithub, httpRequestLarge } from "@the-bds-maneger/core-utils";
+import { customChildProcess, httpRequest, httpRequestGithub, httpRequestLarge } from "@sirherobrine23/coreutils";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { platformManeger } from "@the-bds-maneger/server_versions";
 import { existsSync as fsExistsSync, Stats } from "node:fs";

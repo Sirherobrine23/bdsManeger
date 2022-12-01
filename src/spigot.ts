@@ -1,4 +1,4 @@
-import { httpRequest, httpRequestLarge, httpRequestGithub } from "@the-bds-maneger/core-utils";
+import { httpRequest, httpRequestLarge, httpRequestGithub } from "@sirherobrine23/coreutils";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import * as globalPlatfroms from "./globalPlatfroms";
 import Proprieties from "./lib/Proprieties"

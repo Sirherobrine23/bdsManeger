@@ -22,7 +22,9 @@ jobs:
       - uses: actions/setup-node@v3.5.1
         name: Setup node.js
         with:
-          node-version: 18.x
+          node-version: latest
+
+      - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
       - run: npm ci
 

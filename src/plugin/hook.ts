@@ -1,4 +1,4 @@
-import { httpRequestLarge, customChildProcess } from "@the-bds-maneger/core-utils";
+import { httpRequestLarge, customChildProcess } from "@sirherobrine23/coreutils";
 import { actionsV2 } from "../globalPlatfroms";
 import path from "node:path";
 import fs from "node:fs/promises";

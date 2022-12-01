@@ -1,3 +1,4 @@
+
 name: Test
 on:
   push:
@@ -31,8 +32,9 @@ jobs:
     - uses: actions/setup-node@v3
       name: Setup node.js
       with:
-        node-version: 18.x
-        registry-url: https://registry.npmjs.org/
+        node-version: latest
+
+    - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
     - name: Install latest java
       uses: actions/setup-java@v3
@@ -80,8 +82,9 @@ jobs:
     - uses: actions/setup-node@v3
       name: Setup node.js
       with:
-        node-version: 18.x
-        registry-url: https://registry.npmjs.org/
+        node-version: latest
+
+    - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
     - name: Install latest java
       uses: actions/setup-java@v3
