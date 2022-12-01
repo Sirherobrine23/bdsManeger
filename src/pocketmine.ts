@@ -1,6 +1,5 @@
 import { customChildProcess, httpRequest, httpRequestGithub, httpRequestLarge } from "@sirherobrine23/coreutils";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import { platformManeger } from "@the-bds-maneger/server_versions";
 import { existsSync as fsExistsSync, Stats } from "node:fs";
 import { promisify } from "node:util";
 import * as globalPlatfroms from "./globalPlatfroms";
@@ -8,6 +7,18 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
 import AdmZip from "adm-zip";
+
+export async function listVersions() {
+  return (await httpRequestGithub.GithubRelease("pmmp", "PocketMine-MP")).map(data => {
+    const pharFile = data.assets.find(data => data.name.endsWith((".phar")));
+    return {
+      version: data.tag_name,
+      publish: new Date(data.published_at),
+      pharFile: pharFile?.browser_download_url,
+      size: pharFile?.size
+    };
+  }).filter(rel => !!rel.pharFile);
+}
 
 async function findPhp(serverPath: string, extraPath?: string): Promise<string> {
   if (!extraPath) extraPath = path.join(serverPath, "bin");
@@ -105,13 +116,15 @@ export async function installServer(version: string|boolean, platformOptions: bd
   platformOptions.withBuildFolder = true;
   const { serverPath, buildFolder, id } = await pathControl("pocketmine", platformOptions);
   await installPhp(serverPath, buildFolder);
-  const info = await platformManeger.pocketmine.find(version);
-  await httpRequestLarge.saveFile({url: info?.url, filePath: path.join(serverPath, "pocketmine.phar")});
+  if (typeof version === "boolean") version = "latest";
+  if (version?.trim()?.toLowerCase() === "latest") version = (await listVersions()).at(0)?.version
+  const info = (await listVersions()).find(rel => rel.version === version);
+  await httpRequestLarge.saveFile({url: info?.pharFile, filePath: path.join(serverPath, "pocketmine.phar")});
   return {
     id,
     version: info.version,
-    url: info.url,
-    date: info.date
+    url: info.pharFile,
+    date: info.publish
   };
 }
 
