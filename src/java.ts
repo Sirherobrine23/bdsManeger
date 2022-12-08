@@ -54,13 +54,13 @@ const javaHooks: actionsV2 = {
       protocol: "IPV4/IPv6"
     });
   },
-  playerAction(data, playerConnect, playerDisconnect, playerUnknown) {
+  playerAction(data, Callbacks) {
     if (playerAction.test(data)) {
       const [, playerName, action] = data.match(data)||[];
-      if (action === "joined") playerConnect({playerName, connectTime: new Date()});
-      else if (action === "left") playerDisconnect({playerName, connectTime: new Date()});
-      else if (action === "lost") playerUnknown({playerName, connectTime: new Date(), action: "lost"});
-      else playerUnknown({playerName, connectTime: new Date()});
+      if (action === "joined") Callbacks.connect({playerName, connectTime: new Date()});
+      else if (action === "left") Callbacks.disconnect({playerName, connectTime: new Date()});
+      else if (action === "lost") Callbacks.unknown({playerName, connectTime: new Date(), action: "lost"});
+      else Callbacks.unknown({playerName, connectTime: new Date()});
     }
   },
   stopServer(components) {

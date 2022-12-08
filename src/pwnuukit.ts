@@ -18,7 +18,7 @@ export async function installServer(version: string|boolean, platformOptions: bd
     version: pwNukktiData.version,
     url: pwNukktiData.url,
     date: pwNukktiData.date
-  }
+  };
 }
 
 export const playerAction = /^.*\[.*\]\s([\S\w]+|"[\S\w]+")\s+(left|joined)\s+the\s+game$/;
@@ -39,12 +39,12 @@ export const powernukkitHooks: globalPlatfroms.actionsV2 = {
       })
     }
   },
-  playerAction(data, playerConnect, playerDisconnect, playerUnknown) {
+  playerAction(data, Callbacks) {
     if (playerAction.test(data)) {
       const [, playerName, action] = data.match(playerAction)||[];
-      if (action === "joined") playerConnect({connectTime: new Date(), playerName});
-      else if (action === "left") playerDisconnect({connectTime: new Date(), playerName});
-      else playerUnknown({connectTime: new Date(), playerName});
+      if (action === "joined") Callbacks.connect({connectTime: new Date(), playerName});
+      else if (action === "left") Callbacks.disconnect({connectTime: new Date(), playerName});
+      else Callbacks.unknown({connectTime: new Date(), playerName});
     }
   },
   stopServer(components) {

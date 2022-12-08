@@ -3,12 +3,20 @@ import readline from "node:readline";
 import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
 import { bdsPlatform } from "./platformPathManeger";
+import debug from "debug";
 export const internalSessions: {[sessionID: string]: serverActionV2} = {};
 process.once("exit", () => Object.keys(internalSessions).forEach(id => internalSessions[id].stopServer()));
+const actionsDebug = debug("bdscore:global_platform");
 
 export type actionCommandOption = {command: string, args?: string[], options?: fs.ObjectEncodingOptions & child_process.ExecFileOptions & {logPath?: {stdout: string, stderr?: string}}};
-export type playerHistoric = {[player: string]: {action: "connect"|"disconnect"|"unknown"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"; date: Date}>}};
-export type playerBase = {playerName: string, connectTime: Date, xuid?: string, action?: string};
+export type playerHistoric = {[player: string]: {action: "connect"|"disconnect"|"unknown"|"spawn"; date: Date; history: Array<{action: "connect"|"disconnect"|"unknown"|"spawn"; date: Date}>}};
+export type playerBase = {
+  playerName: string,
+  connectTime: Date,
+  xuid?: string,
+  action?: string,
+  lineString?: string
+};
 export type portListen = {port: number, host?: string, type: "TCP"|"UDP"|"TCP/UDP", protocol: "IPv4"|"IPv6"|"IPV4/IPv6"|"Unknown", proxyOrigin?: number, plugin?: string};
 export type serverStarted = Date|{
   onAvaible: Date,
@@ -20,9 +28,9 @@ export declare interface serverActionsEvent {
   once(act: "error", fn: (data: any) => void): this;
   emit(act: "error", data: any): boolean;
 
-  on(act: "playerConnect"|"playerDisconnect"|"playerUnknown", fn: (data: playerBase) => void): this;
-  once(act: "playerConnect"|"playerDisconnect"|"playerUnknown", fn: (data: playerBase) => void): this;
-  emit(act: "playerConnect"|"playerDisconnect"|"playerUnknown", data: playerBase): boolean;
+  on(act: "playerConnect"|"playerDisconnect"|"playerUnknown"|"playerSpawn", fn: (data: playerBase) => void): this;
+  once(act: "playerConnect"|"playerDisconnect"|"playerUnknown"|"playerSpawn", fn: (data: playerBase) => void): this;
+  emit(act: "playerConnect"|"playerDisconnect"|"playerUnknown"|"playerSpawn", data: playerBase): boolean;
 
   on(act: "portListening", fn: (data: portListen) => void): this;
   once(act: "portListening", fn: (data: portListen) => void): this;
@@ -50,10 +58,14 @@ export declare interface serverActionsEvent {
 }
 export class serverActionsEvent extends EventEmitter {};
 
+export type playerCallback = {
+  [T in playerHistoric[number]["action"]]: (player: playerBase) => void
+};
+
 export type actionsV2 = {
   serverStarted?: (data: string, done: (startedDate: serverStarted) => void) => void,
   portListening?: (data: string, done: (portInfo: portListen) => void) => void,
-  playerAction?: (data: string, playerConnect: (player: playerBase) => void, playerDisconnect: (player: playerBase) => void, playerUnknown: (player: playerBase) => void) => void,
+  playerAction?: (data: string, Callbacks: playerCallback) => void,
   stopServer?: (components: {child: child_process.ChildProcess, actions: serverActionV2}) => void|Promise<number>,
   playerTp?: (actions: serverActionV2, playerName: string, x: number|string, y: number|string, z: number|string) => void,
 };
@@ -88,6 +100,7 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
   processConfig.options.env = {...process.env, ...(processConfig.options.env||{})}
 
   // Run commands
+  actionsDebug("Stating %s", options.id);
   const childProcess = child_process.execFile(processConfig.command, processConfig.args, processConfig.options);
   const serverObject: serverActionV2 = {
     version: 2,
@@ -130,55 +143,98 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
   internalSessions[options.id] = serverObject;
   serverObject.events.on("exit", () => delete internalSessions[options.id]);
 
+  // Break lines with readline
+  const readlineStdout = readline.createInterface(childProcess.stdout);
+  const readlineStderr = readline.createInterface(childProcess.stderr);
+  readlineStdout.on("line", data => serverObject.events.emit("log", data));
+  readlineStderr.on("line", data => serverObject.events.emit("log", data));
+  readlineStdout.on("line", data => serverObject.events.emit("log_stdout", data));
+  readlineStderr.on("line", data => serverObject.events.emit("log_stderr", data));
+
   // Register hooks
   // Server avaible to player
-  if (options.hooks.serverStarted) serverObject.events.on("log", function started(data: string) {
-    return options.hooks.serverStarted(data, onAvaible => {
-      if (serverObject.serverStarted) return;
-      serverObject.serverStarted = onAvaible;
-      serverObject.events.emit("serverStarted", onAvaible);
-      serverObject.events.removeListener("log", started);
+  if (options.hooks.serverStarted) {
+    actionsDebug("Register server started function to %s", options.id);
+    serverObject.events.on("log", function started(data: string) {
+      return options.hooks.serverStarted(data, onAvaible => {
+        actionsDebug("Call server started function to %s", options.id);
+        if (serverObject.serverStarted) return;
+        serverObject.serverStarted = onAvaible;
+        serverObject.events.emit("serverStarted", onAvaible);
+        serverObject.events.removeListener("log", started);
+      });
     });
-  });
+  }
 
   // Server Player actions
   if (options.hooks.playerAction) {
-    const playerConnect = (data: playerBase) => serverObject.events.emit("playerConnect", data);
-    const playerDisonnect = (data: playerBase) => serverObject.events.emit("playerDisconnect", data);
-    const playerUnknown = (data: playerBase) => serverObject.events.emit("playerUnknown", data);
-    serverObject.events.on("log", data => options.hooks.playerAction(data, playerConnect, playerDisonnect, playerUnknown));
+    function updateHistoric(action: playerHistoric[0]["action"], data: playerBase) {
+      if (!serverObject.playerActions[data.playerName]) {
+        serverObject.playerActions[data.playerName] = {
+          action,
+          date: data.connectTime,
+          history: [
+            {
+              action,
+              date: data.connectTime
+            }
+          ]
+        };
+        return;
+      }
+      serverObject.playerActions[data.playerName].action = action;
+      serverObject.playerActions[data.playerName].date = data.connectTime;
+      serverObject.playerActions[data.playerName].history.push({
+        action,
+        date: data.connectTime
+      });
+    }
+    actionsDebug("Register player actions to %s", options.id);
+    const playerConnect = (data: playerBase) => {
+      actionsDebug("Player actions to %s, call connect", options.id);
+      serverObject.events.emit("playerConnect", data);
+      updateHistoric("connect", data);
+    }
+    const playerSpawn = (data: playerBase) => {
+      actionsDebug("Player actions to %s, call spawn", options.id);
+      serverObject.events.emit("playerSpawn", data);
+      updateHistoric("spawn", data);
+    }
+    const playerDisonnect = (data: playerBase) => {
+      actionsDebug("Player actions to %s, call disconnect", options.id);
+      serverObject.events.emit("playerDisconnect", data);
+      updateHistoric("disconnect", data);
+    }
+    const playerUnknown = (data: playerBase) => {
+      actionsDebug("Player actions to %s, call unknown", options.id);
+      serverObject.events.emit("playerUnknown", data);
+      updateHistoric("unknown", data);
+    }
+    const mainFunc = (data: string) => options.hooks.playerAction(data, {
+      connect: playerConnect,
+      disconnect: playerDisonnect,
+      unknown: playerUnknown,
+      spawn: playerSpawn
+    });
+    readlineStdout.on("line", mainFunc);
+    readlineStderr.on("line", mainFunc);
   }
 
   // Port listen
-  if (options.hooks.portListening) serverObject.events.on("log", data => options.hooks.portListening(data, (portData) => serverObject.events.emit("portListening", portData)));
-
-  // Port listen
-  serverObject.events.on("portListening", data => serverObject.portListening[data.port] = data);
-
-  // Player join to server
-  serverObject.events.on("playerConnect", (data): any => {
-    if (!serverObject.playerActions[data.playerName]) return serverObject.playerActions[data.playerName] = {action: "connect", date: data.connectTime, history: [{action: "connect", date: data.connectTime}]};
-    serverObject.playerActions[data.playerName].action = "connect";
-    serverObject.playerActions[data.playerName].date = data.connectTime;
-    serverObject.playerActions[data.playerName].history.push({action: "connect", date: data.connectTime});
-  });
-  // Server left from server
-  serverObject.events.on("playerDisconnect", (data): any => {
-    if (!serverObject.playerActions[data.playerName]) return serverObject.playerActions[data.playerName] = {action: "disconnect", date: data.connectTime, history: [{action: "disconnect", date: data.connectTime}]};
-    serverObject.playerActions[data.playerName].action = "disconnect";
-    serverObject.playerActions[data.playerName].date = data.connectTime;
-    serverObject.playerActions[data.playerName].history.push({action: "disconnect", date: data.connectTime});
-  });
-  // Player action so not infomed
-  serverObject.events.on("playerUnknown", (data): any => {
-    if (!serverObject.playerActions[data.playerName]) return serverObject.playerActions[data.playerName] = {action: "unknown", date: data.connectTime, history: [{action: "unknown", date: data.connectTime}]};
-    serverObject.playerActions[data.playerName].action = "unknown";
-    serverObject.playerActions[data.playerName].date = data.connectTime;
-    serverObject.playerActions[data.playerName].history.push({action: "unknown", date: data.connectTime});
-  });
+  if (options.hooks.portListening) {
+    actionsDebug("Register port listening to %s", options.id);
+    const mainFunc = (data: string) => options.hooks.portListening(data, (portData) => {
+      actionsDebug("Port listen to %s", options.id);
+      serverObject.events.emit("portListening", portData);
+      serverObject.portListening[portData.port] = portData;
+    })
+    readlineStdout.on("line", mainFunc);
+    readlineStderr.on("line", mainFunc);
+  }
 
   // Pipe logs
   if (processConfig.options.logPath) {
+    actionsDebug("Pipe log to file in %s", options.id);
     childProcess.stdout.pipe(fs.createWriteStream(processConfig.options.logPath.stdout));
     if (processConfig.options.logPath.stderr) childProcess.stderr.pipe(fs.createWriteStream(processConfig.options.logPath.stderr));
   }
@@ -187,14 +243,6 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
   childProcess.on("error", data => serverObject.events.emit("error", data));
   childProcess.on("exit", (code, signal) => serverObject.events.emit("exit", {code, signal}));
   childProcess.on("exit", () => serverObject.events.removeAllListeners());
-
-  // Break lines with readline
-  const readlineStdout = readline.createInterface(childProcess.stdout);
-  const readlineStderr = readline.createInterface(childProcess.stderr);
-  readlineStdout.on("line", data => serverObject.events.emit("log", data));
-  readlineStderr.on("line", data => serverObject.events.emit("log", data));
-  readlineStdout.on("line", data => serverObject.events.emit("log_stdout", data));
-  readlineStderr.on("line", data => serverObject.events.emit("log_stderr", data));
 
   // Return session maneger
   return serverObject;

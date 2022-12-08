@@ -11,7 +11,8 @@ import fs from "node:fs/promises";
 // RegExp
 const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
 const started = /\[.*\]\s+Server\s+started\./;
-const player = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
+const playerActionsV1 = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+([0-9]+)/;
+const newPlayerActions = /\[.*INFO\]\s+Player\s+(Spawned|connected|disconnected):\s+([\s\S\w]+)\s+(xuid:\s+([0-9]+))?/;
 const fileSave = /^(worlds|server\.properties|((permissions|allowlist)\.json))$/;
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
@@ -59,9 +60,9 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
   let command = path.join(serverPath, "bedrock_server");
   if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
     args.push(command);
-    if (await coreUtils.customChildProcess.commendExists("qemu-x86_64-static")) command = "qemu-x86_64-static";
-    else if (await coreUtils.customChildProcess.commendExists("qemu-x86_64")) command = "qemu-x86_64";
-    else if (await coreUtils.customChildProcess.commendExists("box64")) command = "box64";
+    if (await coreUtils.customChildProcess.commandExists("qemu-x86_64-static")) command = "qemu-x86_64-static";
+    else if (await coreUtils.customChildProcess.commandExists("qemu-x86_64")) command = "qemu-x86_64";
+    else if (await coreUtils.customChildProcess.commandExists("box64")) command = "box64";
     else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
   const backendStart = new Date();
@@ -74,19 +75,35 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
       });
     },
     portListening(data, done) {
-      const match = data.match(portListen);
-      if (!match) return;
-      const [, protocol, port] = match;
-      const portData: globalPlatfroms.portListen = {port: parseInt(port), type: "UDP", host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown", protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"};
-      done(portData);
+      if (!portListen.test(data)) return;
+      const [, protocol, port] = data.match(portListen);
+      done({
+        type: "UDP",
+        port: parseInt(port),
+        host: protocol?.trim() === "IPv4" ? "127.0.0.1" : protocol?.trim() === "IPv6" ? "[::]" : "Unknown",
+        protocol: protocol?.trim() === "IPv4" ? "IPv4" : protocol?.trim() === "IPv6" ? "IPv6" : "Unknown"
+      });
     },
-    playerAction(data, playerConnect, playerDisconnect, playerUnknown) {
-      if (player.test(data)) {
-        const [, action,, playerName, xuid] = data.match(player);
-        if (action === "connect") playerConnect({connectTime: new Date(), playerName: playerName, xuid});
-        else if (action === "disconnect") playerDisconnect({connectTime: new Date(), playerName: playerName, xuid});
-        else playerUnknown({connectTime: new Date(), playerName: playerName, xuid});
+    playerAction(data, Callbacks) {
+      const connectTime = new Date();
+      if (!(newPlayerActions.test(data)||playerActionsV1.test(data))) return;
+      let playerName: string, action: string, xuid: string;
+      if (newPlayerActions.test(data)) {
+        const [, actionV2,, playerNameV2,, xuidV2] = data.match(newPlayerActions);
+        playerName = playerNameV2;
+        action = actionV2;
+        xuid = xuidV2;
+      } else {
+        const [, actionV1,, playerNameV1, xuidV1] = data.match(newPlayerActions);
+        playerName = playerNameV1;
+        action = actionV1;
+        xuid = xuidV1;
       }
+      const playerData: globalPlatfroms.playerBase = {connectTime, playerName, xuid};
+      if (action === "connect") Callbacks.connect(playerData);
+      else if (action === "disconnect") Callbacks.disconnect(playerData);
+      else if (action === "Spawned") Callbacks.spawn(playerData);
+      else Callbacks.unknown({...playerData, lineString: data});
     },
     stopServer(components) {
       components.actions.runCommand("stop");

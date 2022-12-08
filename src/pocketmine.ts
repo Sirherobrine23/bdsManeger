@@ -62,14 +62,14 @@ async function buildPhp(serverPath: string, buildFolder: string) {
   if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   if (process.platform === "win32") {
     const env = {VS_EDITION: process.env.VS_EDITION||"Enterprise", SOURCES_PATH: process.env.SOURCES_PATH||`${buildFolder}\\pocketmine-php-sdk`};
-    await customChildProcess.execFileAsync("git", ["clone", "--depth=1", "https://github.com/pmmp/php-build-scripts.git", buildFolder], {cwd: buildFolder, stdio: "inherit"});
-    await customChildProcess.execAsync(".\\windows-compile-vs.bat", {cwd: buildFolder, stdio: "inherit", env});
+    await customChildProcess.execFile("git", ["clone", "--depth=1", "https://github.com/pmmp/php-build-scripts.git", buildFolder], {cwd: buildFolder});
+    await customChildProcess.exec(".\\windows-compile-vs.bat", {cwd: buildFolder, env});
     await promisify((new AdmZip(path.join(buildFolder, (await fs.readdir(buildFolder)).find(file => file.endsWith(".zip"))))).extractAllToAsync)(serverPath, false, true);
   } else {
     const buildFile = path.join(buildFolder, "build.sh");
     await fs.writeFile(buildFile, (await httpRequest.bufferFetch({url: "https://raw.githubusercontent.com/pmmp/php-build-scripts/stable/compile.sh"})).data);
     await fs.chmod(buildFile, "777");
-    await customChildProcess.execFileAsync(buildFile, ["-j"+os.cpus().length], {cwd: buildFolder, stdio: "inherit"});
+    await customChildProcess.execFile(buildFile, ["-j"+os.cpus().length], {cwd: buildFolder});
     await fs.cp(path.join(buildFolder, "bin", (await fs.readdir(path.join(buildFolder, "bin")))[0]), path.join(serverPath, "bin"), {force: true, recursive: true, preserveTimestamps: true, verbatimSymlinks: true});
   }
   await fs.rm(buildFolder, {recursive: true, force: true});
@@ -106,7 +106,7 @@ async function installPhp(serverPath: string, buildFolder: string): Promise<void
     }
   }
   // test it's works php
-  await customChildProcess.execFileAsync(await findPhp(serverPath), ["-v"]).catch(err => {
+  await customChildProcess.execFile(await findPhp(serverPath), ["-v"]).catch(err => {
     console.warn(String(err));
     return buildPhp(serverPath, buildFolder);
   });
@@ -128,8 +128,8 @@ export async function installServer(version: string|boolean, platformOptions: bd
   };
 }
 
-export const portListen = /\[.*\]:\s+Minecraft\s+network\s+interface\s+running\s+on\s+(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|\[[A-Za-z0-9:]+\]|):([0-9]+))/;
-export const started = /\[.*\].*\s+Done\s+\(.*\)\!.*/;
+export const portListen = /([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|\[[a-zA-Z0-9:]+\]):([0-9]+)/;
+export const started = /Done[\s\W\S]+Help[\s\S\W]+\?/;
 export const player = /[.*]:\s+(.*)\s+(.*)\s+the\s+game/gi;
 export const pocketmineHooks: globalPlatfroms.actionsV2 = {
   serverStarted(data, done) {
@@ -137,12 +137,11 @@ export const pocketmineHooks: globalPlatfroms.actionsV2 = {
     if (started.test(data)) done(new Date());
   },
   portListening(data, done) {
-    const portParse = data.match(portListen);
-    if (!portParse) return;
-    const [,, host, port] = portParse;
+    if (!portListen.test(data)) return;
+    const [,, host, port] = data.match(portListen);
     done({
-      protocol: /::/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
       type: "UDP",
+      protocol: /\[[a-zA-Z0-9:]+\]/.test(host?.trim())?"IPv6":/[0-9]+\.[0-9]+/.test(host?.trim())?"IPv4":"IPV4/IPv6",
       port: parseInt(port),
       host: host?.trim()
     });

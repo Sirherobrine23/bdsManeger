@@ -1,4 +1,4 @@
-import { httpRequest, httpRequestLarge, httpRequestGithub } from "@sirherobrine23/coreutils";
+import { httpRequestLarge, httpRequestGithub } from "@sirherobrine23/coreutils";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import * as globalPlatfroms from "./globalPlatfroms";
 import Proprieties from "./lib/Proprieties"
@@ -6,30 +6,31 @@ import fsOld from "node:fs";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
+import { compareVersions } from "compare-versions";
 
-async function listVersions() {
-  const data = (await httpRequest.bufferFetch("https://hub.spigotmc.org/versions/")).data.toString("utf8").split("\r").filter(line => /\.json/.test(line)).map(line => {const [, data] = line.match(/>(.*)<\//); return data?.replace(".json", "");}).filter(ver => /^[0-9]+\./.test(ver));
-  const data2 = await Promise.all(data.map(async (version) => {
-    const data = await httpRequest.getJSON<{name: string, description: string, toolsVersion: number, javaVersions?: number[], refs: {BuildData: string, Bukkit: string, CraftBukkit: string, Spigot: string}}>(`https://hub.spigotmc.org/versions/${version}.json`);
-    return {
-      version,
-      date: new Date((await httpRequest.getJSON(`https://hub.spigotmc.org/stash/rest/api/latest/projects/SPIGOT/repos/spigot/commits/${data.refs.Spigot}/`)).committerTimestamp),
-      data,
-    };
-  }));
-  return data2.sort((b, a) => a.date.getTime() - b.date.getTime());
+async function listVersions(): Promise<{version: string, date: Date, url: string}[]> {
+  const releases = (await httpRequestGithub.GithubRelease("The-Bds-Maneger", "SpigotBuilds")).filter(rel => rel.assets.some(file => file.name.endsWith(".jar")));
+  return releases.map(rel => ({
+    version: rel.tag_name,
+    date: new Date(rel.published_at),
+    url: rel.assets.find(file => file.name.endsWith(".jar"))?.browser_download_url
+  })).sort((a, b) => compareVersions(a.version, b.version));
 }
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath, id } = await pathControl("spigot", platformOptions);
-  const jarPath = path.join(serverPath, "server.jar");
-  if (typeof version === "boolean"||version === "latest") version = (await listVersions())[0].version;
-  const url = `https://github.com/The-Bds-Maneger/SpigotBuilds/releases/download/${version}/Spigot.jar`;
-  await httpRequestLarge.saveFile({url, filePath: jarPath});
+  if (!(typeof version === "boolean"||typeof version === "string" && !!version?.trim())) throw TypeError("Version only if boolean and string");
+  const serverPath = await pathControl("spigot", platformOptions);
+  const relData = (await listVersions()).find(rel => ((typeof version === "boolean"||version.trim().toLowerCase() === "latest")||version === rel.version));
+  if (!relData) throw new Error("no version found!");
+  await httpRequestLarge.saveFile({
+    url: relData.url,
+    filePath: path.join(serverPath.serverPath, "server.jar")
+  });
   return {
-    id, url,
+    id: serverPath.id,
+    url: relData.url,
     version: version,
-    date: new Date((await httpRequestGithub.GithubRelease("The-Bds-Maneger", "SpigotBuilds", version)).created_at),
+    date: relData.date
   };
 }
 
@@ -55,13 +56,13 @@ export const serverConfig: globalPlatfroms.actionsV2 = {
       });
     }
   },
-  playerAction(data, playerConnect, playerDisconnect, playerUnknown) {
+  playerAction(data, Callbacks) {
     if (playerAction.test(data)) {
       const [, playerName, action] = data.match(data)||[];
-      if (action === "joined") playerConnect({playerName, connectTime: new Date()});
-      else if (action === "left") playerDisconnect({playerName, connectTime: new Date()});
-      else if (action === "lost") playerUnknown({playerName, connectTime: new Date(), action: "lost"});
-      else playerUnknown({playerName, connectTime: new Date()});
+      if (action === "joined") Callbacks.connect({playerName, connectTime: new Date()});
+      else if (action === "left") Callbacks.disconnect({playerName, connectTime: new Date()});
+      else if (action === "lost") Callbacks.unknown({playerName, connectTime: new Date(), action: "lost"});
+      else Callbacks.unknown({playerName, connectTime: new Date()});
     }
   },
   stopServer(components) {
