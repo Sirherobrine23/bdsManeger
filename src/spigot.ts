@@ -9,12 +9,12 @@ import os from "node:os";
 import { compareVersions } from "compare-versions";
 
 async function listVersions(): Promise<{version: string, date: Date, url: string}[]> {
-  const releases = (await httpRequestGithub.GithubRelease("The-Bds-Maneger", "SpigotBuilds")).filter(rel => rel.assets.some(file => file.name.endsWith(".jar")));
+  const releases = (await httpRequestGithub.GithubRelease("The-Bds-Maneger", "SpigotBuilds")).filter(rel => rel.tag_name !== "latest" && rel.assets.some(file => file.name.endsWith(".jar")));
   return releases.map(rel => ({
     version: rel.tag_name,
     date: new Date(rel.published_at),
     url: rel.assets.find(file => file.name.endsWith(".jar"))?.browser_download_url
-  })).sort((a, b) => compareVersions(a.version, b.version));
+  })).sort((a, b) => compareVersions(a.version.replace(/\-[a-zA-Z\-]+/, ".0"), b.version.replace(/\-[a-zA-Z\-]+/, ".0")));
 }
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
