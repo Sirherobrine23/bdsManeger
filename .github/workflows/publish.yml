@@ -24,13 +24,6 @@ jobs:
       with:
         node-version: latest
 
-    - name: Add Github packages auth token
-      run: |
-        if ! cat ~/.npmrc | grep -q "//npm.pkg.github.com/:_authToken="; then
-          echo "Setup npm token"
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
-        fi
-
     - run: sudo npm install -g ts-node typescript
       name: Install typescript and ts-node
 

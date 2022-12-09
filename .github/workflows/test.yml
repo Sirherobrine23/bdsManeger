@@ -34,13 +34,6 @@ jobs:
       with:
         node-version: latest
 
-    - name: Add Github packages auth token
-      run: |
-        if ! cat ~/.npmrc | grep -q "//npm.pkg.github.com/:_authToken="; then
-          echo "Setup npm token"
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
-        fi
-
     - name: Install latest java
       uses: actions/setup-java@v3
       if: matrix.platform == 'Java' || matrix.platform == 'Paper' || matrix.platform == 'Spigot' || matrix.platform == 'Powernukkit'
@@ -88,13 +81,6 @@ jobs:
       name: Setup node.js
       with:
         node-version: latest
-
-    - name: Add Github packages auth token
-      run: |
-        if ! cat ~/.npmrc | grep -q "//npm.pkg.github.com/:_authToken="; then
-          echo "Setup npm token"
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
-        fi
 
     - name: Install latest java
       uses: actions/setup-java@v3

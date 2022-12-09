@@ -66,8 +66,8 @@ export class script_hook {
     const onSave = path.join(this.#localFolder, fileName);
     // Git
     if (gitUrlDetect.test(urlHost)) {
-      await customChildProcess.execFileAsync("git", ["clone", urlHost, "--depth", 1, onSave], {cwd: this.#localFolder});
-      if (await exists(path.join(onSave, "package.json"))) await customChildProcess.execFileAsync("npm", ["install", "--no-save"], {cwd: onSave, stdio: "inherit"});
+      await customChildProcess.execFile("git", ["clone", urlHost, "--depth", "1", onSave], {cwd: this.#localFolder});
+      if (await exists(path.join(onSave, "package.json"))) await customChildProcess.execFile("npm", ["install", "--no-save"], {cwd: onSave});
     } else await httpRequestLarge.saveFile({url: urlHost, filePath: onSave});
     if (!!this.#serverActions) await this.#registerScript(onSave);
     return;
