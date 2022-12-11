@@ -41,12 +41,6 @@ jobs:
         distribution: temurin
         java-version: "17"
 
-    - name: Install apt dependecies to Pocketmine
-      if: matrix.platform == 'Pocketmine'
-      run: |
-        sudo apt update
-        sudo apt install -y build-essential make wget gzip bzip2 bison git cmake re2c autoconf automake pkg-config libtool* unzip zip tar
-
     # Install dependecies
     - name: Install nodejs dependencies
       run: npm ci
@@ -54,6 +48,8 @@ jobs:
     # Run test
     - name: Test
       run: npm run test:partial -- tests/Platforms/${{ matrix.platform }}.ts
+      env:
+        DEBUG: "bdscore:*,coreutils:*"
 
     # Upload bds root
     - name: Upload BdsCore folder
@@ -87,11 +83,6 @@ jobs:
       with:
         distribution: temurin
         java-version: "17"
-
-    - name: Install apt dependecies to Pocketmine
-      run: |
-        sudo apt update
-        sudo apt install -y build-essential make wget gzip bzip2 bison git cmake re2c autoconf automake pkg-config libtool* unzip zip tar
 
     # Install dependecies
     - name: Install nodejs dependencies

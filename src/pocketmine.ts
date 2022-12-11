@@ -4,6 +4,8 @@ import { existsSync as fsExistsSync, Stats } from "node:fs";
 import * as globalPlatfroms from "./globalPlatfroms";
 import path from "node:path";
 import fs from "node:fs/promises";
+import debug from "debug";
+const pocketmineDebug = debug("bdscore:platform:pocketmine");
 const phpStaticBucket = "https://objectstorage.sa-saopaulo-1.oraclecloud.com/p/0IKM-5KFpAF8PuWoVe86QFsF4sipU2rXfojpaOMEdf4QgFQLcLlDWgMSPHWmjf5W/n/grwodtg32n4d/b/bdsFiles/o/";
 
 export async function listVersions() {
@@ -34,7 +36,11 @@ async function findPhp(serverPath: string, extraPath?: string): Promise<string> 
 
 async function installPhp(serverPath: string): Promise<void> {
   let filePath = (await httpRequest.getJSON<{objects: {name: string}[]}>(phpStaticBucket)).objects.find(({name}) => name.includes(process.platform) && name.includes(process.arch))?.name;
-  if (!filePath) throw new Error("Cannot find php relase!");
+  if (!filePath) {
+    pocketmineDebug("Current OS: %s", process.platform);
+    pocketmineDebug("Current Arch: %s", process.arch);
+    throw new Error("Cannot find php release!");
+  }
   const binFolder = path.resolve(serverPath, "bin");
   if (await extendFs.exists(binFolder)) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
   filePath = phpStaticBucket+filePath;
@@ -43,9 +49,13 @@ async function installPhp(serverPath: string): Promise<void> {
   else throw new Error("Invalid file: "+filePath);
 
   // test it's works php
-  await customChildProcess.execFile(await findPhp(serverPath), ["-v"]).catch(err => {
-    console.warn(String(err));
-    throw new Error("Cannot find php release files");
+  const phpExec = await findPhp(serverPath);
+  if (!phpExec) throw new Error("Cannot find php exec file!");
+  await customChildProcess.execFile(phpExec, ["--version"]).catch(err => {
+    pocketmineDebug("PHP bin error: %O", err);
+    pocketmineDebug("Current OS: %s", process.platform);
+    pocketmineDebug("Current Arch: %s", process.arch);
+    throw new Error("Corrupt PHP in host!");
   });
 }
 
