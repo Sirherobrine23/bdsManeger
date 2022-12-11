@@ -66,7 +66,7 @@ export type actionsV2 = {
   serverStarted?: (data: string, done: (startedDate: serverStarted) => void) => void,
   portListening?: (data: string, done: (portInfo: portListen) => void) => void,
   playerAction?: (data: string, Callbacks: playerCallback) => void,
-  stopServer?: (components: {child: child_process.ChildProcess, actions: serverActionV2}) => void|Promise<number>,
+  stopServer?: (components: {child: child_process.ChildProcess, actions: serverActionV2}) => void|ReturnType<serverActionV2["stopServer"]>,
   playerTp?: (actions: serverActionV2, playerName: string, x: number|string, y: number|string, z: number|string) => void,
 };
 
@@ -78,8 +78,8 @@ export type serverActionV2 = {
   serverCommand?: actionCommandOption,
   serverStarted?: serverStarted,
   killProcess: (signal?: number|NodeJS.Signals) => boolean,
-  waitExit: () => Promise<number>
-  stopServer: () => Promise<number>,
+  waitExit: () => Promise<number|NodeJS.Signals>
+  stopServer: () => ReturnType<serverActionV2["waitExit"]>,
   runCommand?: (...command: Array<string|number|boolean>) => serverActionV2,
   tp?: (playerName: string, x: number|string, y: number|string, z: number|string) => serverActionV2,
   portListening: {[port: number]: portListen},
@@ -111,20 +111,25 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
     portListening: {},
     serverCommand: processConfig,
     runCommand(...command: Array<string|number|boolean>) {
-      childProcess.stdin.write(command.map(a => String(a)).join(" ")+"\n");
+      const commandMaped = command.map(a => String(a)).join(" ")
+      actionsDebug("%s run '%s'", options.id, commandMaped);
+      childProcess.stdin.write(commandMaped+"\n");
       return serverObject;
     },
     killProcess(signal?: number|NodeJS.Signals) {
+      actionsDebug("%s call kill with %s", options.id, signal);
       if(childProcess?.killed) return childProcess?.killed;
       return childProcess.kill(signal);
     },
     stopServer() {
+      actionsDebug("%s call stop server", options.id);
       if (options.hooks.stopServer === undefined) childProcess.kill("SIGKILL");
-      options.hooks.stopServer({child: childProcess, actions: serverObject});
-      return serverObject.waitExit();
+      const data = options.hooks.stopServer({child: childProcess, actions: serverObject});
+      if (!data) return serverObject.waitExit();
+      return data;
     },
-    async waitExit(): Promise<number> {
-      if (childProcess.exitCode !== null) return childProcess.exitCode;
+    async waitExit(): Promise<number|NodeJS.Signals> {
+      if (childProcess.exitCode||childProcess.signalCode) return childProcess.exitCode||childProcess.signalCode;
       return new Promise<number>((done, reject) => {
         childProcess.once("error", err => reject(err));
         childProcess.once("close", code => done(code));
@@ -145,25 +150,30 @@ export async function actionV2(options: {id: string, platform: bdsPlatform, proc
 
   // Break lines with readline
   const readlineStdout = readline.createInterface(childProcess.stdout);
+  readlineStdout.on("line", data => {
+    serverObject.events.emit("log", data);
+    serverObject.events.emit("log_stdout", data)
+  });
   const readlineStderr = readline.createInterface(childProcess.stderr);
-  readlineStdout.on("line", data => serverObject.events.emit("log", data));
-  readlineStderr.on("line", data => serverObject.events.emit("log", data));
-  readlineStdout.on("line", data => serverObject.events.emit("log_stdout", data));
-  readlineStderr.on("line", data => serverObject.events.emit("log_stderr", data));
+  readlineStderr.on("line", data => {
+    serverObject.events.emit("log", data);
+    serverObject.events.emit("log_stderr", data);
+  });
 
   // Register hooks
   // Server avaible to player
   if (options.hooks.serverStarted) {
     actionsDebug("Register server started function to %s", options.id);
-    serverObject.events.on("log", function started(data: string) {
+    function started(data: string) {
       return options.hooks.serverStarted(data, onAvaible => {
         actionsDebug("Call server started function to %s", options.id);
         if (serverObject.serverStarted) return;
         serverObject.serverStarted = onAvaible;
         serverObject.events.emit("serverStarted", onAvaible);
-        serverObject.events.removeListener("log", started);
       });
-    });
+    }
+    readlineStderr.on("line", started);
+    readlineStdout.on("line", started);
   }
 
   // Server Player actions
