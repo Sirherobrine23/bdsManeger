@@ -2,7 +2,11 @@ name: Deploy bds core wiki
 on:
   push:
     branches:
-      - main
+    - main
+    paths:
+    - "src/**/*"
+    - "tests/**/*"
+    - "package*.json"
 
 permissions:
   contents: read
