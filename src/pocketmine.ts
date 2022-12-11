@@ -1,4 +1,4 @@
-import { customChildProcess, httpRequest, httpRequestGithub, httpRequestLarge } from "@sirherobrine23/coreutils";
+import { customChildProcess, extendFs, httpRequestGithub, httpRequestLarge } from "@sirherobrine23/coreutils";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
 import { existsSync as fsExistsSync, Stats } from "node:fs";
 import { promisify } from "node:util";
@@ -34,48 +34,6 @@ async function findPhp(serverPath: string, extraPath?: string): Promise<string> 
   throw new Error("Cannot find php");
 }
 
-async function Readdir(pathRead: string, filter?: RegExp[]) {
-if (!filter) filter = [/.*/];
-  const fixedPath = path.resolve(pathRead);
-  const files: {path: string, name: string}[] = [];
-  for (const file of await fs.readdir(fixedPath)) {
-    const FullFilePath = path.join(fixedPath, file);
-    const stats = await fs.stat(FullFilePath);
-    if (stats.isDirectory()) files.push(...(await Readdir(FullFilePath, filter)));
-    else if (stats.isSymbolicLink()) {
-      const realPath = await fs.realpath(FullFilePath);
-      const statsSys = await fs.stat(realPath);
-      if (statsSys.isDirectory()) files.push(...(await Readdir(realPath, filter)));
-      else if (filter.length === 0||filter.some(x => x.test(realPath))) files.push({
-        path: FullFilePath,
-        name: path.basename(FullFilePath)
-      });
-    } else if (filter.length === 0||filter.some(x => x.test(FullFilePath))) files.push({
-      path: FullFilePath,
-      name: path.basename(FullFilePath)
-    });
-  }
-  return files;
-}
-
-async function buildPhp(serverPath: string, buildFolder: string) {
-  if (fsExistsSync(path.resolve(serverPath, "bin"))) await fs.rm(path.resolve(serverPath, "bin"), {recursive: true});
-  if (process.platform === "win32") {
-    const env = {VS_EDITION: process.env.VS_EDITION||"Enterprise", SOURCES_PATH: process.env.SOURCES_PATH||`${buildFolder}\\pocketmine-php-sdk`};
-    await customChildProcess.execFile("git", ["clone", "--depth=1", "https://github.com/pmmp/php-build-scripts.git", buildFolder], {cwd: buildFolder});
-    await customChildProcess.exec(".\\windows-compile-vs.bat", {cwd: buildFolder, env});
-    await promisify((new AdmZip(path.join(buildFolder, (await fs.readdir(buildFolder)).find(file => file.endsWith(".zip"))))).extractAllToAsync)(serverPath, false, true);
-  } else {
-    const buildFile = path.join(buildFolder, "build.sh");
-    await fs.writeFile(buildFile, (await httpRequest.bufferFetch({url: "https://raw.githubusercontent.com/pmmp/php-build-scripts/stable/compile.sh"})).data);
-    await fs.chmod(buildFile, "777");
-    await customChildProcess.execFile(buildFile, ["-j"+os.cpus().length], {cwd: buildFolder});
-    await fs.cp(path.join(buildFolder, "bin", (await fs.readdir(path.join(buildFolder, "bin")))[0]), path.join(serverPath, "bin"), {force: true, recursive: true, preserveTimestamps: true, verbatimSymlinks: true});
-  }
-  await fs.rm(buildFolder, {recursive: true, force: true});
-  console.log("PHP Build success!");
-}
-
 async function installPhp(serverPath: string, buildFolder: string): Promise<void> {
   const releases: (httpRequestGithub.githubRelease["assets"][0])[] = [];
   (await httpRequestGithub.GithubRelease("The-Bds-Maneger", "Build-PHP-Bins")).map(re => re.assets).forEach(res => releases.push(...res));
@@ -94,21 +52,22 @@ async function installPhp(serverPath: string, buildFolder: string): Promise<void
 
       // Update zts
       if (process.platform === "linux"||process.platform === "android"||process.platform === "darwin") {
-        const ztsFind = await Readdir(path.resolve(serverPath, "bin"), [/.*debug-zts.*/]);
+        const ztsFind = (await extendFs.readdirrecursive(path.resolve(serverPath, "bin"))).filter(file => /.*debug-zts.*/.test(file));
         if (ztsFind.length > 0) {
-          const phpIniPath = (await Readdir(path.resolve(serverPath, "bin"), [/php\.ini$/]))[0].path;
+          const phpIniPath = (await extendFs.readdirrecursive(path.resolve(serverPath, "bin"))).filter(file => file.endsWith("php.ini")).at(0);
           let phpIni = await fs.readFile(phpIniPath, "utf8");
           if (phpIni.includes("extension_dir")) await fs.writeFile(phpIniPath, phpIni.replace(/extension_dir=.*/g, ""));
-          phpIni = phpIni+`\nextension_dir=${path.resolve(ztsFind[0].path, "..")}`
+          phpIni = phpIni+`\nextension_dir=${path.resolve(ztsFind.at(0), "..")}`
           await fs.writeFile(phpIniPath, phpIni);
         }
       }
     }
   }
+  
   // test it's works php
   await customChildProcess.execFile(await findPhp(serverPath), ["-v"]).catch(err => {
     console.warn(String(err));
-    return buildPhp(serverPath, buildFolder);
+    throw new Error("Cannot find php release files");
   });
 }
 

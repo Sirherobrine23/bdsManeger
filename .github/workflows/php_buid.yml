@@ -1,0 +1,206 @@
+name: PHP build
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 */2 * 0"
+  push:
+    branches:
+      - main
+
+jobs:
+  # Android Build arm64
+  android:
+    runs-on: ubuntu-latest
+    name: Android
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v3
+        with:
+          repository: pmmp/php-build-scripts
+          submodules: true
+
+      - name: Cache musl
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-android_musl
+          path: muslCrossMake
+
+      - name: Build musl to android
+        env:
+          DEBIAN_FRONTEND: "noninteractive"
+        run: |
+          set -ex
+          sudo apt update
+          sudo apt -y install build-essential curl make autoconf automake libtool m4 wget gzip bzip2 bison g++ git cmake pkg-config re2c libtool* unzip zip tar
+
+          # Build musl
+          if ! [[ -d muslCrossMake ]];then
+            mkdir muslCrossMake
+            INITIAL_PATH="$(pwd)"
+            cd muslCrossMake
+            git clone https://github.com/pmmp/musl-cross-make.git ./
+            (echo "TARGET = aarch64-linux-musl"; echo "OUTPUT = /usr/local") > config.mak
+            make
+            sudo make install -j$(nproc)
+          else
+            cd muslCrossMake
+            sudo make install -j$(nproc)
+          fi
+
+      - name: "Building php bin"
+        run: |
+          ./compile.sh -t android-aarch64 -x -f -g -j$(nproc)
+          # Compress files
+          cd bin/php*/
+          pwd
+          # ZIP
+          zip -r "${{ github.workspace }}/android_arm64.zip" *
+          # tar
+          tar -czf "${{ github.workspace }}/android_arm64.tar.gz" *
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: android_arm64
+          path: "*.tar.gz"
+
+  # Linux Build
+  linux:
+    runs-on: ubuntu-latest
+    name: Linux
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v3
+        with:
+          repository: pmmp/php-build-scripts
+          submodules: true
+
+      - name: Install tools and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install make autoconf automake libtool libtool-bin m4 wget libc-bin gzip bzip2 bison g++ git re2c zip tar
+
+      - name: Compile PHP
+        run: |
+          set -ex
+          trap "exit 1" ERR
+          ./compile.sh -t linux64 -j 4 -f -g
+
+          # Compress files
+          cd bin/php*/
+          pwd
+          # ZIP
+          zip -r "${{ github.workspace }}/linux_${{ runner.arch }}.zip" *
+          # tar
+          tar -czf "${{ github.workspace }}/linux_${{ runner.arch }}.tar.gz" *
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux_x64
+          path: |
+            *.tar.gz
+            *.zip
+
+  # MacOS Build
+  macos:
+    runs-on: macos-11
+    name: MacOS
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v3
+        with:
+          repository: pmmp/php-build-scripts
+          submodules: true
+
+      - name: Install dependecies
+        run: brew install libtool autoconf automake pkg-config bison re2c
+
+      - name: "Building php to MacOS"
+        run: |
+          export PATH="/usr/local/opt/bison/bin:$PATH"
+          ./compile.sh -t mac-x86-64 -j4 -f -g || (cat *.log && exit 1)
+
+      - name: Create tarballs
+        run: |
+          cd bin/*/
+          pwd
+          tar czfv ../../darwin_x64.tar.gz *
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: darwin_x64
+          path: "*.tar.gz"
+
+  # Windows build
+  win32:
+    runs-on: windows-2019
+    name: Windows
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v3
+        with:
+          repository: pmmp/php-build-scripts
+          submodules: true
+
+      - name: Windows Depencies Install
+        run: choco install --no-progress wget
+
+      - name: "Building php bin"
+        run: .\windows-compile-vs.bat
+        env:
+          VS_EDITION: Enterprise
+          SOURCES_PATH: ${{ github.workspace }}\pocketmine-php-sdk
+
+      - name: show log
+        run: type compile.log
+
+      - name: Rename files
+        shell: node {0}
+        run: |
+          const fs = require("fs");
+          const path = require("path");
+          const files = fs.readdirSync(process.cwd()).filter(file => file.endsWith(".zip"));
+          for (const zip of files) {
+            console.log("File:", path.join(process.cwd(), zip));
+            if (/debug/i.test(zip)) fs.rmSync(path.join(process.cwd(), zip));
+            else fs.renameSync(path.join(process.cwd(), zip), path.join(process.cwd(), "win32_x64.zip"));
+          }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Windows
+          path: "*.zip"
+
+  # Upload to bucket
+  upload:
+    runs-on: ubuntu-latest
+    needs:
+    - win32
+    - macos
+    - linux
+    - android
+    steps:
+    - uses: actions/checkout@v3
+      name: Code checkout
+
+    - uses: actions/setup-node@v3
+      name: Setup node.js
+      with:
+        node-version: latest
+
+    - name: Install node depencies
+      run: npm ci
+
+    - name: Download tarbals
+      uses: actions/download-artifact@v3
+      with:
+        path: ./phpOutput
+
+    - name: Upload to bucket
+      run: node .github/uploadphp/index.mjs
+      timeout-minutes: 25
+      env:
+        OCI_AUTHKEY: ${{ secrets.OCI_AUTHKEY }}

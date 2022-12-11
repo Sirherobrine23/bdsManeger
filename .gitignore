@@ -5,3 +5,10 @@ src/**/*.d.ts
 src/**/*.d.js
 src/**/*.js
 docs/
+
+# PHP Bins
+muslCrossMake/
+phpOutput/
+*.tar.gz
+*.tgz
+*.zip

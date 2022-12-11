@@ -1,4 +1,3 @@
-import { platformManeger } from "@the-bds-maneger/server_versions";
 import { manegerConfigProprieties } from "./configManipulate";
 import { randomPort } from "./lib/randomPort";
 import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
@@ -15,39 +14,70 @@ const playerActionsV1 = /\[.*\]\s+Player\s+((dis|)connected):\s+(.*),\s+xuid:\s+
 const newPlayerActions = /\[.*INFO\]\s+Player\s+(Spawned|connected|disconnected):\s+([\s\S\w]+)\s+(xuid:\s+([0-9]+))?/;
 const fileSave = /^(worlds|server\.properties|((permissions|allowlist)\.json))$/;
 
-export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
-  const { serverPath, serverRoot, platformIDs, id } = await pathControl("bedrock", platformOptions);
-  const bedrockData = await platformManeger.bedrock.find(version);
+type bedrockVersionJSON = {
+  version: string,
+  date: Date,
+  release?: "stable"|"preview",
+  url: {
+    [platform in NodeJS.Platform]?: {
+      [arch in NodeJS.Architecture]?: string
+    }
+  }
+};
+
+export type installOptions = {
+  version: string|boolean,
+  release?: bedrockVersionJSON["release"],
+  platformOptions?: bdsPlatformOptions
+};
+
+const emulaterSoftwares = [
+  "qemu-x86_64-static",
+  "qemu-x86_64",
+  "box64"
+];
+
+export async function installServer(installOptions: installOptions) {
+  if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
+    let emitThrow = true;
+    for (const emu of emulaterSoftwares) if (await coreUtils.customChildProcess.commandExists(emu)) {emitThrow = false; break;}
+    if (emitThrow) throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
+  }
+  const folderControl = await pathControl("bedrock", installOptions?.platformOptions||{id: "default"});
+  const allVersions = await coreUtils.httpRequest.getJSON<bedrockVersionJSON[]>("https://the-bds-maneger.github.io/BedrockFetch/all.json");
+  const bedrockData = ((typeof installOptions?.version === "boolean")||(installOptions?.version?.trim()?.toLowerCase() === "latest")) ? allVersions.at(-1) : allVersions.find(rel => ((rel.release||"stable") !== (installOptions?.release||"stable")) && (installOptions.version === installOptions.version));
+
   let platform = process.platform;
   if (platform === "android") platform = "linux";
   let url = bedrockData?.url[platform]?.[process.arch];
   if (!url) throw new Error("No url to current os platform");
 
   // Remover files
-  const files = await fs.readdir(serverPath);
-  await Promise.all(files.filter(file => !fileSave.test(file)).map(file => fs.rm(path.join(serverPath, file), {recursive: true, force: true})));
-  const backups = await Promise.all(files.filter(file => fileSave.test(file)).map(async file => fs.lstat(path.join(serverPath, file)).then(res => res.isFile()?fs.readFile(path.join(serverPath, file)).then(data => ({data, file: path.join(serverPath, file)})).catch(() => null):null)))
+  const files = await fs.readdir(folderControl.serverPath);
+  await Promise.all(files.filter(file => !fileSave.test(file)).map(file => fs.rm(path.join(folderControl.serverPath, file), {recursive: true, force: true})));
+  const backups = await Promise.all(files.filter(file => fileSave.test(file)).map(async file => fs.lstat(path.join(folderControl.serverPath, file)).then(res => res.isFile()?fs.readFile(path.join(folderControl.serverPath, file)).then(data => ({data, file: path.join(folderControl.serverPath, file)})).catch(() => null):null)))
 
   // Extract file
-  await coreUtils.httpRequestLarge.extractZip({url, folderTarget: serverPath});
-  await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: bedrockData.version, date: bedrockData.date, installDate: new Date()}));
+  await coreUtils.httpRequestLarge.extractZip({url, folderTarget: folderControl.serverPath});
+  await fs.writeFile(path.join(folderControl.serverRoot, "version_installed.json"), JSON.stringify({version: bedrockData.version, date: bedrockData.date, installDate: new Date()}));
 
   // Restore files
   if (backups.length > 0) await Promise.all(backups.filter(file => file !== null).map(({data, file}) => fs.writeFile(file, data).catch(() => null)));
 
-  if (platformIDs.length > 2) {
+  if (folderControl.platformIDs.length > 2) {
     let v4: number, v6: number;
-    const platformPorts = (await Promise.all(platformIDs.map(async id =>(await serverConfig({id})).getConfig()))).map(config => ({v4: config["server-port"], v6: config["server-portv6"]}));
+    const platformPorts = (await Promise.all(folderControl.platformIDs.map(async id =>(await serverConfig({id})).getConfig()))).map(config => ({v4: config["server-port"], v6: config["server-portv6"]}));
     while (!v4||!v6) {
       const tmpNumber = await randomPort();
       if (platformPorts.some(ports => ports.v4 === tmpNumber||ports.v6 == tmpNumber)) continue;
       if (!v4) v4 = tmpNumber;
       else v6 = tmpNumber;
     };
-    await (await serverConfig({id})).editConfig({name: "serverPort", data: v4}).editConfig({name: "serverPortv6", data: v6}).save()
+    await (await serverConfig({id: folderControl.id})).editConfig({name: "serverPort", data: v4}).editConfig({name: "serverPortv6", data: v6}).save()
   }
   return {
-    id, url,
+    id: folderControl.id,
+    url: url,
     version: bedrockData.version,
     date: bedrockData.date
   };
@@ -60,13 +90,15 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
   let command = path.join(serverPath, "bedrock_server");
   if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
     args.push(command);
-    if (await coreUtils.customChildProcess.commandExists("qemu-x86_64-static")) command = "qemu-x86_64-static";
-    else if (await coreUtils.customChildProcess.commandExists("qemu-x86_64")) command = "qemu-x86_64";
-    else if (await coreUtils.customChildProcess.commandExists("box64")) command = "box64";
-    else throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/The-Bds-Maneger/Bds-Maneger-Core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
+    let emitThrow = true;
+    for (const emu of emulaterSoftwares) if (await coreUtils.customChildProcess.commandExists(emu)) {
+      emitThrow = false;
+      command = emu;
+      break;
+    }
+    if (emitThrow) throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
-  const backendStart = new Date();
-  const logFileOut = path.join(logsPath, `${backendStart.getTime()}_${process.platform}_${process.arch}.log`);
+  const backendStart = new Date(), logFileOut = path.join(logsPath, `${backendStart.getTime()}_${process.platform}_${process.arch}.log`);
   const serverConfig: globalPlatfroms.actionsV2 = {
     serverStarted(data, done) {
       if (started.test(data)) done({
