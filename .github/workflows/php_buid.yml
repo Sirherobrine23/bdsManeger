@@ -69,8 +69,13 @@ jobs:
 
   # Linux Build
   linux:
-    runs-on: ubuntu-latest
-    name: Linux
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+        - ubuntu-latest
+    name: "Linux ${{ matrix.target }}"
+    runs-on: ${{ matrix.target }}
     steps:
       - name: Clone Repository
         uses: actions/checkout@v3
@@ -100,7 +105,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: linux_x64
+          name: linux_${{ runner.arch }}
           path: |
             *.tar.gz
             *.zip
@@ -122,19 +127,24 @@ jobs:
       - name: "Building php to MacOS"
         run: |
           export PATH="/usr/local/opt/bison/bin:$PATH"
-          ./compile.sh -t mac-x86-64 -j4 -f -g || (cat *.log && exit 1)
+          ./compile.sh -j4 -f -g || (cat *.log && exit 1)
 
       - name: Create tarballs
         run: |
           cd bin/*/
           pwd
-          tar czfv ../../darwin_x64.tar.gz *
+          # ZIP
+          zip -r "${{ github.workspace }}/darwin_${{ runner.arch }}.zip" *
+          # tar
+          tar -czf "${{ github.workspace }}/darwin_${{ runner.arch }}.tar.gz" *
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: darwin_x64
-          path: "*.tar.gz"
+          name: darwin_${{ runner.arch }}
+          path: |
+            *.tar.gz
+            *.zip
 
   # Windows build
   win32:

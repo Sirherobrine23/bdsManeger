@@ -13,7 +13,7 @@ await Promise.all(files.map(async file => {
   console.log("Uploading %s", fileName);
   // https://docs.oracle.com/en-us/iaas/api/#/en/objectstorage/20160918/Object/PutObject
   await coreutils.httpRequest.bufferFetch({
-    url: `https://objectstorage.sa-saopaulo-1.oraclecloud.com/p/${ociKeyAuth}/n/grwodtg32n4d/b/bdsFiles/o/php_bin/${fileName}`,
+    url: `https://objectstorage.sa-saopaulo-1.oraclecloud.com/p/${ociKeyAuth}/n/grwodtg32n4d/b/bdsFiles/o/php_bin/${fileName.toLowerCase()}`,
     method: "PUT",
     body: createReadStream(file),
     headers: {
