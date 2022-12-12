@@ -2,7 +2,7 @@ import fs from "node:fs";
 import readline from "node:readline";
 import child_process from "node:child_process";
 import { EventEmitter } from "node:events";
-import { bdsPlatform } from "./platformPathManeger";
+import { bdsPlatform } from "./platformPathManeger.js";
 import debug from "debug";
 export const internalSessions: {[sessionID: string]: serverActionV2} = {};
 process.once("exit", () => Object.keys(internalSessions).forEach(id => internalSessions[id].stopServer()));

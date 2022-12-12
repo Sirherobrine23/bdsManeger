@@ -1,11 +1,13 @@
-import { manegerConfigProprieties } from "../configManipulate";
-import { randomPort } from "../lib/randomPort";
-import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
-import * as globalPlatfroms from "../globalPlatfroms";
-import * as coreUtils from "@sirherobrine23/coreutils";
+import { manegerConfigProprieties } from "../configManipulate.js";
+import { randomPort } from "../lib/randomPort.js";
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger.js";
+import * as globalPlatfroms from "../globalPlatfroms.js";
+import coreUtils from "@sirherobrine23/coreutils";
 import path from "node:path";
 import fsOld from "node:fs";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // RegExp
 const portListen = /\[.*\]\s+(IPv[46])\s+supported,\s+port:\s+([0-9]+)/;
@@ -28,7 +30,8 @@ type bedrockVersionJSON = {
 export type installOptions = {
   version: string|boolean,
   release?: bedrockVersionJSON["release"],
-  platformOptions?: bdsPlatformOptions
+  platformOptions?: bdsPlatformOptions,
+  generateRandomPorts?: boolean
 };
 
 const emulaterSoftwares = [
@@ -40,12 +43,12 @@ const emulaterSoftwares = [
 export async function installServer(installOptions: installOptions) {
   if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
     let emitThrow = true;
-    for (const emu of emulaterSoftwares) if (await coreUtils.customChildProcess.commandExists(emu)) {emitThrow = false; break;}
+    for (const emu of emulaterSoftwares) if (await coreUtils.childPromisses.commandExists(emu)) {emitThrow = false; break;}
     if (emitThrow) throw new Error("Cannot emulate x64 architecture. Check the documentents in \"https://github.com/core/wiki/Server-Platforms#minecraft-bedrock-server-alpha\"");
   }
   const folderControl = await pathControl("bedrock", installOptions?.platformOptions||{id: "default"});
   const allVersions = await coreUtils.httpRequest.getJSON<bedrockVersionJSON[]>("https://the-bds-maneger.github.io/BedrockFetch/all.json");
-  const bedrockData = ((typeof installOptions?.version === "boolean")||(installOptions?.version?.trim()?.toLowerCase() === "latest")) ? allVersions.at(-1) : allVersions.find(rel => ((rel.release||"stable") !== (installOptions?.release||"stable")) && (installOptions.version === installOptions.version));
+  const bedrockData = ((typeof installOptions?.version === "boolean")||(installOptions?.version?.trim()?.toLowerCase() === "latest")) ? allVersions.at(-1) : allVersions.find(rel => ((rel.release||"stable") !== (installOptions?.release||"stable")) && (rel.version === installOptions.version));
 
   let platform = process.platform;
   if (platform === "android") platform = "linux";
@@ -64,7 +67,7 @@ export async function installServer(installOptions: installOptions) {
   // Restore files
   if (backups.length > 0) await Promise.all(backups.filter(file => file !== null).map(({data, file}) => fs.writeFile(file, data).catch(() => null)));
 
-  if (folderControl.platformIDs.length > 2) {
+  if (installOptions?.generateRandomPorts||folderControl.platformIDs.length > 2) {
     let v4: number, v6: number;
     const platformPorts = (await Promise.all(folderControl.platformIDs.map(async id =>(await serverConfig({id})).getConfig()))).map(config => ({v4: config["server-port"], v6: config["server-portv6"]}));
     while (!v4||!v6) {
@@ -91,7 +94,7 @@ export async function startServer(platformOptions: bdsPlatformOptions = {id: "de
   if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
     args.push(command);
     let emitThrow = true;
-    for (const emu of emulaterSoftwares) if (await coreUtils.customChildProcess.commandExists(emu)) {
+    for (const emu of emulaterSoftwares) if (await coreUtils.childPromisses.commandExists(emu)) {
       emitThrow = false;
       command = emu;
       break;

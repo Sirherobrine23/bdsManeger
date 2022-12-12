@@ -1,7 +1,7 @@
-import { customChildProcess, extendFs, httpRequest, httpRequestGithub, httpRequestLarge } from "@sirherobrine23/coreutils";
-import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
+import { childPromisses, extendFs, httpRequest, httpRequestGithub, httpRequestLarge } from "@sirherobrine23/coreutils";
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger.js";
 import { existsSync as fsExistsSync, Stats } from "node:fs";
-import * as globalPlatfroms from "../globalPlatfroms";
+import * as globalPlatfroms from "../globalPlatfroms.js";
 import path from "node:path";
 import fs from "node:fs/promises";
 import debug from "debug";
@@ -51,7 +51,7 @@ async function installPhp(serverPath: string): Promise<void> {
   // test it's works php
   const phpExec = await findPhp(serverPath);
   if (!phpExec) throw new Error("Cannot find php exec file!");
-  await customChildProcess.execFile(phpExec, ["--version"]).catch(err => {
+  await childPromisses.execFile(phpExec, ["--version"]).catch(err => {
     pocketmineDebug("PHP bin error: %O", err);
     pocketmineDebug("Current OS: %s", process.platform);
     pocketmineDebug("Current Arch: %s", process.arch);

@@ -48,7 +48,7 @@ export async function pathControl(platform: bdsPlatform, options?: bdsPlatformOp
 
   // Get real id
   if (!idRegex.test(options.id)) throw new Error("Invalid Platform ID");
-  if (options?.id === "default") options.id = path.basename(await fs.realpath(path.join(platformRoot, options.id)));
+  if (options?.id === "default") options.id = path.basename(await fs.realpath(path.join(platformRoot, options.id)).catch(async () => (await fs.readdir(platformRoot)).sort().at(0)));
 
   // Mount Paths
   const serverRoot = path.join(platformRoot, options.id);

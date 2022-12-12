@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "target": "ES2019",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ESNext",
     "declaration": true,
     "strict": false,
+    "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
@@ -15,5 +16,12 @@
   },
   "include": [
     "src/**/*"
-  ]
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "node_modules/**/*"
+  ],
+  "ts-node": {
+    "esm": true
+  }
 }

@@ -1,17 +1,20 @@
-import { platformManeger } from "@the-bds-maneger/server_versions";
-import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
-import { httpRequestLarge } from "@sirherobrine23/coreutils";
-import * as globalPlatfroms from "../globalPlatfroms";
+import coreUtils, { httpRequestLarge } from "@sirherobrine23/coreutils";
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger.js";
+import * as globalPlatfroms from "../globalPlatfroms.js";
 import path from "node:path";
 import fsOld from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
+import { compareVersions } from "compare-versions";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, id } = await pathControl("powernukkit", platformOptions);
   const jarPath = path.join(serverPath, "pwnukkit.jar");
   if (!fsOld.existsSync(serverPath)) await fs.mkdir(serverPath, {recursive: true});
-  const pwNukktiData = await platformManeger.powernukkit.find(version);
+  const allVersions = (await coreUtils.httpRequest.getJSON("https://mcpeversion-static.sirherobrine23.org/paper/all.json")).sort(({version: a}, {version: b}) => compareVersions(a, b));
+  const pwNukktiData = ((typeof version === "boolean")||(version?.trim()?.toLowerCase() === "latest")) ? allVersions.at(-1) : allVersions.find(rel => (version === rel.version));
+  if (!pwNukktiData) throw new Error("Cannot find version!");
+  // const pwNukktiData = await platformManeger.powernukkit.find(version);
   await httpRequestLarge.saveFile({url: pwNukktiData.url, filePath: jarPath})
   return {
     id,

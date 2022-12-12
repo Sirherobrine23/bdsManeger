@@ -1,0 +1,11 @@
+exit: true
+colors: true
+full-trace: true
+recursive: true
+parallel: true
+timeout: 0
+node-option:
+  - "experimental-specifier-resolution=node"
+  - "loader=ts-node/esm"
+extension:
+  - "test.ts"

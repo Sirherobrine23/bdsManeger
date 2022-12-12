@@ -1,17 +1,28 @@
-import * as coreUtils from "@sirherobrine23/coreutils";
-import { platformManeger } from "@the-bds-maneger/server_versions";
-import { actionV2, actionsV2 } from "../globalPlatfroms";
-import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
-import { manegerConfigProprieties } from "../configManipulate";
-import { randomPort } from "../lib/randomPort";
+import coreUtils from "@sirherobrine23/coreutils";
+import { actionV2, actionsV2 } from "../globalPlatfroms.js";
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger.js";
+import { manegerConfigProprieties } from "../configManipulate.js";
+import { randomPort } from "../lib/randomPort.js";
 import fsOld from "node:fs";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
+import { compareVersions } from "compare-versions";
+import {fileURLToPath} from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+type javaRemoteVersion = {
+  version: string,
+  date: string,
+  latest: boolean,
+  url: string
+};
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, serverRoot, platformIDs, id } = await pathControl("java", platformOptions);
-  const javaDownload = await platformManeger.java.find(version);
+  const allVersions = (await coreUtils.httpRequest.getJSON<javaRemoteVersion[]>("https://mcpeversion-static.sirherobrine23.org/java/all.json")).sort(({version: a}, {version: b}) => compareVersions(a, b));
+  const javaDownload = ((typeof version === "boolean")||(version?.trim()?.toLowerCase() === "latest")) ? allVersions.at(-1) : allVersions.find(rel => (version === rel.version));
+  if (!javaDownload) throw new Error("Cannot find version!");
   await coreUtils.httpRequestLarge.saveFile({url: javaDownload.url, filePath: path.join(serverPath, "server.jar")});
   await fs.writeFile(path.join(serverRoot, "version_installed.json"), JSON.stringify({version: javaDownload.version, date: javaDownload.date, installDate: new Date()}));
 

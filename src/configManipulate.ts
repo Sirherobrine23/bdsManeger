@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import utils from "node:util";
-import Proprieties, { properitiesBase } from "./lib/Proprieties";
+import Proprieties, { properitiesBase } from "./lib/Proprieties.js";
 
 export type configEdit = {name: string, data?: any};
 export async function manegerConfigProprieties<updateConfig extends configEdit, configJson extends properitiesBase = any>(config: {configPath: string, configManipulate: {[Properties in updateConfig["name"]]: ((config: string, value: updateConfig["data"]) => string)|{validate?: (value: updateConfig["data"]) => boolean, regexReplace: RegExp, valueFormat: string, addIfNotExist?: string}}}) {

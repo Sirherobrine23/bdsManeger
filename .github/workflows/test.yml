@@ -13,61 +13,7 @@ on:
     - main
 
 jobs:
-  test_partial:
-    strategy:
-      matrix:
-        platform:
-        - Bedrock
-        - Powernukkit
-        - Pocketmine
-        # very slow platforms
-        - Paper
-        - Java
-        - Spigot
-    runs-on: ubuntu-latest
-    name: "Partial test to ${{ matrix.platform }}"
-    env:
-      BDS_HOME: "~/.bdsCore"
-    steps:
-    - uses: actions/checkout@v3
-      name: Code checkout
-
-    # Install basic tools
-    - uses: actions/setup-node@v3
-      name: Setup node.js
-      with:
-        node-version: latest
-
-    - name: Install latest java
-      uses: actions/setup-java@v3
-      if: matrix.platform == 'Java' || matrix.platform == 'Paper' || matrix.platform == 'Spigot' || matrix.platform == 'Powernukkit'
-      with:
-        distribution: temurin
-        java-version: "17"
-
-    # Install dependecies
-    - name: Install nodejs dependencies
-      run: npm ci
-
-    # Run test
-    - name: Test
-      run: npm run test:partial -- tests/Platforms/${{ matrix.platform }}.ts
-      env:
-        DEBUG: "bdscore:*,coreutils:*"
-
-    # Upload bds root
-    - name: Upload BdsCore folder
-      uses: actions/upload-artifact@v3
-      if: ${{ failure() }}
-      with:
-        name: ${{ matrix.platform }}_Fail
-        path: |
-          ~/.bdsCore/**/*.log
-          ~/.bdsCore/**/world*/
-
   test:
-    needs:
-    - test_partial
     runs-on: ubuntu-latest
     name: "Test"
     env:

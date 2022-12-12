@@ -1,17 +1,19 @@
-import { platformManeger } from "@the-bds-maneger/server_versions";
-import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
-import { spigotProprieties } from "./spigot";
-import * as globalPlatfroms from "../globalPlatfroms";
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger.js";
+import { spigotProprieties } from "./spigot.js";
+import * as globalPlatfroms from "../globalPlatfroms.js";
 import * as coreUtils from "@sirherobrine23/coreutils";
-import Proprieties from "../lib/Proprieties";
+import Proprieties from "../lib/Proprieties.js";
 import fsOld from "node:fs";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
+import { compareVersions } from "compare-versions";
 
 export async function installServer(version: string|boolean, platformOptions: bdsPlatformOptions = {id: "default"}) {
   const { serverPath, id } = await pathControl("paper", platformOptions);
-  const release = await platformManeger.paper.find(version);
+  const allVersions = (await coreUtils.httpRequest.getJSON("https://mcpeversion-static.sirherobrine23.org/paper/all.json")).sort(({version: a}, {version: b}) => compareVersions(a, b));
+  const release = ((typeof version === "boolean")||(version?.trim()?.toLowerCase() === "latest")) ? allVersions.at(-1) : allVersions.find(rel => (version === rel.version));
+  if (!release) throw new Error("Cannot find version!");
   await coreUtils.httpRequestLarge.saveFile({url: release.url, filePath: path.join(serverPath, "paper.jar")});
   return {
     id,
