@@ -1,7 +1,7 @@
 import { httpRequestLarge, httpRequestGithub } from "@sirherobrine23/coreutils";
-import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import * as globalPlatfroms from "./globalPlatfroms";
-import Proprieties from "./lib/Proprieties"
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
+import * as globalPlatfroms from "../globalPlatfroms";
+import Proprieties from "../lib/Proprieties"
 import fsOld from "node:fs";
 import path from "node:path";
 import fs from "node:fs/promises";

@@ -1,9 +1,9 @@
 import * as coreUtils from "@sirherobrine23/coreutils";
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { actionV2, actionsV2 } from "./globalPlatfroms";
-import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import { manegerConfigProprieties } from "./configManipulate";
-import { randomPort } from "./lib/randomPort";
+import { actionV2, actionsV2 } from "../globalPlatfroms";
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
+import { manegerConfigProprieties } from "../configManipulate";
+import { randomPort } from "../lib/randomPort";
 import fsOld from "node:fs";
 import path from "node:path";
 import fs from "node:fs/promises";

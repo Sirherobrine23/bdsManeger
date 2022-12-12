@@ -7,12 +7,12 @@ import * as pluginHooks from "./plugin/hook";
 import * as proxy from "./lib/proxy";
 
 // Platforms
-import * as Bedrock from "./bedrock";
-import * as Java from "./java";
-import * as PocketmineMP from "./pocketmine";
-import * as Spigot from "./spigot";
-import * as Powernukkit from "./pwnuukit";
-import * as PaperMC from "./paper";
+import * as Bedrock from "./Platforms/bedrock";
+import * as Java from "./Platforms/java";
+import * as PocketmineMP from "./Platforms/pocketmine";
+import * as Spigot from "./Platforms/spigot";
+import * as Powernukkit from "./Platforms/pwnuukit";
+import * as PaperMC from "./Platforms/paper";
 
 export {platformPathManeger, globalPlatfroms, pluginManeger, export_import, PocketmineMP, pluginHooks, Powernukkit, PaperMC, Bedrock, Spigot, proxy, Java};
 export default {

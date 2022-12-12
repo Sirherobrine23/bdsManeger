@@ -1,7 +1,7 @@
 import { platformManeger } from "@the-bds-maneger/server_versions";
-import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
 import { httpRequestLarge } from "@sirherobrine23/coreutils";
-import * as globalPlatfroms from "./globalPlatfroms";
+import * as globalPlatfroms from "../globalPlatfroms";
 import path from "node:path";
 import fsOld from "node:fs";
 import fs from "node:fs/promises";

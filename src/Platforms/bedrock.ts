@@ -1,7 +1,7 @@
-import { manegerConfigProprieties } from "./configManipulate";
-import { randomPort } from "./lib/randomPort";
-import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
-import * as globalPlatfroms from "./globalPlatfroms";
+import { manegerConfigProprieties } from "../configManipulate";
+import { randomPort } from "../lib/randomPort";
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
+import * as globalPlatfroms from "../globalPlatfroms";
 import * as coreUtils from "@sirherobrine23/coreutils";
 import path from "node:path";
 import fsOld from "node:fs";

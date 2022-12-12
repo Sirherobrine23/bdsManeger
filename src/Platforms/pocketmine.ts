@@ -1,7 +1,7 @@
 import { customChildProcess, extendFs, httpRequest, httpRequestGithub, httpRequestLarge } from "@sirherobrine23/coreutils";
-import { pathControl, bdsPlatformOptions } from "./platformPathManeger";
+import { pathControl, bdsPlatformOptions } from "../platformPathManeger";
 import { existsSync as fsExistsSync, Stats } from "node:fs";
-import * as globalPlatfroms from "./globalPlatfroms";
+import * as globalPlatfroms from "../globalPlatfroms";
 import path from "node:path";
 import fs from "node:fs/promises";
 import debug from "debug";
