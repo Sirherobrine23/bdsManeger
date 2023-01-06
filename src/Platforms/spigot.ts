@@ -9,7 +9,7 @@ import os from "node:os";
 import { compareVersions } from "compare-versions";
 
 async function listVersions(): Promise<{version: string, date: Date, url: string}[]> {
-  const releases = (await httpRequestGithub.GithubRelease("The-Bds-Maneger", "SpigotBuilds")).filter(rel => rel.tag_name !== "latest" && rel.assets.some(file => file.name.endsWith(".jar")));
+  const releases = (await httpRequestGithub.getRelease({owner: "The-Bds-Maneger", repository: "SpigotBuilds", all: true})).filter(rel => rel.tag_name !== "latest" && rel.assets.some(file => file.name.endsWith(".jar")));
   return releases.map(rel => ({
     version: rel.tag_name,
     date: new Date(rel.published_at),

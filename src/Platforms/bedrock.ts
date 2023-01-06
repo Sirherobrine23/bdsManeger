@@ -338,7 +338,7 @@ export async function addResourcePacksToWorld(resourceId: string, platformOption
   const serverConfigObject = (await serverConfig(platformOptions)).getConfig();
   if (!await coreUtils.extendFs.exists(path.join(serverPath, "worlds", serverConfigObject["level-name"], "world_resource_packs.json"))) await fs.writeFile(path.join(serverPath, "worlds", serverConfigObject["level-name"], "world_resource_packs.json"), "[]");
   const resourcesData: resourcePacks[] = JSON.parse(await fs.readFile(path.join(serverPath, "worlds", serverConfigObject["level-name"], "world_resource_packs.json"), "utf8"));
-  const manifests: resourceManifest[] = await Promise.all((await coreUtils.extendFs.readdirrecursive([path.join(serverPath, "resource_packs"), path.join(serverPath, "worlds", serverConfigObject["level-name"], "resource_packs")])).filter((file: string) => file.endsWith("manifest.json")).map(async (file: string) => JSON.parse(await fs.readFile(file, "utf8"))));
+  const manifests: resourceManifest[] = await Promise.all((await coreUtils.extendFs.readdir({folderPath: [path.join(serverPath, "resource_packs"), path.join(serverPath, "worlds", serverConfigObject["level-name"], "resource_packs")]})).filter((file: string) => file.endsWith("manifest.json")).map(async (file: string) => JSON.parse(await fs.readFile(file, "utf8"))));
   const packInfo = manifests.find(pf => pf.header.uuid === resourceId);
   if (!packInfo) throw new Error("UUID to texture not installed in the server");
   if (resourcesData.includes({pack_id: resourceId})) throw new Error("Textura alredy installed in the World");

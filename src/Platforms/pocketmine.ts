@@ -9,7 +9,7 @@ const pocketmineDebug = debug("bdscore:platform:pocketmine");
 const phpStaticBucket = "https://objectstorage.sa-saopaulo-1.oraclecloud.com/p/0IKM-5KFpAF8PuWoVe86QFsF4sipU2rXfojpaOMEdf4QgFQLcLlDWgMSPHWmjf5W/n/grwodtg32n4d/b/bdsFiles/o/";
 
 export async function listVersions() {
-  return (await httpRequestGithub.GithubRelease("pmmp", "PocketMine-MP")).map(data => {
+  return (await httpRequestGithub.getRelease({owner: "pmmp", repository: "PocketMine-MP", all: true})).map(data => {
     const pharFile = data.assets.find(data => data.name.endsWith((".phar")));
     return {
       version: data.tag_name,
