@@ -19,7 +19,7 @@ jobs:
         submodules: true
 
     # Install basic tools
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v3.6.0
       name: Setup node.js
       with:
         registry-url: https://registry.npmjs.org/
