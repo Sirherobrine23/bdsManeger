@@ -2,15 +2,16 @@ import { createServerManeger, platformPathID, pathOptions, serverConfig } from "
 import { promises as fs, createWriteStream } from "node:fs";
 import { pipeline } from "node:stream/promises";
 import coreUtils, { childPromisses } from "@sirherobrine23/coreutils";
+import { promisify } from "node:util";
 import path from "node:path";
 import tar from "tar";
 import AdmZip from "adm-zip";
-import { promisify } from "node:util";
 
 export type bedrockRootOption = pathOptions & {
   variant?: "oficial"|"Pocketmine-PMMP"|"Powernukkit"|"Cloudbust"
 };
 
+const oracleBucket = await coreUtils.oracleBucket("sa-saopaulo-1", "bdsFiles", "grwodtg32n4d", "0IKM-5KFpAF8PuWoVe86QFsF4sipU2rXfojpaOMEdf4QgFQLcLlDWgMSPHWmjf5W");
 const hostArchEmulate = [
   "qemu-x86_64-static",
   "qemu-x86_64",
@@ -38,7 +39,6 @@ async function getPHPBin(options?: bedrockRootOption) {
   return file;
 }
 
-const oracleBucket = await coreUtils.oracleBucket("sa-saopaulo-1", "bdsFiles", "grwodtg32n4d", "0IKM-5KFpAF8PuWoVe86QFsF4sipU2rXfojpaOMEdf4QgFQLcLlDWgMSPHWmjf5W");
 export async function installServer(version: string, options?: bedrockRootOption) {
   options = {variant: "oficial", ...options};
   const serverPath = await platformPathID("bedrock", options);

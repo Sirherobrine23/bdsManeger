@@ -12,3 +12,6 @@ phpOutput/
 *.tar.gz
 *.tgz
 *.zip
+
+# Spigot
+*.jar
