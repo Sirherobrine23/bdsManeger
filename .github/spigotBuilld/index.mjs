@@ -16,6 +16,6 @@ execFileSync("java", ["-jar", buildFile, "--rev", version, "-o", __dirname], {
 
 const SpigotFile = (await fs.readdir(__dirname)).find(file => file.endsWith(".jar"));
 if (!SpigotFile) throw new Error("No spigot file found");
-if (version === "latest") version = SpigotFile.split("-")[1].split(".")[0];
-await oracleBucket.uploadFile(path.posix.join("SpigotBuild", version+".jar"), createReadStream(fileBuild));
+if (version.trim().toLowerCase() === "latest") version = path.basename(SpigotFile, ".jar").split("-")[1];
+await oracleBucket.uploadFile(path.posix.join("SpigotBuild", version+".jar"), createReadStream(path.join(__dirname, SpigotFile)));
 await Promise.all((await fs.readdir(__dirname)).filter(file => file.endsWith(".jar")).map(file => fs.unlink(file)));
