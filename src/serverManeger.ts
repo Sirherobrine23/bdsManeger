@@ -5,6 +5,7 @@ import { extendFs } from "@sirherobrine23/coreutils";
 import crypto from "node:crypto";
 import path from "node:path";
 import os from "node:os";
+import EventEmitter from "node:events";
 
 export type pathOptions = {
   id?: "default"|string,
@@ -63,36 +64,129 @@ export async function platformPathID(platform: "bedrock"|"java", options?: pathO
   };
 }
 
+export type playerAction = ({action: "join"|"spawned"|"leave"}|{
+  action: "kick"|"ban",
+  reason?: string,
+  by?: string
+}) & {
+  player: string,
+  actionDate: Date,
+  sessionID: string
+  more?: any,
+  latestAction?: playerAction
+}
+
 export type serverConfig = {
   exec: {
-    exec: string,
+    exec?: string,
     args?: string[],
     cwd?: string,
     env?: NodeJS.ProcessEnv & {[key: string]: string},
   },
-  actions: {
+  actions?: {
     stopServer?: (child_process: ChildProcess) => void,
-    onStart?: (lineData: string, fnRegister: (data: {serverAvaible: Date, bootUp?: number}) => void) => void,
-    playerActions?: (lineData: string, fnRegister: (data: {player: string, action: "join" | "leave"}) => void) => void,
+    onStart?: (lineData: string, fnRegister: (data?: {serverAvaible?: Date, bootUp?: number}) => void) => void,
+    playerActions?: (lineData: string, fnRegister: (data: playerAction) => void) => void,
   }
 };
 
-export async function serverManeger(serverOptions: serverConfig) {
+declare class serverManeger extends EventEmitter {
+  on(event: "error", fn: (lineLog: any) => void): this;
+  once(event: "error", fn: (lineLog: any) => void): this;
+  emit(event: "error", data: any): boolean;
+
+  on(event: "log", fn: (lineLog: string) => void): this;
+  once(event: "log", fn: (lineLog: string) => void): this;
+  emit(event: "log", data: string): boolean;
+
+  on(event: "rawLog", fn: (raw: any) => void): this;
+  once(event: "rawLog", fn: (raw: any) => void): this;
+  emit(event: "rawLog", data: any): boolean;
+
+  // Player actions
+  on(event: "playerAction", fn: (playerAction: playerAction) => void): this;
+  once(event: "playerAction", fn: (playerAction: playerAction) => void): this;
+  emit(event: "playerAction", data: playerAction): boolean;
+
+  // Server started
+  on(event: "serverStarted", fn: (data: {serverAvaible: Date, bootUp: number}) => void): this;
+  once(event: "serverStarted", fn: (data: {serverAvaible: Date, bootUp: number}) => void): this;
+  emit(event: "serverStarted", data: {serverAvaible: Date, bootUp: number}): boolean;
+}
+
+export async function createServerManeger(serverOptions: serverConfig): Promise<serverManeger> {
   const serverExec = child_process.execFile(serverOptions.exec.exec, serverOptions.exec.args ?? [], {
     cwd: serverOptions.exec.cwd,
+    windowsHide: true,
+    maxBuffer: Infinity,
     env: {
       ...process.env,
       ...serverOptions.exec.env
     },
-    windowsHide: true,
-    maxBuffer: Infinity
   });
-  const stdoutReadline = readline({input: serverExec.stdout});
-  const stderrReadline = readline({input: serverExec.stderr});
+  const playerActions: playerAction[] = [];
+  const internalEvent = new class serverManeger extends EventEmitter {
+    stopServer() {
+      const stopServer = serverOptions.actions?.stopServer ?? ((child_process) => child_process.kill("SIGKILL"));
+      stopServer(serverExec);
+    }
 
-  return {
-    serverExec,
-    stdoutReadline,
-    stderrReadline
+    getPlayers() {
+      return playerActions ?? [];
+    }
   };
+  serverExec.on("error", internalEvent.emit.bind(internalEvent, "error"));
+  const stdoutReadline = readline({input: serverExec.stdout});
+  stdoutReadline.on("line", (line) => internalEvent.emit("log", line));
+  stdoutReadline.on("error", internalEvent.emit.bind(internalEvent, "error"));
+  serverExec.stdout.on("data", (data) => internalEvent.emit("rawLog", data));
+
+  const stderrReadline = readline({input: serverExec.stderr});
+  stderrReadline.on("line", (line) => internalEvent.emit("log", line));
+  stderrReadline.on("error", internalEvent.emit.bind(internalEvent, "error"));
+  serverExec.stderr.on("data", (data) => internalEvent.emit("rawLog", data));
+
+  // Server start
+  if (serverOptions.actions?.onStart) {
+    const serverStartFN = serverOptions.actions.onStart;
+    let lock = false;
+    const started = new Date();
+    function register(data?: {serverAvaible?: Date, bootUp?: number}) {
+      if (lock) return;
+      const eventData = {
+        serverAvaible: data?.serverAvaible ?? new Date(),
+        bootUp: data?.bootUp ?? new Date().getTime() - started.getTime()
+      };
+      internalEvent.emit("serverStarted", eventData);
+      lock = true;
+      stderrReadline.removeListener("line", register);
+      stdoutReadline.removeListener("line", register);
+      // emit and remove new listener for serverStarted
+      internalEvent.removeAllListeners("serverStarted");
+      internalEvent.prependListener("serverStarted", () => {
+        internalEvent.emit("serverStarted", eventData);
+        internalEvent.removeAllListeners("serverStarted");
+      });
+    }
+    stdoutReadline.on("line", (line) => serverStartFN(line, register));
+    stderrReadline.on("line", (line) => serverStartFN(line, register));
+  }
+
+  // Player actions
+  if (serverOptions.actions?.playerActions) {
+    const playerFn = serverOptions.actions.playerActions;
+    const registerData = (data: playerAction) => {
+      const player = playerActions.find((player) => player.player === data.player);
+      if (!player) playerActions.push(data);
+      else {
+        data.latestAction = player;
+        playerActions[playerActions.indexOf(player)] = data;
+      }
+      internalEvent.emit("playerAction", data);
+    }
+    stdoutReadline.on("line", (line) => playerFn(line, registerData));
+    stderrReadline.on("line", (line) => playerFn(line, registerData));
+  }
+
+  return internalEvent;
 }
