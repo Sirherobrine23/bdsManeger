@@ -30,7 +30,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@sirherobrine23/coreutils": "^2.4.5",
+    "@sirherobrine23/coreutils": "^3.0.5",
     "adm-zip": "^0.5.10",
     "compare-versions": "^5.0.3",
     "debug": "^4.3.4",

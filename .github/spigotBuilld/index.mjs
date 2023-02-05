@@ -1,21 +1,29 @@
 #!/usr/bin/env node
 import { createReadStream, promises as fs } from "node:fs";
-import { execFileSync } from "child_process";
-import { tmpdir } from "os";
-import coreUtils from "@sirherobrine23/coreutils";
+import { Cloud, Extends } from "@sirherobrine23/coreutils";
 import path from "path";
-const oracleBucket = await coreUtils.oracleBucket("sa-saopaulo-1", "bdsFiles", "grwodtg32n4d", process.env.OCI_AUTHKEY?.trim());
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
-let version = process.argv.find(arg => arg.startsWith("--version="))?.split("=")?.[1]?.trim() ?? "latest";
+const { tenancy, fingerprint, privateKey, user, passphase } = process.env;
+const oracleBucket = await Cloud.oracleBucket({
+  region: "sa-saopaulo-1",
+  name: "bdsFiles",
+  namespace: "grwodtg32n4d",
+  auth: {
+    type: "user",
+    tenancy,
+    fingerprint,
+    privateKey,
+    user,
+    passphase
+  }
+})
+const __dirname = path.resolve(process.cwd(), process.argv.slice(2)[0]||"");
 
-const buildFile = await coreUtils.httpRequestLarge.saveFile("https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar");
-execFileSync("java", ["-jar", buildFile, "--rev", version, "-o", __dirname], {
-  cwd: tmpdir(),
-  stdio: "inherit"
+await Extends.extendsFS.readdir({folderPath: __dirname}).then(files => files.filter(file => file.endsWith(".jar"))).then(async files => {
+  for (const file of files) {
+    const version = path.basename(file, ".jar").split("-")[1];
+    if (!version) continue;
+    console.log("Uploading %s, file: %O", version, "SpigotBuild/"+version+".jar");
+    await oracleBucket.uploadFile("SpigotBuild/"+version+".jar", createReadStream(file)).then(() => console.log("Uploaded %s", version));
+    await fs.unlink(file);
+  }
 });
-
-const SpigotFile = (await fs.readdir(__dirname)).find(file => file.endsWith(".jar"));
-if (!SpigotFile) throw new Error("No spigot file found");
-if (version.trim().toLowerCase() === "latest") version = path.basename(SpigotFile, ".jar").split("-")[1];
-await oracleBucket.uploadFile(path.posix.join("SpigotBuild", version+".jar"), createReadStream(path.join(__dirname, SpigotFile)));
-await Promise.all((await fs.readdir(__dirname)).filter(file => file.endsWith(".jar")).map(file => fs.unlink(file)));
