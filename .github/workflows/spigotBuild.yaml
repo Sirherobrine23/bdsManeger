@@ -82,7 +82,7 @@ jobs:
       with:
         node-version: 18.x
 
-    - run: npm ci && node .github/spigotBuilld/index.mjs --version=${{ matrix.version || 'latest' }}
+    - run: npm install --no-save && node .github/spigotBuilld/index.mjs --version=${{ matrix.version || 'latest' }}
       continue-on-error: true
       env:
         OCI_AUTHKEY: "${{ secrets.OCI_AUTHKEY }}"

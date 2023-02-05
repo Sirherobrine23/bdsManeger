@@ -207,7 +207,7 @@ jobs:
         node-version: latest
 
     - name: Install node depencies
-      run: npm ci
+      run: npm install --no-save
 
     - name: Download tarbals
       uses: actions/download-artifact@v3
