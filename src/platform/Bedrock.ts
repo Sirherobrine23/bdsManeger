@@ -62,7 +62,7 @@ export async function installServer(version: string, options?: bedrockRootOption
     const phpBinPath = await getPHPBin(options);
     await coreUtils.childPromisses.execFile(phpBinPath, ["--version"]);
 
-    const rel = await coreUtils.httpRequestGithub.getRelease({owner: "pmmp", repository: "PocketMine-MP", all: true});
+    const rel = await (await coreUtils.httpRequestGithub("pmmp", "PocketMine-MP")).getRelease();
     const relData = version.trim().toLowerCase() === "latest" ? rel.at(0) : rel.find((v) => v.tag_name === version.trim());
     if (!relData) throw new Error("Version not found");
     const phpAsset = relData.assets.find((a) => a.name.endsWith(".phar"))?.browser_download_url;
@@ -77,7 +77,7 @@ export async function installServer(version: string, options?: bedrockRootOption
       phpBin: phpBin.name,
     };
   } else if (options?.variant === "Powernukkit") {
-    const versions = await coreUtils.httpRequest.getJSON<{version: string, mcpeVersion: string, date: string, url: string, variantType: "snapshot"|"stable"}[]>("https://mcpeversion-static.sirherobrine23.org/powernukkit/all.json");
+    const versions = await coreUtils.httpRequest.fetchJSON<{version: string, mcpeVersion: string, date: string, url: string, variantType: "snapshot"|"stable"}[]>("https://mcpeversion-static.sirherobrine23.org/powernukkit/all.json");
     const versionData = version.trim().toLowerCase() === "latest" ? versions.at(-1) : versions.find((v) => v.version === version.trim() || v.mcpeVersion === version.trim());
     if (!versionData) throw new Error("Version not found");
     const url = versionData.url;
@@ -93,7 +93,7 @@ export async function installServer(version: string, options?: bedrockRootOption
   } else if (options?.variant === "Cloudbust") {
     throw new Error("Not implemented");
   } else {
-    const versions = await coreUtils.httpRequest.getJSON<bedrockVersionJSON[]>("https://the-bds-maneger.github.io/BedrockFetch/all.json");
+    const versions = await coreUtils.httpRequest.fetchJSON<bedrockVersionJSON[]>("https://the-bds-maneger.github.io/BedrockFetch/all.json");
     const versionData = version.trim().toLowerCase() === "latest" ? versions.at(-1) : versions.find((v) => v.version === version.trim());
     if (!versionData) throw new Error("Version not found");
     let currentPlatform = process.platform;
@@ -110,7 +110,6 @@ export async function installServer(version: string, options?: bedrockRootOption
   }
 }
 
-export default startServer;
 export async function startServer(options?: bedrockRootOption) {
   // Bad fix options
   options = {variant: "oficial", ...options};
