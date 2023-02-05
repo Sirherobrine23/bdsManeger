@@ -4,11 +4,11 @@ on:
   schedule:
     - cron: "0 0 */2 * 0"
   push:
-    # branches:
-    #   - main
-    # paths:
-    #   - ".github/workflows/spigotBuild.yaml"
-    #   - ".github/spigotBuilld/**/*"
+    branches:
+      - main
+    paths:
+      - ".github/workflows/spigotBuild.yaml"
+      - ".github/spigotBuilld/**/*"
 
 jobs:
   build:

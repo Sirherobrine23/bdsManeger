@@ -5,6 +5,10 @@ on:
       - prereleased
       - released
 
+permissions:
+  pull-requests: write
+  id-token: write
+
 jobs:
   publishpackage:
     runs-on: ubuntu-latest
