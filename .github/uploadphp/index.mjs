@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import { createReadStream } from "node:fs";
-import coreutils from "@sirherobrine23/coreutils";
+import coreutils, { extendFs } from "@sirherobrine23/coreutils";
 import path from "node:path";
 import fs from "node:fs/promises";
 if (!process.env.OCI_AUTHKEY) throw new Error("No key auth");
 const ociKeyAuth = (process.env.OCI_AUTHKEY||"").trim();
 console.log("using key to upload '%s'", ociKeyAuth);
 
-const files = (await coreutils.extendFs.readdir({folderPath: path.join(process.cwd(), "phpOutput")})).filter(file => file.endsWith(".tar.gz")||file.endsWith(".zip")||file.endsWith(".tgz"));
+const files = (await extendFs.readdir({folderPath: path.join(process.cwd(), "phpOutput")})).filter(file => file.endsWith(".tar.gz")||file.endsWith(".zip")||file.endsWith(".tgz"));
 await Promise.all(files.map(async file => {
   const fileName = path.basename(file);
   console.log("Uploading %s", fileName);
