@@ -10,7 +10,7 @@
     "**/node_modules/": true,
     // Ignore generate tsc files
     "**/dist/": true,
-    "**/src/**/*.js": true,
-    "**/src/**/*.d.ts": true,
+    "**/src/**/*.js": false,
+    "**/src/**/*.d.ts": false,
   }
 }
