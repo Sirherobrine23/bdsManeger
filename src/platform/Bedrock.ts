@@ -21,11 +21,11 @@ const oracleBucket = await coreUtils.Cloud.oracleBucket({
   }
 });
 
-const hostArchEmulate = [
+export const hostArchEmulate = Object.freeze([
   "qemu-x86_64-static",
   "qemu-x86_64",
   "box64"
-];
+]);
 
 type bedrockVersionJSON = {
   version: string,
@@ -43,16 +43,18 @@ async function getPHPBin(options?: bedrockRootOption) {
   const serverPath = await platformPathID("bedrock", options);
   const binFolder = path.join(serverPath.serverPath, "bin");
   const files = await coreUtils.Extends.readdir({folderPath: binFolder});
-  const file = files.filter((v) => v.endsWith("php.exe")||v.endsWith("php")).at(0);
+  const file = files.find((v) => v.endsWith("php.exe")||v.endsWith("php"));
   if (!file) throw new Error("PHP Bin not found");
   return file;
 }
+
+// async function restoreBedrockServerSoftware(version: string) {}
 
 export async function installServer(version: string, options?: bedrockRootOption) {
   options = {variant: "oficial", ...options};
   const serverPath = await platformPathID("bedrock", options);
   if (options?.variant === "Pocketmine-PMMP") {
-    const phpBin = (await oracleBucket.fileList()).filter(({name}) => name.startsWith("/php_bin/")).filter(({name}) => name.includes(process.platform) && name.includes(process.arch)).at(0);
+    const phpBin = ((await oracleBucket.listFiles()) as any[]).filter(({name}) => name.includes("php_bin/")).filter(({name}) => name.includes(process.platform) && name.includes(process.arch)).at(0);
     if (!phpBin) throw new Error("PHP Bin not found");
     const binFolder = path.join(serverPath.serverPath, "bin");
     if (await coreUtils.Extends.exists(binFolder)) await fs.rm(binFolder, {recursive: true});
@@ -68,8 +70,6 @@ export async function installServer(version: string, options?: bedrockRootOption
       await promisify((new AdmZip(path.join(binFolder, "phpTmp"))).extractAllToAsync)(binFolder, true, true);
     }
     await fs.rm(path.join(binFolder, "phpTmp"));
-    const phpBinPath = await getPHPBin(options);
-    await childPromisses.execFile(phpBinPath, ["--version"]);
 
     const rel = await (await coreUtils.http.Github.GithubManeger("pmmp", "PocketMine-MP")).getRelease();
     const relData = version.trim().toLowerCase() === "latest" ? rel.at(0) : rel.find((v) => v.tag_name === version.trim());
@@ -158,18 +158,18 @@ export async function startServer(options?: bedrockRootOption) {
         LD_LIBRARY_PATH: serverPath.serverPath
       };
     }
-    if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
-      const exec = serverExec.exec.exec;
-      serverExec.exec.exec = undefined;
-      for (const command of hostArchEmulate) {
-        if (await childPromisses.commandExists(command, true)) {
-          serverExec.exec.args = [exec];
-          serverExec.exec.exec = command;
-          break;
-        }
-        if (!serverExec.exec.exec) throw new Error("No emulator found for this platform");
-      }
-    }
+    // if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
+    //   const exec = serverExec.exec.exec;
+    //   serverExec.exec.exec = undefined;
+    //   for (const command of hostArchEmulate) {
+    //     if (await childPromisses.commandExists(command, true)) {
+    //       serverExec.exec.args = [exec];
+    //       serverExec.exec.exec = command;
+    //       break;
+    //     }
+    //     if (!serverExec.exec.exec) throw new Error("No emulator found for this platform");
+    //   }
+    // }
 
     const startTest = /\[.*\]\s+Server\s+started\./;
     // Server actions
