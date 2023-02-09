@@ -1,8 +1,8 @@
 import { createServerManeger, platformPathID, pathOptions, serverConfig } from "../serverManeger.js";
 import { promises as fs, createWriteStream } from "node:fs";
 import { pipeline } from "node:stream/promises";
-import coreUtils, { childPromisses } from "@sirherobrine23/coreutils";
 import { promisify } from "node:util";
+import coreUtils from "@sirherobrine23/coreutils";
 import path from "node:path";
 import tar from "tar";
 import AdmZip from "adm-zip";
@@ -11,7 +11,16 @@ export type bedrockRootOption = pathOptions & {
   variant?: "oficial"|"Pocketmine-PMMP"|"Powernukkit"|"Cloudbust"
 };
 
-const oracleBucket = await coreUtils.oracleBucket("sa-saopaulo-1", "bdsFiles", "grwodtg32n4d", "0IKM-5KFpAF8PuWoVe86QFsF4sipU2rXfojpaOMEdf4QgFQLcLlDWgMSPHWmjf5W");
+const oracleBucket = await coreUtils.Cloud.oracleBucket({
+  region: "sa-saopaulo-1",
+  namespace: "grwodtg32n4d",
+  name: "bdsFiles",
+  auth: {
+    type: "preAuthentication",
+    PreAuthenticatedKey: "0IKM-5KFpAF8PuWoVe86QFsF4sipU2rXfojpaOMEdf4QgFQLcLlDWgMSPHWmjf5W"
+  }
+});
+
 const hostArchEmulate = [
   "qemu-x86_64-static",
   "qemu-x86_64",
@@ -33,7 +42,7 @@ async function getPHPBin(options?: bedrockRootOption) {
   options = {variant: "oficial", ...options};
   const serverPath = await platformPathID("bedrock", options);
   const binFolder = path.join(serverPath.serverPath, "bin");
-  const files = await coreUtils.extendFs.readdir({folderPath: binFolder});
+  const files = await coreUtils.Extends.readdir({folderPath: binFolder});
   const file = files.filter((v) => v.endsWith("php.exe")||v.endsWith("php")).at(0);
   if (!file) throw new Error("PHP Bin not found");
   return file;
@@ -46,7 +55,7 @@ export async function installServer(version: string, options?: bedrockRootOption
     const phpBin = (await oracleBucket.fileList()).filter(({name}) => name.startsWith("/php_bin/")).filter(({name}) => name.includes(process.platform) && name.includes(process.arch)).at(0);
     if (!phpBin) throw new Error("PHP Bin not found");
     const binFolder = path.join(serverPath.serverPath, "bin");
-    if (await coreUtils.extendFs.exists(binFolder)) await fs.rm(binFolder, {recursive: true});
+    if (await coreUtils.Extends.exists(binFolder)) await fs.rm(binFolder, {recursive: true});
     await fs.mkdir(binFolder);
     await pipeline(await oracleBucket.getFileStream(phpBin.name), createWriteStream(path.join(binFolder, "phpTmp")));
 
@@ -60,14 +69,14 @@ export async function installServer(version: string, options?: bedrockRootOption
     }
     await fs.rm(path.join(binFolder, "phpTmp"));
     const phpBinPath = await getPHPBin(options);
-    await coreUtils.childPromisses.execFile(phpBinPath, ["--version"]);
+    await childPromisses.execFile(phpBinPath, ["--version"]);
 
-    const rel = await (await coreUtils.httpRequestGithub("pmmp", "PocketMine-MP")).getRelease();
+    const rel = await (await coreUtils.http.Github.GithubManeger("pmmp", "PocketMine-MP")).getRelease();
     const relData = version.trim().toLowerCase() === "latest" ? rel.at(0) : rel.find((v) => v.tag_name === version.trim());
     if (!relData) throw new Error("Version not found");
     const phpAsset = relData.assets.find((a) => a.name.endsWith(".phar"))?.browser_download_url;
     if (!phpAsset) throw new Error("PHP asset not found");
-    await coreUtils.httpRequestLarge.saveFile({url: phpAsset, filePath: path.join(serverPath.serverPath, "PocketMine-MP.phar")});
+    await coreUtils.http.large.saveFile({url: phpAsset, path: path.join(serverPath.serverPath, "PocketMine-MP.phar")});
 
     return {
       version: relData.tag_name,
@@ -77,12 +86,12 @@ export async function installServer(version: string, options?: bedrockRootOption
       phpBin: phpBin.name,
     };
   } else if (options?.variant === "Powernukkit") {
-    const versions = await coreUtils.httpRequest.fetchJSON<{version: string, mcpeVersion: string, date: string, url: string, variantType: "snapshot"|"stable"}[]>("https://mcpeversion-static.sirherobrine23.org/powernukkit/all.json");
+    const versions = await coreUtils.http.jsonRequest<{version: string, mcpeVersion: string, date: string, url: string, variantType: "snapshot"|"stable"}[]>("https://mcpeversion-static.sirherobrine23.org/powernukkit/all.json").then(data => data.body);
     const versionData = version.trim().toLowerCase() === "latest" ? versions.at(-1) : versions.find((v) => v.version === version.trim() || v.mcpeVersion === version.trim());
     if (!versionData) throw new Error("Version not found");
     const url = versionData.url;
     if (!url) throw new Error("Platform not supported");
-    await coreUtils.httpRequestLarge.saveFile({url, filePath: path.join(serverPath.serverPath, "server.jar")});
+    await coreUtils.http.large.saveFile({url, path: path.join(serverPath.serverPath, "server.jar")});
     return {
       version: versionData.version,
       mcpeVersion: versionData.mcpeVersion,
@@ -93,14 +102,14 @@ export async function installServer(version: string, options?: bedrockRootOption
   } else if (options?.variant === "Cloudbust") {
     throw new Error("Not implemented");
   } else {
-    const versions = await coreUtils.httpRequest.fetchJSON<bedrockVersionJSON[]>("https://the-bds-maneger.github.io/BedrockFetch/all.json");
+    const versions = await coreUtils.http.jsonRequest<bedrockVersionJSON[]>("https://the-bds-maneger.github.io/BedrockFetch/all.json").then(data => data.body);
     const versionData = version.trim().toLowerCase() === "latest" ? versions.at(-1) : versions.find((v) => v.version === version.trim());
     if (!versionData) throw new Error("Version not found");
     let currentPlatform = process.platform;
     if (currentPlatform === "android") currentPlatform = "linux";
     const url = versionData.url[currentPlatform]?.[process.arch];
     if (!url) throw new Error("Platform not supported");
-    await coreUtils.httpRequestLarge.extractZip({url, folderTarget: serverPath.serverPath});
+    (await coreUtils.http.large.admZip(url)).zip.extractAllTo(serverPath.serverPath, true, true);
     return {
       version: versionData.version,
       releaseDate: new Date(versionData.date),

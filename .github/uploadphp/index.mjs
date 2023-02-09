@@ -12,7 +12,7 @@ await Promise.all(files.map(async file => {
   const fileName = path.basename(file);
   console.log("Uploading %s", fileName);
   await coreutils.httpRequest.bufferFetch({
-    url: `https://objectstorage.sa-saopaulo-1.oraclecloud.com/p/${ociKeyAuth}/n/grwodtg32n4d/b/bdsFiles/o/php_bin/${fileName.toLowerCase()}`,
+    url: `https://objectstorage.sa-saopaulo-1.oraclecloud.com/p/${ociKeyAuth}/n/grwodtg32n4d/b/bdsFiles/o/php_bin/${encodeURIComponent(fileName.toLowerCase())}`,
     method: "PUT",
     body: createReadStream(file),
     headers: {
