@@ -1,7 +1,7 @@
 import { createInterface as readline } from "node:readline";
 import { promises as fs } from "node:fs";
-import child_process, { ChildProcess } from "node:child_process";
-import { extendFs } from "@sirherobrine23/coreutils";
+import child_process from "node:child_process";
+import { Cloud, Extends as extendFs } from "@sirherobrine23/coreutils";
 import crypto from "node:crypto";
 import path from "node:path";
 import os from "node:os";
@@ -84,9 +84,20 @@ export type serverConfig = {
     env?: NodeJS.ProcessEnv & {[key: string]: string},
   },
   actions?: {
-    stopServer?: (child_process: ChildProcess) => void,
+    stopServer?: (child_process: child_process.ChildProcess) => void,
     onStart?: (lineData: string, fnRegister: (data?: {serverAvaible?: Date, bootUp?: number}) => void) => void,
     playerActions?: (lineData: string, fnRegister: (data: playerAction) => void) => void,
+  },
+  maneger?: {
+    backup?: {
+      folderWatch: {local: string, remoteParent?: string}[],
+    } & ({
+      cloud: "google",
+      config: Cloud.googleOptions
+    }|{
+      cloud: "oracle_bucket",
+      config: Cloud.oracleOptions
+    })
   }
 };
 
@@ -115,6 +126,18 @@ declare class serverManeger extends EventEmitter {
 }
 
 export async function createServerManeger(serverOptions: serverConfig): Promise<serverManeger> {
+  const internalStops: (() => any|void)[] = [];
+  if (serverOptions?.maneger?.backup) {
+    const { folderWatch, cloud } = serverOptions?.maneger?.backup;
+    if (cloud === "oracle_bucket") {
+      const { config } = serverOptions?.maneger?.backup;
+      const ociClient = await Cloud.oracleBucket(config);
+      for await (const folder of folderWatch) {
+        ociClient;
+        folder;
+      }
+    }
+  }
   const serverExec = child_process.execFile(serverOptions.exec.exec, serverOptions.exec.args ?? [], {
     cwd: serverOptions.exec.cwd,
     windowsHide: true,
@@ -126,9 +149,10 @@ export async function createServerManeger(serverOptions: serverConfig): Promise<
   });
   const playerActions: playerAction[] = [];
   const internalEvent = new class serverManeger extends EventEmitter {
-    stopServer() {
+    async stopServer() {
       const stopServer = serverOptions.actions?.stopServer ?? ((child_process) => child_process.kill("SIGKILL"));
-      stopServer(serverExec);
+      await Promise.resolve(stopServer(serverExec)).catch(err => internalEvent.emit("error", err));
+      internalStops.forEach((fn) => Promise.resolve().then(() => fn()).catch(err => internalEvent.emit("error", err)));
     }
 
     getPlayers() {
@@ -151,7 +175,7 @@ export async function createServerManeger(serverOptions: serverConfig): Promise<
     const serverStartFN = serverOptions.actions.onStart;
     let lock = false;
     const started = new Date();
-    function register(data?: {serverAvaible?: Date, bootUp?: number}) {
+    async function register(data?: {serverAvaible?: Date, bootUp?: number}) {
       if (lock) return;
       const eventData = {
         serverAvaible: data?.serverAvaible ?? new Date(),

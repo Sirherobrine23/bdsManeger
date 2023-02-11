@@ -6,8 +6,10 @@ export type javaRootOption = pathOptions & {
 
 export async function installServer(options?: javaRootOption) {
   options = {variant: "oficial", ...options};
-
-  if (options?.variant === "Paper") {}
+  if (options?.variant === "Spigot") {
+  } else if (options?.variant === "Paper") {
+  } else if (options?.variant === "Purpur") {
+  } else {}
 }
 
 export default startServer;

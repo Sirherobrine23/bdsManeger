@@ -1,25 +1,17 @@
 import { createServerManeger, platformPathID, pathOptions, serverConfig } from "../serverManeger.js";
 import { promises as fs, createWriteStream } from "node:fs";
-import { pipeline } from "node:stream/promises";
+import { oracleBucket } from "../lib/remote.js";
 import { promisify } from "node:util";
+import { pipeline } from "node:stream/promises";
+import * as childPromisses from "../lib/childPromisses.js";
 import coreUtils from "@sirherobrine23/coreutils";
+import AdmZip from "adm-zip";
 import path from "node:path";
 import tar from "tar";
-import AdmZip from "adm-zip";
 
 export type bedrockRootOption = pathOptions & {
   variant?: "oficial"|"Pocketmine-PMMP"|"Powernukkit"|"Cloudbust"
 };
-
-const oracleBucket = await coreUtils.Cloud.oracleBucket({
-  region: "sa-saopaulo-1",
-  namespace: "grwodtg32n4d",
-  name: "bdsFiles",
-  auth: {
-    type: "preAuthentication",
-    PreAuthenticatedKey: "0IKM-5KFpAF8PuWoVe86QFsF4sipU2rXfojpaOMEdf4QgFQLcLlDWgMSPHWmjf5W"
-  }
-});
 
 export const hostArchEmulate = Object.freeze([
   "qemu-x86_64-static",
@@ -48,12 +40,11 @@ async function getPHPBin(options?: bedrockRootOption) {
   return file;
 }
 
-// async function restoreBedrockServerSoftware(version: string) {}
-
-export async function installServer(version: string, options?: bedrockRootOption) {
+export async function installServer(version?: string, options?: bedrockRootOption) {
   options = {variant: "oficial", ...options};
   const serverPath = await platformPathID("bedrock", options);
   if (options?.variant === "Pocketmine-PMMP") {
+    if (!version) version = "latest";
     const phpBin = ((await oracleBucket.listFiles()) as any[]).filter(({name}) => name.includes("php_bin/")).filter(({name}) => name.includes(process.platform) && name.includes(process.arch)).at(0);
     if (!phpBin) throw new Error("PHP Bin not found");
     const binFolder = path.join(serverPath.serverPath, "bin");
@@ -86,6 +77,7 @@ export async function installServer(version: string, options?: bedrockRootOption
       phpBin: phpBin.name,
     };
   } else if (options?.variant === "Powernukkit") {
+    if (!version) version = "latest";
     const versions = await coreUtils.http.jsonRequest<{version: string, mcpeVersion: string, date: string, url: string, variantType: "snapshot"|"stable"}[]>("https://mcpeversion-static.sirherobrine23.org/powernukkit/all.json").then(data => data.body);
     const versionData = version.trim().toLowerCase() === "latest" ? versions.at(-1) : versions.find((v) => v.version === version.trim() || v.mcpeVersion === version.trim());
     if (!versionData) throw new Error("Version not found");
@@ -100,9 +92,20 @@ export async function installServer(version: string, options?: bedrockRootOption
       url,
     };
   } else if (options?.variant === "Cloudbust") {
-    throw new Error("Not implemented");
+    await coreUtils.http.large.saveFile({
+      url: "https://ci.opencollab.dev/job/NukkitX/job/Server/job/bleeding/lastSuccessfulBuild/artifact/target/Cloudburst.jar",
+      path: path.join(serverPath.serverPath, "server.jar")
+    });
+
+    return {
+      version: "bleeding",
+      releaseDate: new Date(),
+      release: "preview",
+      url: "https://ci.opencollab.dev/job/NukkitX/job/Server/job/bleeding/lastSuccessfulBuild/artifact/target/Cloudburst.jar",
+    };
   } else {
-    const versions = await coreUtils.http.jsonRequest<bedrockVersionJSON[]>("https://the-bds-maneger.github.io/BedrockFetch/all.json").then(data => data.body);
+    if (!version) version = "latest";
+    const versions = await coreUtils.http.jsonRequest<bedrockVersionJSON[]>("https://sirherobrine23.github.io/BedrockFetch/all.json").then(data => data.body);
     const versionData = version.trim().toLowerCase() === "latest" ? versions.at(-1) : versions.find((v) => v.version === version.trim());
     if (!versionData) throw new Error("Version not found");
     let currentPlatform = process.platform;
@@ -147,8 +150,44 @@ export async function startServer(options?: bedrockRootOption) {
         });
       },
     };
-  } else if (options?.variant === "Powernukkit") {
-  } else if (options?.variant === "Cloudbust") {
+  } else if (options?.variant === "Powernukkit" || options?.variant === "Cloudbust") {
+    serverExec.exec.exec = "java";
+    serverExec.exec.args = [
+      "-XX:+UseG1GC",
+      "-XX:+ParallelRefProcEnabled",
+      "-XX:MaxGCPauseMillis=200",
+      "-XX:+UnlockExperimentalVMOptions",
+      "-XX:+DisableExplicitGC",
+      "-XX:+AlwaysPreTouch",
+      "-XX:G1NewSizePercent=30",
+      "-XX:G1MaxNewSizePercent=40",
+      "-XX:G1HeapRegionSize=8M",
+      "-XX:G1ReservePercent=20",
+      "-XX:G1HeapWastePercent=5",
+      "-XX:G1MixedGCCountTarget=4",
+      "-XX:InitiatingHeapOccupancyPercent=15",
+      "-XX:G1MixedGCLiveThresholdPercent=90",
+      "-XX:G1RSetUpdatingPauseTimePercent=5",
+      "-XX:SurvivorRatio=32",
+      "-XX:+PerfDisableSharedMem",
+      "-XX:MaxTenuringThreshold=1",
+      "-Dusing.aikars.flags=https://mcflags.emc.gs",
+      "-Daikars.new.flags=true",
+      "-jar", "server.jar"
+    ];
+    serverExec.actions = {
+      stopServer(child_process) {
+        child_process.stdin.write("stop\n");
+      },
+      onStart(lineData, fnRegister) {
+        if (!(lineData.includes("INFO") && lineData.includes("Done") && lineData.includes("help"))) return;
+        const doneStart = new Date();
+        fnRegister({
+          serverAvaible: doneStart,
+          bootUp: runStart.getTime() - doneStart.getTime()
+        });
+      },
+    };
   } else {
     if (process.platform === "win32") serverExec.exec.exec = "bedrock_server.exe";
     else if (process.platform === "darwin") throw new Error("MacOS is not supported, run in Docker or Virtual Machine");
@@ -158,18 +197,18 @@ export async function startServer(options?: bedrockRootOption) {
         LD_LIBRARY_PATH: serverPath.serverPath
       };
     }
-    // if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
-    //   const exec = serverExec.exec.exec;
-    //   serverExec.exec.exec = undefined;
-    //   for (const command of hostArchEmulate) {
-    //     if (await childPromisses.commandExists(command, true)) {
-    //       serverExec.exec.args = [exec];
-    //       serverExec.exec.exec = command;
-    //       break;
-    //     }
-    //     if (!serverExec.exec.exec) throw new Error("No emulator found for this platform");
-    //   }
-    // }
+    if ((["android", "linux"]).includes(process.platform) && process.arch !== "x64") {
+      const exec = serverExec.exec.exec;
+      serverExec.exec.exec = undefined;
+      for (const command of hostArchEmulate) {
+        if (await childPromisses.commandExists(command, true)) {
+          serverExec.exec.args = [exec];
+          serverExec.exec.exec = command;
+          break;
+        }
+        if (!serverExec.exec.exec) throw new Error("No emulator found for this platform");
+      }
+    }
 
     const startTest = /\[.*\]\s+Server\s+started\./;
     // Server actions
