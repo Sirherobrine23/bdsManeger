@@ -78,6 +78,7 @@ export async function startServer(options: javaOptions) {
       "-Dusing.aikars.flags=https://mcflags.emc.gs",
       "-Daikars.new.flags=true",
       "-jar", "server.jar",
+      ...(options.altServer === "paper" ? [] : options.altServer === "purpur" ? [] : options.altServer === "spigot" ? [] : ["--nogui", "--universe", "worlds"])
     ],
     serverActions: {
       stop(child) {
