@@ -214,8 +214,18 @@ jobs:
       with:
         path: ./phpOutput
 
+    - name: Rename files
+      run: |
+        set -ex
+        cd phpOutput/
+        find . -type f | grep -v ".jar" | xargs rm -rfv
+        find . -type f | grep "build" | xargs rm -rfv
+        for file in $(find . -type f | grep "spigot"); do
+          mv -v "$file" "$(echo $file | sed 's|spigot-||g')"
+        done
+
     - name: Upload to bucket
-      run: node .github/uploadphp/index.mjs
+      run: node .github/uploadToBucket.mjs php_bin phpOutput
       timeout-minutes: 25
       env:
         OCI_AUTHKEY: ${{ secrets.OCI_AUTHKEY }}

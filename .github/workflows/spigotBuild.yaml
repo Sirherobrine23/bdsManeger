@@ -8,12 +8,12 @@ on:
       - main
     paths:
       - ".github/workflows/spigotBuild.yaml"
-      - ".github/spigotBuilld/**/*"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 6
       matrix:
         version:
         - latest
@@ -107,10 +107,6 @@ jobs:
         path: artifacts
 
     - name: Upload to actifial
-      run: node .github/spigotBuilld/index.mjs artifacts
+      run: node .github/uploadToBucket.mjs SpigotBuild artifacts
       env:
-        tenancy: ${{ secrets.OCI_TENANCY }}
-        fingerprint: ${{ secrets.OCI_FING }}
-        privateKey: ${{ secrets.OCI_PRIV }}
-        user: ${{ secrets.OCI_USER }}
-        passphase: ${{ secrets.OCI_PASSPHASE || '' }}
+        OCI_AUTHKEY: ${{ secrets.OCI_AUTHKEY }}

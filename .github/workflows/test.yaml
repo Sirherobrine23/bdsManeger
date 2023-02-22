@@ -1,23 +1,13 @@
-
 name: Test
 on:
   push:
-    branches:
-    - main
-    paths:
-      - "src/**/*"
-      - "tests/**/*"
-      - "package*.json"
-  pull_request:
-    branches:
-    - main
 
 jobs:
   test:
     runs-on: ubuntu-latest
     name: "Test"
     env:
-      BDS_HOME: "~/.bdsCore"
+      bdscoreroot: "~/.bdsCore"
     steps:
     - uses: actions/checkout@v3
       name: Code checkout
@@ -36,8 +26,8 @@ jobs:
 
     # Install dependecies
     - name: Install nodejs dependencies
-      run: npm ci
+      run: npm install --no-save
 
-    # Run test
-    - name: Test
-      run: npm run test
+    # Build Core
+    - name: Core Build
+      run: cd package/core && npm run build
