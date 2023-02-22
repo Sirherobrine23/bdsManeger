@@ -15,10 +15,11 @@
     "allowJs": true,
     "lib": [
       "ESNext"
-    ]
+    ],
+    "composite": true
   },
   "exclude": [
-    "**/*.test.ts"
+    "**/*.test.*"
   ],
   "ts-node": {
     "esm": true

@@ -1,0 +1,17 @@
+{
+  "name": "@the-bds-maneger/docker",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "bin": {
+    "bdsdocker": "./src/index.js"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
+  "license": "ISC"
+}

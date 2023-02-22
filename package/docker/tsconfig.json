@@ -18,9 +18,14 @@
     ]
   },
   "exclude": [
-    "**/*.test.ts"
+    "**/*.test.*"
   ],
   "ts-node": {
     "esm": true
-  }
+  },
+  "references": [
+    {
+      "path": "../core"
+    }
+  ]
 }
