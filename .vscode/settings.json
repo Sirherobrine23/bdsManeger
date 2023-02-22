@@ -8,9 +8,7 @@
   "files.trimTrailingWhitespace": true,
   "files.exclude": {
     "**/node_modules/": true,
-    // Ignore generate tsc files
-    "**/dist/": true,
-    "**/src/**/*.js": false,
-    "**/src/**/*.d.ts": false,
+    "**/src/**/*.js": true,
+    "**/src/**/*.d.ts": true,
   }
 }

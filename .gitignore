@@ -1,17 +1,9 @@
-/*.log
+# Node
 node_modules/
-dist/
-src/**/*.d.ts
-src/**/*.d.js
-src/**/*.js
-docs/
 
-# PHP Bins
-muslCrossMake/
+# Typescript
+packages/**/*.js
+packages/**/*.d.ts
+
+# PHP Pre builds
 phpOutput/
-*.tar.gz
-*.tgz
-*.zip
-
-# Spigot
-*.jar
