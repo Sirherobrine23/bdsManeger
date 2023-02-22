@@ -15,7 +15,6 @@ export type bedrockOptions = manegerOptions & {
    * Servidor alternativo ao invés do servidor ofical da Mojang
    */
   altServer?: "pocketmine"|"powernukkit"|"cloudbust",
-  allowBeta?: boolean
 };
 
 const pocketmineGithub = await Github.GithubManeger("pmmp", "PocketMine-MP");
@@ -61,7 +60,7 @@ export async function listVersions(options?: Omit<bedrockOptions, keyof manegerO
   return (await coreHttp.jsonRequest<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>("https://sirherobrine23.github.io/BedrockFetch/all.json")).body;
 }
 
-export async function installServer(options: bedrockOptions & {version?: string}): Promise<{id: string, version: string, mcpeVersion?: string, releaseDate: Date}> {
+export async function installServer(options: bedrockOptions & {version?: string, allowBeta?: boolean}): Promise<{id: string, version: string, mcpeVersion?: string, releaseDate: Date}> {
   const serverPath = await serverManeger(options);
   if (options.altServer === "pocketmine") {
     const version = (options.version ?? "latest").trim();
