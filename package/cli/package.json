@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@the-bds-maneger/core": "*",
-    "yargs": "^17.7.0"
+    "yargs": "^17.7.1"
   },
   "devDependencies": {
     "@types/yargs": "^17.0.22"
