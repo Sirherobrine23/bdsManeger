@@ -30,7 +30,9 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: latest
-        path: "*.jar"
+        path: |
+          !build.jar
+          *.jar
 
   # Upload
   upload:
