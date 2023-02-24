@@ -1,31 +1,9 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "esModuleInterop": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ESNext",
-    "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "strict": false,
-    "noUnusedLocals": true,
-    "isolatedModules": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "allowJs": true,
-    "lib": [
-      "ESNext"
-    ]
+    "composite": true
   },
-  "exclude": [
-    "**/*.test.*"
-  ],
-  "ts-node": {
-    "esm": true
-  },
-  "references": [
-    {
-      "path": "../core"
-    }
-  ]
+  "references": [{
+    "path": "../core"
+  }]
 }

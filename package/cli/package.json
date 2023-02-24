@@ -4,7 +4,9 @@
   "description": "",
   "main": "src/index.js",
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "build": "tsc --build --clean && tsc --build"
+  },
   "keywords": [],
   "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
   "license": "ISC",

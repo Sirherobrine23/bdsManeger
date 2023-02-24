@@ -1,51 +1,154 @@
+import { createInterface as readline } from "node:readline";
 import { extendsFS } from "@sirherobrine23/extends";
 import child_process from "node:child_process";
 import crypto from "node:crypto";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
+import { format } from "node:util";
+import { createWriteStream } from "node:fs";
 
 // Default bds maneger core
 export const bdsManegerRoot = process.env.bdscoreroot ? path.resolve(process.cwd(), process.env.bdscoreroot) : path.join(os.homedir(), ".bdsmaneger");
 if (!(await extendsFS.exists(bdsManegerRoot))) await fs.mkdir(bdsManegerRoot, {recursive: true});
+export type withPromise<T> = T|Promise<T>;
+
+export type manegerOptions = {
+  ID?: string,
+  newID?: boolean,
+};
+
+// only letters and numbers
+const idReg = /^[a-zA-Z0-9]+$/;
+
+export type serverManegerV1 = {
+  id: string,
+  rootPath: string,
+  serverFolder: string,
+  backup: string,
+  logs: string,
+  runCommand(options: Omit<runOptions, "cwd">): ReturnType<typeof runServer>
+};
+
+/**
+ * Platform path maneger
+ */
+export async function serverManeger(platform: "bedrock"|"java", options: manegerOptions): Promise<serverManegerV1> {
+  if (!((["java", "bedrock"]).includes(platform))) throw new TypeError("Invalid platform target!");
+  if (!options) throw new TypeError("Please add serverManeger options!");
+  const platformFolder = path.join(bdsManegerRoot, platform);
+  if ((await fs.readdir(platformFolder).then(a => a.length).catch(() => 0)) === 0) options.newID = true;
+  if (options.newID) while(true) {
+    options.ID = crypto.randomBytes(16).toString("hex");
+    if (!(idReg.test(options.ID))) continue;
+    if (!(await fs.readdir(platformFolder).catch(() => [])).includes(options.ID)) break;
+  }
+
+  // Test invalid ID
+  if (!(!!options.ID && idReg.test(options.ID))) throw new TypeError("options.ID is invalid");
+
+  /**
+   * Platform ID root path
+   */
+  const rootPath = path.join(platformFolder, options.ID);
+  if (!(await extendsFS.exists(rootPath))) await fs.mkdir(rootPath, {recursive: true});
+
+  // sub-folders
+  const serverFolder = path.join(rootPath, "server");
+  const backup = path.join(rootPath, "backups");
+  const log = path.join(rootPath, "logs");
+
+  for await (const p of [
+    serverFolder,
+    backup,
+    log,
+  ]) if (!(await extendsFS.exists(p))) await fs.mkdir(p, {recursive: true});
+
+  return {
+    id: options.ID,
+    rootPath,
+    serverFolder,
+    backup,
+    logs: log,
+    async runCommand(options: Omit<runOptions, "cwd">) {
+      return runServer({...options, cwd: serverFolder});
+    }
+  };
+}
+
+export type portListen = {
+  port: number,
+  protocol: "TCP"|"UDP"|"both",
+  listenOn?: string,
+};
+
+export type playerAction = {
+  playerName: string,
+  onDate: Date,
+  action: string,
+  extra?: any
+};
 
 export type runOptions = {
   cwd: string,
   env?: {[k: string]: string|number|boolean},
   command: string,
   args?: (string|number|boolean)[],
+  stdio?: child_process.StdioOptions,
+  paths: serverManegerV1,
   serverActions?: {
-    stop?(child: serverRun): void|Promise<void>,
+    stop?(this: serverRun): withPromise<void>,
+    playerAction?(this: serverRun, lineString: string): withPromise<null|void|playerAction>,
+    hotBackup?(this: serverRun): withPromise<string|void>,
+    portListen?(this: serverRun, lineString: string): withPromise<void|portListen>,
+    postStop?: {
+      createBackup?(this: serverRun): withPromise<void>,
+    },
   }
 };
 
 export declare class serverRun extends child_process.ChildProcess {
   on(event: string, listener: (...args: any[]) => void): this;
-  on(event: "error", listener: (err: Error) => void): this;
-  on(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-  on(event: "disconnect", listener: () => void): this;
-  on(event: "exit", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-  on(event: "message", listener: (message: child_process.Serializable, sendHandle: child_process.SendHandle) => void): this;
-  on(event: "spawn", listener: () => void): this;
-
   once(event: string, listener: (...args: any[]) => void): this;
+  on(event: "error", listener: (err: Error) => void): this;
   once(event: "error", listener: (err: Error) => void): this;
+  on(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
   once(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
+  on(event: "disconnect", listener: () => void): this;
   once(event: "disconnect", listener: () => void): this;
+  on(event: "exit", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
   once(event: "exit", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
+  on(event: "message", listener: (message: child_process.Serializable, sendHandle: child_process.SendHandle) => void): this;
   once(event: "message", listener: (message: child_process.Serializable, sendHandle: child_process.SendHandle) => void): this;
+  on(event: "spawn", listener: () => void): this;
   once(event: "spawn", listener: () => void): this;
+
+  // BDS Assigns
+  once(event: "line", fn: (data: string, from: "stdout"|"stderr") => void): this;
+  on(event: "line", fn: (data: string, from: "stdout"|"stderr") => void): this;
+  once(event: "player", fn: (playerInfo: playerAction) => void): this;
+  on(event: "player", fn: (playerInfo: playerAction) => void): this;
+  once(event: "portListening", fn: (portInfo: portListen) => void): this;
+  on(event: "portListening", fn: (portInfo: portListen) => void): this;
+  once(event: "backup", fn: (status: "start"|"success"|"fail") => void): this;
+  on(event: "backup", fn: (status: "start"|"success"|"fail") => void): this;
+
+  runOptions: runOptions;
+  portListening: portListen[];
+  logPath: {stderr: string, stdout: string};
 
   stopServer(): Promise<{code?: number, signal?: NodeJS.Signals}>;
   sendCommand(...args: (string|number|boolean)[]): this;
+  hotBackup(): this & Promise<Awaited<ReturnType<runOptions["serverActions"]["hotBackup"]>>>;
 }
 
 /**
- *
+ * Run servers globally and hormonally across servers
  */
 export async function runServer(options: runOptions): Promise<serverRun> {
-  const child = child_process.execFile(options.command, [...((options.args ?? []).map(String))], {
-    maxBuffer: Infinity,
+  const child = child_process.spawn(options.command, [...((options.args ?? []).map(String))], {
+    // maxBuffer: Infinity,
+    stdio: options.stdio,
     cwd: options.cwd || process.cwd(),
     env: {
       ...process.env,
@@ -55,6 +158,42 @@ export async function runServer(options: runOptions): Promise<serverRun> {
       }, {})
     }
   }) as serverRun;
+  child.runOptions = options;
+  child.portListening = [];
+  for (const std of [child.stdout, child.stderr]) if (!std) {
+    child.kill("SIGKILL");
+    throw new TypeError("Stdout or Stderr stream disabled, killed process, cannot continue to exec server, check stdio passed to spawn!");
+  }
+
+  // Log Write
+  const currentDate = new Date();
+  const baseLog = path.join(options.paths.logs, format("%s_%s_%s_%s-%s-%s", currentDate.getDate(), currentDate.getMonth()+1, currentDate.getFullYear(), currentDate.getHours(), currentDate.getMinutes(), currentDate.getSeconds()));
+  await fs.mkdir(baseLog, {recursive: true});
+  child.logPath = {stdout: path.join(baseLog, "stdout.log"), stderr: path.join(baseLog, "stderr.log")};
+  child.stdout.pipe(createWriteStream(child.logPath.stdout));
+  child.stderr.pipe(createWriteStream(child.logPath.stderr));
+
+  // Lines
+  const stdout = readline(child.stdout).on("line", data => child.emit("line", data, "stdout")).on("error", err => child.emit("error", err));
+  const stderr = readline(child.stderr).on("line", data => child.emit("line", data, "stderr")).on("error", err => child.emit("error", err));
+
+  if (typeof options.serverActions?.playerAction === "function") {
+    for (const std of [stdout, stderr]) std.on("line", async data => {
+      const playerData = await Promise.resolve(options.serverActions.playerAction.call(child, data) as ReturnType<typeof options.serverActions.playerAction>);
+      if (!playerData) return;
+      child.emit("player", playerData);
+    });
+  }
+
+  if (typeof options.serverActions?.portListen === "function") {
+    for (const std of [stdout, stderr]) std.on("line", async data => {
+      const portData = await Promise.resolve(options.serverActions.portListen.call(child, data) as ReturnType<typeof options.serverActions.portListen>);
+      if (!portData) return;
+      child.portListening.push(portData);
+      child.emit("portListening", portData);
+    });
+  }
+
   child.sendCommand = function (...args) {
     if (!child.stdin.writable) {
       child.emit("error", new Error("cannot send command to server"));
@@ -65,57 +204,40 @@ export async function runServer(options: runOptions): Promise<serverRun> {
   }
 
   child.stopServer = async function () {
-    const stop = options.serverActions?.stop ?? function (child) {
-
+    const stop = options.serverActions?.stop ?? function () {
+      child.kill("SIGINT");
+      const kill = setTimeout(() => {
+        clearTimeout(kill);
+        if (child.exitCode !== null) return;
+        child.kill("SIGKILL");
+      }, 2500);
     };
-    Promise.resolve().then(() => stop(child)).catch(err => child.emit("error", err));
+    Promise.resolve().then(() => stop.call(child)).catch(err => child.emit("error", err));
     return new Promise((done, reject) => child.once("error", reject).once("exit", (code, signal) => done({code, signal})));
   }
-  return child;
-}
 
-export type manegerOptions = {
-  ID?: string,
-  newID?: boolean,
-};
-
-/**
- *
- */
-export async function serverManeger(options: manegerOptions) {
-  if (!options) throw new TypeError("Por favor adicione as opções do serverManeger!");
-  if (!options.ID) options.newID = true;
-  if (options.newID) {
-    while(true) {
-      options.ID = crypto.randomBytes(16).toString("hex");
-      if (!(await fs.readdir(bdsManegerRoot)).includes(options.ID)) break;
-    }
+  child.hotBackup = function hotBackup() {
+    return Object.assign(Promise.resolve().then((async () => {
+      if (!options.serverActions?.hotBackup) throw new Error("Hot backup disabled to current platform!");
+      child.emit("backup", "start");
+      return Promise.resolve(options.serverActions.hotBackup.call(child) as ReturnType<typeof options.serverActions.hotBackup>).then(data => {
+        child.emit("backup", "success");
+        return data;
+      }).catch(err => {
+        child.emit("backup", "fail");
+        return Promise.reject(err);
+      });
+    })), child);
   }
 
-  /**
-   * Platform ID root path
-   */
-  const rootPath = path.join(bdsManegerRoot, options.ID);
-  if (!(await extendsFS.exists(rootPath))) await fs.mkdir(rootPath, {recursive: true});
+  // Create backup post server stop
+  if (typeof options.serverActions?.postStop?.createBackup === "function") child.on("close", () => {
+    child.emit("backup", "start");
+    return Promise.resolve(options.serverActions.postStop.createBackup.call(child)).then(() => child.emit("backup", "success")).catch(err => {
+      child.emit("backup", "fail");
+      child.emit("error", err);
+    });
+  });
 
-  // sub-folders
-  const serverFolder = path.join(rootPath, "server");
-  const backup = path.join(rootPath, "backups");
-
-  for await (const p of [
-    serverFolder,
-    backup,
-  ]) if (!(await extendsFS.exists(p))) await fs.mkdir(p, {recursive: true});
-
-  return {
-    id: options.ID,
-    rootPath,
-    serverFolder,
-    backup,
-    async runCommand(options: Omit<runOptions, "cwd">) {
-      return runServer({...options, cwd: serverFolder});
-    }
-  };
+  return child;
 }
-
-export type serverManegerV1 = Awaited<ReturnType<typeof serverManeger>>;

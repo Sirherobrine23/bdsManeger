@@ -4,6 +4,8 @@ node_modules/
 # Typescript
 packages/**/*.js
 packages/**/*.d.ts
+package/**/tsconfig.tsbuildinfo
 
-# PHP Pre builds
+# PHP and Spigot Pre builds
 phpOutput/
+*.jar

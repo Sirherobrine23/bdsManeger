@@ -3,12 +3,14 @@ import { manegerOptions, runOptions, serverManeger } from "../serverManeger.js";
 import { commandExists } from "../childPromisses.js";
 import { oracleStorage } from "../internal.js";
 import { pipeline } from "node:stream/promises";
+import extendsFS from "@sirherobrine23/extends";
 import semver from "semver";
 import unzip from "unzip-stream";
 import utils from "node:util";
 import path from "node:path";
 import tar from "tar";
-import extendsFS from "@sirherobrine23/extends";
+import { createWriteStream } from "node:fs";
+import { readdir } from "node:fs/promises";
 
 export type bedrockOptions = manegerOptions & {
   /**
@@ -57,25 +59,26 @@ export async function listVersions(options?: Omit<bedrockOptions, keyof manegerO
       return acc;
     }, [] as {version: string, mcpeVersion: string, date: Date, variantType: "stable"|"snapshot", url: string}[]).filter(a => !!a.url).sort((b, a) => (b.date.getTime() - a.date.getTime()) - semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version))));
   } else if (options.altServer === "cloudbust") throw new TypeError("O Cloudbust não tem listagem de versöes");
-  return (await coreHttp.jsonRequest<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>("https://sirherobrine23.github.io/BedrockFetch/all.json")).body;
+  return (await coreHttp.jsonRequest<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>("https://sirherobrine23.github.io/BedrockFetch/all.json")).body.sort((b, a) => semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version))));
 }
 
 export async function installServer(options: bedrockOptions & {version?: string, allowBeta?: boolean}): Promise<{id: string, version: string, mcpeVersion?: string, releaseDate: Date}> {
-  const serverPath = await serverManeger(options);
+  const serverPath = await serverManeger("bedrock", options);
   if (options.altServer === "pocketmine") {
-    const version = (options.version ?? "latest").trim();
-    const rel = (await pocketmineGithub.getRelease(version));
-    if (!rel) throw new Error("Não foi possivel encontrar a versão informada do Pocketmine!");
+    const version = (options.version || "latest").trim();
+    const rel = await pocketmineGithub.getRelease(version === "latest" ? true : version);
+    let fileURL: string;
+    if (!(fileURL = rel?.assets?.find(a => a.name.endsWith(".phar"))?.browser_download_url)) throw new Error("Não foi possivel encontrar a versão informada do Pocketmine!");
 
     const phpFile = (await oracleStorage.listFiles("php_bin")).find(file => file.name.includes(process.platform) && file.name.includes(process.arch));
     if (!phpFile) throw new Error(`Não foi possivel encontra os arquivos do php para o ${process.platform} com a arquitetura ${process.arch}`);
-    if (phpFile.name.endsWith(".tar.gz")) await pipeline(await oracleStorage.getFileStream(phpFile.name), tar.extract({cwd: serverPath.serverFolder}));
+    if (phpFile.name.endsWith(".tar.gz")||phpFile.name.endsWith(".tgz")||phpFile.name.endsWith(".tar")) await pipeline(await oracleStorage.getFileStream(phpFile.name), tar.extract({cwd: serverPath.serverFolder}));
     else if (phpFile.name.endsWith(".zip")) await pipeline(await oracleStorage.getFileStream(phpFile.name), unzip.Extract({path: serverPath.serverFolder}));
     else throw new Error("Arquivo encontrado não é suportado!");
 
     // save phar
     await large.saveFile({
-      url: rel.assets.find(a => a.name.endsWith(".phar"))?.browser_download_url,
+      url: fileURL,
       path: path.join(serverPath.serverFolder, "server.phar")
     });
 
@@ -141,7 +144,7 @@ export async function installServer(options: bedrockOptions & {version?: string,
 }
 
 export async function startServer(options: bedrockOptions) {
-  const serverPath = await serverManeger(options);
+  const serverPath = await serverManeger("bedrock", options);
   if (options.altServer === "powernukkit"||options.altServer === "cloudbust") {
     return serverPath.runCommand({
       command: "java",
@@ -168,9 +171,10 @@ export async function startServer(options: bedrockOptions) {
         "-Daikars.new.flags=true",
         "-jar", "server.jar",
       ],
+      paths: serverPath,
       serverActions: {
-        stop(child) {
-          child.sendCommand("stop");
+        stop() {
+          this.sendCommand("stop");
         },
       }
     })
@@ -178,24 +182,62 @@ export async function startServer(options: bedrockOptions) {
     return serverPath.runCommand({
       command: (await extendsFS.readdir(serverPath.serverFolder)).find(file => file.endsWith("php")||file.endsWith("php.exe")),
       args: [
-        "server.jar",
+        "server.phar",
         "--no-wizard"
-      ]
+      ],
+      paths: serverPath,
+      serverActions: {
+        stop() {
+          this.sendCommand("stop")
+        },
+      }
     });
   }
   if (process.platform === "darwin") throw new Error("Run in docker or podman!");
   const run: Omit<runOptions, "cwd"> = {
     command: path.join(serverPath.serverFolder, "bedrock_server"),
+    paths: serverPath,
     serverActions: {
-      stop(child) {
-        child.sendCommand("stop");
+      postStop: {
+        async createBackup() {
+          const currentDate = new Date();
+          return pipeline(tar.create({
+            gzip: true,
+            cwd: this.runOptions.paths.serverFolder,
+            prefix: ""
+          }, await readdir(this.runOptions.paths.serverFolder)), createWriteStream(path.join(this.runOptions.paths.backup, String(currentDate.getTime())+".tgz")));
+        },
+      },
+      stop() {
+        this.sendCommand("stop");
+      },
+      portListen(lineString) {
+        // [INFO] IPv4 supported, port: 19132
+        lineString = lineString.replace(/^(.*)?\[.*\]/, "").trim();
+        if (lineString.startsWith("IPv")) {
+          return {
+            protocol: "UDP",
+            listenOn: lineString.startsWith("IPv4") ? "0.0.0.0" : "[::]",
+            port: Number(lineString.substring(lineString.indexOf("port: ")+6).replace(/:.*$/, "")),
+          };
+        }
+        // NO LOG FILE! - [2023-02-23 21:09:52 INFO] Listening on IPv4 port: 19132
+        else if (lineString.startsWith("Listening")) {
+          lineString = lineString.substring(lineString.indexOf("IPv")-3);
+          return {
+            protocol: "UDP",
+            listenOn: lineString.startsWith("IPv4") ? "0.0.0.0" : "[::]",
+            port: Number(lineString.substring(lineString.indexOf("port: ")+6).replace(/:.*$/, "")),
+          };
+        }
+        return null;
       },
     }
   };
   if ((["android", "linux"] as NodeJS.Process["platform"][]).includes(process.platform) && process.arch !== "x64") {
     for (const emu of ["qemu-x86_64-static", "qemu-x86_64", "box64"]) {
       if (await commandExists(emu)) {
-        run.args = [emu, run.command];
+        run.args = [run.command, ...run.args];
         run.command = emu;
         break;
       }

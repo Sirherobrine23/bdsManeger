@@ -11,9 +11,9 @@
     "build": "tsc --build --clean && tsc"
   },
   "dependencies": {
-    "@sirherobrine23/cloud": "^3.2.2",
+    "@sirherobrine23/cloud": "^3.2.5",
     "@sirherobrine23/extends": "^3.2.1",
-    "@sirherobrine23/http": "^3.2.1",
+    "@sirherobrine23/http": "^3.2.6",
     "semver": "^7.3.8",
     "tar": "^6.1.13",
     "unzip-stream": "^0.3.1"

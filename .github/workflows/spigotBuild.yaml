@@ -12,76 +12,24 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        version:
-        - latest
-        - "1.19.2"
-        - "1.19.1"
-        - "1.19"
-        - "1.18.2"
-        - "1.18.1"
-        - "1.18-rc3"
-        - "1.18-pre8"
-        - "1.18-pre5"
-        - "1.18"
-        - "1.17.1"
-        - "1.17"
-        - "1.16.5"
-        - "1.16.4"
-        - "1.16.3"
-        - "1.16.2"
-        - "1.16.1"
-        - "1.15.2"
-        - "1.15.1"
-        - "1.15"
-        - "1.14.4"
-        - "1.14.3-pre4"
-        - "1.14.3"
-        - "1.14.2"
-        - "1.14.1"
-        - "1.14-pre5"
-        - "1.14"
-        - "1.13.2"
-        - "1.13.1"
-        - "1.13-pre7"
-        - "1.13"
-        - "1.12.2"
-        - "1.12.1"
-        - "1.12"
-        - "1.11.2"
-        - "1.11.1"
-        - "1.11"
-        - "1.10.2"
-        - "1.10"
-        - "1.9.4"
-        - "1.9.2"
-        - "1.9"
-        - "1.8.8"
-        - "1.8.7"
-        - "1.8.6"
-        - "1.8.5"
-        - "1.8.4"
-        - "1.8.3"
-        - "1.8"
     steps:
-    - name: Install ${{ startsWith(matrix.version, 'latest') && '19' || (startsWith(matrix.version, '1.19')||startsWith(matrix.version, '1.18')) && '17' || startsWith(matrix.version, '1.17') && '16' || '8' }} java
+    - name: Install 19 java
       uses: actions/setup-java@v3
       continue-on-error: true
       with:
         distribution: liberica
-        java-version: ${{ (startsWith(matrix.version, 'latest')||startsWith(matrix.version, '1.19')||startsWith(matrix.version, '1.18')) && '17' || startsWith(matrix.version, '1.17') && '16' || '8' }}
+        java-version: "19"
 
     - name: Build
       continue-on-error: true
       run: |
         wget -qO build.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
-        java -jar build.jar --rev "${{ matrix.version || 'latest' }}"
+        java -jar build.jar --rev "latest"
 
     - name: Upload to actifial
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.version || 'latest' }}
+        name: latest
         path: "*.jar"
 
   # Upload
@@ -105,17 +53,8 @@ jobs:
       with:
         path: artifacts
 
-    - name: Rename files
-      run: |
-        set -ex
-        cd artifacts/
-        find . -type f | grep -v ".jar" | xargs rm -rfv
-        find . -type f | grep "build" | xargs rm -rfv
-        for file in $(find . -type f | grep "spigot"); do
-          mv -v "$file" "$(echo $file | sed 's|spigot-||g')"
-        done
-
     - name: Upload to actifial
       run: node .github/uploadToBucket.mjs SpigotBuild artifacts
       env:
-        OCI_AUTHKEY: ${{ secrets.OCI_AUTHKEY }}
+        ociauth: "${{ secrets.OCI_AUTHKEY }}"
+        OCI_AUTHKEY: "${{ secrets.OCI_AUTHKEY }}"

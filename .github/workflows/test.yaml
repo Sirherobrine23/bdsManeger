@@ -5,7 +5,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: "Test"
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - core
+          - cli
+          - docker
+    name: "Testing ${{ matrix.package }}"
     env:
       bdscoreroot: "~/.bdsCore"
     steps:
@@ -30,4 +37,7 @@ jobs:
 
     # Build Core
     - name: Core Build
-      run: cd package/core && npm run build
+      run: npm run -w package/core build
+
+    - name: Build ${{ matrix.package }}
+      run: npm run -w "package/${{ matrix.package }}" build
