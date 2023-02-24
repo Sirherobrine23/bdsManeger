@@ -1,5 +1,37 @@
 # Bds Maneger Core
 
-Este é um nucleo de utilização basica como: Fazer download do servidor, Gerenciar e outras coisas.
+Basic core to install, update and manage several minecraft servers automatically, depending on a few dependencies, the basic being **Nodejs**.
 
-**Atualmente suportamos varias servidores, tanto para o Bedrock tanto o Java**
+## Servers supports and TODO
+
+**Bedrock Mojang**:
+  - [x] Install/Update.
+  - [ ] Hot backup.
+  - [x] Start.
+  - [x] Port Listened.
+  - [ ] Player connect/disconnect/spawn.
+  - [ ] Player kick/ban.
+
+**Pocketmine PMMP**:
+  - [x] Install/Update.
+  - [ ] Hot backup.
+  - [x] Start.
+  - [ ] Port listened.
+  - [ ] Player connect/disconnect.
+  - [ ] Player kick/ban.
+
+**Powernukkit** and **Cloudbust**:
+  - [x] Install/Update.
+  - 🚫 Hot backup.
+  - [x] Start.
+  - [ ] Port listened.
+  - [ ] Player connect/disconnect.
+  - [ ] Player kick/ban.
+
+**Java Mojang**, **Purpur**, **Paper** and **Spigot**:
+  - [x] Install/Update.
+  - 🚫 Hot Backup.
+  - [x] Start.
+  - [ ] Port listened.
+  - [ ] Player connect/disconect action.
+  - [ ] Player kick/ban.

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bdsDocker
+  labels:
+    name: bdsDocker
+spec:
+  containers:
+  - name: bdsDocker
+    image: ghcr.io/sirherobrine23/bdsdocker:latest
+    imagePullPolicy: Always
+    resources:
+      limits:
+        memory: 6G
+        cpu: 2
+    ports:
+      - containerPort: 19132
+        hostPort: 19132
+        protocol: UDP
+      - containerPort: 19133
+        hostPort: 19133
+        protocol: UDP

@@ -1,12 +1,13 @@
 import { createInterface as readline } from "node:readline";
+import { createWriteStream } from "node:fs";
 import { extendsFS } from "@sirherobrine23/extends";
+import { format } from "node:util";
 import child_process from "node:child_process";
 import crypto from "node:crypto";
+import stream from "node:stream";
 import path from "node:path";
 import fs from "node:fs/promises";
 import os from "node:os";
-import { format } from "node:util";
-import { createWriteStream } from "node:fs";
 
 // Default bds maneger core
 export const bdsManegerRoot = process.env.bdscoreroot ? path.resolve(process.cwd(), process.env.bdscoreroot) : path.join(os.homedir(), ".bdsmaneger");
@@ -37,23 +38,25 @@ export async function serverManeger(platform: "bedrock"|"java", options: maneger
   if (!((["java", "bedrock"]).includes(platform))) throw new TypeError("Invalid platform target!");
   if (!options) throw new TypeError("Please add serverManeger options!");
   const platformFolder = path.join(bdsManegerRoot, platform);
-  if ((await fs.readdir(platformFolder).then(a => a.length).catch(() => 0)) === 0) options.newID = true;
-  if (options.newID) while(true) {
-    options.ID = crypto.randomBytes(16).toString("hex");
-    if (!(idReg.test(options.ID))) continue;
-    if (!(await fs.readdir(platformFolder).catch(() => [])).includes(options.ID)) break;
+  if ((await fs.readdir(platformFolder).then(a => a.length).catch(() => 0)) === 0 && options.newID === undefined) options.newID = true;
+
+  // Create or check if exists
+  if (options.newID === true) {
+    while(true) {
+      options.ID = crypto.randomBytes(crypto.randomInt(8, 14)).toString("hex");
+      if (!(idReg.test(options.ID))) continue;
+      if (!((await fs.readdir(platformFolder).catch(() => [])).includes(options.ID))) break;
+    }
+    await fs.mkdir(path.join(platformFolder, options.ID), {recursive: true});
+  } else {
+    // Test invalid ID
+    if (String(options.ID).length > 32) throw new TypeError("options.ID is invalid, is very long!");
+    if (!(!!options.ID && idReg.test(options.ID))) throw new TypeError("options.ID is invalid");
+    else if (!((await fs.readdir(platformFolder)).includes(options.ID))) throw new Error("ID not exists")
   }
 
-  // Test invalid ID
-  if (!(!!options.ID && idReg.test(options.ID))) throw new TypeError("options.ID is invalid");
-
-  /**
-   * Platform ID root path
-   */
+  // Folders
   const rootPath = path.join(platformFolder, options.ID);
-  if (!(await extendsFS.exists(rootPath))) await fs.mkdir(rootPath, {recursive: true});
-
-  // sub-folders
   const serverFolder = path.join(rootPath, "server");
   const backup = path.join(rootPath, "backups");
   const log = path.join(rootPath, "logs");
@@ -138,6 +141,7 @@ export declare class serverRun extends child_process.ChildProcess {
   logPath: {stderr: string, stdout: string};
 
   stopServer(): Promise<{code?: number, signal?: NodeJS.Signals}>;
+  sendCommand(streamPipe: stream.Readable): this;
   sendCommand(...args: (string|number|boolean)[]): this;
   hotBackup(): this & Promise<Awaited<ReturnType<runOptions["serverActions"]["hotBackup"]>>>;
 }
@@ -199,6 +203,10 @@ export async function runServer(options: runOptions): Promise<serverRun> {
       child.emit("error", new Error("cannot send command to server"));
       return child;
     };
+    if (args[0] instanceof stream.Readable) {
+      args[0].on("data", data => child.stdin.write(data));
+      return child;
+    }
     child.stdin.write(args.map(String).join(" ")+"\n");
     return child;
   }
