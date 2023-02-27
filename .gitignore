@@ -2,9 +2,9 @@
 node_modules/
 
 # Typescript
-packages/**/*.js
-packages/**/*.d.ts
-package/**/tsconfig.tsbuildinfo
+**/*.js
+**/*.d.ts
+**/tsconfig.tsbuildinfo
 
 # PHP and Spigot Pre builds
 phpOutput/

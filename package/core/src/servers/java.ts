@@ -14,14 +14,14 @@ export type javaOptions = manegerOptions & {
   altServer?: "spigot"|"paper"|"purpur"
 };
 
-export async function listVersions(options: Omit<javaOptions, keyof manegerOptions>) {
-  if (options.altServer === "purpur") {
+export async function listVersions(altServer?: javaOptions["altServer"]) {
+  if (altServer === "purpur") {
     return (await Promise.all((await coreHttp.jsonRequest<{versions: string[]}>("https://api.purpurmc.org/v2/purpur")).body.versions.map(async version => ({
       version,
       getFile: async () => coreHttp.streamRequest(utils.format("https://api.purpurmc.org/v2/purpur/%s/latest/download", version)),
       date: new Date((await coreHttp.jsonRequest<{timestamp: number}>(utils.format("https://api.purpurmc.org/v2/purpur/%s/latest", version))).body.timestamp)
     })))).sort((b, a) => semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version))));
-  } else if (options.altServer === "paper") {
+  } else if (altServer === "paper") {
     return (await Promise.all((await coreHttp.jsonRequest<{versions: string[]}>("https://api.papermc.io/v2/projects/paper")).body.versions.map(async version => {
       const build = (await coreHttp.jsonRequest<{builds: number[]}>(utils.format("https://api.papermc.io/v2/projects/paper/versions/%s", version))).body.builds.at(-1);
       const data = (await coreHttp.jsonRequest<{time: string, downloads: {[k: string]: {name: string, sha256: string}}}>(utils.format("https://api.papermc.io/v2/projects/paper/versions/%s/builds/%s", version, build))).body;
@@ -32,7 +32,7 @@ export async function listVersions(options: Omit<javaOptions, keyof manegerOptio
         getFile: async () => coreHttp.streamRequest(utils.format("https://api.papermc.io/v2/projects/paper/versions/%s/builds/%s/downloads/%s", version, build, data.downloads["application"].name))
       }
     }))).sort((b, a) => semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version))));
-  } else if (options.altServer === "spigot") {
+  } else if (altServer === "spigot") {
     return (await oracleStorage.listFiles("SpigotBuild")).filter(f => f.name.endsWith(".jar") && !f.name.includes("craftbukkit-")).map(file => ({
       getFile: file.getFile,
       version: semver.valid(semver.coerce(file.name.replace("SpigotBuild/", "").replace(".jar", ""))),
@@ -51,7 +51,7 @@ export async function listVersions(options: Omit<javaOptions, keyof manegerOptio
 
 export async function installServer(options: javaOptions & {version?: string}) {
   const serverPath = await serverManeger("java", options);
-  const version = (await listVersions(options)).find(rel => (!options.version || options.version === "latest" || rel.version === options.version));
+  const version = (await listVersions(options.altServer)).find(rel => (!options.version || options.version === "latest" || rel.version === options.version));
   if (!version) throw new Error("Não existe a versão informada!");
   await pipeline(await version.getFile(), fs.createWriteStream(path.join(serverPath.serverFolder, "server.jar")));
   await fs.promises.writeFile(path.join(serverPath.serverFolder, "eula.txt"), "eula=true\n");

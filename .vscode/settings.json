@@ -6,9 +6,9 @@
   "editor.minimap.enabled": false,
   "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true,
-  "files.exclude": {
-    "**/node_modules/": true,
-    "**/src/**/*.js": true,
-    "**/src/**/*.d.ts": true,
-  }
+  // "files.exclude": {
+  //   "**/node_modules/": true,
+  //   "**/src/**/*.js": true,
+  //   "**/src/**/*.d.ts": true,
+  // }
 }

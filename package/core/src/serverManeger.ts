@@ -79,6 +79,24 @@ export async function serverManeger(platform: "bedrock"|"java", options: maneger
   };
 }
 
+export async function listIDs(): Promise<{[T in ("bedrock"|"java")]?: {id: string}[]}> {
+  const main = {};
+  for await (const platform of ["bedrock", "java"]) {
+    try {
+      const platformFolder = path.join(bdsManegerRoot, platform);
+      if (!(await extendsFS.exists(platformFolder))) continue;
+      const IDs = await fs.readdir(platformFolder);
+      for await (const id of IDs) {
+        main[platform] ??= [];
+        main[platform].push({
+          id: id,
+        });
+      }
+    } catch {}
+  }
+  return main;
+}
+
 export type portListen = {
   port: number,
   protocol: "TCP"|"UDP"|"both",

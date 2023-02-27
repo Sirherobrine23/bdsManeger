@@ -16,18 +16,18 @@ export type bedrockOptions = manegerOptions & {
   /**
    * Servidor alternativo ao invés do servidor ofical da Mojang
    */
-  altServer?: "pocketmine"|"powernukkit"|"cloudbust",
+  altServer?: "pocketmine"|"powernukkit"|"nukkit"|"cloudbust",
 };
 
 const pocketmineGithub = await Github.GithubManeger("pmmp", "PocketMine-MP");
 
-export async function listVersions(options: {altServer: "powernukkit"} & Omit<bedrockOptions, "altServer"|keyof manegerOptions>): Promise<{version: string, mcpeVersion: string, date: Date, variantType: "stable"|"snapshot", url: string}[]>;
-export async function listVersions(options: {altServer: "pocketmine"} & Omit<bedrockOptions, "altServer"|keyof manegerOptions>): Promise<Github.githubRelease[]>;
+export async function listVersions(altServer: "powernukkit"): Promise<{version: string, mcpeVersion: string, date: Date, variantType: "stable"|"snapshot", url: string}[]>;
+export async function listVersions(altServer: "pocketmine"): Promise<Github.githubRelease[]>;
+export async function listVersions(altServer: "cloudbust"|"nukkit"): Promise<{buildNumber: number, branch: string, releaseDate: Date, url: string}[]>;
 export async function listVersions(): Promise<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>;
-export async function listVersions(options?: Omit<bedrockOptions, keyof manegerOptions>) {
-  if (!options) options = {};
-  if (options.altServer === "pocketmine") return pocketmineGithub.getRelease();
-  else if (options.altServer === "powernukkit") {
+export async function listVersions(altServer?: bedrockOptions["altServer"]) {
+  if (altServer === "pocketmine") return pocketmineGithub.getRelease();
+  else if (altServer === "powernukkit") {
     const releases_version = (await coreHttp.jsonRequest<{[k: string]: {version: string, releaseTime: number, minecraftVersion: string, artefacts: string[], commitId:  string, snapshotBuild?: number}[]}>("https://raw.githubusercontent.com/PowerNukkit/powernukkit-version-aggregator/master/powernukkit-versions.json")).body;
     return Object.keys(releases_version).reduce((acc, key) => {
       for (const data of releases_version[key]) {
@@ -58,7 +58,24 @@ export async function listVersions(options?: Omit<bedrockOptions, keyof manegerO
       }
       return acc;
     }, [] as {version: string, mcpeVersion: string, date: Date, variantType: "stable"|"snapshot", url: string}[]).filter(a => !!a.url).sort((b, a) => (b.date.getTime() - a.date.getTime()) - semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version))));
-  } else if (options.altServer === "cloudbust") throw new TypeError("O Cloudbust não tem listagem de versöes");
+  } else if (altServer === "cloudbust"||altServer === "nukkit") {
+    const buildFiles = [];
+    const { body: { jobs } } = await coreHttp.jsonRequest<{jobs: {name: string, _class: string}[]}>(`https://ci.opencollab.dev/job/NukkitX/job/${altServer === "nukkit" ? "Nukkit" : "Server"}/api/json`);
+    await Promise.all(jobs.filter(b => b._class === "org.jenkinsci.plugins.workflow.job.WorkflowJob").map(b => b.name).map(async branch => {
+      const { body: { builds } } = await coreHttp.jsonRequest<{builds: {_class: string, number: number, url: string}[]}>(`https://ci.opencollab.dev/job/NukkitX/job/${altServer === "nukkit" ? "Nukkit" : "Server"}/job/${branch}/api/json`);
+      return Promise.all(builds.map(async build => {
+        const { body: { artifacts, result, timestamp } } = await coreHttp.jsonRequest<{result: "SUCCESS", timestamp: number, artifacts: {displayPath: string, fileName: string, relativePath: string}[]}>(`https://ci.opencollab.dev/job/NukkitX/job/${altServer === "nukkit" ? "Nukkit" : "Server"}/job/${branch}/${build.number}/api/json`);
+        if (result !== "SUCCESS") return;
+        artifacts.filter(f => f.relativePath.endsWith(".jar")).forEach(target => buildFiles.push({
+          buildNumber: build.number,
+          branch,
+          releaseDate: new Date(timestamp),
+          url: `https://ci.opencollab.dev/job/NukkitX/job/${altServer === "nukkit" ? "Nukkit" : "Server"}/job/${branch}/${build.number}/artifact/${target.relativePath}`,
+        }));
+      }));
+    }));
+    return buildFiles.sort((a, b) => a.releaseDate.getTime() - b.releaseDate.getTime());
+  }
   return (await coreHttp.jsonRequest<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>("https://sirherobrine23.github.io/BedrockFetch/all.json")).body.sort((b, a) => semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version))));
 }
 
@@ -89,7 +106,7 @@ export async function installServer(options: bedrockOptions & {version?: string,
     };
   } else if (options.altServer === "powernukkit") {
     const version = (options.version ?? "latest").trim();
-    const releases = await listVersions({altServer: "powernukkit"});
+    const releases = await listVersions("powernukkit");
     const relVersion = releases.find(rel => {
       if (rel.variantType === "snapshot") if (!options.allowBeta) return false;
       if (version.toLowerCase() === "latest") return true;

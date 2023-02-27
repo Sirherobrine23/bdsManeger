@@ -1,0 +1,21 @@
+{
+  "name": "@the-bds-maneger/web",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
+  "license": "GPL-3.0",
+  "scripts": {
+    "dev": "next dev"
+  },
+  "dependencies": {
+    "@the-bds-maneger/core": "*",
+    "mongodb": "^5.1.0",
+    "next": "^13.2.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.28"
+  }
+}
