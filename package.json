@@ -10,5 +10,8 @@
   },
   "workspaces": [
     "package/*"
-  ]
+  ],
+  "dependencies": {
+    "mongodb": "^5.1.0"
+  }
 }

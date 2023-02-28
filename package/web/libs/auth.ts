@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { IncomingMessage } from "node:http";
 import mongodb from "mongodb";
 
 export type authSchema = ({
@@ -17,7 +18,7 @@ async function authCollection(): Promise<mongodb.Collection<authSchema>> {
   return global["authCollection"] = connection.db(process.env.NODE_ENV).collection<authSchema>("auth");
 }
 
-export default async function authHandler(req: NextApiRequest, res: NextApiResponse): Promise<boolean> {
+async function authHandler(req: NextApiRequest|IncomingMessage, res?: NextApiResponse): Promise<boolean> {
   const { authorization = "" } = req.headers;
   if (typeof authorization === "string" && !!authorization) {
     const coll = await authCollection();
@@ -27,11 +28,20 @@ export default async function authHandler(req: NextApiRequest, res: NextApiRespo
       if (!exists) return true;
       return false;
     } else if (authorization.startsWith("basic")) {
-      const { email = "", password = "" } = JSON.parse(Buffer.from(authorization.slice(5).trim(), "base64").toString("utf8"));
-      if (email && password) return true;
-      
+      const { email = "", password = "", token = "" } = JSON.parse(Buffer.from(authorization.slice(5).trim(), "base64").toString("utf8"));
+      console.log({
+        email,
+        password,
+        token
+      });
       return false;
     }
   }
   return true;
 }
+
+export default Object.assign(authHandler, {
+  async setHeader(req: NextApiRequest|IncomingMessage, res: null|NextApiResponse, email: string, password?: string) {
+    res.setHeader("WWW-Authenticate", )
+  }
+});
