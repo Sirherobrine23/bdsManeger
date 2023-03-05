@@ -17,10 +17,31 @@ app.use(express.json(), express.urlencoded({extended: true}), (req, res, next) =
 app.get("/v1", ({res}) => res.json(Object.keys(sessions).reduce((acc, key) => {
   acc[key] = {
     ports: sessions[key].portListening,
+    player: sessions[key].playerActions.reverse().reduce((acc, player) => {
+      if (!acc[player.playerName]) acc[player.playerName] = player;
+      else acc[player.playerName] = {
+        ...player,
+        previous: acc[player.playerName]
+      };
+      return acc;
+    }, {})
   };
   return acc;
 }, {}))).post("/v1", async (req, res) => {
-  
+  const { platform = "bedrock", version = "latest", altServer = "", serverID = "" } = req.body;
+  if (platform === "bedrock") return res.json(bdsCore.Bedrock.installServer({
+    newID: !serverID,
+    ID: serverID,
+    version,
+    altServer,
+    allowBeta: req.query.beta === "true"
+  })); else if (platform === "java") return res.json(bdsCore.Java.installServer({
+    newID: !serverID,
+    ID: serverID,
+    version,
+    altServer,
+  }));
+  return res.status(400).json({error: "Check platform"});
 });
 
 app.get("/v1/id", async ({res}) => res.json(await serverManeger.listIDs()));

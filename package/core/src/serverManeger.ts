@@ -155,6 +155,7 @@ export declare class serverRun extends child_process.ChildProcess {
   runOptions: runOptions;
   portListening: portListen[];
   logPath: {stderr: string, stdout: string};
+  playerActions: playerAction[]
 
   stopServer(): Promise<{code?: number, signal?: NodeJS.Signals}>;
   sendCommand(streamPipe: stream.Readable): this;
@@ -180,6 +181,7 @@ export async function runServer(options: runOptions): Promise<serverRun> {
   }) as serverRun;
   child.runOptions = options;
   child.portListening = [];
+  child.playerActions = [];
   for (const std of [child.stdout, child.stderr]) if (!std) {
     child.kill("SIGKILL");
     throw new TypeError("Stdout or Stderr stream disabled, killed process, cannot continue to exec server, check stdio passed to spawn!");
@@ -201,6 +203,7 @@ export async function runServer(options: runOptions): Promise<serverRun> {
     for (const std of [stdout, stderr]) std.on("line", async data => {
       const playerData = await Promise.resolve(options.serverActions.playerAction.call(child, data) as ReturnType<typeof options.serverActions.playerAction>);
       if (!playerData) return;
+      child.playerActions.push(playerData);
       child.emit("player", playerData);
     });
   }
