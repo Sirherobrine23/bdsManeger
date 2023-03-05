@@ -38,7 +38,7 @@ yargs(process.argv.slice(2)).version(false).help(true).strictCommands().demandCo
     default: false,
     description: "Update/Downgrade installed server version"
   }).parseSync();
-  if (options.list) return console.log(JSON.stringify(await bdsCore.Bedrock.listVersions({altServer: options.altServer as any}), null, 2));
+  if (options.list) return console.log(JSON.stringify(await bdsCore.Bedrock.listVersions(options.altServer as any), null, 2));
   const data = await bdsCore.Bedrock.installServer({
     altServer: options.altServer as any,
     version: options.version,

@@ -79,19 +79,17 @@ export async function serverManeger(platform: "bedrock"|"java", options: maneger
   };
 }
 
-export async function listIDs(): Promise<{[T in ("bedrock"|"java")]?: {id: string}[]}> {
-  const main = {};
+export async function listIDs(): Promise<{id: string, platform: "bedrock"|"java"}[]> {
+  const main = [];
   for await (const platform of ["bedrock", "java"]) {
     try {
       const platformFolder = path.join(bdsManegerRoot, platform);
       if (!(await extendsFS.exists(platformFolder))) continue;
       const IDs = await fs.readdir(platformFolder);
-      for await (const id of IDs) {
-        main[platform] ??= [];
-        main[platform].push({
-          id: id,
-        });
-      }
+      for await (const id of IDs) main.push({
+        id: id,
+        platform
+      });
     } catch {}
   }
   return main;
