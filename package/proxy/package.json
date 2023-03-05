@@ -1,0 +1,22 @@
+{
+  "name": "@the-bds-maneger/server_proxy",
+  "version": "0.0.1",
+  "description": "Host multiples server ports and publish one port to internet",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "tsc --build --clean && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sirherobrine23/Bds-Maneger.git"
+  },
+  "keywords": [
+    "proxy"
+  ],
+  "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
+  "license": "GPL-2.0-only",
+  "bugs": {
+    "url": "https://github.com/Sirherobrine23/Bds-Maneger/issues"
+  },
+  "homepage": "https://github.com/Sirherobrine23/Bds-Maneger#readme"
+}
