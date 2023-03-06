@@ -1,5 +1,5 @@
 import coreHttp, { Github, large } from "@sirherobrine23/http";
-import { manegerOptions, runOptions, serverManeger } from "../serverManeger.js";
+import { manegerOptions, runOptions, serverManeger, serverManegerV1 } from "../serverManeger.js";
 import { createWriteStream } from "node:fs";
 import { commandExists } from "../childPromisses.js";
 import { oracleStorage } from "../internal.js";
@@ -21,43 +21,66 @@ export type bedrockOptions = manegerOptions & {
 
 const pocketmineGithub = await Github.GithubManeger("pmmp", "PocketMine-MP");
 
-export async function listVersions(altServer: "powernukkit"): Promise<{version: string, mcpeVersion: string, date: Date, variantType: "stable"|"snapshot", url: string}[]>;
-export async function listVersions(altServer: "pocketmine"): Promise<Github.githubRelease[]>;
-export async function listVersions(altServer: "cloudbust"|"nukkit"): Promise<{buildNumber: number, branch: string, releaseDate: Date, url: string}[]>;
-export async function listVersions(): Promise<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>;
-export async function listVersions(altServer?: bedrockOptions["altServer"]) {
-  if (altServer === "pocketmine") return pocketmineGithub.getRelease();
-  else if (altServer === "powernukkit") {
-    const releases_version = (await coreHttp.jsonRequest<{[k: string]: {version: string, releaseTime: number, minecraftVersion: string, artefacts: string[], commitId:  string, snapshotBuild?: number}[]}>("https://raw.githubusercontent.com/PowerNukkit/powernukkit-version-aggregator/master/powernukkit-versions.json")).body;
-    return Object.keys(releases_version).reduce((acc, key) => {
-      for (const data of releases_version[key]) {
-        const dt = new Date(data.releaseTime);
-        const getArtefactExtension = (artefactId: string) => (artefactId.includes("REDUCED_JAR")) ? ".jar" : (artefactId.includes("REDUCED_SOURCES_JAR")) ? "-sources.jar" : (artefactId.includes("SHADED_JAR")) ? "-shaded.jar" : (artefactId.includes("SHADED_SOURCES_JAR")) ? "-shaded-sources.jar" : (artefactId.includes("JAVADOC_JAR")) ? "-javadoc.jar" : ".unknown";
-        function buildArtefactUrl(data: any, artefactId?: string) {
-          const buildReleaseArtefactUrl = (data: any, artefactId?: string) => !data.artefacts.includes(artefactId) ? null : utils.format("https://search.maven.org/remotecontent?filepath=org/powernukkit/powernukkit/%s/powernukkit-%s%s", data.version, data.version, getArtefactExtension(artefactId));
-          const buildSnapshotArtefactUrl = (data: any, artefactId?: string) => !data.artefacts.includes(artefactId) ? null : utils.format("https://oss.sonatype.org/content/repositories/snapshots/org/powernukkit/powernukkit/%s-SNAPSHOT/powernukkit-%s-%s%s", data.version.substring(0, data.version.indexOf("-SNAPSHOT")), data.version.substring(0, data.version.indexOf("-SNAPSHOT")), dt.getUTCFullYear().toString().padStart(4, "0") + (dt.getUTCMonth() + 1).toString().padStart(2, "0") + dt.getUTCDate().toString().padStart(2, "0") + "." + dt.getUTCHours().toString().padStart(2, "0") + dt.getUTCMinutes().toString().padStart(2, "0") + dt.getUTCSeconds().toString().padStart(2, "0") + "-" + data.snapshotBuild, getArtefactExtension(artefactId));
-          if (artefactId == "GIT_SOURCE") {
-            if (data.commitId) return utils.format("https://github.com/PowerNukkit/PowerNukkit/tree/%s", data.commitId);
-            else if (data.snapshotBuild && data.artefacts.includes("SHADED_SOURCES_JAR")) return buildSnapshotArtefactUrl(data, "SHADED_SOURCES_JAR");
-            else if (data.snapshotBuild && data.artefacts.includes("REDUCED_SOURCES_JAR")) return buildSnapshotArtefactUrl(data, "REDUCED_SOURCES_JAR");
-            else if (data.artefacts.includes("SHADED_SOURCES_JAR")) return buildReleaseArtefactUrl(data, "SHADED_SOURCES_JAR");
-            else if (data.artefacts.includes("REDUCED_SOURCES_JAR")) return buildReleaseArtefactUrl(data, "REDUCED_SOURCES_JAR");
-          } else if (data.snapshotBuild) return buildSnapshotArtefactUrl(data, artefactId);
-          else return buildReleaseArtefactUrl(data, artefactId);
-          return null;
+export async function listVersions(altServer?: bedrockOptions["altServer"]): Promise<{date: Date, release: "stable"|"preview", version: string, url: {[k: string]: {run?(serverPath?: serverManegerV1): Promise<any>, [k: string]: any}}}[]> {
+  if (altServer === "pocketmine") {
+    return (await pocketmineGithub.getRelease()).map(rel => ({
+      date: new Date(rel.created_at),
+      version: rel.tag_name,
+      release: rel.prerelease ? "preview" : "stable",
+      url: {
+        php: {
+          async run(serverPath) {
+            const phpFile = (await oracleStorage.listFiles("php_bin")).find(file => file.name.includes(process.platform) && file.name.includes(process.arch));
+            if (!phpFile) throw new Error(`Unable to find php files for ${process.platform} with architecture ${process.arch}`);
+            if (phpFile.name.endsWith(".tar.gz")||phpFile.name.endsWith(".tgz")||phpFile.name.endsWith(".tar")) await pipeline(await oracleStorage.getFileStream(phpFile.name), tar.extract({cwd: serverPath.serverFolder}));
+            else if (phpFile.name.endsWith(".zip")) await pipeline(await oracleStorage.getFileStream(phpFile.name), unzip.Extract({path: serverPath.serverFolder}));
+            else throw new Error("Found file is not supported!");
+            return null
+          },
+        },
+        server: {
+          async run() {
+            const pharFile = rel.assets.find(assert => assert.name.endsWith(".phar"));
+            if (!pharFile) throw new Error("Version not includes server file!");
+            return coreHttp.streamRequest(pharFile.browser_download_url);
+          },
         }
-        const artefacts = data.artefacts.reduce((acc, artefactId) => {acc[artefactId] = buildArtefactUrl(data, artefactId); return acc;}, {} as {[key: string]: string});
-        const verRel = {
-          version: data.version,
-          mcpeVersion: data.minecraftVersion,
-          date: dt,
-          variantType: (!data.snapshotBuild?"snapshot":"stable") as "stable"|"snapshot",
-          url: artefacts.SHADED_JAR || artefacts.REDUCED_JAR
-        };
-        if (!!verRel.url) acc.push(verRel);
       }
-      return acc;
-    }, [] as {version: string, mcpeVersion: string, date: Date, variantType: "stable"|"snapshot", url: string}[]).filter(a => !!a.url).sort((b, a) => (b.date.getTime() - a.date.getTime()) - semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version))));
+    }));
+  } else if (altServer === "powernukkit") {
+    const releases_version = (await coreHttp.jsonRequest<{[k: string]: {version: string, releaseTime: number, minecraftVersion: string, artefacts: string[], commitId:  string, snapshotBuild?: number}[]}>("https://raw.githubusercontent.com/PowerNukkit/powernukkit-version-aggregator/master/powernukkit-versions.json")).body;
+    return Object.keys(releases_version).reduce((acc, key) => acc.concat(releases_version[key]), [] as (typeof releases_version)[string]).map(data => {
+      const dt = new Date(data.releaseTime);
+      const getArtefactExtension = (artefactId: string) => (artefactId.includes("REDUCED_JAR")) ? ".jar" : (artefactId.includes("REDUCED_SOURCES_JAR")) ? "-sources.jar" : (artefactId.includes("SHADED_JAR")) ? "-shaded.jar" : (artefactId.includes("SHADED_SOURCES_JAR")) ? "-shaded-sources.jar" : (artefactId.includes("JAVADOC_JAR")) ? "-javadoc.jar" : ".unknown";
+      function buildArtefactUrl(data: any, artefactId?: string) {
+        const buildReleaseArtefactUrl = (data: any, artefactId?: string) => !data.artefacts.includes(artefactId) ? null : utils.format("https://search.maven.org/remotecontent?filepath=org/powernukkit/powernukkit/%s/powernukkit-%s%s", data.version, data.version, getArtefactExtension(artefactId));
+        const buildSnapshotArtefactUrl = (data: any, artefactId?: string) => !data.artefacts.includes(artefactId) ? null : utils.format("https://oss.sonatype.org/content/repositories/snapshots/org/powernukkit/powernukkit/%s-SNAPSHOT/powernukkit-%s-%s%s", data.version.substring(0, data.version.indexOf("-SNAPSHOT")), data.version.substring(0, data.version.indexOf("-SNAPSHOT")), dt.getUTCFullYear().toString().padStart(4, "0") + (dt.getUTCMonth() + 1).toString().padStart(2, "0") + dt.getUTCDate().toString().padStart(2, "0") + "." + dt.getUTCHours().toString().padStart(2, "0") + dt.getUTCMinutes().toString().padStart(2, "0") + dt.getUTCSeconds().toString().padStart(2, "0") + "-" + data.snapshotBuild, getArtefactExtension(artefactId));
+        if (artefactId == "GIT_SOURCE") {
+          if (data.commitId) return utils.format("https://github.com/PowerNukkit/PowerNukkit/tree/%s", data.commitId);
+          else if (data.snapshotBuild && data.artefacts.includes("SHADED_SOURCES_JAR")) return buildSnapshotArtefactUrl(data, "SHADED_SOURCES_JAR");
+          else if (data.snapshotBuild && data.artefacts.includes("REDUCED_SOURCES_JAR")) return buildSnapshotArtefactUrl(data, "REDUCED_SOURCES_JAR");
+          else if (data.artefacts.includes("SHADED_SOURCES_JAR")) return buildReleaseArtefactUrl(data, "SHADED_SOURCES_JAR");
+          else if (data.artefacts.includes("REDUCED_SOURCES_JAR")) return buildReleaseArtefactUrl(data, "REDUCED_SOURCES_JAR");
+        } else if (data.snapshotBuild) return buildSnapshotArtefactUrl(data, artefactId);
+        else return buildReleaseArtefactUrl(data, artefactId);
+        return null;
+      }
+      const artefacts = data.artefacts.reduce((acc, artefactId) => {acc[artefactId] = buildArtefactUrl(data, artefactId); return acc;}, {} as {[key: string]: string});
+      return {
+        date: dt,
+        version: data.version,
+        release: data.snapshotBuild ? "stable" : "preview",
+        url: {
+          server: {
+            mcpeVersion: data.minecraftVersion,
+            async run() {
+              if (!(artefacts.SHADED_JAR || artefacts.REDUCED_JAR)) throw new Error("Cannot get server file to the version!");
+              return coreHttp.streamRequest(artefacts.SHADED_JAR || artefacts.REDUCED_JAR)
+            },
+          }
+        }
+      };
+    });
   } else if (altServer === "cloudbust"||altServer === "nukkit") {
     const buildFiles = [];
     const { body: { jobs } } = await coreHttp.jsonRequest<{jobs: {name: string, _class: string}[]}>(`https://ci.opencollab.dev/job/NukkitX/job/${altServer === "nukkit" ? "Nukkit" : "Server"}/api/json`);
@@ -76,7 +99,23 @@ export async function listVersions(altServer?: bedrockOptions["altServer"]) {
     }));
     return buildFiles.sort((a, b) => a.releaseDate.getTime() - b.releaseDate.getTime());
   }
-  return (await coreHttp.jsonRequest<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>("https://sirherobrine23.github.io/BedrockFetch/all.json")).body.sort((b, a) => semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version))));
+  return (await coreHttp.jsonRequest<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>("https://sirherobrine23.github.io/BedrockFetch/all.json")).body.sort((b, a) => semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version)))).map(rel => ({
+    version: rel.version,
+    date: new Date(rel.date),
+    release: rel.release === "preview" ? "preview" : "stable",
+    url: {
+      server: {
+        async run() {
+          const platformURL = (rel.url[process.platform] ?? rel.url["linux"]);
+          if (!platformURL) throw new Error("Cannot get platform URL");
+          const arch = platformURL[process.arch] ?? platformURL["x64"];
+          if (!arch) throw new Error("Cannot get bedrock server to current arch");
+          return coreHttp.streamRequest(arch);
+        },
+        url: rel.url
+      }
+    }
+  }));
 }
 
 export async function installServer(options: bedrockOptions & {version?: string, allowBeta?: boolean}): Promise<{id: string, version: string, mcpeVersion?: string, releaseDate: Date}> {
@@ -136,7 +175,7 @@ export async function installServer(options: bedrockOptions & {version?: string,
     };
   }
   const bedrockVersion = (await listVersions()).find(rel => {
-    if (rel.release === "preview" && !!options.allowBeta) return false;
+    if (rel.release === "preview") if (options.allowBeta !== true) return false;
     const version = (options.version ?? "latest").trim();
     if (version.toLowerCase() === "latest") return true;
     return rel.version === version;

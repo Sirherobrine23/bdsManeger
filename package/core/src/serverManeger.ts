@@ -79,7 +79,7 @@ export async function serverManeger(platform: "bedrock"|"java", options: maneger
   };
 }
 
-export async function listIDs(): Promise<{id: string, platform: "bedrock"|"java"}[]> {
+export async function listIDs(): Promise<{id: string, platform: "bedrock"|"java", delete: () => Promise<void>}[]> {
   const main = [];
   for await (const platform of ["bedrock", "java"]) {
     try {
@@ -88,7 +88,10 @@ export async function listIDs(): Promise<{id: string, platform: "bedrock"|"java"
       const IDs = await fs.readdir(platformFolder);
       for await (const id of IDs) main.push({
         id: id,
-        platform
+        platform,
+        async delete() {
+          return fs.rm(path.join(platformFolder, id), {recursive: true, force: true});
+        }
       });
     } catch {}
   }
