@@ -1,9 +1,10 @@
-import coreHttp, { Github, large } from "@sirherobrine23/http";
+import coreHttp, { Github } from "@sirherobrine23/http";
 import { manegerOptions, runOptions, serverManeger, serverManegerV1 } from "../serverManeger.js";
 import { createWriteStream } from "node:fs";
 import { commandExists } from "../childPromisses.js";
 import { oracleStorage } from "../internal.js";
 import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
 import { readdir } from "node:fs/promises";
 import extendsFS from "@sirherobrine23/extends";
 import semver from "semver";
@@ -20,16 +21,42 @@ export type bedrockOptions = manegerOptions & {
 };
 
 const pocketmineGithub = await Github.GithubManeger("pmmp", "PocketMine-MP");
+export type bedrockList = {
+  date: Date,
+  version: string,
+  release: "preview"|"stable",
+  downloads: {
+    php?: {
+      installPHP(serverPath: serverManegerV1): Promise<void>,
+    },
+    server: {
+      getServer(): Promise<Readable>,
+      url?: string,
+      urls?: {
+        [platform in NodeJS.Platform]?: {
+          [arch in NodeJS.Architecture]?: string
+        }
+      }
+      [K: string]: any
+    }
+  }
+};
 
-export async function listVersions(altServer?: bedrockOptions["altServer"]): Promise<{date: Date, release: "stable"|"preview", version: string, url: {[k: string]: {run?(serverPath?: serverManegerV1): Promise<any>, [k: string]: any}}}[]> {
+/**
+ * List Minecrft bedrock server versions
+ *
+ * @param altServer - Alternative server of official Mojang
+ * @returns
+ */
+export async function listVersions(altServer?: bedrockOptions["altServer"]): Promise<bedrockList[]> {
   if (altServer === "pocketmine") {
     return (await pocketmineGithub.getRelease()).map(rel => ({
       date: new Date(rel.created_at),
       version: rel.tag_name,
       release: rel.prerelease ? "preview" : "stable",
-      url: {
+      downloads: {
         php: {
-          async run(serverPath) {
+          async installPHP(serverPath: serverManegerV1) {
             const phpFile = (await oracleStorage.listFiles("php_bin")).find(file => file.name.includes(process.platform) && file.name.includes(process.arch));
             if (!phpFile) throw new Error(`Unable to find php files for ${process.platform} with architecture ${process.arch}`);
             if (phpFile.name.endsWith(".tar.gz")||phpFile.name.endsWith(".tgz")||phpFile.name.endsWith(".tar")) await pipeline(await oracleStorage.getFileStream(phpFile.name), tar.extract({cwd: serverPath.serverFolder}));
@@ -39,11 +66,12 @@ export async function listVersions(altServer?: bedrockOptions["altServer"]): Pro
           },
         },
         server: {
-          async run() {
+          url: (rel.assets.find(assert => assert.name.endsWith(".phar")))?.browser_download_url,
+          async getServer() {
             const pharFile = rel.assets.find(assert => assert.name.endsWith(".phar"));
             if (!pharFile) throw new Error("Version not includes server file!");
             return coreHttp.streamRequest(pharFile.browser_download_url);
-          },
+          }
         }
       }
     }));
@@ -70,10 +98,11 @@ export async function listVersions(altServer?: bedrockOptions["altServer"]): Pro
         date: dt,
         version: data.version,
         release: data.snapshotBuild ? "stable" : "preview",
-        url: {
+        downloads: {
           server: {
             mcpeVersion: data.minecraftVersion,
-            async run() {
+            url: artefacts.SHADED_JAR || artefacts.REDUCED_JAR,
+            async getServer() {
               if (!(artefacts.SHADED_JAR || artefacts.REDUCED_JAR)) throw new Error("Cannot get server file to the version!");
               return coreHttp.streamRequest(artefacts.SHADED_JAR || artefacts.REDUCED_JAR)
             },
@@ -82,120 +111,97 @@ export async function listVersions(altServer?: bedrockOptions["altServer"]): Pro
       };
     });
   } else if (altServer === "cloudbust"||altServer === "nukkit") {
-    const buildFiles = [];
     const { body: { jobs } } = await coreHttp.jsonRequest<{jobs: {name: string, _class: string}[]}>(`https://ci.opencollab.dev/job/NukkitX/job/${altServer === "nukkit" ? "Nukkit" : "Server"}/api/json`);
-    await Promise.all(jobs.filter(b => b._class === "org.jenkinsci.plugins.workflow.job.WorkflowJob").map(b => b.name).map(async branch => {
+    const buildFiles = await Promise.all(jobs.filter(b => b._class === "org.jenkinsci.plugins.workflow.job.WorkflowJob").map(b => b.name).map(async branch => {
       const { body: { builds } } = await coreHttp.jsonRequest<{builds: {_class: string, number: number, url: string}[]}>(`https://ci.opencollab.dev/job/NukkitX/job/${altServer === "nukkit" ? "Nukkit" : "Server"}/job/${branch}/api/json`);
       return Promise.all(builds.map(async build => {
         const { body: { artifacts, result, timestamp } } = await coreHttp.jsonRequest<{result: "SUCCESS", timestamp: number, artifacts: {displayPath: string, fileName: string, relativePath: string}[]}>(`https://ci.opencollab.dev/job/NukkitX/job/${altServer === "nukkit" ? "Nukkit" : "Server"}/job/${branch}/${build.number}/api/json`);
-        if (result !== "SUCCESS") return;
-        artifacts.filter(f => f.relativePath.endsWith(".jar")).forEach(target => buildFiles.push({
+        if (result !== "SUCCESS") return [];
+        return artifacts.filter(f => f.relativePath.endsWith(".jar")).map(target => ({
           buildNumber: build.number,
           branch,
           releaseDate: new Date(timestamp),
           url: `https://ci.opencollab.dev/job/NukkitX/job/${altServer === "nukkit" ? "Nukkit" : "Server"}/job/${branch}/${build.number}/artifact/${target.relativePath}`,
         }));
       }));
+    })).then(r => r.flat(2));
+    return buildFiles.sort((b, a) => a.releaseDate.getTime() - b.releaseDate.getTime()).map(rel => ({
+      date: rel.releaseDate,
+      release: "preview",
+      version: `${rel.branch}_${rel.buildNumber}`,
+      downloads: {
+        server: {
+          url: rel.url,
+          async getServer() {
+            return coreHttp.streamRequest(rel.url);
+          },
+        }
+      }
     }));
-    return buildFiles.sort((a, b) => a.releaseDate.getTime() - b.releaseDate.getTime());
   }
   return (await coreHttp.jsonRequest<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>("https://sirherobrine23.github.io/BedrockFetch/all.json")).body.sort((b, a) => semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version)))).map(rel => ({
     version: rel.version,
     date: new Date(rel.date),
     release: rel.release === "preview" ? "preview" : "stable",
-    url: {
+    downloads: {
       server: {
-        async run() {
+        url: rel.url[process.platform]?.[process.arch],
+        async getServer() {
           const platformURL = (rel.url[process.platform] ?? rel.url["linux"]);
           if (!platformURL) throw new Error("Cannot get platform URL");
           const arch = platformURL[process.arch] ?? platformURL["x64"];
           if (!arch) throw new Error("Cannot get bedrock server to current arch");
           return coreHttp.streamRequest(arch);
         },
-        url: rel.url
+        urls: rel.url
       }
     }
   }));
 }
 
-export async function installServer(options: bedrockOptions & {version?: string, allowBeta?: boolean}): Promise<{id: string, version: string, mcpeVersion?: string, releaseDate: Date}> {
+export async function installServer(options: bedrockOptions & {version?: string, allowBeta?: boolean}) {
   const serverPath = await serverManeger("bedrock", options);
+  const versions = await listVersions(options?.altServer);
   if (options.altServer === "pocketmine") {
-    const version = (options.version || "latest").trim();
-    const rel = await pocketmineGithub.getRelease(version === "latest" ? true : version);
-    let fileURL: string;
-    if (!(fileURL = rel?.assets?.find(a => a.name.endsWith(".phar"))?.browser_download_url)) throw new Error("Não foi possivel encontrar a versão informada do Pocketmine!");
-
-    const phpFile = (await oracleStorage.listFiles("php_bin")).find(file => file.name.includes(process.platform) && file.name.includes(process.arch));
-    if (!phpFile) throw new Error(`Não foi possivel encontra os arquivos do php para o ${process.platform} com a arquitetura ${process.arch}`);
-    if (phpFile.name.endsWith(".tar.gz")||phpFile.name.endsWith(".tgz")||phpFile.name.endsWith(".tar")) await pipeline(await oracleStorage.getFileStream(phpFile.name), tar.extract({cwd: serverPath.serverFolder}));
-    else if (phpFile.name.endsWith(".zip")) await pipeline(await oracleStorage.getFileStream(phpFile.name), unzip.Extract({path: serverPath.serverFolder}));
-    else throw new Error("Arquivo encontrado não é suportado!");
-
-    // save phar
-    await large.saveFile({
-      url: fileURL,
-      path: path.join(serverPath.serverFolder, "server.phar")
-    });
-
+    const rel = options.version === "latest" ? versions.at(0) : versions.find(rel => rel.version === options.version);
+    if (!rel) throw new Error("Version not exsists");
+    await rel.downloads.php.installPHP(serverPath);
+    await pipeline(await rel.downloads.server.getServer(), createWriteStream(path.join(serverPath.serverFolder, "server.phar")));
     return {
+      ...rel,
       id: serverPath.id,
-      version: rel.tag_name,
-      releaseDate: new Date(rel.published_at)
     };
-  } else if (options.altServer === "powernukkit") {
-    const version = (options.version ?? "latest").trim();
-    const releases = await listVersions("powernukkit");
-    const relVersion = releases.find(rel => {
-      if (rel.variantType === "snapshot") if (!options.allowBeta) return false;
-      if (version.toLowerCase() === "latest") return true;
-      return (rel.version === version || rel.mcpeVersion === version);
-    });
-    if (!relVersion) throw new Error("A versão não foi encontrada, por favor verique a versão informada!");
-    await large.saveFile({
-      path: path.join(serverPath.serverFolder, "server.jar"),
-      url: relVersion.url
-    });
+  } else if (options.altServer === "cloudbust" || options.altServer === "powernukkit" || options.altServer === "nukkit") {
+    if ((["cloudbust", "nukkit"]).includes(options.altServer)) options.version = "latest";
+    const rel = options.version === "latest" ? versions.at(0) : versions.find(rel => rel.version === options.version);
+    if (!rel) throw new Error("Version not exists");
+    await pipeline(await rel.downloads.server.getServer(), createWriteStream(path.join(serverPath.serverFolder, "server.jar")));
     return {
+      ...rel,
       id: serverPath.id,
-      version: relVersion.version,
-      mcpeVersion: relVersion.mcpeVersion,
-      releaseDate: relVersion.date,
-    };
-  } else if (options.altServer === "cloudbust") {
-    await large.saveFile({
-      url: "https://ci.opencollab.dev/job/NukkitX/job/Server/job/bleeding/lastSuccessfulBuild/artifact/target/Cloudburst.jar",
-      path: path.join(serverPath.serverFolder, "server.jar")
-    });
-
-    return {
-      id: serverPath.id,
-      version: "bleeding",
-      releaseDate: new Date()
     };
   }
-  const bedrockVersion = (await listVersions()).find(rel => {
+  const bedrockVersion = versions.find(rel => {
     if (rel.release === "preview") if (options.allowBeta !== true) return false;
     const version = (options.version ?? "latest").trim();
     if (version.toLowerCase() === "latest") return true;
     return rel.version === version;
   });
   if (!bedrockVersion) throw new Error("Não existe essa versão");
-  let downloadUrl = bedrockVersion.url[process.platform]?.[process.arch];
+  let downloadUrl = bedrockVersion.downloads[process.platform]?.[process.arch];
   if ((["android", "linux"] as NodeJS.Process["platform"][]).includes(process.platform) && process.arch !== "x64") {
     if (!downloadUrl) {
       for (const emu of ["qemu-x86_64-static", "qemu-x86_64", "box64"]) {
         if (downloadUrl) break;
-        if (await commandExists(emu)) downloadUrl = bedrockVersion.url.linux?.x64;
+        if (await commandExists(emu)) downloadUrl = bedrockVersion.downloads.server.urls.linux?.x64;
       }
     }
   }
   if (!downloadUrl) throw new Error(`Não existe o URL de download para ${process.platform} na arquitetura ${process.arch}`);
   await pipeline(await coreHttp.streamRequest(downloadUrl), unzip.Extract({path: serverPath.serverFolder}));
   return {
+    ...bedrockVersion,
     id: serverPath.id,
-    version: bedrockVersion.version,
-    releaseDate: bedrockVersion.date,
   };
 }
 

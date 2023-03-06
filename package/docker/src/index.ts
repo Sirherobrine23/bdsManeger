@@ -77,7 +77,7 @@ app.route("/v1/id").get(async ({res}) => res.json(await serverManeger.listIDs())
   });
 });
 
-app.get("/v1/platform/:platform?", async (req, res) => {
+app.get("/v1/platform(s)?/:platform?", async (req, res) => {
   const { platform = "bedrock" } = req.params;
   if (!(platform === "bedrock"||platform === "java")) return res.status(400).json({error: "Invalid platform"});
   if (platform === "bedrock") {
