@@ -43,22 +43,7 @@ app.route("/v1").get(({res}) => res.json(Object.keys(sessions).reduce((acc, key)
     }, {})
   };
   return acc;
-}, {}))).post(async (req, res) => {
-  const { platform = "bedrock", version = "latest", altServer = "", serverID = "" } = req.body || {};
-  if (platform === "bedrock") return res.json(bdsCore.Bedrock.installServer({
-    newID: !serverID,
-    ID: serverID,
-    version,
-    altServer,
-    allowBeta: String(req.body.beta ?? req.query.beta) === "true"
-  })); else if (platform === "java") return res.json(bdsCore.Java.installServer({
-    newID: !serverID,
-    ID: serverID,
-    version,
-    altServer,
-  }));
-  return res.status(400).json({error: "Check platform"});
-});
+}, {})));
 
 app.route("/v1/id").get(async ({res}) => res.json(await serverManeger.listIDs())).delete(async (req, res) => {
   const IDs: string[] = [];
@@ -86,23 +71,61 @@ app.get("/v1/platform(s)?/:platform?", async (req, res) => {
   return res.json(await bdsCore.Java.listVersions(req.query.alt as any));
 });
 
-app.post("/v1/:id", async (req, res) => {
-  const { id } = req.params;
+app.route("/v1/server").put(async (req, res) => {
+  const { platform } = req.body as { platform: "bedrock"|"java" };
+  if (!(platform === "bedrock" || platform === "java")) return res.status(400).json({error: "Platform is invalid"});
+  const platformInstall = await (platform === "java" ? bdsCore.Java.installServer : bdsCore.Bedrock.installServer)({
+    newID: true,
+    version: req.body?.version ?? "latest",
+    altServer: req.body?.altServer as never,
+    allowBeta: req.body?.allowBeta ?? req.query.allowBeta === "true"
+  });
+  delete platformInstall["downloads"]?.server?.urls;
+  return res.json(platformInstall);
+}).patch(async (req, res) => {
+  const { id } = req.body;
+  const localID = (await bdsCore.listIDs()).find(ind => ind.id === id);
+  if (!localID) return res.status(400).json({error: "server not installed to update"});
+  const platformInstall = await (localID.platform === "java" ? bdsCore.Java.installServer : bdsCore.Bedrock.installServer)({
+    newID: true,
+    version: req.body?.version ?? "latest",
+    altServer: req.body?.altServer as never,
+    allowBeta: req.body?.allowBeta ?? req.query.allowBeta === "true"
+  });
+  delete platformInstall["downloads"]?.server?.urls;
+  return res.json(platformInstall);
+}).post(async (req, res) => {
+  const { id } = req.body;
   const idInfo = (await serverManeger.listIDs()).find(f => f.id === id);
   if (!idInfo) return res.status(400).json({error: "ID not exsists"});
-  const { action = "start" } = req.body;
-  if (!(["start", "stop"]).includes(action)) return res.status(400).json({error: "Invalid action"});
-  if (action === "start") {
-    if (sessions[id]) return res.status(400).json({error: "Server are running"});
-    sessions[id] = await (idInfo.platform === "java" ? bdsCore.Java.startServer : bdsCore.Bedrock.startServer)({
-      newID: false,
-      ID: id
-    });
-    sessions[id].once("close", () => delete sessions[id]).on("line", (line, from) => console.log("[%s from %s]: %s", id, from, line));
-    return res.json(sessions[id]);
-  }
-  if (!sessions[id]) return res.status(400).json({error: "Server not running"});
-  return res.json(await sessions[id].stopServer());
+  if (sessions[id]) return res.status(400).json({error: "Server are running"});
+  sessions[id] = await (idInfo.platform === "java" ? bdsCore.Java.startServer : bdsCore.Bedrock.startServer)({
+    newID: false,
+    ID: id
+  });
+  sessions[id].once("close", () => delete sessions[id]).on("line", (line, from) => console.log("[%s from %s]: %s", id, from, line));
+  return res.json({
+    spawnargs: sessions[id].spawnargs,
+    pid: sessions[id].pid,
+  });
+});
+
+app.route("/v1/server/:id").get((req, res) => {
+  if (!sessions[req.params.id]) return res.status(400).json({error: "Session not running"});
+  return res.json({
+    ports: sessions[req.params.id].portListening,
+    player: sessions[req.params.id].playerActions.reverse().reduce((acc, player) => {
+      if (!acc[player.playerName]) acc[player.playerName] = player;
+      else acc[player.playerName] = {
+        ...player,
+        previous: acc[player.playerName]
+      };
+      return acc;
+    }, {})
+  });
+}).delete((req, res) => {
+  if (!sessions[req.params.id]) return res.status(400).json({error: "Session not running"});
+  return sessions[req.params.id].stopServer().then(res.json).catch(err => res.status(400).json({err: String(err?.message || err)}));
 });
 
 // Listen

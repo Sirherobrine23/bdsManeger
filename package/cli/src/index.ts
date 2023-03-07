@@ -45,7 +45,7 @@ yargs(process.argv.slice(2)).version(false).help(true).strictCommands().demandCo
     ID: options.id,
     newID: !options.update,
   });
-  return console.log("Server ID: %O, Version: %O, Release Date: %s", data.id, data.version, data.releaseDate);
+  return console.log("Server ID: %O, Version: %O, Release Date: %s", data.id, data.version, data.date);
 }).command("run", "Start Server", async yargs => {
   const options = yargs.option("altServer", {
     alias: "a",

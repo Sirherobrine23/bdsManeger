@@ -188,7 +188,7 @@ export async function installServer(options: bedrockOptions & {version?: string,
     return rel.version === version;
   });
   if (!bedrockVersion) throw new Error("Não existe essa versão");
-  let downloadUrl = bedrockVersion.downloads[process.platform]?.[process.arch];
+  let downloadUrl = bedrockVersion.downloads.server.url;
   if ((["android", "linux"] as NodeJS.Process["platform"][]).includes(process.platform) && process.arch !== "x64") {
     if (!downloadUrl) {
       for (const emu of ["qemu-x86_64-static", "qemu-x86_64", "box64"]) {
@@ -292,6 +292,32 @@ export async function startServer(options: bedrockOptions) {
             port: Number(lineString.substring(lineString.indexOf("port: ")+6).replace(/:.*$/, "")),
           };
         }
+        return null;
+      },
+      playerAction(lineString) {
+        lineString = lineString.replace(/^(.*)?\[.*\]/, "").trim();
+        if (lineString.startsWith("Player")) {
+          lineString = lineString.replace("Player", "").trim();
+
+          // Spawned, disconnected, connected
+          let action = "unknown";
+          if (lineString.startsWith("Spawned")) action = "Spawned";
+          else if (lineString.startsWith("disconnected")) action = "disconnected";
+          else if (lineString.startsWith("connected")) action = "connected";
+          lineString = lineString.replace(action+":", "").trim();
+
+          let playerName = lineString.substring(0, lineString.indexOf("xuid:")-2).trim();
+          if (!playerName) return null;
+
+          return {
+            onDate: new Date(),
+            action,
+            playerName,
+            extra: {
+              xuid: lineString.substring(lineString.indexOf("xuid:")-5).trim()
+            }
+          };
+        };
         return null;
       },
     }

@@ -9,9 +9,8 @@
     "typescript": "^4.9.5"
   },
   "workspaces": [
-    "package/*"
-  ],
-  "dependencies": {
-    "mongodb": "^5.1.0"
-  }
+    "package/core",
+    "package/cli",
+    "package/docker"
+  ]
 }
