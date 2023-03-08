@@ -5,7 +5,7 @@ import { commandExists } from "../childPromisses.js";
 import { oracleStorage } from "../internal.js";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import { readdir } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import extendsFS from "@sirherobrine23/extends";
 import semver from "semver";
 import unzip from "unzip-stream";
@@ -198,7 +198,11 @@ export async function installServer(options: bedrockOptions & {version?: string,
     }
   }
   if (!downloadUrl) throw new Error(`Não existe o URL de download para ${process.platform} na arquitetura ${process.arch}`);
+
+  const filesBackup = ["server.properties", "valid_known_packs.json", "permissions.json", "allowlist.json", "whitelist.json"];
+  const datS = (await Promise.all(filesBackup.map(async f => await extendsFS.exists(path.join(serverPath.serverFolder, f)) ? null : ({path: f, data: await readFile(path.join(serverPath.serverFolder, f))})))).filter(a => !!a);
   await pipeline(await coreHttp.streamRequest(downloadUrl), unzip.Extract({path: serverPath.serverFolder}));
+  await Promise.all(datS.map(async f => writeFile(f.path, f.data)));
   return {
     ...bedrockVersion,
     id: serverPath.id,
@@ -275,21 +279,14 @@ export async function startServer(options: bedrockOptions) {
       },
       portListen(lineString) {
         // [INFO] IPv4 supported, port: 19132
-        lineString = lineString.replace(/^(.*)?\[.*\]/, "").trim();
-        if (lineString.startsWith("IPv")) {
+        // [2023-03-08 13:01:57 INFO] Listening on IPv4 port: 19132
+        const ipProtocol = lineString.slice(lineString.indexOf("IPv"), lineString.indexOf("IPv")+4);
+        if (ipProtocol) {
+          let port = lineString.slice(lineString.lastIndexOf("port:")+5).trim();
           return {
             protocol: "UDP",
-            listenOn: lineString.startsWith("IPv4") ? "0.0.0.0" : "[::]",
-            port: Number(lineString.substring(lineString.indexOf("port: ")+6).replace(/:.*$/, "")),
-          };
-        }
-        // NO LOG FILE! - [2023-02-23 21:09:52 INFO] Listening on IPv4 port: 19132
-        else if (lineString.startsWith("Listening")) {
-          lineString = lineString.substring(lineString.indexOf("IPv")-3);
-          return {
-            protocol: "UDP",
-            listenOn: lineString.startsWith("IPv4") ? "0.0.0.0" : "[::]",
-            port: Number(lineString.substring(lineString.indexOf("port: ")+6).replace(/:.*$/, "")),
+            listenOn: ipProtocol.toLowerCase() === "ipv4" ? "0.0.0.0" : "[::]",
+            port: Number(port),
           };
         }
         return null;
@@ -300,21 +297,30 @@ export async function startServer(options: bedrockOptions) {
           lineString = lineString.replace("Player", "").trim();
 
           // Spawned, disconnected, connected
-          let action = "unknown";
+          let action: string;
           if (lineString.startsWith("Spawned")) action = "Spawned";
           else if (lineString.startsWith("disconnected")) action = "disconnected";
           else if (lineString.startsWith("connected")) action = "connected";
-          lineString = lineString.replace(action+":", "").trim();
+          if (!action) return null;
+          lineString = lineString.replace(action, "").trim();
+          if (lineString.startsWith(":")) lineString = lineString.slice(1).trim();
 
-          let playerName = lineString.substring(0, lineString.indexOf("xuid:")-2).trim();
+          let playerName = lineString.substring(0, lineString.indexOf("xuid:")-1).trim();
           if (!playerName) return null;
+          if (playerName.endsWith(",")) playerName = playerName.slice(0, playerName.length - 1);
+
+          let xuid: string;
+          if (lineString.indexOf("xuid:") !== -1) {
+            xuid = lineString.slice(lineString.indexOf("xuid:")+5).trim();
+            if (!xuid) xuid = null;
+          }
 
           return {
             onDate: new Date(),
             action,
             playerName,
             extra: {
-              xuid: lineString.substring(lineString.indexOf("xuid:")-5).trim()
+              xuid
             }
           };
         };

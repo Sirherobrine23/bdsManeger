@@ -28,13 +28,14 @@ export type serverManegerV1 = {
   serverFolder: string,
   backup: string,
   logs: string,
+  platform: "java"|"bedrock",
   runCommand(options: Omit<runOptions, "cwd">): ReturnType<typeof runServer>
 };
 
 /**
  * Platform path maneger
  */
-export async function serverManeger(platform: "bedrock"|"java", options: manegerOptions): Promise<serverManegerV1> {
+export async function serverManeger(platform: serverManegerV1["platform"], options: manegerOptions): Promise<serverManegerV1> {
   if (!((["java", "bedrock"]).includes(platform))) throw new TypeError("Invalid platform target!");
   if (!options) throw new TypeError("Please add serverManeger options!");
   const platformFolder = path.join(bdsManegerRoot, platform);
@@ -69,6 +70,7 @@ export async function serverManeger(platform: "bedrock"|"java", options: maneger
 
   return {
     id: options.ID,
+    platform,
     rootPath,
     serverFolder,
     backup,
@@ -121,7 +123,7 @@ export type runOptions = {
   serverActions?: {
     stop?(this: serverRun): withPromise<void>,
     playerAction?(this: serverRun, lineString: string): withPromise<null|void|playerAction>,
-    hotBackup?(this: serverRun): withPromise<string|void>,
+    hotBackup?(this: serverRun): withPromise<stream.Readable|void>,
     portListen?(this: serverRun, lineString: string): withPromise<void|portListen>,
     postStop?: {
       createBackup?(this: serverRun): withPromise<void>,
@@ -173,7 +175,7 @@ export async function runServer(options: runOptions): Promise<serverRun> {
   const child = child_process.spawn(options.command, [...((options.args ?? []).map(String))], {
     // maxBuffer: Infinity,
     stdio: options.stdio,
-    cwd: options.cwd || process.cwd(),
+    cwd: options.cwd,
     env: {
       ...process.env,
       ...Object.keys(options.env ?? {}).reduce((acc, a) => {
@@ -226,7 +228,7 @@ export async function runServer(options: runOptions): Promise<serverRun> {
       return child;
     };
     if (args[0] instanceof stream.Readable) {
-      args[0].on("data", data => child.stdin.write(data));
+      args[0].on("data", data => child.stdin.write(data)).once("close", () => child.stdin.write("\n"));
       return child;
     }
     child.stdin.write(args.map(String).join(" ")+"\n");
@@ -234,6 +236,7 @@ export async function runServer(options: runOptions): Promise<serverRun> {
   }
 
   child.stopServer = async function () {
+    child.sendCommand("");
     const stop = options.serverActions?.stop ?? function () {
       child.kill("SIGINT");
       const kill = setTimeout(() => {

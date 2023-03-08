@@ -27,13 +27,13 @@ app.disable("etag").disable("x-powered-by").use(async (req, res, next) => {
     }));
   }
   next();
-}, express.json(), express.urlencoded({extended: true}), express.text());
+}, express.json(), express.urlencoded({extended: true}));
 
 // Get current server running
 app.route("/v1").get(({res}) => res.json(Object.keys(sessions).reduce((acc, key) => {
   acc[key] = {
     ports: sessions[key].portListening,
-    player: sessions[key].playerActions.reverse().reduce((acc, player) => {
+    player: sessions[key].playerActions.reduce((acc, player) => {
       if (!acc[player.playerName]) acc[player.playerName] = player;
       else acc[player.playerName] = {
         ...player,
@@ -86,6 +86,7 @@ app.route("/v1/server").put(async (req, res) => {
   const { id } = req.body;
   const localID = (await bdsCore.listIDs()).find(ind => ind.id === id);
   if (!localID) return res.status(400).json({error: "server not installed to update"});
+  if (sessions[id]) await sessions[id].stopServer();
   const platformInstall = await (localID.platform === "java" ? bdsCore.Java.installServer : bdsCore.Bedrock.installServer)({
     newID: true,
     version: req.body?.version ?? "latest",
@@ -113,8 +114,9 @@ app.route("/v1/server").put(async (req, res) => {
 app.route("/v1/server/:id").get((req, res) => {
   if (!sessions[req.params.id]) return res.status(400).json({error: "Session not running"});
   return res.json({
+    bedrockConnect: sessions[req.params.id].runOptions.paths.platform === "java" ? null : `minecraft:?addExternalServer=${sessions[req.params.id].runOptions.paths.id}|${req.hostname}:${sessions[req.params.id].portListening.at(0).port}`,
     ports: sessions[req.params.id].portListening,
-    player: sessions[req.params.id].playerActions.reverse().reduce((acc, player) => {
+    player: sessions[req.params.id].playerActions.reduce((acc, player) => {
       if (!acc[player.playerName]) acc[player.playerName] = player;
       else acc[player.playerName] = {
         ...player,
@@ -123,6 +125,11 @@ app.route("/v1/server/:id").get((req, res) => {
       return acc;
     }, {})
   });
+}).post(async (req, res) => {
+  if (!sessions[req.params.id]) return res.status(400).json({error: "Session not running"});
+  if (Array.isArray(req.body)) sessions[req.params.id].sendCommand(...req.body);
+  else sessions[req.params.id].sendCommand(req);
+  return res.sendStatus(200);
 }).delete((req, res) => {
   if (!sessions[req.params.id]) return res.status(400).json({error: "Session not running"});
   return sessions[req.params.id].stopServer().then(res.json).catch(err => res.status(400).json({err: String(err?.message || err)}));
