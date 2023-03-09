@@ -1,7 +1,9 @@
 {
   "name": "@the-bds-maneger/monorepo",
   "private": true,
-  "scripts": {},
+  "scripts": {
+    "clean": "tsc --build --clean"
+  },
   "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
   "license": "GPL-3.0",
   "devDependencies": {

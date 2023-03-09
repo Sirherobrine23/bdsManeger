@@ -11,7 +11,7 @@
   "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "@the-bds-maneger/core": "^1.0.0",
+    "@the-bds-maneger/core": "^6.0.0",
     "yargs": "^17.7.1"
   },
   "devDependencies": {

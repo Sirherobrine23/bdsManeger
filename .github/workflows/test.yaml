@@ -37,6 +37,7 @@ jobs:
 
     # Build Core
     - name: Core Build
+      if: matrix.package != 'core'
       run: npm run -w package/core build
 
     - name: Build ${{ matrix.package }}

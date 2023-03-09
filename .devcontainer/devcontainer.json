@@ -1,0 +1,22 @@
+{
+  "name": "Sirherobrine23 Devcontainer",
+  "updateRemoteUserUID": false,
+  "containerUser": "devcontainer",
+  "remoteUser": "devcontainer",
+  "overrideCommand": false,
+  "postCreateCommand": "npm install",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "USERNAME": "devcontainer",
+      "USER_UID": "1000"
+    }
+  },
+  "runArgs": [
+    "--init",
+    "--privileged"
+  ],
+  "mounts": [
+    "target=/var/lib/docker,type=volume,source=devcontainersh23"
+  ]
+}
