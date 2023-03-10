@@ -49,8 +49,9 @@ export type bedrockList = {
  * @returns
  */
 export async function listVersions(altServer?: bedrockOptions["altServer"]): Promise<bedrockList[]> {
+  if (altServer) if (!(["cloudbust", "cloudbust", "nukkit", "pocketmine", "powernukkit"]).includes(altServer)) throw new TypeError("Invalid alt server");
   if (altServer === "pocketmine") {
-    return (await pocketmineGithub.getRelease()).map(rel => ({
+    return (await pocketmineGithub.getRelease()).filter(rel => (rel.assets.find(assert => assert.name.endsWith(".phar")) ?? {}).browser_download_url).map(rel => ({
       date: new Date(rel.created_at),
       version: rel.tag_name,
       release: rel.prerelease ? "preview" : "stable",
@@ -66,7 +67,7 @@ export async function listVersions(altServer?: bedrockOptions["altServer"]): Pro
           },
         },
         server: {
-          url: (rel.assets.find(assert => assert.name.endsWith(".phar")))?.browser_download_url,
+          url: (rel.assets.find(assert => assert.name.endsWith(".phar")) ?? {}).browser_download_url,
           async getServer() {
             const pharFile = rel.assets.find(assert => assert.name.endsWith(".phar"));
             if (!pharFile) throw new Error("Version not includes server file!");
@@ -200,7 +201,7 @@ export async function installServer(options: bedrockOptions & {version?: string,
   if (!downloadUrl) throw new Error(`Não existe o URL de download para ${process.platform} na arquitetura ${process.arch}`);
 
   const filesBackup = ["server.properties", "valid_known_packs.json", "permissions.json", "allowlist.json", "whitelist.json"];
-  const datS = (await Promise.all(filesBackup.map(async f => await extendsFS.exists(path.join(serverPath.serverFolder, f)) ? null : ({path: f, data: await readFile(path.join(serverPath.serverFolder, f))})))).filter(a => !!a);
+  const datS = (await Promise.all(filesBackup.map(async f => !await extendsFS.exists(path.join(serverPath.serverFolder, f)) ? null : ({path: f, data: await readFile(path.join(serverPath.serverFolder, f))})))).filter(a => !!a);
   await pipeline(await coreHttp.streamRequest(downloadUrl), unzip.Extract({path: serverPath.serverFolder}));
   await Promise.all(datS.map(async f => writeFile(f.path, f.data)));
   return {

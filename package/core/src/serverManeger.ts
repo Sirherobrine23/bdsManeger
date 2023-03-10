@@ -2,6 +2,7 @@ import { createInterface as readline } from "node:readline";
 import { createWriteStream } from "node:fs";
 import { extendsFS } from "@sirherobrine23/extends";
 import { format } from "node:util";
+import sanitizeFilename from "sanitize-filename";
 import child_process from "node:child_process";
 import crypto from "node:crypto";
 import stream from "node:stream";
@@ -57,7 +58,7 @@ export async function serverManeger(platform: serverManegerV1["platform"], optio
   }
 
   // Folders
-  const rootPath = path.join(platformFolder, options.ID);
+  const rootPath = path.join(platformFolder, path.posix.resolve("/", sanitizeFilename(options.ID)));
   const serverFolder = path.join(rootPath, "server");
   const backup = path.join(rootPath, "backups");
   const log = path.join(rootPath, "logs");
@@ -104,6 +105,7 @@ export type portListen = {
   port: number,
   protocol: "TCP"|"UDP"|"both",
   listenOn?: string,
+  listenFrom?: "server"|"plugin"
 };
 
 export type playerAction = {
@@ -217,6 +219,7 @@ export async function runServer(options: runOptions): Promise<serverRun> {
     for (const std of [stdout, stderr]) std.on("line", async data => {
       const portData = await Promise.resolve(options.serverActions.portListen.call(child, data) as ReturnType<typeof options.serverActions.portListen>);
       if (!portData) return;
+      portData.listenFrom ??= "server";
       child.portListening.push(portData);
       child.emit("portListening", portData);
     });

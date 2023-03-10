@@ -1,82 +1,90 @@
 #!/usr/bin/env node
-import { createInterface as readline } from "node:readline";
+// import { createInterface as readline } from "node:readline";
 import bdsCore from "@the-bds-maneger/core";
 import yargs from "yargs";
 
 // Init yargs
 yargs(process.argv.slice(2)).version(false).help(true).strictCommands().demandCommand().alias("h", "help")
-
-// bedrock
-.command("bedrock", "Bedrock", yargs => yargs.strictCommands().demandCommand().command("install", "Install Server", async yargs => {
-  const options = yargs.option("altServer", {
+.command("install", "Install server", async yargs => {
+  const options = yargs.option("platform", {
+    type: "string",
+    string: true,
+    alias: "p",
+    choices: ["bedrock", "java"],
+    default: "bedrock",
+    description: "Platform to install"
+  })
+  .option("altserver", {
+    type: "string",
+    string: true,
     alias: "a",
-    string: true,
-    description: "Select a server other than Mojang",
-    demandOption: false,
-    choices: [
-      "pocketmine",
-      "powernukkit",
-      "cloudbust"
-    ],
-  }).option("id", {
+    choices: ["spigot", "paper", "purpur", "pocketmine", "powernukkit", "nukkit", "cloudbust"],
+  })
+  .option("id", {
     alias: "i",
-    string: true,
-    description: "Select Server ID"
-  }).option("list", {
-    alias: "l",
-    boolean: true,
-    default: false,
-    description: "List versions instead of installing"
-  }).option("version", {
+    type: "string",
+    describe: "ID to update server"
+  })
+  .option("version", {
+    type: "string",
     alias: "V",
-    string: true,
-    default: "latest",
-    description: "Server version to install",
-  }).option("update", {
-    alias: "u",
+    describe: "Server version",
+    default: "latest"
+  })
+  .option("beta", {
+    type: "boolean",
     boolean: true,
     default: false,
-    description: "Update/Downgrade installed server version"
-  }).parseSync();
-  if (options.list) return console.log(JSON.stringify(await bdsCore.Bedrock.listVersions(options.altServer as any), null, 2));
-  const data = await bdsCore.Bedrock.installServer({
-    altServer: options.altServer as any,
+    describe: "allow install beta or snapshort versions"
+  })
+  .parseSync();
+
+  const installData = await (options.platform === "java" ? bdsCore.Java.installServer : bdsCore.Bedrock.installServer)({
+    ...(options.id ? {newID: false, ID: options.id} : {newID: true}),
     version: options.version,
-    ID: options.id,
-    newID: !options.update,
+    altServer: options.altserver as never,
+    allowBeta: Boolean(options.beta)
   });
-  return console.log("Server ID: %O, Version: %O, Release Date: %s", data.id, data.version, data.date);
-}).command("run", "Start Server", async yargs => {
-  const options = yargs.option("altServer", {
+
+  console.log("ID: %O, Server Version: %O, Server Date: %O", installData.id, installData.version, installData.date);
+})
+.command("list", "list all versions", yargs => {
+  const { platform, altserver } = yargs.option("platform", {
+    type: "string",
+    string: true,
+    alias: "p",
+    choices: ["bedrock", "java"],
+    default: "bedrock",
+    description: "Platform to install"
+  }).option("altserver", {
+    type: "string",
+    string: true,
     alias: "a",
+    choices: ["spigot", "paper", "purpur", "pocketmine", "powernukkit", "nukkit", "cloudbust"],
+  }).parseSync();
+  return (platform === "java" ? bdsCore.Java.listVersions : bdsCore.Bedrock.listVersions)(altserver as never).then(data => console.log(JSON.stringify(data, null, 2)));
+})
+.command("run", "Start server", async yargs => {
+  const option = yargs.option("id", {
+    type: "string",
     string: true,
-    description: "Select a server other than Mojang",
-    demandOption: false,
-    choices: [
-      "pocketmine",
-      "powernukkit",
-      "cloudbust"
-    ],
-  }).option("id", {
-    alias: "i",
-    string: true,
-    description: "Select Server ID",
+    alias: "d",
     demandOption: true,
   }).parseSync();
-  const server = await bdsCore.Bedrock.startServer({
-    newID: false,
-    ID: options.id,
-    altServer: options.altServer as any,
-  });
-  const read = readline(process.stdin, process.stdout).on("error", () => {}).on("line", data => server.sendCommand(data)).on("SIGINT", () => server.stopServer()).on("SIGCONT", () => server.stopServer()).on("SIGTSTP", () => server.stopServer());
-  server.once("spawn", () => console.log("Stating server!"));
-  server.on("line", (data, from) => console.log("[%s]: %O", from, data));
-  server.on("player", data => console.log("%O", data));
-  server.once("close", () => read.close());
-  server.on("backup", status => console.log("Backup status %O", status));
-  // process.stdin.pipe(server.stdin);
-  return server;
-}))
-
-// run
-.parseAsync();
+  const idInfo = (await bdsCore.listIDs()).find(local => local.id === option.id);
+  if (!idInfo) throw new Error("Invalid ID");
+  const session = await (idInfo.platform === "java" ? bdsCore.Java.startServer : bdsCore.Bedrock.startServer)({ID: idInfo.id});
+  process.stdin.pipe(session.stdin);
+  session.stdout.pipe(process.stdout);
+  session.stderr.pipe(process.stderr);
+  for (const ss of ([
+    "SIGCONT",
+    "SIGINT",
+    "SIGTERM",
+  ] as NodeJS.Signals[])) process.on(ss, () => session.stopServer());
+  return session;
+})
+.parseAsync().catch(err => {
+  console.log(err);
+  process.exit(1);
+});
