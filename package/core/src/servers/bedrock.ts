@@ -1,11 +1,10 @@
+import fsOld, { createWriteStream, promises as fs } from "node:fs";
 import coreHttp, { Github } from "@sirherobrine23/http";
 import { manegerOptions, runOptions, serverManeger, serverManegerV1 } from "../serverManeger.js";
-import { createWriteStream } from "node:fs";
 import { commandExists } from "../childPromisses.js";
 import { oracleStorage } from "../internal.js";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import { readdir, readFile, writeFile } from "node:fs/promises";
 import extendsFS from "@sirherobrine23/extends";
 import semver from "semver";
 import unzip from "unzip-stream";
@@ -201,9 +200,9 @@ export async function installServer(options: bedrockOptions & {version?: string,
   if (!downloadUrl) throw new Error(`Não existe o URL de download para ${process.platform} na arquitetura ${process.arch}`);
 
   const filesBackup = ["server.properties", "valid_known_packs.json", "permissions.json", "allowlist.json", "whitelist.json"];
-  const datS = (await Promise.all(filesBackup.map(async f => !await extendsFS.exists(path.join(serverPath.serverFolder, f)) ? null : ({path: f, data: await readFile(path.join(serverPath.serverFolder, f))})))).filter(a => !!a);
+  const datS = (await Promise.all(filesBackup.map(async f => !await extendsFS.exists(path.join(serverPath.serverFolder, f)) ? null : ({path: f, data: await fs.readFile(path.join(serverPath.serverFolder, f))})))).filter(a => !!a);
   await pipeline(await coreHttp.streamRequest(downloadUrl), unzip.Extract({path: serverPath.serverFolder}));
-  await Promise.all(datS.map(async f => writeFile(f.path, f.data)));
+  await Promise.all(datS.map(async f => fs.writeFile(f.path, f.data)));
   return {
     ...bedrockVersion,
     id: serverPath.id,
@@ -265,16 +264,6 @@ export async function startServer(options: bedrockOptions) {
     command: path.join(serverPath.serverFolder, "bedrock_server"),
     paths: serverPath,
     serverActions: {
-      postStop: {
-        async createBackup() {
-          const currentDate = new Date();
-          return pipeline(tar.create({
-            gzip: true,
-            cwd: this.runOptions.paths.serverFolder,
-            prefix: ""
-          }, await readdir(this.runOptions.paths.serverFolder)), createWriteStream(path.join(this.runOptions.paths.backup, String(currentDate.getTime())+".tgz")));
-        },
-      },
       stop() {
         this.sendCommand("stop");
       },
@@ -284,6 +273,7 @@ export async function startServer(options: bedrockOptions) {
         const ipProtocol = lineString.slice(lineString.indexOf("IPv"), lineString.indexOf("IPv")+4);
         if (ipProtocol) {
           let port = lineString.slice(lineString.lastIndexOf("port:")+5).trim();
+          if (port.indexOf(":") !== -1) port = port.slice(0, port.lastIndexOf(":"));
           return {
             protocol: "UDP",
             listenOn: ipProtocol.toLowerCase() === "ipv4" ? "0.0.0.0" : "[::]",
@@ -327,6 +317,46 @@ export async function startServer(options: bedrockOptions) {
         };
         return null;
       },
+      onAvaible(data) {
+        // [2023-03-06 21:37:27:699 INFO] Server started.
+        data = data.replace(/^.*?\[.*\]/, "").trim();
+        if (data.includes("started") && data.includes("Server")) return new Date();
+        return null
+      },
+      postStart: [
+        async function() {
+          let breaked = false;
+          this.once("close", () => breaked = true);
+          let w: any;
+          this.once("close", () => w.close());
+          while(true) {
+            if (breaked) break;
+            await new Promise(done => {
+              this.once("close", done);
+              w = fsOld.watch(this.runOptions.paths.serverFolder, {recursive: true}, () => {w.close(); done(null);}).on("error", () => {});
+            });
+            await new Promise(done => setTimeout(done, 1000));
+            const cDate = new Date();
+            const month = String(cDate.getMonth()+1 > 9 ? cDate.getMonth()+1 : "0"+(cDate.getMonth()+1).toString());
+            const day = String(cDate.getDate() > 9 ? cDate.getDate() : "0"+((cDate.getDate()).toString()));
+            const backupFile = path.join(this.runOptions.paths.backup, "hotBackup", String(cDate.getFullYear()), month, day, `${cDate.getHours()}_${cDate.getMinutes()}.tgz`);
+            if (!(await extendsFS.exists(path.dirname(backupFile)))) await fs.mkdir(path.dirname(backupFile), {recursive: true});
+            const ff = (await fs.readdir(this.runOptions.paths.serverFolder)).filter(ff => {
+              let ok = ff.endsWith(".json");
+              if (!ok) ok = ff === "server.properties";
+              if (!ok) ok = ff === "worlds";
+              return ok;
+            });
+            const hotTar = tar.create({
+              gzip: true,
+              cwd: this.runOptions.paths.serverFolder,
+              prefix: ""
+            }, ff);
+            this.emit("hotBackup", hotTar);
+            await pipeline(hotTar, createWriteStream(backupFile));
+          }
+        }
+      ]
     }
   };
   if ((["android", "linux"] as NodeJS.Process["platform"][]).includes(process.platform) && process.arch !== "x64") {

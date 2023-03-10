@@ -1,14 +1,17 @@
-import { createInterface as readline } from "node:readline";
+import readline from "node:readline";
 import { createWriteStream } from "node:fs";
 import { extendsFS } from "@sirherobrine23/extends";
+import { pipeline } from "node:stream/promises";
 import { format } from "node:util";
 import sanitizeFilename from "sanitize-filename";
 import child_process from "node:child_process";
 import crypto from "node:crypto";
 import stream from "node:stream";
 import path from "node:path";
+import tar from "tar";
 import fs from "node:fs/promises";
 import os from "node:os";
+
 
 // Default bds maneger core
 export const bdsManegerRoot = process.env.bdscoreroot ? path.resolve(process.cwd(), process.env.bdscoreroot) : path.join(os.homedir(), ".bdsmaneger");
@@ -127,9 +130,8 @@ export type runOptions = {
     playerAction?(this: serverRun, lineString: string): withPromise<null|void|playerAction>,
     hotBackup?(this: serverRun): withPromise<stream.Readable|void>,
     portListen?(this: serverRun, lineString: string): withPromise<void|portListen>,
-    postStop?: {
-      createBackup?(this: serverRun): withPromise<void>,
-    },
+    onAvaible?(this: serverRun, lineString: string): withPromise<void|Date>,
+    postStart?: ((this: serverRun) => withPromise<void>)[],
   }
 };
 
@@ -148,6 +150,8 @@ export declare class serverRun extends child_process.ChildProcess {
   once(event: "message", listener: (message: child_process.Serializable, sendHandle: child_process.SendHandle) => void): this;
   on(event: "spawn", listener: () => void): this;
   once(event: "spawn", listener: () => void): this;
+  on(event: "warning", listener: (data: any) => void): this;
+  once(event: "warning", listener: (data: any) => void): this;
 
   // BDS Assigns
   once(event: "line", fn: (data: string, from: "stdout"|"stderr") => void): this;
@@ -156,13 +160,20 @@ export declare class serverRun extends child_process.ChildProcess {
   on(event: "player", fn: (playerInfo: playerAction) => void): this;
   once(event: "portListening", fn: (portInfo: portListen) => void): this;
   on(event: "portListening", fn: (portInfo: portListen) => void): this;
-  once(event: "backup", fn: (status: "start"|"success"|"fail") => void): this;
-  on(event: "backup", fn: (status: "start"|"success"|"fail") => void): this;
+  once(event: "serverAvaible", fn: (date: Date) => void): this;
+  on(event: "serverAvaible", fn: (date: Date) => void): this;
+  once(event: "backup", fn: (filePath: string) => void): this;
+  on(event: "backup", fn: (filePath: string) => void): this;
+  once(event: "hotBackup", fn: (fileStream: stream.Readable) => void): this;
+  on(event: "hotBackup", fn: (fileStream: stream.Readable) => void): this;
 
+  avaibleDate?: Date;
   runOptions: runOptions;
   portListening: portListen[];
   logPath: {stderr: string, stdout: string};
-  playerActions: playerAction[]
+  playerActions: playerAction[];
+  stdoutInterface: readline.Interface;
+  stderrInterface: readline.Interface;
 
   stopServer(): Promise<{code?: number, signal?: NodeJS.Signals}>;
   sendCommand(streamPipe: stream.Readable): this;
@@ -203,8 +214,8 @@ export async function runServer(options: runOptions): Promise<serverRun> {
   child.stderr.pipe(createWriteStream(child.logPath.stderr));
 
   // Lines
-  const stdout = readline(child.stdout).on("line", data => child.emit("line", data, "stdout")).on("error", err => child.emit("error", err));
-  const stderr = readline(child.stderr).on("line", data => child.emit("line", data, "stderr")).on("error", err => child.emit("error", err));
+  const stdout = child.stdoutInterface = readline.createInterface(child.stdout).on("line", data => child.emit("line", data, "stdout")).on("error", err => child.emit("error", err));
+  const stderr = child.stderrInterface = readline.createInterface(child.stderr).on("line", data => child.emit("line", data, "stderr")).on("error", err => child.emit("error", err));
 
   if (typeof options.serverActions?.playerAction === "function") {
     for (const std of [stdout, stderr]) std.on("line", async data => {
@@ -266,13 +277,35 @@ export async function runServer(options: runOptions): Promise<serverRun> {
     })), child);
   }
 
-  // Create backup post server stop
-  if (typeof options.serverActions?.postStop?.createBackup === "function") child.on("close", () => {
-    child.emit("backup", "start");
-    return Promise.resolve(options.serverActions.postStop.createBackup.call(child)).then(() => child.emit("backup", "success")).catch(err => {
-      child.emit("backup", "fail");
-      child.emit("error", err);
+  if (typeof options.serverActions?.onAvaible === "function") {
+    let run = options.serverActions.onAvaible;
+    for (const std of [stdout, stderr]) std.on("line", async data => {
+      if (!run) return null;
+      const avaibleDate = await Promise.resolve(run.call(child, data) as ReturnType<typeof run>);
+      if (!avaibleDate) return;
+      child.avaibleDate = avaibleDate;
+      if (options.serverActions?.postStart) for (const ss of options.serverActions?.postStart) Promise.resolve().then(() => ss.call(child)).catch(err => child.emit("error", err));
     });
+  } else if (options.serverActions?.postStart?.length > 0) child.emit("warning", "no post actions run!");
+
+  child.once("close", async () => {
+    const cDate = new Date();
+    const month = String(cDate.getMonth()+1 > 9 ? cDate.getMonth()+1 : "0"+(cDate.getMonth()+1).toString());
+    const day = String(cDate.getDate() > 9 ? cDate.getDate() : "0"+((cDate.getDate()).toString()));
+    const backupFile = path.join(options.paths.backup, String(cDate.getFullYear()), month, day, `${cDate.getHours()}_${cDate.getMinutes()}.tgz`);
+    try {
+      if (!(await extendsFS.exists(path.dirname(backupFile)))) await fs.mkdir(path.dirname(backupFile), {recursive: true});
+      const ff = await fs.readdir(options.paths.serverFolder);
+      await pipeline(tar.create({
+        gzip: true,
+        cwd: options.paths.serverFolder,
+        prefix: ""
+      }, ff), createWriteStream(backupFile));
+      child.emit("backup", backupFile);
+    } catch (err) {
+      if (await extendsFS.exists(backupFile)) await fs.unlink(backupFile);
+      child.emit("error", err);
+    }
   });
 
   return child;

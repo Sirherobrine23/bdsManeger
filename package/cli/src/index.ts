@@ -74,6 +74,8 @@ yargs(process.argv.slice(2)).version(false).help(true).strictCommands().demandCo
   const idInfo = (await bdsCore.listIDs()).find(local => local.id === option.id);
   if (!idInfo) throw new Error("Invalid ID");
   const session = await (idInfo.platform === "java" ? bdsCore.Java.startServer : bdsCore.Bedrock.startServer)({ID: idInfo.id});
+  process.on("error", console.log);
+  session.once("backup", filePath => console.log("Backup file path: %O", filePath));
   process.stdin.pipe(session.stdin);
   session.stdout.pipe(process.stdout);
   session.stderr.pipe(process.stderr);
