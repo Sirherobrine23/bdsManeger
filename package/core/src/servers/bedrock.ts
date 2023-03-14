@@ -1,4 +1,4 @@
-import fsOld, { createWriteStream, promises as fs } from "node:fs";
+import fsOld, { promises as fs } from "node:fs";
 import coreHttp, { Github } from "@sirherobrine23/http";
 import { manegerOptions, runOptions, serverManeger, serverManegerV1 } from "../serverManeger.js";
 import { commandExists } from "../childPromisses.js";
@@ -166,7 +166,7 @@ export async function installServer(options: bedrockOptions & {version?: string,
     const rel = options.version === "latest" ? versions.at(0) : versions.find(rel => rel.version === options.version);
     if (!rel) throw new Error("Version not exsists");
     await rel.downloads.php.installPHP(serverPath);
-    await pipeline(await rel.downloads.server.getServer(), createWriteStream(path.join(serverPath.serverFolder, "server.phar")));
+    await pipeline(await rel.downloads.server.getServer(), fsOld.createWriteStream(path.join(serverPath.serverFolder, "server.phar")));
     return {
       ...rel,
       id: serverPath.id,
@@ -175,7 +175,7 @@ export async function installServer(options: bedrockOptions & {version?: string,
     if ((["cloudbust", "nukkit"]).includes(options.altServer)) options.version = "latest";
     const rel = options.version === "latest" ? versions.at(0) : versions.find(rel => rel.version === options.version);
     if (!rel) throw new Error("Version not exists");
-    await pipeline(await rel.downloads.server.getServer(), createWriteStream(path.join(serverPath.serverFolder, "server.jar")));
+    await pipeline(await rel.downloads.server.getServer(), fsOld.createWriteStream(path.join(serverPath.serverFolder, "server.jar")));
     return {
       ...rel,
       id: serverPath.id,
@@ -353,7 +353,7 @@ export async function startServer(options: bedrockOptions) {
               prefix: ""
             }, ff);
             this.emit("hotBackup", hotTar);
-            await pipeline(hotTar, createWriteStream(backupFile));
+            await pipeline(hotTar, fsOld.createWriteStream(backupFile));
           }
         }
       ]

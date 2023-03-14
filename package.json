@@ -7,7 +7,7 @@
   "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/node": "^18.14.2",
+    "@types/node": "^18.15.3",
     "typescript": "^4.9.5"
   },
   "workspaces": [

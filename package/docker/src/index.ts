@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import bdsCore, { serverManeger, serverRun } from "@the-bds-maneger/core";
 import expressLayer from "express/lib/router/layer.js";
 import express from "express";
 import yaml from "yaml";
-import bdsCore, { serverManeger, serverRun } from "@the-bds-maneger/core";
 
 const sessions: {[id: string]: serverRun} = {};
 process.on("exit", () => Object.keys(sessions).forEach(k => sessions[k].stopServer()));
