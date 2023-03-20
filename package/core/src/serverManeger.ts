@@ -14,7 +14,8 @@ import os from "node:os";
 
 
 // Default bds maneger core
-export const bdsManegerRoot = process.env.bdscoreroot ? path.resolve(process.cwd(), process.env.bdscoreroot) : path.join(os.homedir(), ".bdsmaneger");
+const ENVROOT = process.env.BDSCOREROOT || process.env.bdscoreroot;
+export const bdsManegerRoot = ENVROOT ? path.resolve(process.cwd(), ENVROOT) : path.join(os.homedir(), ".bdsmaneger");
 if (!(await extendsFS.exists(bdsManegerRoot))) await fs.mkdir(bdsManegerRoot, {recursive: true});
 export type withPromise<T> = T|Promise<T>;
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import bdsCore, { serverManeger, serverRun } from "@the-bds-maneger/core";
-import expressLayer from "express/lib/router/layer.js";
 import express from "express";
+import neste from "neste";
 import yaml from "yaml";
 
 const sessions: {[id: string]: serverRun} = {};
@@ -9,10 +9,8 @@ process.on("exit", () => Object.keys(sessions).forEach(k => sessions[k].stopServ
 
 // Catch error
 for (const k of ["uncaughtException", "unhandledRejection"]) process.on(k, err => console.log(err));
-
-expressLayer.prototype.handle_request = async function handle_request_promised(...args) {var fn = this.handle; if (fn.length > 3) return args.at(-1)(); await Promise.resolve().then(() => fn.call(this, ...args)).catch(args.at(-1));}
-const app = express();
-app.disable("etag").disable("x-powered-by").use(async (req, res, next) => {
+const app = neste();
+app.use(async (req, res, next) => {
   req.res.json = res.json = function(body: any) {return Object.assign(res, Promise.resolve(body).then(d => res.send(JSON.stringify(d, null, 2))).catch(next));}
   if (typeof req.headers["content-type"] === "string" && (["application/x-yaml", "text/yaml", "text/x-yaml"]).find(k => req.headers["content-type"].includes(k))) {
     const data: Buffer[] = [];
@@ -114,7 +112,7 @@ app.route("/v1/server").put(async (req, res) => {
 app.route("/v1/server/:id").get((req, res) => {
   if (!sessions[req.params.id]) return res.status(400).json({error: "Session not running"});
   return res.json({
-    bedrockConnect: sessions[req.params.id].runOptions.paths.platform === "java" ? null : `minecraft:?addExternalServer=${sessions[req.params.id].runOptions.paths.id}|${req.hostname}:${sessions[req.params.id].portListening.at(0).port}`,
+    // bedrockConnect: sessions[req.params.id].runOptions.paths.platform === "java" ? null : `minecraft:?addExternalServer=${sessions[req.params.id].runOptions.paths.id}|${}:${sessions[req.params.id].portListening.at(0).port}`,
     ports: sessions[req.params.id].portListening,
     player: sessions[req.params.id].playerActions.reduce((acc, player) => {
       if (!acc[player.playerName]) acc[player.playerName] = player;
@@ -129,7 +127,7 @@ app.route("/v1/server/:id").get((req, res) => {
   if (!sessions[req.params.id]) return res.status(400).json({error: "Session not running"});
   if (Array.isArray(req.body)) sessions[req.params.id].sendCommand(...req.body);
   else sessions[req.params.id].sendCommand(req);
-  return res.sendStatus(200);
+  return res.status(200).send("ok");
 }).delete((req, res) => {
   if (!sessions[req.params.id]) return res.status(400).json({error: "Session not running"});
   return sessions[req.params.id].stopServer().then(res.json).catch(err => res.status(400).json({err: String(err?.message || err)}));

@@ -13,7 +13,7 @@ jobs:
       - name: Clone Repository
         uses: actions/checkout@v3
         with:
-          repository: pmmp/php-build-scripts
+          repository: pmmp/PHP-Binaries
           submodules: true
 
       - name: Cache musl
@@ -77,7 +77,7 @@ jobs:
       - name: Clone Repository
         uses: actions/checkout@v3
         with:
-          repository: pmmp/php-build-scripts
+          repository: pmmp/PHP-Binaries
           submodules: true
 
       - name: Install tools and dependencies
@@ -116,7 +116,7 @@ jobs:
       - name: Clone Repository
         uses: actions/checkout@v3
         with:
-          repository: pmmp/php-build-scripts
+          repository: pmmp/PHP-Binaries
           submodules: true
 
       - name: Install dependecies
@@ -156,7 +156,7 @@ jobs:
       - name: Clone Repository
         uses: actions/checkout@v3
         with:
-          repository: pmmp/php-build-scripts
+          repository: pmmp/PHP-Binaries
           submodules: true
 
       - name: Windows Depencies Install

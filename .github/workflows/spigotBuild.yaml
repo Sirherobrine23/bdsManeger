@@ -23,16 +23,14 @@ jobs:
     - name: Build
       continue-on-error: true
       run: |
-        wget -qO build.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
-        java -jar build.jar --rev "latest"
+        wget -qO /tmp/build.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+        java -jar /tmp/build.jar --rev "latest"
 
     - name: Upload to actifial
       uses: actions/upload-artifact@v3
       with:
         name: latest
-        path: |
-          !build.jar
-          *.jar
+        path: "*.jar"
 
   # Upload
   upload:

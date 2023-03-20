@@ -16,8 +16,10 @@ const bucket = await oracleBucket.oracleBucket({
   }
 });
 
-for await (const file of await extendsFS.readdir(path.resolve(process.cwd(), local))) {
+for (const file of await extendsFS.readdir(path.resolve(process.cwd(), local))) {
   console.log("Uploading %O", file);
   await bucket.uploadFile(path.posix.resolve("/", remote ?? "", path.basename(file)), await fs.promises.readFile(file).catch(() => fs.createReadStream(file)));
   console.log("Success %O", file);
 }
+
+process.exit(0);
