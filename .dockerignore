@@ -1,0 +1,14 @@
+# npm
+/*.tgz
+
+# Node
+node_modules/
+
+# Typescript
+**/*.js
+**/*.d.ts
+**/tsconfig.tsbuildinfo
+
+# PHP and Spigot Pre builds
+phpOutput/
+*.jar

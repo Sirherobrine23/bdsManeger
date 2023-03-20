@@ -48,6 +48,6 @@ jobs:
         cache-from: type=gha,scope=sirherobrine23_docker
         cache-to: type=gha,scope=sirherobrine23_docker
         platforms: "linux/amd64,linux/arm64"
-        context: ./package/docker
+        context: ./
         tags: ghcr.io/sirherobrine23/bdsmaneger
         push: true
