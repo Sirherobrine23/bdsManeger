@@ -16,7 +16,7 @@
     "build": "tsc --build --clean && tsc"
   },
   "dependencies": {
-    "@sirherobrine23/cloud": "^3.4.2",
+    "@sirherobrine23/cloud": "^3.5.4",
     "@sirherobrine23/extends": "^3.5.4",
     "@sirherobrine23/http": "^3.4.2",
     "sanitize-filename": "^1.6.3",
