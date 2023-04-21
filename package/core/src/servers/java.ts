@@ -1,7 +1,7 @@
 import { manegerOptions, serverManeger } from "../serverManeger.js";
-import coreHttp from "@sirherobrine23/http";
 import { oracleStorage } from "../internal.js";
 import { pipeline } from "node:stream/promises";
+import coreHttp from "@sirherobrine23/http";
 import semver from "semver";
 import stream from "node:stream";
 import utils from "node:util";
@@ -14,7 +14,6 @@ export type javaOptions = manegerOptions & {
    */
   altServer?: "spigot"|"paper"|"purpur"
 };
-
 
 export type javaList = {
   version: string,

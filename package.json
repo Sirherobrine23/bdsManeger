@@ -8,8 +8,8 @@
   "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
   "license": "GPL-3.0",
   "devDependencies": {
-    "@types/node": "^18.15.3",
-    "typescript": "^5.0.3"
+    "@types/node": "^18.15.13",
+    "typescript": "^5.0.4"
   },
   "workspaces": [
     "package/core",

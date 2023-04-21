@@ -16,10 +16,10 @@
   },
   "keywords": [],
   "dependencies": {
-    "@the-bds-maneger/core": "^6.0.1",
+    "@the-bds-maneger/core": "^6.0.3",
     "yargs": "^17.7.1"
   },
   "devDependencies": {
-    "@types/yargs": "^17.0.22"
+    "@types/yargs": "^17.0.24"
   }
 }

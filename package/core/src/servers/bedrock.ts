@@ -19,7 +19,7 @@ export type bedrockOptions = manegerOptions & {
   altServer?: "pocketmine"|"powernukkit"|"nukkit"|"cloudbust",
 };
 
-const pocketmineGithub = await Github.GithubManeger("pmmp", "PocketMine-MP");
+const pocketmineGithub = await Github.repositoryManeger("pmmp", "PocketMine-MP");
 export type bedrockList = {
   date: Date,
   version: string,
@@ -50,7 +50,7 @@ export type bedrockList = {
 export async function listVersions(altServer?: bedrockOptions["altServer"]): Promise<bedrockList[]> {
   if (altServer) if (!(["cloudbust", "cloudbust", "nukkit", "pocketmine", "powernukkit"]).includes(altServer)) throw new TypeError("Invalid alt server");
   if (altServer === "pocketmine") {
-    return (await pocketmineGithub.getRelease()).filter(rel => (rel.assets.find(assert => assert.name.endsWith(".phar")) ?? {}).browser_download_url).map(rel => ({
+    return (await pocketmineGithub.release.getRelease()).filter(rel => (rel.assets.find(assert => assert.name.endsWith(".phar")) ?? {}).browser_download_url).map(rel => ({
       date: new Date(rel.created_at),
       version: rel.tag_name,
       release: rel.prerelease ? "preview" : "stable",
