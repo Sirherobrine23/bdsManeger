@@ -12,7 +12,7 @@ export type javaOptions = manegerOptions & {
   /**
    * Servidor alternativo ao invés do servidor ofical da Mojang
    */
-  altServer?: "spigot"|"paper"|"purpur"
+  altServer?: "spigot"|"paper"|"purpur"|"glowstone"|"folia"|"cuberite"
 };
 
 export type javaList = {

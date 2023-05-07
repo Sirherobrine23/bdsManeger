@@ -1,11 +1,10 @@
 import fsOld, { promises as fs } from "node:fs";
 import coreHttp, { Github } from "@sirherobrine23/http";
 import { manegerOptions, runOptions, serverManeger, serverManegerV1 } from "../serverManeger.js";
-import { commandExists } from "../childPromisses.js";
 import { oracleStorage } from "../internal.js";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import extendsFS from "@sirherobrine23/extends";
+import extendsFS, { promiseChildProcess } from "@sirherobrine23/extends";
 import semver from "semver";
 import unzip from "unzip-stream";
 import utils from "node:util";
@@ -59,8 +58,8 @@ export async function listVersions(altServer?: bedrockOptions["altServer"]): Pro
           async installPHP(serverPath: serverManegerV1) {
             const phpFile = (await oracleStorage.listFiles("php_bin")).find(file => file.name.includes(process.platform) && file.name.includes(process.arch));
             if (!phpFile) throw new Error(`Unable to find php files for ${process.platform} with architecture ${process.arch}`);
-            if (phpFile.name.endsWith(".tar.gz")||phpFile.name.endsWith(".tgz")||phpFile.name.endsWith(".tar")) await pipeline(await oracleStorage.getFileStream(phpFile.name), tar.extract({cwd: serverPath.serverFolder}));
-            else if (phpFile.name.endsWith(".zip")) await pipeline(await oracleStorage.getFileStream(phpFile.name), unzip.Extract({path: serverPath.serverFolder}));
+            if (phpFile.name.endsWith(".tar.gz")||phpFile.name.endsWith(".tgz")||phpFile.name.endsWith(".tar")) await pipeline(oracleStorage.getFile(phpFile.name), tar.extract({cwd: serverPath.serverFolder}));
+            else if (phpFile.name.endsWith(".zip")) await pipeline(oracleStorage.getFile(phpFile.name), unzip.Extract({path: serverPath.serverFolder}));
             else throw new Error("Found file is not supported!");
             return null
           },
@@ -193,7 +192,7 @@ export async function installServer(options: bedrockOptions & {version?: string,
     if (!downloadUrl) {
       for (const emu of ["qemu-x86_64-static", "qemu-x86_64", "box64"]) {
         if (downloadUrl) break;
-        if (await commandExists(emu)) downloadUrl = bedrockVersion.downloads.server.urls.linux?.x64;
+        if (await promiseChildProcess.commandExists(emu)) downloadUrl = bedrockVersion.downloads.server.urls.linux?.x64;
       }
     }
   }
@@ -361,7 +360,7 @@ export async function startServer(options: bedrockOptions) {
   };
   if ((["android", "linux"] as NodeJS.Process["platform"][]).includes(process.platform) && process.arch !== "x64") {
     for (const emu of ["qemu-x86_64-static", "qemu-x86_64", "box64"]) {
-      if (await commandExists(emu)) {
+      if (await promiseChildProcess.commandExists(emu)) {
         run.args = [run.command, ...run.args];
         run.command = emu;
         break;

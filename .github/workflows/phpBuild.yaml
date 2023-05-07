@@ -2,7 +2,7 @@ name: PHP build
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 */2 * 0"
+    - cron: "0 0 */2 * *"
 
 jobs:
   # Android Build arm64
@@ -215,7 +215,7 @@ jobs:
         path: ./phpOutput
 
     - name: Upload to bucket
-      run: node .github/uploadToBucket.mjs php_bin phpOutput
+      run: node .github/uploadToBucket.mjs phpOutput -/php_bin
       timeout-minutes: 25
       env:
         OCI_AUTHKEY: ${{ secrets.OCI_AUTHKEY }}
