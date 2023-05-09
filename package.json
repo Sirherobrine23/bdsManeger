@@ -8,12 +8,14 @@
   "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
   "license": "GPL-3.0",
   "devDependencies": {
+    "@types/express": "^4.17.17",
     "@types/node": "^20.1.0",
     "typescript": "^5.0.4"
   },
   "workspaces": [
     "package/core",
     "package/cli",
-    "package/docker"
+    "package/docker",
+    "package/verapi"
   ]
 }

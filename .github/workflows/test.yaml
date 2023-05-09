@@ -12,6 +12,7 @@ jobs:
           - core
           - cli
           - docker
+          - verapi
     name: "Testing ${{ matrix.package }}"
     env:
       bdscoreroot: "~/.bdsCore"
@@ -41,4 +42,4 @@ jobs:
       run: npm run -w package/core build
 
     - name: Build ${{ matrix.package }}
-      run: npm run -w "package/${{ matrix.package }}" build
+      run: npm run --if-present -w "package/${{ matrix.package }}" build

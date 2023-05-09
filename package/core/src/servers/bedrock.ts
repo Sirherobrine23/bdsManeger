@@ -13,7 +13,7 @@ import tar from "tar";
 
 export type bedrockOptions = manegerOptions & {
   /**
-   * Servidor alternativo ao invés do servidor ofical da Mojang
+   * Alternative server instead of official Mojang server
    */
   altServer?: "pocketmine"|"powernukkit"|"nukkit"|"cloudbust",
 };
