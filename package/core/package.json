@@ -16,17 +16,17 @@
     "build": "tsc --build --clean && tsc"
   },
   "dependencies": {
-    "@sirherobrine23/cloud": "^3.6.10",
-    "@sirherobrine23/extends": "^3.6.10",
-    "@sirherobrine23/http": "^3.6.10",
+    "@sirherobrine23/cloud": "^3.6.11",
+    "@sirherobrine23/extends": "^3.6.11",
+    "@sirherobrine23/http": "^3.6.11",
     "sanitize-filename": "^1.6.3",
     "semver": "^7.5.0",
     "tar": "^6.1.14",
     "unzip-stream": "^0.3.1"
   },
   "devDependencies": {
-    "@types/semver": "^7.3.13",
-    "@types/tar": "^6.1.4",
+    "@types/semver": "^7.5.0",
+    "@types/tar": "^6.1.5",
     "@types/unzip-stream": "^0.3.1"
   }
 }
