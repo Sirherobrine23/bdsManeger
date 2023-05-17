@@ -169,6 +169,7 @@ jobs:
           SOURCES_PATH: ${{ github.workspace }}\pocketmine-php-sdk
 
       - name: show log
+        if: failure()
         run: type compile.log
 
       - name: Rename files
