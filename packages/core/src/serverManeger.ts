@@ -19,15 +19,15 @@ export const bdsManegerRoot = ENVROOT ? path.resolve(process.cwd(), ENVROOT) : p
 if (!(await extendsFS.exists(bdsManegerRoot))) await fs.mkdir(bdsManegerRoot, {recursive: true});
 export type withPromise<T> = T|Promise<T>;
 
-export type manegerOptions = {
+export interface manegerOptions {
   ID?: string,
   newID?: boolean,
 };
 
 // only letters and numbers
-const idReg = /^[a-zA-Z0-9]+$/;
+const idReg = /^[a-zA-Z0-9_]+$/;
 
-export type serverManegerV1 = {
+export interface serverManegerV1 {
   id: string,
   rootPath: string,
   serverFolder: string,
@@ -49,7 +49,7 @@ export async function serverManeger(platform: serverManegerV1["platform"], optio
   // Create or check if exists
   if (options.newID === true) {
     while(true) {
-      options.ID = crypto.randomBytes(crypto.randomInt(8, 14)).toString("hex");
+      options.ID = typeof crypto.randomUUID === "function" ?  crypto.randomUUID().split("-").join("_") : crypto.randomBytes(crypto.randomInt(8, 14)).toString("hex");
       if (!(idReg.test(options.ID))) continue;
       if (!((await fs.readdir(platformFolder).catch(() => [])).includes(options.ID))) break;
     }
@@ -171,7 +171,7 @@ export declare class serverRun extends child_process.ChildProcess {
   avaibleDate?: Date;
   runOptions: runOptions;
   portListening: portListen[];
-  logPath: {stderr: string, stdout: string};
+  logPath: {stderr: string, stdout: string, merged: string};
   playerActions: playerAction[];
   stdoutInterface: readline.Interface;
   stderrInterface: readline.Interface;
@@ -186,6 +186,7 @@ export declare class serverRun extends child_process.ChildProcess {
  * Run servers globally and hormonally across servers
  */
 export async function runServer(options: runOptions): Promise<serverRun> {
+  if (!options.stdio) options.stdio = ["pipe", "pipe", "pipe"];
   const child = child_process.spawn(options.command, [...((options.args ?? []).map(String))], {
     // maxBuffer: Infinity,
     stdio: options.stdio,
@@ -210,8 +211,11 @@ export async function runServer(options: runOptions): Promise<serverRun> {
   const currentDate = new Date();
   const baseLog = path.join(options.paths.logs, format("%s_%s_%s_%s-%s-%s", currentDate.getDate(), currentDate.getMonth()+1, currentDate.getFullYear(), currentDate.getHours(), currentDate.getMinutes(), currentDate.getSeconds()));
   await fs.mkdir(baseLog, {recursive: true});
-  child.logPath = {stdout: path.join(baseLog, "stdout.log"), stderr: path.join(baseLog, "stderr.log")};
+  child.logPath = {stdout: path.join(baseLog, "stdout.log"), stderr: path.join(baseLog, "stderr.log"), merged: path.join(baseLog, "server.log")};
+  const allLog = createWriteStream(child.logPath.merged);
+  child.stdout.pipe(allLog);
   child.stdout.pipe(createWriteStream(child.logPath.stdout));
+  child.stderr.pipe(allLog);
   child.stderr.pipe(createWriteStream(child.logPath.stderr));
 
   // Lines
@@ -265,7 +269,7 @@ export async function runServer(options: runOptions): Promise<serverRun> {
   }
 
   child.hotBackup = function hotBackup() {
-    return Object.assign(Promise.resolve().then((async () => {
+    return Object.assign({}, Promise.resolve().then((async () => {
       if (!options.serverActions?.hotBackup) throw new Error("Hot backup disabled to current platform!");
       child.emit("backup", "start");
       return Promise.resolve(options.serverActions.hotBackup.call(child) as ReturnType<typeof options.serverActions.hotBackup>).then(data => {

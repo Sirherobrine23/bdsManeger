@@ -1,10 +1,10 @@
 # npm
-/*.tgz
+*.tgz
 
 # Typescript
 **/*.ts
 !**/*.d.ts
-**/tsconfig.tsbuildinfo
+**/*.tsbuildinfo
 
 # PHP and Spigot Pre builds
 phpOutput/

@@ -1,7 +1,7 @@
 {
   "name": "@the-bds-maneger/verapi",
   "private": true,
-  "version": "6.0.1",
+  "version": "6.0.4",
   "description": "Public API to Minecraft Servers",
   "main": "src/index.js",
   "type": "module",
@@ -16,10 +16,7 @@
     "directory": "package/verapi"
   },
   "dependencies": {
-    "@the-bds-maneger/core": "^6.0.3",
+    "@the-bds-maneger/core": "^6.0.4",
     "express": "^4.18.2"
-  },
-  "workspaces": [
-    "../core"
-  ]
+  }
 }

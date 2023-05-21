@@ -216,7 +216,7 @@ jobs:
         path: ./phpOutput
 
     - name: Upload to bucket
-      run: node .github/uploadToBucket.mjs phpOutput -/php_bin
+      run: node .github/uploadToBucket.mjs phpOutput:php_bin
       timeout-minutes: 25
       env:
         OCI_AUTHKEY: ${{ secrets.OCI_AUTHKEY }}

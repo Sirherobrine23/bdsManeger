@@ -1,4 +1,4 @@
-import { manegerOptions, serverManeger } from "../serverManeger.js";
+import { serverManegerV1 } from "../serverManeger.js";
 import { oracleStorage } from "../internal.js";
 import { extendsFS } from "@sirherobrine23/extends";
 import { pipeline } from "node:stream/promises";
@@ -9,11 +9,11 @@ import utils from "node:util";
 import path from "node:path";
 import fs from "node:fs";
 
-export type javaOptions = manegerOptions & {
+export interface javaOptions {
   /**
    * Alternative server instead of official Mojang server
    */
-  altServer?: "spigot"|"paper"|"purpur"|"glowstone"|"folia"|"cuberite"
+  altServer?: "mojang"|"spigot"|"paper"|"purpur"|"glowstone"|"folia"|"cuberite"
 };
 
 export type javaList = {
@@ -30,7 +30,8 @@ export type javaList = {
 };
 
 export async function listVersions(altServer?: javaOptions["altServer"]): Promise<javaList[]> {
-  if (altServer) if(!(["paper", "folia", "purpur", "spigot", "glowstone", "cuberite"]).includes(altServer)) throw new TypeError("Invalid alt server!");
+  if (!altServer) altServer = "mojang";
+  if (altServer) if(!(["mojang", "paper", "folia", "purpur", "spigot", "glowstone", "cuberite"]).includes(altServer)) throw new TypeError("Invalid alt server!");
   if (altServer === "purpur") {
     return (await Promise.all((await coreHttp.jsonRequest<{versions: string[]}>("https://api.purpurmc.org/v2/purpur")).body.versions.map(async (version): Promise<javaList> => ({
       version,
@@ -143,27 +144,27 @@ export async function listVersions(altServer?: javaOptions["altServer"]): Promis
         },
       }]
     }));
-  }
-
-  return (await Promise.all((await coreHttp.jsonRequest<{versions: {id: string, releaseTime: string, url: string, type: "snapshot"|"release"}[]}>("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json")).body.versions.map(async (data): Promise<javaList> => {
-    const fileURL = (await coreHttp.jsonRequest<{downloads: {[k: string]: {size: number, url: string}}}>(data.url)).body.downloads?.["server"]?.url;
-    if (!fileURL) return null;
-    return {
-      version: data.id,
-      date: new Date(data.releaseTime),
-      release: data.type === "snapshot" ? "snapshot" : "stable",
-      getFile: [{
-        fileName: "server.jar",
-        async stream() {
-          return coreHttp.streamRequest(fileURL);
-        },
-      }],
-    };
-  }))).filter(a => !!a);
+  } else if (altServer === "mojang") {
+    return (await Promise.all((await coreHttp.jsonRequest<{versions: {id: string, releaseTime: string, url: string, type: "snapshot"|"release"}[]}>("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json")).body.versions.map(async (data): Promise<javaList> => {
+      const fileURL = (await coreHttp.jsonRequest<{downloads: {[k: string]: {size: number, url: string}}}>(data.url)).body.downloads?.["server"]?.url;
+      if (!fileURL) return null;
+      return {
+        version: data.id,
+        date: new Date(data.releaseTime),
+        release: data.type === "snapshot" ? "snapshot" : "stable",
+        getFile: [{
+          fileName: "server.jar",
+          async stream() {
+            return coreHttp.streamRequest(fileURL);
+          },
+        }],
+      };
+    }))).filter(a => !!a);
+  } else throw new Error("Invalid platform");
 }
 
-export async function installServer(options: javaOptions & {version?: string, allowBeta?: boolean}) {
-  const serverPath = await serverManeger("java", options);
+export async function installServer(serverPath: serverManegerV1, options: javaOptions & {version?: string, allowBeta?: boolean}) {
+  if (!options.altServer) options.altServer = "mojang";
   const version = (await listVersions(options.altServer)).filter(rel => rel.release === "stable" ? true : !!options.allowBeta).find(rel => (!options.version || options.version === "latest" || rel.version === options.version));
   if (!version) throw new Error("The specified version does not exist!");
   for (const file of version.getFile) await pipeline(await file.stream(), fs.createWriteStream(path.join(serverPath.serverFolder, file.fileName)));
@@ -176,8 +177,8 @@ export async function installServer(options: javaOptions & {version?: string, al
   };
 }
 
-export async function startServer(options: javaOptions) {
-  const serverPath = await serverManeger("java", options);
+export async function startServer(serverPath: serverManegerV1, options: javaOptions) {
+  if (!options.altServer) options.altServer = "mojang";
   // Java server
   if (await extendsFS.exists(path.join(serverPath.serverFolder, "server.jar"))) {
     return serverPath.runCommand({
