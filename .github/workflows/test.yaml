@@ -9,11 +9,11 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - core
-          - cli
-          - docker
-          - verapi
-    name: "Testing ${{ matrix.package }}"
+          - "@the-bds-maneger/core"
+          - "@the-bds-maneger/web"
+          - "bds-maneger"
+          - "@the-bds-maneger/verapi"
+    name: "Testing \"${{ matrix.package }}\""
     env:
       bdscoreroot: "~/.bdsCore"
     steps:
@@ -38,8 +38,8 @@ jobs:
 
     # Build Core
     - name: Core Build
-      if: matrix.package != 'core'
-      run: npm run -w package/core build
+      if: matrix.package != '@the-bds-maneger/core'
+      run: npm run -w "@the-bds-maneger/core" build
 
-    - name: Build ${{ matrix.package }}
-      run: npm run --if-present -w "package/${{ matrix.package }}" build
+    - name: Build "${{ matrix.package }}"
+      run: npm run --if-present -w "${{ matrix.package }}" prepack

@@ -39,12 +39,15 @@ yargs(process.argv.slice(2)).version(false).help(true).strictCommands().demandCo
   })
   .parseSync();
 
-  const installData = await (options.platform === "java" ? bdsCore.Java.installServer : bdsCore.Bedrock.installServer)({
+  const serverPath = await bdsCore.serverManeger.serverManeger(options.platform === "java" ? "java" : "bedrock", {
     ...(options.id ? {newID: false, ID: options.id} : {newID: true}),
+  });
+
+  const installData = await (options.platform === "java" ? bdsCore.Java.installServer : bdsCore.Bedrock.installServer)(Object.assign({}, serverPath, {
     version: options.version,
     altServer: options.altserver as never,
     allowBeta: Boolean(options.beta)
-  });
+  }));
 
   console.log("ID: %O, Server Version: %O, Server Date: %O", installData.id, installData.version, installData.date);
 })
@@ -73,7 +76,8 @@ yargs(process.argv.slice(2)).version(false).help(true).strictCommands().demandCo
   }).parseSync();
   const idInfo = (await bdsCore.listIDs()).find(local => local.id === option.id);
   if (!idInfo) throw new Error("Invalid ID");
-  const session = await (idInfo.platform === "java" ? bdsCore.Java.startServer : bdsCore.Bedrock.startServer)({ID: idInfo.id});
+  const sserverPaths = await bdsCore.serverManeger.serverManeger(option.platform === "java" ? "java" : "bedrock", {ID: option.id, newID: false});
+  const session = await (idInfo.platform === "java" ? bdsCore.Java.startServer : bdsCore.Bedrock.startServer)(sserverPaths);
   process.on("error", console.log);
   session.once("backup", filePath => console.log("Backup file path: %O", filePath));
   process.stdin.pipe(session.stdin);

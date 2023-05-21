@@ -1,7 +1,7 @@
 FROM node:lts
 WORKDIR /app
 COPY ./ ./
-RUN npm install --no-save && npm run -w package/docker build
+RUN npm install --no-save && npm run -w "@the-bds-maneger/web" build
 
 FROM node:lts
 WORKDIR /app

@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "lib": [
+      "dom",
+      "DOM.Iterable"
+    ],
+  },
+  "exclude": [
+    "**/next.config.*js",
+    "**/.next/"
+  ],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ]
+}

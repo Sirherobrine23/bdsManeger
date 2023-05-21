@@ -1,0 +1,5 @@
+# Next
+.next/
+
+# Include typescript
+!next-env.d.ts

@@ -1,5 +1,5 @@
 # npm
-/*.tgz
+*.tgz
 
 # Node
 node_modules/
@@ -8,7 +8,7 @@ node_modules/
 # Typescript
 **/*.js
 **/*.d.ts
-**/tsconfig.tsbuildinfo
+**/*.tsbuildinfo
 
 # PHP and Spigot Pre builds
 phpOutput/

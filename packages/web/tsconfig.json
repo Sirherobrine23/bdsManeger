@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "references": [
+    {
+      "path": "../core"
+    }
+  ],
+  "exclude": [
+    "src/next/next.config.cjs"
+  ]
+}

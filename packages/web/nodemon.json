@@ -1,0 +1,8 @@
+{
+  "ext": "ts,cts,mts,json",
+  "watch": ["src"],
+  "exec": "ts-node",
+  "args": [
+    "src/index.ts"
+  ]
+}

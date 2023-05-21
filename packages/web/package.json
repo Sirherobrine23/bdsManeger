@@ -1,0 +1,36 @@
+{
+  "name": "@the-bds-maneger/web",
+  "version": "6.0.4",
+  "type": "module",
+  "author": "Matheus Sampaio Queiroga <srherobrine20@gmail.com>",
+  "license": "GPL-3.0",
+  "scripts": {
+    "prepack": "tsc --build --clean && tsc --build && next build ./src/next/",
+    "postpack": "tsc --build --clean",
+    "dev": "nodemon"
+  },
+  "bin": {
+    "bds-web": "src/index.js"
+  },
+  "dependencies": {
+    "@the-bds-maneger/core": "^6.0.4",
+    "@types/express-session": "^1.17.7",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
+    "express-session": "^1.17.3",
+    "mongodb": "^5.5.0",
+    "next": "^13.4.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "ssh2": "^1.13.0",
+    "xterm": "^5.1.0",
+    "yaml": "^2.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/react": "18.2.7",
+    "@types/ssh2": "^1.11.11",
+    "nodemon": "^2.0.22"
+  }
+}
