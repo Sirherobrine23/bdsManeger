@@ -1,21 +1,21 @@
 import fsOld, { promises as fs } from "node:fs";
 import coreHttp, { Github } from "@sirherobrine23/http";
-import { manegerOptions, runOptions, serverManeger, serverManegerV1 } from "../serverManeger.js";
+import { runOptions, serverManegerV1 } from "../serverManeger.js";
 import { oracleStorage } from "../internal.js";
 import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import extendsFS, { promiseChildProcess } from "@sirherobrine23/extends";
 import semver from "semver";
-import unzip from "unzip-stream";
+import unzip from "unzipper";
 import utils from "node:util";
 import path from "node:path";
 import tar from "tar";
 
-export type bedrockOptions = manegerOptions & {
+export interface bedrockOptions {
   /**
    * Alternative server instead of official Mojang server
    */
-  altServer?: "pocketmine"|"powernukkit"|"nukkit"|"cloudbust",
+  altServer?: "mojang"|"pocketmine"|"powernukkit"|"nukkit"|"cloudbust",
 };
 
 const pocketmineGithub = await Github.repositoryManeger("pmmp", "PocketMine-MP");
@@ -47,7 +47,8 @@ export type bedrockList = {
  * @returns
  */
 export async function listVersions(altServer?: bedrockOptions["altServer"]): Promise<bedrockList[]> {
-  if (altServer) if (!(["cloudbust", "cloudbust", "nukkit", "pocketmine", "powernukkit"]).includes(altServer)) throw new TypeError("Invalid alt server");
+  if (!altServer) altServer = "mojang";
+  if (altServer) if (!(["mojang", "cloudbust", "cloudbust", "nukkit", "pocketmine", "powernukkit"]).includes(altServer)) throw new TypeError("Invalid alt server");
   if (altServer === "pocketmine") {
     return (await pocketmineGithub.release.getRelease()).filter(rel => (rel.assets.find(assert => assert.name.endsWith(".phar")) ?? {}).browser_download_url).map(rel => ({
       date: new Date(rel.created_at),
@@ -137,30 +138,32 @@ export async function listVersions(altServer?: bedrockOptions["altServer"]): Pro
         }
       }
     }));
-  }
-  return (await coreHttp.jsonRequest<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>("https://sirherobrine23.github.io/BedrockFetch/all.json")).body.sort((b, a) => semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version)))).map(rel => ({
-    version: rel.version,
-    date: new Date(rel.date),
-    release: rel.release === "preview" ? "preview" : "stable",
-    downloads: {
-      server: {
-        url: rel.url[process.platform]?.[process.arch],
-        async getServer() {
-          const platformURL = (rel.url[process.platform] ?? rel.url["linux"]);
-          if (!platformURL) throw new Error("Cannot get platform URL");
-          const arch = platformURL[process.arch] ?? platformURL["x64"];
-          if (!arch) throw new Error("Cannot get bedrock server to current arch");
-          return coreHttp.streamRequest(arch);
-        },
-        urls: rel.url
+  } else if (altServer === "mojang") {
+
+    return (await coreHttp.jsonRequest<{version: string, date: Date, release?: "stable"|"preview", url: {[platform in NodeJS.Platform]?: {[arch in NodeJS.Architecture]?: string}}}[]>("https://sirherobrine23.github.io/BedrockFetch/all.json")).body.sort((b, a) => semver.compare(semver.valid(semver.coerce(a.version)), semver.valid(semver.coerce(b.version)))).map(rel => ({
+      version: rel.version,
+      date: new Date(rel.date),
+      release: rel.release === "preview" ? "preview" : "stable",
+      downloads: {
+        server: {
+          url: rel.url[process.platform]?.[process.arch],
+          async getServer() {
+            const platformURL = (rel.url[process.platform] ?? rel.url["linux"]);
+            if (!platformURL) throw new Error("Cannot get platform URL");
+            const arch = platformURL[process.arch] ?? platformURL["x64"];
+            if (!arch) throw new Error("Cannot get bedrock server to current arch");
+            return coreHttp.streamRequest(arch);
+          },
+          urls: rel.url
+        }
       }
-    }
-  }));
+    }));
+  } else throw new Error("Invalid platform");
 }
 
-export async function installServer(options: bedrockOptions & {version?: string, allowBeta?: boolean}) {
-  const serverPath = await serverManeger("bedrock", options);
+export async function installServer(serverPath: serverManegerV1, options: bedrockOptions & {version?: string, allowBeta?: boolean}) {
   const versions = await listVersions(options?.altServer);
+  if (!options.altServer) options.altServer = "mojang";
   if (options.altServer === "pocketmine") {
     const rel = options.version === "latest" ? versions.at(0) : versions.find(rel => rel.version === options.version);
     if (!rel) throw new Error("Version not exsists");
@@ -179,39 +182,40 @@ export async function installServer(options: bedrockOptions & {version?: string,
       ...rel,
       id: serverPath.id,
     };
-  }
-  const bedrockVersion = versions.find(rel => {
-    if (rel.release === "preview") if (options.allowBeta !== true) return false;
-    const version = (options.version ?? "latest").trim();
-    if (version.toLowerCase() === "latest") return true;
-    return rel.version === version;
-  });
-  if (!bedrockVersion) throw new Error("Não existe essa versão");
-  let downloadUrl = bedrockVersion.downloads.server.url;
-  if ((["android", "linux"] as NodeJS.Process["platform"][]).includes(process.platform) && process.arch !== "x64") {
-    if (!downloadUrl) {
-      for (const emu of ["qemu-x86_64-static", "qemu-x86_64", "box64"]) {
-        if (downloadUrl) break;
-        if (await promiseChildProcess.commandExists(emu)) downloadUrl = bedrockVersion.downloads.server.urls.linux?.x64;
+  } else if (options.altServer === "mojang") {
+    const bedrockVersion = versions.find(rel => {
+      if (rel.release === "preview") if (options.allowBeta !== true) return false;
+      const version = (options.version ?? "latest").trim();
+      if (version.toLowerCase() === "latest") return true;
+      return rel.version === version;
+    });
+    if (!bedrockVersion) throw new Error("Não existe essa versão");
+    let downloadUrl = bedrockVersion.downloads.server.url;
+    if ((["android", "linux"] as NodeJS.Process["platform"][]).includes(process.platform) && process.arch !== "x64") {
+      if (!downloadUrl) {
+        for (const emu of ["qemu-x86_64-static", "qemu-x86_64", "box64"]) {
+          if (downloadUrl) break;
+          if (await promiseChildProcess.commandExists(emu)) downloadUrl = bedrockVersion.downloads.server.urls.linux?.x64;
+        }
       }
     }
-  }
-  if (!downloadUrl) throw new Error(`Não existe o URL de download para ${process.platform} na arquitetura ${process.arch}`);
+    if (!downloadUrl) throw new Error(`Não existe o URL de download para ${process.platform} na arquitetura ${process.arch}`);
 
-  const filesBackup = ["server.properties", "valid_known_packs.json", "permissions.json", "allowlist.json", "whitelist.json"];
-  const datS = (await Promise.all(filesBackup.map(async f => !await extendsFS.exists(path.join(serverPath.serverFolder, f)) ? null : ({path: f, data: await fs.readFile(path.join(serverPath.serverFolder, f))})))).filter(a => !!a);
-  await pipeline(await coreHttp.streamRequest(downloadUrl), unzip.Extract({path: serverPath.serverFolder}));
-  await Promise.all(datS.map(async f => fs.writeFile(f.path, f.data)));
-  return {
-    ...bedrockVersion,
-    id: serverPath.id,
-  };
+    const filesBackup = ["server.properties", "valid_known_packs.json", "permissions.json", "allowlist.json", "whitelist.json"];
+    const datS = (await Promise.all(filesBackup.map(async f => !await extendsFS.exists(path.join(serverPath.serverFolder, f)) ? null : ({path: f, data: await fs.readFile(path.join(serverPath.serverFolder, f))})))).filter(a => !!a);
+    await pipeline(await coreHttp.streamRequest(downloadUrl), unzip.Extract({path: serverPath.serverFolder}));
+    await Promise.all(datS.map(async f => fs.writeFile(f.path, f.data)));
+    return {
+      ...bedrockVersion,
+      id: serverPath.id,
+    };
+  } else throw new Error("Invalid platform");
 }
 
-export async function startServer(options: bedrockOptions) {
-  const serverPath = await serverManeger("bedrock", options);
+export async function startServer(maneger: serverManegerV1, options: bedrockOptions) {
+  if (!options.altServer) options.altServer = "mojang";
   if (options.altServer === "powernukkit"||options.altServer === "cloudbust") {
-    return serverPath.runCommand({
+    return maneger.runCommand({
       command: "java",
       args: [
         "-XX:+UseG1GC",
@@ -236,7 +240,7 @@ export async function startServer(options: bedrockOptions) {
         "-Daikars.new.flags=true",
         "-jar", "server.jar",
       ],
-      paths: serverPath,
+      paths: maneger,
       serverActions: {
         stop() {
           this.sendCommand("stop");
@@ -244,13 +248,13 @@ export async function startServer(options: bedrockOptions) {
       }
     })
   } else if (options.altServer === "pocketmine") {
-    return serverPath.runCommand({
-      command: (await extendsFS.readdir(serverPath.serverFolder)).find(file => file.endsWith("php")||file.endsWith("php.exe")),
+    return maneger.runCommand({
+      command: (await extendsFS.readdir(maneger.serverFolder)).find(file => file.endsWith("php")||file.endsWith("php.exe")),
       args: [
         "server.phar",
         "--no-wizard"
       ],
-      paths: serverPath,
+      paths: maneger,
       serverActions: {
         stop() {
           this.sendCommand("stop")
@@ -260,8 +264,8 @@ export async function startServer(options: bedrockOptions) {
   }
   if (process.platform === "darwin") throw new Error("Run in docker or podman!");
   const run: Omit<runOptions, "cwd"> = {
-    command: path.join(serverPath.serverFolder, "bedrock_server"),
-    paths: serverPath,
+    command: path.join(maneger.serverFolder, "bedrock_server"+(process.platform === "win32" ? ".exe" : "")),
+    paths: maneger,
     serverActions: {
       stop() {
         this.sendCommand("stop");
@@ -322,6 +326,19 @@ export async function startServer(options: bedrockOptions) {
         if (data.includes("started") && data.includes("Server")) return new Date();
         return null
       },
+      async hotBackup() {
+        const ff = (await fs.readdir(this.runOptions.paths.serverFolder)).filter(ff => {
+          let ok = ff.endsWith(".json");
+          if (!ok) ok = ff === "server.properties";
+          if (!ok) ok = ff === "worlds";
+          return ok;
+        });
+        return tar.create({
+          gzip: true,
+          cwd: this.runOptions.paths.serverFolder,
+          prefix: ""
+        }, ff);
+      },
       postStart: [
         async function() {
           let breaked = false;
@@ -367,5 +384,5 @@ export async function startServer(options: bedrockOptions) {
       }
     }
   }
-  return serverPath.runCommand(run);
+  return maneger.runCommand(run);
 }

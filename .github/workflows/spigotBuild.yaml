@@ -54,7 +54,7 @@ jobs:
         path: artifacts
 
     - name: Upload to actifial
-      run: node .github/uploadToBucket.mjs SpigotBuild artifacts
+      run: node .github/uploadToBucket.mjs artifacts:SpigotBuild
       env:
         ociauth: "${{ secrets.OCI_AUTHKEY }}"
         OCI_AUTHKEY: "${{ secrets.OCI_AUTHKEY }}"

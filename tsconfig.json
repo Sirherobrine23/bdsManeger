@@ -20,7 +20,8 @@
   },
   "exclude": [
     "**/*.test.ts",
-    "node_modules/"
+    "**/node_modules/**",
+    "packages/verapi/**"
   ],
   "ts-node": {
     "files": true,
