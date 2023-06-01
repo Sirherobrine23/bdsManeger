@@ -1,5 +1,6 @@
 import cookie, { Store } from "express-session";
 import { database } from "./db.js";
+import { config } from "./config.js";
 
 declare module "express-session" {
   interface SessionData {
@@ -17,14 +18,27 @@ class bdsSession extends Store {
   nMap = new Map<string, cookie.SessionData>();
   destroy(sid: string, callback?: (err?: any) => void): void {
     if (this.nMap.has(sid)) this.nMap.delete(sid);
-    cookieCollection.deleteOne({sid}).then(() => callback(), err => callback(err));
+    cookieCollection.deleteOne({ sid }).then(() => callback(), err => callback(err));
   }
 
   get(sid: string, callback: (err?: any, session?: cookie.SessionData) => void) {
     if (this.nMap.has(sid)) return callback(null, this.nMap.get(sid));
     (async () => {
       try {
-        const inDb = await cookieCollection.findOne({sid});
+        const inDb = await cookieCollection.findOne({ sid });
+        if (inDb) return callback(null, inDb.session);
+        return callback();
+      } catch (err) {
+        return callback(err);
+      }
+    })();
+  }
+
+  load(sid: string, callback: (err?: any, session?: cookie.SessionData) => any): void {
+    if (this.nMap.has(sid)) return callback(null, this.nMap.get(sid));
+    (async () => {
+      try {
+        const inDb = await cookieCollection.findOne({ sid });
         if (inDb) return callback(null, inDb.session);
         return callback();
       } catch (err) {
@@ -38,8 +52,8 @@ class bdsSession extends Store {
       try {
         if (this.nMap.has(sid)) return callback();
         this.nMap.set(sid, session);
-        const existsInDb = await cookieCollection.findOne({sid});
-        if (existsInDb) await cookieCollection.deleteOne({sid});
+        const existsInDb = await cookieCollection.findOne({ sid });
+        if (existsInDb) await cookieCollection.deleteOne({ sid });
         await cookieCollection.insertOne({
           sid,
           session: typeof session["toJSON"] === "function" ? session["toJSON"]() : session,
@@ -73,7 +87,7 @@ class bdsSession extends Store {
 
 export default cookie({
   name: "bdsLogin",
-  secret: process.env.COOKIE_SECRET,
+  secret: config.cookieSecret,
   resave: true,
   saveUninitialized: true,
   cookie: {
@@ -82,4 +96,4 @@ export default cookie({
     secure: "auto"
   },
   store: new bdsSession(),
-})
+});

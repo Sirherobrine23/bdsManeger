@@ -1,0 +1,64 @@
+.background-masker {
+  position: absolute;
+}
+
+.btn-divide-left {
+  top: 0;
+  left: 25%;
+  height: 100%;
+  width: 5%;
+}
+
+@keyframes placeHolderShimmer {
+  0% {
+    background-position: -800px 0
+  }
+
+  100% {
+    background-position: 800px 0
+  }
+}
+
+.animated-background {
+  animation-duration: 2.5s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  animation-name: placeHolderShimmer;
+  animation-timing-function: linear;
+  background-color: #f6f7f8;
+  background: linear-gradient(to right, rgb(238, 238, 238) 8%, rgb(187, 187, 187) 18%, rgb(238, 238, 238) 33%);
+  background-size: 800px 104px;
+  position: relative;
+}
+
+.css-dom:empty {
+  width: 280px;
+  height: 220px;
+  border-radius: 6px;
+  box-shadow: 0 10px 45px rgba(0, 0, 0, .2);
+  background-repeat: no-repeat;
+
+  background-image:
+    radial-gradient(circle 16px, lightgray 99%, transparent 0),
+    linear-gradient(lightgray, lightgray),
+    linear-gradient(lightgray, lightgray),
+    linear-gradient(lightgray, lightgray),
+    linear-gradient(lightgray, lightgray),
+    linear-gradient(#fff, #fff);
+
+  background-size:
+    32px 32px,
+    200px 32px,
+    180px 32px,
+    230px 16px,
+    100% 40px,
+    280px 100%;
+
+  background-position:
+    24px 30px,
+    66px 30px,
+    24px 90px,
+    24px 142px,
+    0 180px,
+    0 0;
+}

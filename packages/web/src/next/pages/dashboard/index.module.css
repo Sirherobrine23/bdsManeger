@@ -1,0 +1,16 @@
+.ServersGrid {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-start;
+  justify-items: center;
+  flex-wrap: wrap;
+}
+
+.serverModule {
+  color: grey;
+  background-color: #00000069;
+  padding: 1.5%;
+  cursor: pointer;
+  border-radius: 36px;
+  border-style: dotted;
+}

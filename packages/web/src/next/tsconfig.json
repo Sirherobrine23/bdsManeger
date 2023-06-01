@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../../../tsconfig.json",
   "compilerOptions": {
     "jsx": "preserve",
     "esModuleInterop": true,
@@ -7,12 +7,16 @@
     "noEmit": true,
     "incremental": true,
     "resolveJsonModule": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "target": "ESNext",
     "lib": [
       "dom",
       "DOM.Iterable"
-    ],
+    ]
   },
   "exclude": [
+    "next.config.cjs",
     "**/next.config.*js",
     "**/.next/"
   ],

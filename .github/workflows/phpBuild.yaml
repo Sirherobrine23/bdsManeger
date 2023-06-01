@@ -215,6 +215,18 @@ jobs:
       with:
         path: ./phpOutput
 
+    - name: Rename files
+      run: |
+        cd phpOutput
+        OIFS="$IFS"
+        IFS=$'\n'
+        for file in $(find . -type f)
+        do
+          echo "Working on ${file} ..."
+          mv -v "$file" "$(basename "$file")"
+        done
+        IFS="$OIFS"
+
     - name: Upload to bucket
       run: node .github/uploadToBucket.mjs phpOutput:php_bin
       timeout-minutes: 25

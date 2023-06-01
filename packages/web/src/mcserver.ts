@@ -46,7 +46,7 @@ app.use(async (req, res, next) => {
   return next();
 });
 
-const sessionMAP = new Map<string, serverRun>();
+export const sessionMAP = new Map<string, serverRun>();
 
 // List auth user server allow access
 app.get("/", async (req, res) => {
@@ -54,6 +54,7 @@ app.get("/", async (req, res) => {
   return res.json(servers.map(info => ({
     ID: info.ID,
     platform: info.platform,
+    name: info.name,
     running: sessionMAP.has(info.ID),
   })));
 });
@@ -63,7 +64,7 @@ app.post("/", async (req, res) => {
   if (!(req.userInfo.permissions.includes("admin"))) return res.status(401).json({ error: "You no have access to create server" });
   else if (typeof req.body !== "object") return res.status(400).json({ error: "Require body to setup server" });
   const { platform } = req.body;
-  if (!(platform === "bedrock" || platform === "java")) res.status(400).json({ error: "Invalid platform" });
+  if (!(platform === "bedrock" || platform === "java")) return res.status(400).json({ error: "Invalid platform", body: req.body });
   const v1 = await createServerID(platform, [req.session.userID]);
   if (platform === "bedrock") {
     await Bedrock.installServer(v1, { version: req.body.version, altServer: req.body.altServer, allowBeta: !!req.body.allowBeta });
@@ -79,18 +80,18 @@ app.post("/", async (req, res) => {
 app.delete("/", async (req, res) => {
   if (!(req.userInfo.permissions.includes("admin"))) return res.status(401).json({ error: "You no have access to create server" });
   else if (typeof req.body !== "object") return res.status(400).json({ error: "Require body to setup server" });
-  const serverInfo = await serversIDs.findOne({ID: String(req.body.id)});
-  if (!(serverInfo)) return res.status(404).json({error: "Server not exists"});
+  const serverInfo = await serversIDs.findOne({ ID: String(req.body.id) });
+  if (!(serverInfo)) return res.status(404).json({ error: "Server not exists" });
   if (sessionMAP.has(serverInfo.ID)) await sessionMAP.get(serverInfo.ID).stopServer();
   const v1 = await getServerPaths(serverInfo.ID);
-  await fs.rm(v1.rootPath, {recursive: true, force: true});
-  return res.json((await serversIDs.findOneAndDelete({ID: serverInfo.ID})).value);
+  await fs.rm(v1.rootPath, { recursive: true, force: true });
+  return res.json((await serversIDs.findOneAndDelete({ ID: serverInfo.ID })).value);
 });
 
 app.get("/server/:ID", async (req, res) => {
-  const serverInfo = await serversIDs.findOne({ID: req.params.ID});
-  if (!(serverInfo)) return res.status(404).json({error: "Server not exists"});
-  else if (!(serverInfo.users.includes(req.session.userID))) return res.status(404).json({error: "You do not have permission for this server"});
+  const serverInfo = await serversIDs.findOne({ ID: req.params.ID });
+  if (!(serverInfo)) return res.status(404).json({ error: "Server not exists" });
+  else if (!(serverInfo.users.includes(req.session.userID))) return res.status(404).json({ error: "You do not have permission for this server" });
   const Running = sessionMAP.get(serverInfo.ID);
   return res.json({
     running: !!Running,
@@ -100,32 +101,32 @@ app.get("/server/:ID", async (req, res) => {
 });
 
 app.get("/server/:ID/hotbackup", async (req, res) => {
-  const serverInfo = await serversIDs.findOne({ID: req.params.ID});
-  if (!(serverInfo)) return res.status(404).json({error: "Server not exists"});
-  else if (!(serverInfo.users.includes(req.session.userID))) return res.status(404).json({error: "You do not have permission for this server"});
-  else if (!(sessionMAP.has(req.params.ID))) return res.status(400).json({error: "Server not running"});
+  const serverInfo = await serversIDs.findOne({ ID: req.params.ID });
+  if (!(serverInfo)) return res.status(404).json({ error: "Server not exists" });
+  else if (!(serverInfo.users.includes(req.session.userID))) return res.status(404).json({ error: "You do not have permission for this server" });
+  else if (!(sessionMAP.has(req.params.ID))) return res.status(400).json({ error: "Server not running" });
   const run = sessionMAP.get(serverInfo.ID);
   const data = await run.hotBackup();
-  if (!data) return res.status(503).json({error: "Server not support hot backup"});
+  if (!data) return res.status(503).json({ error: "Server not support hot backup" });
   return data.pipe(res.writeHead(200, {}));
 });
 
 app.post("/server/:ID", async (req, res) => {
-  const serverInfo = await serversIDs.findOne({ID: req.params.ID});
-  if (!(serverInfo)) return res.status(404).json({error: "Server not exists"});
-  else if (!(serverInfo.users.includes(req.session.userID))) return res.status(404).json({error: "You do not have permission for this server"});
-  else if (sessionMAP.has(serverInfo.ID)) return res.status(400).json({error: "the server is already running"});
+  const serverInfo = await serversIDs.findOne({ ID: req.params.ID });
+  if (!(serverInfo)) return res.status(404).json({ error: "Server not exists" });
+  else if (!(serverInfo.users.includes(req.session.userID))) return res.status(404).json({ error: "You do not have permission for this server" });
+  else if (sessionMAP.has(serverInfo.ID)) return res.status(400).json({ error: "the server is already running" });
   const v1 = await getServerPaths(serverInfo.ID);
   const server = await (serverInfo.platform === "bedrock" ? Bedrock.startServer : Java.startServer)(v1, {});
   sessionMAP.set(v1.id, server);
   server.once("exit", () => sessionMAP.delete(v1.id));
-  return res.status(201).json({ID: v1.id, pid: server.pid});
+  return res.status(201).json({ ID: v1.id, pid: server.pid });
 });
 
 app.delete("/server/:ID", async (req, res) => {
-  const serverInfo = await serversIDs.findOne({ID: req.params.ID});
-  if (!(serverInfo)) return res.status(404).json({error: "Server not exists"});
-  else if (!(serverInfo.users.includes(req.session.userID))) return res.status(404).json({error: "You do not have permission for this server"});
-  else if (!(sessionMAP.has(req.params.ID))) return res.status(400).json({error: "Server not running"});
+  const serverInfo = await serversIDs.findOne({ ID: req.params.ID });
+  if (!(serverInfo)) return res.status(404).json({ error: "Server not exists" });
+  else if (!(serverInfo.users.includes(req.session.userID))) return res.status(404).json({ error: "You do not have permission for this server" });
+  else if (!(sessionMAP.has(req.params.ID))) return res.status(400).json({ error: "Server not running" });
   return res.json(await sessionMAP.get(req.params.ID).stopServer());
 });

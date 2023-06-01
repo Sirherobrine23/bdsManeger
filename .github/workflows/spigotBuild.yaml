@@ -51,10 +51,22 @@ jobs:
     - name: Download artifacts
       uses: actions/download-artifact@v3
       with:
-        path: artifacts
+        path: SpigotBuild
+
+    - name: Rename files
+      run: |
+        cd SpigotBuild/latest
+        OIFS="$IFS"
+        IFS=$'\n'
+        for file in $(find . -type f)
+        do
+          echo "Working on ${file} ..."
+          mv -v "$file" "$(echo $file | sed 's|spigot-||g')"
+        done
+        IFS="$OIFS"
 
     - name: Upload to actifial
-      run: node .github/uploadToBucket.mjs artifacts:SpigotBuild
+      run: node .github/uploadToBucket.mjs SpigotBuild/latest:SpigotBuild
       env:
         ociauth: "${{ secrets.OCI_AUTHKEY }}"
         OCI_AUTHKEY: "${{ secrets.OCI_AUTHKEY }}"

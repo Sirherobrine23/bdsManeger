@@ -1,7 +1,7 @@
 import express from "express";
-import rateLimit from "express-rate-limit";
+// import rateLimit from "express-rate-limit";
 import crypto from "node:crypto";
-import { createToken, passwordCheck, passworldSc, userCollection } from "./db.js";
+import { createToken, passwordCheck, passworldSc, createSSHKey, userCollection } from "./db.js";
 import { pageRender } from "./reactServer.js";
 import path from "node:path";
 
@@ -15,13 +15,6 @@ app.get("/login", (req, res) => {
 app.get("/register", (req, res) => {
   return pageRender(req, res, "/register");
 });
-
-// Rate limit
-app.use(rateLimit({
-  max: 500,
-  windowMs: 1000 * 60 * 60 * 2,
-  message: "Try again more later, you have many requests!"
-}));
 
 app.post("/api/login", async (req, res) => {
   if (typeof req.body !== "object") return res.status(400).json({ error: "Require body to login" });
@@ -48,23 +41,27 @@ app.post("/api/register", async (req, res) => {
   const { username, email, password } = req.body;
   if (!(typeof username === "string" && typeof email === "string")) return res.status(400).json({ error: "Invalid username and email body" });
   else if (!(typeof password === "string" && (password.length >= 8))) return res.status(400).json({ error: "Require password with 8 characters" });
-  else if (await userCollection.findOne({ $or: [{ username }, { email }] })) return res.status(400).json({ error: "Username or Email in use!" });
+  else if (await userCollection.findOne({ email})) return res.status(400).json({ error: "email in use!" });
+  else if (await userCollection.findOne({ username})) return res.status(400).json({ error: "username in use!" });
   const passEncrypt = await passworldSc(password);
   let ID: string;
   while (true) if (!(await userCollection.findOne({ ID: (ID = crypto.randomUUID()) }))) break;
   const token = await createToken();
+  const sshKey = await createSSHKey();
   await userCollection.insertOne({
     ID, createAt: new Date(),
     email, username, password: passEncrypt,
-    tokens: [token],
     permissions: [
       "confirm"
-    ]
+    ],
+    tokens: [token],
+    sshKeys: [sshKey]
   });
 
-  return res.json({
+  return res.status(201).json({
     ID,
-    token
+    token,
+    sshKey
   });
 });
 

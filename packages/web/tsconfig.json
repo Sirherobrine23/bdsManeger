@@ -6,6 +6,7 @@
     }
   ],
   "exclude": [
-    "src/next/next.config.cjs"
+    "src/next/next.config.cjs",
+    "src/next/**/*.tsx"
   ]
 }

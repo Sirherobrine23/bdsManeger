@@ -1,16 +1,18 @@
-import { serverManegerV1, bdsManegerRoot, runServer, runOptions } from "@the-bds-maneger/core";
-import { MongoClient } from "mongodb";
 import { extendsFS } from "@sirherobrine23/extends";
-import { promisify } from "node:util";
+import { bdsManegerRoot, runOptions, runServer, serverManegerV1 } from "@the-bds-maneger/core";
+import { MongoClient } from "mongodb";
 import crypto from "node:crypto";
-import path from "node:path";
 import fs from "node:fs/promises";
-export const { MONGO_URI = "mongodb://127.0.0.1", DB_NAME = "bdsWeb" } = process.env;
+import path from "node:path";
+import util from "node:util";
+import { getConfig } from "./config.js";
+import { uniqueNamesGenerator, names, colors, animals, adjectives } from "unique-names-generator";
 
-export const client = await (new MongoClient(MONGO_URI)).connect();
-export const database = client.db(DB_NAME);
+const config = await getConfig();
+export const client = await (new MongoClient(config.mongo.uri)).connect();
+export const database = client.db(config.mongo.databaseName);
 
-export type userPermission = "root"|"admin"|"confirm";
+export type userPermission = "root" | "admin" | "confirm";
 export type userCollection = {
   ID: string;
   createAt: Date;
@@ -22,6 +24,10 @@ export type userCollection = {
   username: string;
   permissions: userPermission[];
   tokens: string[];
+  sshKeys: {
+    private: string;
+    public: string;
+  }[];
 };
 
 export const userCollection = database.collection<userCollection>("user");
@@ -32,18 +38,33 @@ export async function createToken() {
     let str: string = "";
     for (let i = 0; buf.length > i; i++) {
       if ((/[a-zA-Z0-9]/).test(String.fromCharCode(buf[i]))) str += String.fromCharCode(buf[i]);
-      else str += randomInt(2, 20000);
+      else str += crypto.randomInt(2, 20000);
     }
     return str;
   }
   while (true) {
-    if (await userCollection.findOne({tokens: [(token = "tk_"+bufToChar(randomBytes(16)))]})) continue;
+    if (await userCollection.findOne({ tokens: [(token = "tk_" + bufToChar(crypto.randomBytes(16)))] })) continue;
     break;
   }
   return token;
 }
 
-export async function passworldSc(input: string): Promise<{hash: string, salt: string}> {
+export async function createSSHKey() {
+  const generateKeyPair = util.promisify(crypto.generateKeyPair);
+  return generateKeyPair("rsa", {
+    modulusLength: 3072,
+    privateKeyEncoding: {
+      format: "pem",
+      type: "pkcs1"
+    },
+    publicKeyEncoding: {
+      type: "pkcs1",
+      format: "pem"
+    }
+  }).then(a => ({ private: String(a.privateKey), public: String(a.publicKey) }));
+}
+
+export async function passworldSc(input: string): Promise<{ hash: string, salt: string }> {
   const iv = crypto.randomBytes(16);
   const secret = crypto.randomBytes(24);
   return new Promise((done, reject) => {
@@ -81,13 +102,15 @@ export async function passwordCheck(info: userCollection, password: string) {
 export type serverDB = {
   ID: string;
   platform: serverManegerV1["platform"];
+  name: string;
   users: string[];
 };
 
-export const serversIDs = database.collection<serverDB>("server");
+export const serveCollection = database.collection<serverDB>("server");
+export const serversIDs = serveCollection;
 
 export async function getServerPaths(ID: string): Promise<serverManegerV1> {
-  const info = await serversIDs.findOne({ID});
+  const info = await serveCollection.findOne({ ID });
   if (!(info)) throw new Error("Server not exists!");
 
   const rootPath = path.join(bdsManegerRoot, info.platform, ID);
@@ -96,7 +119,7 @@ export async function getServerPaths(ID: string): Promise<serverManegerV1> {
   const log = path.join(rootPath, "logs");
 
   // Create folders
-  for (const p of [serverFolder, backup, log]) if (!(await extendsFS.exists(p))) await fs.mkdir(p, {recursive: true});
+  for (const p of [serverFolder, backup, log]) if (!(await extendsFS.exists(p))) await fs.mkdir(p, { recursive: true });
 
   return {
     id: ID,
@@ -120,16 +143,21 @@ export async function createServerID(platform: serverManegerV1["platform"], user
   // Create Server ID
   let ID: string;
   while (true) {
-    if (await userCollection.findOne({ID: (ID = randomUUID().split("-").join("_"))})) continue;
+    if (await userCollection.findOne({ ID: (ID = crypto.randomUUID().split("-").join("_")) })) continue;
     else if (await extendsFS.exists(path.join(bdsManegerRoot, platform, ID))) continue;
     break;
   }
 
   // Insert
-  await serversIDs.insertOne({ID, platform, users: []});
+  await serveCollection.insertOne({
+    ID,
+    name: uniqueNamesGenerator({dictionaries: [ names, colors, animals, adjectives ]}),
+    platform,
+    users: []
+  });
 
   // If seted user inject to DB
-  if (usersIds && usersIds.length > 0) await serversIDs.findOneAndUpdate({ID}, {$set: {users: usersIds}});
+  if (usersIds && usersIds.length > 0) await serveCollection.findOneAndUpdate({ ID }, { $set: { users: usersIds } });
 
   return getServerPaths(ID);
 }
