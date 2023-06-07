@@ -1,20 +1,27 @@
 import { http, Github } from "@sirherobrine23/http";
+import { versionsStorages } from "../../serverRun.js";
 import util from "node:util";
 import xml from "xml-js";
 
 export interface mojangInfo {
-  releaseDate: Date;
-  release: "oficial" | "beta";
-  files: { [P in NodeJS.Platform]?: { [A in NodeJS.Architecture]?: string } }
+  date: Date,
+  release?: "oficial" | "preview",
+  url: {
+    [platform in NodeJS.Platform]?: {
+      [arch in NodeJS.Architecture]?: {
+        [ext in "tgz" | "zip"]?: string;
+      }
+    }
+  }
 }
 
-export const mojangCache = new Map<string, mojangInfo>();
+export const mojangCache = new versionsStorages<mojangInfo>();
 export async function listMojang() {
-  const versions = await http.jsonRequestBody<{ version: string, release?: "stable" | "preview", date: string, url: { [P in NodeJS.Platform]?: { [A in NodeJS.Architecture]?: string } } }[]>("https://raw.githubusercontent.com/Sirherobrine23/BedrockFetch/main/versions/all.json");
-  versions.forEach(rel => mojangCache.has(rel.version) ? null : mojangCache.set(rel.version, {
-    releaseDate: new Date(rel.release),
-    release: !rel.release ? "oficial" : rel.release === "preview" ? "beta" : "oficial",
-    files: rel.url
+  const versions = await http.jsonRequestBody<({version: string} & mojangInfo)[]>("https://raw.githubusercontent.com/Sirherobrine23/BedrockFetch/main/versions/all.json");
+  versions.filter(ver => !(mojangCache.has(ver.version))).forEach(rel => mojangCache.set(rel.version, {
+    date: new Date(rel.date),
+    release: rel.release,
+    url: rel.url
   }));
 }
 
@@ -34,7 +41,7 @@ export interface powernukkitDownload {
   url: string;
 }
 
-export const powernukkitCache = new Map<string, powernukkitDownload>();
+export const powernukkitCache = new versionsStorages<powernukkitDownload>();
 export async function listPowernukkitProject() {
   const releases = await http.jsonRequestBody<{[k in "releases"|"snapshots"]: powerNukkitRelease[]}>("https://raw.githubusercontent.com/PowerNukkit/powernukkit-version-aggregator/master/powernukkit-versions.json");
   const releasesData = (Object.keys(releases) as (keyof typeof releases)[]).map(releaseType => releases[releaseType].map(data => ({...data, releaseType}))).flat(1).sort((b, a) => Math.min(1, Math.max(-1, a.releaseTime - b.releaseTime)));
@@ -70,8 +77,8 @@ export interface cloudburstDownload {
   url: string;
 }
 
-export const nukkitCache = new Map<string, cloudburstDownload>();
-export const cloudburstCache = new Map<string, cloudburstDownload>();
+export const nukkitCache = new versionsStorages<cloudburstDownload>();
+export const cloudburstCache = new versionsStorages<cloudburstDownload>();
 export async function listCloudburstProject() {
   const Projects = [ "Nukkit", "Server" ] as const;
   for (const Project of Projects) {
@@ -142,7 +149,7 @@ export interface pocketmineDownload {
   url: string;
 }
 
-export const pocketmineCache = new Map<string, pocketmineDownload>();
+export const pocketmineCache = new versionsStorages<pocketmineDownload>();
 const pocketmineGithub = await Github.repositoryManeger("pmmp", "PocketMine-MP");
 export async function listPocketmineProject() {
   const pocketmineReleases = (await pocketmineGithub.release.getRelease()).filter(rel => (rel.assets.find(assert => assert.name.endsWith(".phar")) ?? {}).browser_download_url);
