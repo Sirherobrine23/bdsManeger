@@ -48,7 +48,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 40
         run: |
-          ./compile.sh -t android-aarch64 -x -f -g -j$(nproc)
+          ./compile.sh -t android-aarch64 -x -f -g -j$(nproc) -P 5
           # Compress files
           cd bin/php*/
           pwd
@@ -71,7 +71,10 @@ jobs:
         target:
         - ubuntu-latest
         - arm64
-    name: "Linux - ${{ matrix.target }}"
+        pm-version-major:
+        - 4
+        - 5
+    name: "Linux (PM ${{ matrix.pm-version-major }} - ${{ matrix.target }})"
     runs-on: ${{ matrix.target }}
     steps:
       - name: Clone Repository
@@ -90,7 +93,7 @@ jobs:
         timeout-minutes: 40
         run: |
           set -ex
-          ./compile.sh -j 4 -f -g -s
+          ./compile.sh -j 4 -f -g -s -P ${{ matrix.pm-version-major }}
 
           # Compress files
           cd bin/php*/
@@ -103,15 +106,18 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: linux_${{ runner.arch }}
+          name: linux_PM${{ matrix.pm-version-major }}_${{ runner.arch }}
           path: |
             *.tar.gz
             *.zip
 
   # MacOS Build
   macos:
-    runs-on: macos-11
-    name: MacOS
+    name: MacOS (PM ${{ matrix.pm-version-major }})
+    runs-on: macos-11.0
+    strategy:
+      matrix:
+        pm-version-major: [ 4, 5 ]
     steps:
       - name: Clone Repository
         uses: actions/checkout@v3
@@ -129,29 +135,33 @@ jobs:
           export PATH="/usr/local/opt/bison/bin:$PATH"
           set -ex
           trap "exit 1" ERR
-          ./compile.sh -j4 -f -g || (cat *.log && exit 1)
+          ./compile.sh -t mac-x86-64 -j4 -f -g -P ${{ matrix.pm-version-major }}
 
       - name: Create tarballs
         run: |
-          cd bin/*/
+          cd bin/
           pwd
+          ARCH="$(node -e 'console.log(process.arch)')"
           # ZIP
-          zip -r "${{ github.workspace }}/darwin_${{ runner.arch }}.zip" *
+          zip -r "${{ github.workspace }}/darwin_${ARCH}.zip" *
           # tar
-          tar -czf "${{ github.workspace }}/darwin_${{ runner.arch }}.tar.gz" *
+          tar -czf "${{ github.workspace }}/darwin_${ARCH}.tar.gz" *
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: darwin_${{ runner.arch }}
+          name: darwin_PM${{ matrix.pm-version-major }}_${{ runner.arch }}
           path: |
             *.tar.gz
             *.zip
 
   # Windows build
   win32:
+    name: Windows (PM ${{ matrix.pm-version-major }})
     runs-on: windows-2019
-    name: Windows
+    strategy:
+      matrix:
+        pm-version-major: [ 4, 5 ]
     steps:
       - name: Clone Repository
         uses: actions/checkout@v3
@@ -167,10 +177,7 @@ jobs:
         env:
           VS_EDITION: Enterprise
           SOURCES_PATH: ${{ github.workspace }}\pocketmine-php-sdk
-
-      - name: show log
-        if: failure()
-        run: type compile.log
+          PM_VERSION_MAJOR: ${{ matrix.pm-version-major }}
 
       - name: Rename files
         shell: node {0}
@@ -181,13 +188,13 @@ jobs:
           for (const zip of files) {
             console.log("File:", path.join(process.cwd(), zip));
             if (/debug/i.test(zip)) fs.rmSync(path.join(process.cwd(), zip));
-            else fs.renameSync(path.join(process.cwd(), zip), path.join(process.cwd(), "win32_x64.zip"));
+            else fs.renameSync(path.join(process.cwd(), zip), path.join(process.cwd(), `win32_${process.arch}_pm${{ matrix.pm-version-major }}.zip`));
           }
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: Windows
+          name: Windows_PM${{ matrix.pm-version-major }}_${{ runner.arch }}
           path: "*.zip"
 
   # Upload to bucket
@@ -214,6 +221,18 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         path: ./phpOutput
+
+    - name: Rename files
+      run: |
+        cd phpOutput
+        OIFS="$IFS"
+        IFS=$'\n'
+        for file in $(find . -type f)
+        do
+          echo "${file} => $(basename "$file")"
+          mv -v "$file" "$(basename "$file")"
+        done
+        IFS="$OIFS"
 
     - name: Upload to bucket
       run: node .github/uploadToBucket.mjs phpOutput:php_bin
