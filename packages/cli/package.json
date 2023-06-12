@@ -16,7 +16,7 @@
   },
   "keywords": [],
   "dependencies": {
-    "@the-bds-maneger/core": "^6.0.4",
+    "@the-bds-maneger/core": "^6.1.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

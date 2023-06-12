@@ -16,7 +16,7 @@
     "directory": "package/verapi"
   },
   "dependencies": {
-    "@the-bds-maneger/core": "^6.0.4",
+    "@the-bds-maneger/core": "^6.1.0",
     "express": "^4.18.2"
   }
 }
