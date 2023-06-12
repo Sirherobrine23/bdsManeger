@@ -1,8 +1,9 @@
 import { Github, http } from "@sirherobrine23/http";
 import stream from "node:stream";
-import semver from "semver";
 import path from "path";
+import semver from "semver";
 import { bdsFilesBucket } from "../../internalClouds.js";
+import { versionsStorages } from "../../serverRun.js";
 
 interface baseDownload {
   URL: string;
@@ -28,7 +29,7 @@ async function PromiseSplit<T extends (any[])>(arrayInput: T, fn: (value: T[numb
   return result.flat(1);
 }
 
-export const mojangCache = new Map<string, mojangInfo>();
+export const mojangCache = new versionsStorages<mojangInfo>();
 export async function listMojang() {
   const versions = (await http.jsonRequestBody<{ versions: { id: string, releaseTime: string, url: string, type: "snapshot" | "release" | "old_beta" | "old_alpha" }[] }>("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json")).versions;
   await PromiseSplit(versions, async version => {
@@ -48,7 +49,7 @@ export interface spigotDownload {
   craftbukkit?(): Promise<stream.Readable>;
 }
 
-const spigotCache = new Map<string, spigotDownload>();
+export const spigotCache = new versionsStorages<spigotDownload>();
 export async function listSpigot() {
   const spigotFiles = await bdsFilesBucket.listFiles("SpigotBuild/");
   for (const file of spigotFiles.filter(file => file.name.slice(12).startsWith("1.")).sort((b, a) => {
@@ -65,9 +66,9 @@ export async function listSpigot() {
   }
 }
 
-export const paperCache = new Map<string, baseDownload>();
-export const velocityCache = new Map<string, baseDownload>();
-export const foliaCache = new Map<string, baseDownload>();
+export const paperCache = new versionsStorages<baseDownload>();
+export const velocityCache = new versionsStorages<baseDownload>();
+export const foliaCache = new versionsStorages<baseDownload>();
 export async function listPaperProject() {
   const paperProjects = ["paper", "velocity", "folia"] as const;
   await Promise.all(paperProjects.map(async projectName => {
@@ -96,7 +97,7 @@ export async function listPaperProject() {
   }));
 }
 
-export const purpurCache = new Map<string, baseDownload>();
+export const purpurCache = new versionsStorages<baseDownload>();
 export async function listPurpurProject() {
   const baseURL = new URL("https://api.purpurmc.org/v2/purpur");
   const { versions } = await http.jsonRequestBody<{ versions: string[] }>(baseURL);
@@ -111,7 +112,7 @@ export async function listPurpurProject() {
   }
 }
 
-export const glowstoneCache = new Map<string, baseDownload>();
+export const glowstoneCache = new versionsStorages<baseDownload>();
 export async function listGlowstoneProject() {
   const repo = await Github.repositoryManeger("GlowstoneMC", "Glowstone");
   const rels = (await repo.release.getRelease()).filter(rel => rel.assets.some(asset => asset.name.endsWith(".jar")));
@@ -121,20 +122,14 @@ export async function listGlowstoneProject() {
   })));
 }
 
-export const cuberiteCache = new Map<string, { URL: string[] }>([
-  [
-    "win32-x64",
-    {
-      URL: ["https://download.cuberite.org/windows-x86_64/Cuberite.zip"]
-    }
-  ],
-  [
-    "win32-ia32",
-    {
-      URL: ["https://download.cuberite.org/windows-i386/Cuberite.zip"]
-    }
-  ]
-]);
+export const cuberiteCache = new versionsStorages<{ URL: string[] }>({
+  "win32-x64": {
+    URL: ["https://download.cuberite.org/windows-x86_64/Cuberite.zip"]
+  },
+  "win32-ia32": {
+    URL: ["https://download.cuberite.org/windows-i386/Cuberite.zip"]
+  }
+});
 export async function listCuberite() {
   const projects = ["android", "linux-aarch64", "linux-armhf", "linux-i386", "linux-x86_64", "darwin-x86_64"] as const;
   await Promise.all(projects.map(async project => {
@@ -143,7 +138,13 @@ export async function listCuberite() {
       const { artifacts = [], result } = await http.jsonRequestBody<{ result: string, artifacts: { relativePath: string, fileName: string }[] }>(`https://builds.cuberite.org/job/${project}/${job.number}/api/json`);
       if (result !== "SUCCESS") continue;
       let map = artifacts.filter(file => !file.fileName.endsWith(".sha1")).map(file => `https://builds.cuberite.org/job/${project}/${job.number}/artifact/${file.relativePath}`);
-      if (project === "android") {
+      if (!map.length) continue;
+      else if (project === "darwin-x86_64") cuberiteCache.set("darwin-x64", { URL: map });
+      else if (project === "linux-x86_64") cuberiteCache.set("linux-x64", { URL: map });
+      else if (project === "linux-aarch64") cuberiteCache.set("linux-arm64", { URL: map });
+      else if (project === "linux-armhf") cuberiteCache.set("linux-arm", { URL: map });
+      else if (project === "linux-i386") cuberiteCache.set("linux-ia32", { URL: map });
+      else if (project === "android") {
         const serverIndex = map.findIndex(file => file.toLowerCase().endsWith("server.zip"));
         const server = map[serverIndex];
         delete map[serverIndex];
@@ -156,8 +157,19 @@ export async function listCuberite() {
           else if (plat.startsWith("arm64")) cuberiteCache.set("android-arm64", { URL: [server, file] });
           else if (plat.startsWith("arm")) cuberiteCache.set("android-arm", { URL: [server, file] });
         }
-      } else cuberiteCache.set(project, { URL: map });
+      }
       break;
     }
   }));
+}
+
+export async function syncCaches() {
+  await Promise.all([
+    listMojang(),
+    listSpigot(),
+    listPaperProject(),
+    listPurpurProject(),
+    listGlowstoneProject(),
+    listCuberite(),
+  ]);
 }

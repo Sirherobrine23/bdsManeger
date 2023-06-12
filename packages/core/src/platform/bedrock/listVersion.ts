@@ -173,3 +173,12 @@ export function getCacheVersions() {
     cloudburst: Array.from(cloudburstCache.keys()).reduce<{[k: string]: cloudburstDownload}>((acc, key) => {acc[key] = cloudburstCache.get(key); return acc;}, {}),
   };
 }
+
+export async function syncCaches() {
+  await Promise.all([
+    listMojang(),
+    listCloudburstProject(),
+    listPocketmineProject(),
+    listPowernukkitProject()
+  ]);
+}

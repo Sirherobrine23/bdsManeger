@@ -1,0 +1,7 @@
+# Node
+node_modules/
+
+# Typescript
+**/*.js
+**/*.d.ts
+**/*.tsbuildinfo

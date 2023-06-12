@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "packages/verapiDockerfile"
+  },
+  "deploy": {
+    "restartPolicyType": "ALWAYS"
+  }
+}

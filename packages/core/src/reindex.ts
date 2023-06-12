@@ -6,3 +6,4 @@ export { isBedrock } from "./platform/bedrock/index.js";
 // Java platform
 export * as Java from "./platform/java/index.js";
 export * as java from "./platform/java/index.js";
+export { isJava } from "./platform/java/index.js";
