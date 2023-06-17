@@ -39,7 +39,7 @@ jobs:
     # Build Core
     - name: Core Build
       if: matrix.package != '@the-bds-maneger/core'
-      run: npm run -w "@the-bds-maneger/core" build
+      run: npm run -w "@the-bds-maneger/core" prepack
 
     - name: Build "${{ matrix.package }}"
       run: npm run --if-present -w "${{ matrix.package }}" prepack
