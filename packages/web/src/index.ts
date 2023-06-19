@@ -1,33 +1,25 @@
 #!/usr/bin/env node
-import "dotenv/config.js";
 import express from "express";
-import expressLayer from "express/lib/router/layer.js";
-import { config } from "./config.js";
-import cookie from "./cookie.js";
-import loginRegisterRoute from "./login.js";
-import mcserverAPI from "./mcserver.js";
-import * as nextPage from "./reactServer.js";
-import { server as sshServer } from "./ssh.js";
+import http from "node:http";
+import { cookie } from "./auth.js";
+import { localConfig } from "./config.js";
+import mcserver from "./mcserver.js";
+import { nextHandler, nextUpgarde } from "./reactServer.js";
 
-// Patch express promise catch's
-expressLayer.prototype.handle_request = async function handle_request_promised(...args) {
-  var fn = this.handle;
-  if (fn.length > 3) return args.at(-1)();
-  await Promise.resolve().then(() => fn.call(this, ...args)).catch(args.at(-1));
-}
-
-// Express app
 const app = express();
+const server = http.createServer();
+server.on("upgrade", nextUpgarde);
+server.on("request", app);
 
 app.disable("etag").disable("x-powered-by");
 app.use(cookie, express.json(), express.urlencoded({ extended: true }));
 
-// API
-app.use("/api/mcserver", mcserverAPI);
-app.use(loginRegisterRoute);
+// API 404
+app.use("/api/mcserver", mcserver);
+app.use("/api", ({res}) => res.status(404).json({error: "endpoint not exists!"}));
 
-// Next request
-app.all("*", (req, res) => nextPage.nextHandler(req, res));
+// Page render
+app.all("*", (req, res) => nextHandler(req, res));
 
 // 500 error
 app.use((err, _req, res, _next) => {
@@ -35,14 +27,8 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: err?.message || err })
 });
 
-app.listen(config.port, function () {
-  const addr = this.address();
-  console.log("Dashboard/API listen on %O", typeof addr === "object" ? addr.port : Number(addr));
-  this.on("upgrade", nextPage.nextUpgarde);
-  if (config.sshServer.port >= 0) {
-    sshServer.listen(config.sshServer.port, function listenOn() {
-      const addr = sshServer.address();
-      console.log("SSH listen on %O", typeof addr === "object" ? addr.port : Number(addr));
-    });
-  }
+// Server listen
+server.listen(localConfig.portListen, () => {
+  const addr = server.address();
+  console.log("HTTP Listen on %s", typeof addr === "object" ? addr.port : addr);
 });
