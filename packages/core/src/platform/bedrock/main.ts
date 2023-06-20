@@ -92,6 +92,14 @@ export class Bedrock<P extends platforms> extends customEvent<bedrockEvents> {
     Object.defineProperty(this, "platform", { writable: false });
   }
 
+  getVersion(version: string | number) {
+    if (this.platform === "mojang") return bedrockVersions.mojangCache.get(version);
+    else if (this.platform === "pocketmine") return bedrockVersions.pocketmineCache.get(version);
+    else if (this.platform === "cloudburst") return bedrockVersions.cloudburstCache.get(version);
+    else if (this.platform === "nukkit") return bedrockVersions.nukkitCache.get(version);
+    else return bedrockVersions.powernukkitCache.get(version);
+  }
+
   async installServer(version: string | number) {
     const { platform } = this;
     if (!(await extendsFS.exists(this.serverFolder))) await fs.mkdir(this.serverFolder, { recursive: true });

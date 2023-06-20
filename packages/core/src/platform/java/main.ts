@@ -41,6 +41,16 @@ export class Java<P extends platform> extends customEvent<javaEvents> {
     Object.defineProperty(this, "platform", { writable: false });
   }
 
+  getVersion(version: number|string) {
+    if (this.platform === "mojang") return javaVersions.mojangCache.get(version);
+    else if (this.platform === "spigot") return javaVersions.spigotCache.get(version);
+    else if (this.platform === "paper") return javaVersions.paperCache.get(version);
+    else if (this.platform === "purpur") return javaVersions.purpurCache.get(version);
+    else if (this.platform === "folia") return javaVersions.foliaCache.get(version);
+    else if (this.platform === "cuberite") return javaVersions.cuberiteCache.get(version);
+    else return javaVersions.glowstoneCache.get(version);
+  }
+
   async installServer(version: string | number) {
     const { platform } = this;
     if (!(await extendsFS.exists(this.serverFolder))) await fs.mkdir(this.serverFolder, { recursive: true });

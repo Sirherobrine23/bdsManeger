@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import express from "express";
 import http from "node:http";
-import { cookie } from "./auth.js";
+import { authRoute, cookie } from "./auth.js";
 import { localConfig } from "./config.js";
 import mcserver from "./mcserver.js";
 import { nextHandler, nextUpgarde } from "./reactServer.js";
@@ -12,7 +12,7 @@ server.on("upgrade", nextUpgarde);
 server.on("request", app);
 
 app.disable("etag").disable("x-powered-by");
-app.use(cookie, express.json(), express.urlencoded({ extended: true }));
+app.use(cookie, authRoute, express.json(), express.urlencoded({ extended: true }));
 
 // API 404
 app.use("/api/mcserver", mcserver);

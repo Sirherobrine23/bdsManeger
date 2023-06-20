@@ -5,12 +5,12 @@ import semver from "semver";
 import { bdsFilesBucket } from "../../internalClouds.js";
 import { versionsStorages } from "../../serverRun.js";
 
-interface baseDownload {
+export interface baseDownload {
   URL: string;
   releaseDate: Date;
 }
 
-interface mojangInfo extends baseDownload {
+export interface mojangInfo extends baseDownload {
   release: "oficial" | "snapshot" | "beta" | "alpha";
 }
 

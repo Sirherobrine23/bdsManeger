@@ -1,4 +1,5 @@
 import session from "express-session";
+import express from "express";
 import crypto from "node:crypto";
 import { localConfig } from "./config.js";
 import { mongoDatabase } from "./databaseConnect.js";
@@ -131,7 +132,7 @@ export async function createSSHKey(): Promise<{privateKey: string, publicKey: st
   });
 }
 
-type userSorage = {
+type userStorage = {
   /** Unique user ID */
   readonly userID: string;
 
@@ -142,7 +143,7 @@ type userSorage = {
   email: string;
 
   /** Auth password */
-  password: string;
+  password: {hash: string, salt: string};
 
   /** API Token auth */
   tokens: string[];
@@ -153,16 +154,16 @@ type userSorage = {
     Java: string;
   };
 };
-export const usersCollection = mongoDatabase.collection<userSorage>("usersAuth");
+export const usersCollection = mongoDatabase.collection<userStorage>("usersAuth");
 
 export const random = () => {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
   return ([
-    crypto.pseudoRandomBytes(8).toString("hex"),
-    crypto.pseudoRandomBytes(4).toString("hex"),
-    crypto.pseudoRandomBytes(4).toString("hex"),
-    crypto.pseudoRandomBytes(4).toString("hex"),
-    crypto.pseudoRandomBytes(12).toString("hex"),
+    crypto.randomBytes(8).toString("hex"),
+    crypto.randomBytes(4).toString("hex"),
+    crypto.randomBytes(4).toString("hex"),
+    crypto.randomBytes(4).toString("hex"),
+    crypto.randomBytes(12).toString("hex"),
   ]).join("-");
 }
 
@@ -174,7 +175,7 @@ export async function generateUserID() {
 
 export async function generateToken() {
   const genToken = () => {
-    let data = Array(crypto.randomInt(3, 8)+1).fill(null).map(() => crypto.pseudoRandomBytes(crypto.randomInt(1, 6)).toString("hex"));
+    let data = Array(crypto.randomInt(3, 8)+1).fill(null).map(() => crypto.randomBytes(crypto.randomInt(1, 6)).toString("hex"));
     let scg =  "tk_";
 
     scg += data.shift() + data.pop();
@@ -186,4 +187,34 @@ export async function generateToken() {
   let token: string;
   while (true) if (!(await usersCollection.findOne({tokens: [(token = genToken())]}))) break;
   return token;
+}
+
+declare module "express-serve-static-core" {
+  interface Request {
+    userInfo?: userStorage;
+  }
+}
+
+export const authRoute: express.RequestHandler = async (req, res, next) => {
+  if (typeof req.headers.authorization === "string" && (req.headers.authorization = req.headers.authorization.trim()).length > 0) {
+    let userInfo: userStorage;
+    const { authorization } = req.headers;
+    if (authorization.startsWith("Basic ")) {
+      const decode64 = Buffer.from(authorization.slice(5).trim(), "base64").toString("utf8");
+      let index: number, email = decode64.slice(0, (index = decode64.indexOf(":"))), password = decode64.slice(index+1);
+      userInfo = await usersCollection.findOne({email});
+      if (await passwordDecrypt(userInfo.password.hash, userInfo.password.salt) !== password) userInfo = undefined;
+    } else if (authorization.startsWith("Token ")||authorization.startsWith("Bearer ")) {
+      const token = authorization.slice(6).trim();
+      userInfo = await usersCollection.findOne({tokens: [token]});
+    }
+
+    if (!userInfo) return res.status(401).json({error: "invalid authentication"});
+    req.userInfo = userInfo;
+    req.session.userID = userInfo.userID;
+    return req.session.save(next);
+  }
+
+  if (typeof req.session.userID === "string" && !req.userInfo) req.userInfo = await usersCollection.findOne({userID: req.session.userID});
+  return next();
 }
