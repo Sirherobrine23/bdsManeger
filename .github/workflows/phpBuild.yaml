@@ -68,12 +68,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        pm-version-major: [ 4, 5 ]
         target:
         - ubuntu-latest
         - arm64
-        pm-version-major:
-        - 4
-        - 5
+        exclude:
+          - target: arm64
+            pm-version-major: 4
     name: "Linux (PM ${{ matrix.pm-version-major }} - ${{ matrix.target }})"
     runs-on: ${{ matrix.target }}
     steps:
@@ -89,11 +90,11 @@ jobs:
           sudo apt-get install -y cmake pkg-config make autoconf automake libtool libtool-bin m4 wget libc-bin gzip bzip2 bison g++ git re2c zip tar
 
       - name: Compile PHP
-        continue-on-error: true
         timeout-minutes: 40
         run: |
           set -ex
-          ./compile.sh -j 4 -f -g -s -P ${{ matrix.pm-version-major }}
+          trap "exit 1" ERR
+          ./compile.sh -j 4 -g -s -P ${{ matrix.pm-version-major }}
 
           # Compress files
           cd bin/php*/
