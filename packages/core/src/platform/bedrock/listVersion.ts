@@ -80,7 +80,7 @@ export interface cloudburstDownload {
 export const nukkitCache = new versionsStorages<cloudburstDownload>();
 export const cloudburstCache = new versionsStorages<cloudburstDownload>();
 export async function listCloudburstProject() {
-  const Projects = [ "Nukkit", "Server" ] as const;
+  const Projects = [ "Nukkit", "Cloudburst" ] as const;
   for (const Project of Projects) {
     const { body: { jobs } } = await http.jsonRequest<{jobs: {name: string, _class: string}[]}>(`https://ci.opencollab.dev/job/NukkitX/job/${Project}/api/json`);
     const buildFiles = await Promise.all(jobs.filter(b => b._class === "org.jenkinsci.plugins.workflow.job.WorkflowJob").map(b => b.name).map(async branch => {
@@ -92,8 +92,8 @@ export async function listCloudburstProject() {
         if (!branch) return [];
         const commitID = ((branchBuild?.buildsByBranchName[Object.keys(branchBuild.buildsByBranchName).at(0)]?.marked?.SHA1 || branchBuild.buildsByBranchName[Object.keys(branchBuild.buildsByBranchName).at(0)]?.revision?.SHA1) as string|undefined)
         let mcpeVersion: string;
-        if (Project === "Server") {
-          const json = xml.xml2js((await http.bufferRequestBody(`https://raw.githubusercontent.com/CloudburstMC/Server/${commitID}/pom.xml`)).toString("utf8"), {compact: true});
+        if (Project === "Cloudburst") {
+          const json = xml.xml2js((await http.bufferRequestBody(`https://raw.githubusercontent.com/CloudburstMC/Cloudburst/${commitID}/pom.xml`)).toString("utf8"), {compact: true});
           const info = json["project"].dependencies.dependency.find(dep => dep.groupId._text === "com.nukkitx");
           mcpeVersion = info.version._text;
         } else {
@@ -126,7 +126,7 @@ export async function listCloudburstProject() {
       }));
     })).then(r => r.flat(2));
     for (const build of buildFiles.sort((b, a) => a.releaseDate.getTime() - b.releaseDate.getTime())) {
-      if (Project === "Server") {
+      if (Project === "Cloudburst") {
         if (cloudburstCache.has(build.mcpeVersion)) continue;
         cloudburstCache.set(build.mcpeVersion, {
           releaseDate: build.releaseDate,
