@@ -94,7 +94,7 @@ jobs:
         run: |
           set -ex
           trap "exit 1" ERR
-          ./compile.sh -j 4 -g -s -P ${{ matrix.pm-version-major }}
+          ./compile.sh -j 4 -g -P ${{ matrix.pm-version-major }}
 
           # Compress files
           cd bin/php*/
