@@ -67,6 +67,7 @@ jobs:
   linux:
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         pm-version-major: [ 4, 5 ]
         target:
