@@ -11,7 +11,7 @@ jobs:
     name: Android
     steps:
       - name: Clone Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: pmmp/PHP-Binaries
           submodules: true
@@ -80,7 +80,7 @@ jobs:
     runs-on: ${{ matrix.target }}
     steps:
       - name: Clone Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: pmmp/PHP-Binaries
           submodules: true
@@ -122,7 +122,7 @@ jobs:
         pm-version-major: [ 4, 5 ]
     steps:
       - name: Clone Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: pmmp/PHP-Binaries
           submodules: true
@@ -166,7 +166,7 @@ jobs:
         pm-version-major: [ 4, 5 ]
     steps:
       - name: Clone Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: pmmp/PHP-Binaries
           submodules: true
@@ -208,7 +208,7 @@ jobs:
     - linux
     - android
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       name: Code checkout
 
     - uses: actions/setup-node@v3.6.0
