@@ -1,2 +1,3 @@
-export * from "./reindex.js";
-export * as default from "./reindex.js";
+import * as bedrock from "./mojang.js";
+export default {bedrock};
+export { bedrock };

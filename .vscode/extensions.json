@@ -1,9 +1,0 @@
-{
-  "recommendations": [
-    "benshabatnoam.google-translate-ext",
-    "redhat.vscode-yaml",
-    "ms-vscode-remote.remote-containers",
-    "vscode-icons-team.vscode-icons",
-    "ms-azuretools.vscode-docker"
-  ]
-}
