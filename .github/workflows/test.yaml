@@ -20,7 +20,7 @@ jobs:
       name: Code checkout
 
     # Install basic tools
-    - uses: actions/setup-node@v3.6.0
+    - uses: actions/setup-node@v4
       name: Setup node.js
       with:
         node-version: latest
